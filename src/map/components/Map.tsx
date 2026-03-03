@@ -3,12 +3,22 @@ import MagBackground from '../../assets/map/map_background.webp'
 import MapStrategy from '../../assets/map/map_strategy.webp'
 import './Map.css'
 
+interface StrategyTransform {
+  x: number
+  y: number
+  scale: number
+}
+
 export default function Map() {
-  const computeScale = () => Math.max(800,window.innerWidth) / 7170 * 1.25
+  const computeScale = () => (Math.max(800, window.innerWidth) / 7170) * 1.25
   const [scale, setScale] = useState<number>(() => computeScale())
-  const [strategyPosition, setStrategyPosition] = useState({ x: 0, y: 0 })
-  const [strategyScale, setStrategyScale] = useState(0.2)
+  const [strategy, setStrategy] = useState<StrategyTransform>({
+    x: 0,
+    y: 0,
+    scale: 0.2,
+  })
   const [isDragging, setIsDragging] = useState(false)
+  const backgroundRef = useRef<HTMLDivElement | null>(null)
   const strategyImageRef = useRef<HTMLImageElement | null>(null)
   const dragStateRef = useRef<{
     pointerId: number
@@ -42,10 +52,11 @@ export default function Map() {
       const deltaX = event.clientX - dragState.startX
       const deltaY = event.clientY - dragState.startY
 
-      setStrategyPosition({
+      setStrategy((prev) => ({
+        ...prev,
         x: dragState.startTranslateX + deltaX,
         y: dragState.startTranslateY + deltaY,
-      })
+      }))
     }
 
     const handlePointerUp = (event: PointerEvent) => {
@@ -68,34 +79,44 @@ export default function Map() {
   }, [])
 
   useEffect(() => {
-    const strategyImage = strategyImageRef.current
-    if (!strategyImage) return
+    const background = backgroundRef.current
+    if (!background) return
 
     const handleWheel = (event: WheelEvent) => {
-      const pointerX = event.clientX
-      const pointerY = event.clientY
+      const rect = background.getBoundingClientRect()
+      const pointerX = event.clientX - rect.left
+      const pointerY = event.clientY - rect.top
 
-      setStrategyScale((currentScale) => {
-        const zoomStep = event.deltaY < 0 ? 1.1 : 0.9
-        const nextScale = Math.min(3, Math.max(0.05, currentScale * zoomStep))
+      if (
+        pointerX < 0 ||
+        pointerX > rect.width ||
+        pointerY < 0 ||
+        pointerY > rect.height
+      )
+        return
 
-        if (nextScale === currentScale) return currentScale
+      setStrategy((prev) => {
+        const zoomFactor = Math.exp(-event.deltaY * 0.0015)
+        const nextScale = Math.min(3, Math.max(0.05, prev.scale * zoomFactor))
 
-        const ratio = nextScale / currentScale
+        if (nextScale === prev.scale) return prev
 
-        setStrategyPosition((currentPosition) => ({
-          x: currentPosition.x +  pointerX * (1 - ratio),
-          y: currentPosition.y +  pointerY * (1 - ratio),
-        }))
+        // Image point under cursor in image-local coordinates
+        const imgX = (pointerX - prev.x) / prev.scale
+        const imgY = (pointerY - prev.y) / prev.scale
 
-        return nextScale
+        return {
+          x: pointerX - imgX * nextScale,
+          y: pointerY - imgY * nextScale,
+          scale: nextScale,
+        }
       })
     }
 
-    strategyImage.addEventListener('wheel', handleWheel, { passive: true })
+    background.addEventListener('wheel', handleWheel, { passive: true })
 
     return () => {
-      strategyImage.removeEventListener('wheel', handleWheel)
+      background.removeEventListener('wheel', handleWheel)
     }
   }, [])
 
@@ -106,15 +127,15 @@ export default function Map() {
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
-      startTranslateX: strategyPosition.x,
-      startTranslateY: strategyPosition.y,
+      startTranslateX: strategy.x,
+      startTranslateY: strategy.y,
     }
 
     setIsDragging(true)
   }
 
   return (
-    <div className="background">
+    <div className="background" ref={backgroundRef}>
       <img
         src={MagBackground}
         alt="Map Background"
@@ -128,7 +149,7 @@ export default function Map() {
         ref={strategyImageRef}
         onPointerDown={handleStrategyPointerDown}
         style={{
-          transform: `translate(${strategyPosition.x}px, ${strategyPosition.y}px) scale(${strategyScale})`,
+          transform: `translate(${strategy.x}px, ${strategy.y}px) scale(${strategy.scale})`,
           cursor: isDragging ? 'grabbing' : 'grab',
         }}
       />

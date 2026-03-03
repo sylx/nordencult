@@ -7,7 +7,7 @@
   height: 100%;
   z-index: 0;
   display: flex;
-  justify-content: center;    
+  justify-content: center;
 }
 
 .background img {
@@ -29,7 +29,7 @@
 
 .background img.strategy-image {
   z-index: 1;
-  width: 8192px;
+  width: 11060px;
   height: 8192px;
   touch-action: none;
   user-select: none;
