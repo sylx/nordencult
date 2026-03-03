@@ -1,10 +1,10 @@
 import './App.css'
-import Bg from './map/components/Bg'
+import Map from './map/components/Map'
 
 function App() {
   return (
     <>
-    <Bg />
+    <Map />
       <h1>Nordencult</h1>
     </>
   )
