@@ -1,4 +1,4 @@
-import React, { use, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import MagBackground from '../../assets/map/map_background.webp'
 import MapStrategy from '../../assets/map/map_strategy.webp'
 import './Map.css'

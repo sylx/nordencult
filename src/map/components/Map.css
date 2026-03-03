@@ -6,8 +6,7 @@
   width: 100%;
   height: 100%;
   z-index: 0;
-  display: flex;
-  justify-content: center;
+  overflow: hidden;
 }
 
 .background img {
@@ -37,7 +36,6 @@
   height: 8192px;
   touch-action: none;
   user-select: none;
-  transition: 0.1s ease-out transform;
 }
 
 @keyframes seaAnimation {
@@ -58,6 +56,6 @@
   height: 10000px;
   z-index: 0;
   pointer-events: none;
-  transition: 0.1s ease-out transform;
-  animation: seaAnimation 20s linear infinite;
+  transform-origin: top left;
+  animation: seaAnimation 40s linear infinite;
 }
