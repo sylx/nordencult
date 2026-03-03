@@ -7,3 +7,11 @@
   height: 100vh;
 }
 
+.ui{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  transform: translateX(0);
+}

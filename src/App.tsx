@@ -5,7 +5,10 @@ function App() {
   return (
     <>
     <Map />
-      <h1>Nordencult</h1>
+    <div className="ui">
+        <h1>Nordencult</h1>
+    </div>
+
     </>
   )
 }

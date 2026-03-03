@@ -29,18 +29,31 @@
   pointer-events: none;
 }
 
+.background .light-fg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at top center, rgba(0, 0, 0, 0.0) 0%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 1.0) 100%);
+  mix-blend-mode: spotlight;
+  z-index: 5;
+  pointer-events: none;
+}
+
 .background .mask-bg {
   position: absolute;
-  top: 50vh;
+  top: 60vh;
   left: 0;
   width: 100%;
-  height: 50vh;
+  height: 120vh;
   background: #000;
   z-index: 4;
   display: none;
 }
 
-@media screen and (min-height: 1600px) {
+/* Show mask background when viewport aspect ratio is less than 1 (portrait) */
+@media (max-aspect-ratio: 1/1) {
   .background .mask-bg {
     display: block;
   }
@@ -52,6 +65,7 @@
   height: 8192px;
   touch-action: none;
   user-select: none;
+  transition: 0.1s transform ease-out;
 }
 
 @keyframes seaAnimation {
@@ -73,4 +87,5 @@
   z-index: 0;
   transform-origin: top left;
   animation: seaAnimation 40s linear infinite;
+  transition: 0.1s transform ease-out;
 }

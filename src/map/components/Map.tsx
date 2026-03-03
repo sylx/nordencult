@@ -3,20 +3,61 @@ import MagBackground from '../../assets/map/map_background.webp'
 import MapStrategy from '../../assets/map/map_strategy.webp'
 import './Map.css'
 
+// --- Tunable constants ---------------------------------------------------
+/** Zoom limits */
+const SCALE_MIN = 0.075
+const SCALE_MAX = 0.60
+/**
+ * Pan limits in image-space pixels.
+ * These define which image-space coordinate can be placed at the viewport
+ * centre. Because the constraint is in image space, a single pair of
+ * min/max values works identically at every zoom level.
+ */
+const PAN_IMG_X_MIN = 1000
+const PAN_IMG_X_MAX = 8192
+const PAN_IMG_Y_MIN = 0
+const PAN_IMG_Y_MAX = 8192
+// -------------------------------------------------------------------------
+
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
+
 interface StrategyTransform {
   x: number
   y: number
   scale: number
 }
 
+/**
+ * Clamp scale and pan position.
+ * Converts the viewport-centre to image-space, clamps to the allowed
+ * rectangle, then converts back to screen-space translation.
+ */
+function clampStrategy(
+  s: StrategyTransform,
+  viewW: number,
+  viewH: number,
+): StrategyTransform {
+  const scale = clamp(s.scale, SCALE_MIN, SCALE_MAX)
+  // Image-space coordinate currently at viewport centre
+  const imgCenterX = (viewW / 2 - s.x) / scale
+  const imgCenterY = (viewH / 2 - s.y) / scale
+  // Clamp to allowed range
+  const cx = clamp(imgCenterX, PAN_IMG_X_MIN, PAN_IMG_X_MAX)
+  const cy = clamp(imgCenterY, PAN_IMG_Y_MIN, PAN_IMG_Y_MAX)
+  // Convert back to screen-space
+  return { x: viewW / 2 - cx * scale, y: viewH / 2 - cy * scale, scale }
+}
+
 export default function Map() {
   const computeScale = () => (Math.max(800, window.innerWidth) / 7170) * 1.25
   const [scale, setScale] = useState<number>(() => computeScale())
-  const [strategy, setStrategy] = useState<StrategyTransform>({
-    x: 582,
-    y: 6,
-    scale: 0.1,
-  })
+  const [strategy, setStrategy] = useState<StrategyTransform>(() =>
+    clampStrategy(
+      { x: 582, y: 6, scale: 0.1 },
+      window.innerWidth,
+      window.innerHeight,
+    )
+  )
   const [isDragging, setIsDragging] = useState(false)
   const backgroundRef = useRef<HTMLDivElement | null>(null)
   const strategyImageRef = useRef<HTMLImageElement | null>(null)
@@ -34,6 +75,10 @@ export default function Map() {
       if (raf) cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
         setScale(computeScale())
+        // Re-clamp strategy for new viewport size
+        setStrategy((prev) =>
+          clampStrategy(prev, window.innerWidth, window.innerHeight)
+        )
       })
     }
 
@@ -52,11 +97,17 @@ export default function Map() {
       const deltaX = event.clientX - dragState.startX
       const deltaY = event.clientY - dragState.startY
 
-      setStrategy((prev) => ({
-        ...prev,
-        x: dragState.startTranslateX + deltaX,
-        y: dragState.startTranslateY + deltaY,
-      }))
+      setStrategy((prev) =>
+        clampStrategy(
+          {
+            ...prev,
+            x: dragState.startTranslateX + deltaX,
+            y: dragState.startTranslateY + deltaY,
+          },
+          window.innerWidth,
+          window.innerHeight,
+        )
+      )
     }
 
     const handlePointerUp = (event: PointerEvent) => {
@@ -97,7 +148,7 @@ export default function Map() {
 
       setStrategy((prev) => {
         const zoomFactor = Math.exp(-event.deltaY * 0.001)
-        const nextScale = Math.min(3, Math.max(0.05, prev.scale * zoomFactor))
+        const nextScale = clamp(prev.scale * zoomFactor, SCALE_MIN, SCALE_MAX)
 
         if (nextScale === prev.scale) return prev
 
@@ -105,11 +156,15 @@ export default function Map() {
         const imgX = (pointerX - prev.x) / prev.scale
         const imgY = (pointerY - prev.y) / prev.scale
 
-        return {
-          x: pointerX - imgX * nextScale,
-          y: pointerY - imgY * nextScale,
-          scale: nextScale,
-        }
+        return clampStrategy(
+          {
+            x: pointerX - imgX * nextScale,
+            y: pointerY - imgY * nextScale,
+            scale: nextScale,
+          },
+          rect.width,
+          rect.height,
+        )
       })
     }
 
@@ -144,6 +199,7 @@ export default function Map() {
           style={{ transform: `scale(${scale})` }}
         />
         <div className="mask-bg" />
+        <div className="light-fg" />
       </div>
       <div className="strategy-container">
         <div className="sea-bg"
