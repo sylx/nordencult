@@ -143,12 +143,14 @@ export default function Map() {
           className="background-image"
           style={{ transform: `scale(${scale})` }}
         />
+        <div className="mask-bg" />
       </div>
-      <div className="strategy-container" 
-        onPointerDown={handleStrategyPointerDown}>
+      <div className="strategy-container">
         <div className="sea-bg"
+          onPointerDown={handleStrategyPointerDown}
           style={{
             transform: `translate(${strategy.x}px, ${strategy.y}px)`,
+            cursor: isDragging ? 'grabbing' : 'grab',
           }}
         />
         <img
@@ -156,6 +158,7 @@ export default function Map() {
           alt="Map Strategy"
           className="strategy-image"
           ref={strategyImageRef}
+          onPointerDown={handleStrategyPointerDown}
           style={{
             transform: `translate(${strategy.x}px, ${strategy.y}px) scale(${strategy.scale})`,
             cursor: isDragging ? 'grabbing' : 'grab',

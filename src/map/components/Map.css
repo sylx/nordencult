@@ -16,18 +16,35 @@
   border: 1px solid red;
   transform-origin: top left; /* ここが重要 */  
 }
+.background .strategy-container,
+.background .background-container {
+  position: relative;
+}
 
 .background img.background-image {
   z-index: 3;
-  left: -20%;
+  left: -15%;
   /* 元のサイズを維持しつつ縮小をかける */
   width: 7170px;
   height: 5906px;
   pointer-events: none;
 }
 
-.background .strategy-container {
-  position: relative;
+.background .mask-bg {
+  position: absolute;
+  top: 50vh;
+  left: 0;
+  width: 100%;
+  height: 50vh;
+  background: #000;
+  z-index: 4;
+  display: none;
+}
+
+@media screen and (min-height: 1600px) {
+  .background .mask-bg {
+    display: block;
+  }
 }
 
 .background img.strategy-image {
@@ -55,7 +72,6 @@
   width: 10000px;
   height: 10000px;
   z-index: 0;
-  pointer-events: none;
   transform-origin: top left;
   animation: seaAnimation 40s linear infinite;
 }
