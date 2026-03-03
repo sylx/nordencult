@@ -7,7 +7,9 @@ export default function Map() {
   const computeScale = () => Math.max(800,window.innerWidth) / 7170 * 1.25
   const [scale, setScale] = useState<number>(() => computeScale())
   const [strategyPosition, setStrategyPosition] = useState({ x: 0, y: 0 })
+  const [strategyScale, setStrategyScale] = useState(0.2)
   const [isDragging, setIsDragging] = useState(false)
+  const strategyImageRef = useRef<HTMLImageElement | null>(null)
   const dragStateRef = useRef<{
     pointerId: number
     startX: number
@@ -65,6 +67,38 @@ export default function Map() {
     }
   }, [])
 
+  useEffect(() => {
+    const strategyImage = strategyImageRef.current
+    if (!strategyImage) return
+
+    const handleWheel = (event: WheelEvent) => {
+      const pointerX = event.clientX
+      const pointerY = event.clientY
+
+      setStrategyScale((currentScale) => {
+        const zoomStep = event.deltaY < 0 ? 1.1 : 0.9
+        const nextScale = Math.min(3, Math.max(0.05, currentScale * zoomStep))
+
+        if (nextScale === currentScale) return currentScale
+
+        const ratio = nextScale / currentScale
+
+        setStrategyPosition((currentPosition) => ({
+          x: currentPosition.x +  pointerX * (1 - ratio),
+          y: currentPosition.y +  pointerY * (1 - ratio),
+        }))
+
+        return nextScale
+      })
+    }
+
+    strategyImage.addEventListener('wheel', handleWheel, { passive: true })
+
+    return () => {
+      strategyImage.removeEventListener('wheel', handleWheel)
+    }
+  }, [])
+
   const handleStrategyPointerDown = (event: React.PointerEvent<HTMLImageElement>) => {
     event.preventDefault()
 
@@ -91,9 +125,10 @@ export default function Map() {
         src={MapStrategy}
         alt="Map Strategy"
         className="strategy-image"
+        ref={strategyImageRef}
         onPointerDown={handleStrategyPointerDown}
         style={{
-          transform: `translate(${strategyPosition.x}px, ${strategyPosition.y}px) scale(0.2)`,
+          transform: `translate(${strategyPosition.x}px, ${strategyPosition.y}px) scale(${strategyScale})`,
           cursor: isDragging ? 'grabbing' : 'grab',
         }}
       />
