@@ -1,0 +1,18 @@
+.background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  display: flex;
+  justify-content: center;    
+}
+
+.background img.background-image {
+  transform-origin: top center; /* ここが重要 */
+  
+  /* 元のサイズを維持しつつ縮小をかける */
+  width: 7170px;
+  height: 5906px;
+}
