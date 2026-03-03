@@ -19,7 +19,7 @@
 }
 
 .background img.background-image {
-  z-index: 2;
+  z-index: 3;
   left: -20%;
   /* 元のサイズを維持しつつ縮小をかける */
   width: 7170px;
@@ -27,11 +27,37 @@
   pointer-events: none;
 }
 
+.background .strategy-container {
+  position: relative;
+}
+
 .background img.strategy-image {
   z-index: 1;
-  width: 11060px;
+  width: 8192px;
   height: 8192px;
   touch-action: none;
   user-select: none;
   transition: 0.1s ease-out transform;
+}
+
+@keyframes seaAnimation {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 1024px 1024px;
+  }
+}
+
+.background .sea-bg {
+  background: url("../../assets/map/sea_tile.webp") repeat;
+  position: absolute;
+  top: -2000px;
+  left: -2000px;
+  width: 10000px;
+  height: 10000px;
+  z-index: 0;
+  pointer-events: none;
+  transition: 0.1s ease-out transform;
+  animation: seaAnimation 20s linear infinite;
 }

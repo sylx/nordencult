@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { use, useEffect, useRef, useState } from 'react'
 import MagBackground from '../../assets/map/map_background.webp'
 import MapStrategy from '../../assets/map/map_strategy.webp'
 import './Map.css'
@@ -96,7 +96,7 @@ export default function Map() {
         return
 
       setStrategy((prev) => {
-        const zoomFactor = Math.exp(-event.deltaY * 0.0015)
+        const zoomFactor = Math.exp(-event.deltaY * 0.001)
         const nextScale = Math.min(3, Math.max(0.05, prev.scale * zoomFactor))
 
         if (nextScale === prev.scale) return prev
@@ -136,23 +136,36 @@ export default function Map() {
 
   return (
     <div className="background" ref={backgroundRef}>
-      <img
-        src={MagBackground}
-        alt="Map Background"
-        className="background-image"
-        style={{ transform: `scale(${scale})` }}
-      />
-      <img
-        src={MapStrategy}
-        alt="Map Strategy"
-        className="strategy-image"
-        ref={strategyImageRef}
-        onPointerDown={handleStrategyPointerDown}
-        style={{
-          transform: `translate(${strategy.x}px, ${strategy.y}px) scale(${strategy.scale})`,
-          cursor: isDragging ? 'grabbing' : 'grab',
-        }}
-      />
+      <div className="background-container">
+        <img
+          src={MagBackground}
+          alt="Map Background"
+          className="background-image"
+          style={{ transform: `scale(${scale})` }}
+        />
+      </div>
+      <div className="strategy-container" 
+        onPointerDown={handleStrategyPointerDown}>
+        <div className="sea-bg"
+          style={{
+            transform: `translate(${strategy.x}px, ${strategy.y}px)`,
+          }}
+        />
+        <img
+          src={MapStrategy}
+          alt="Map Strategy"
+          className="strategy-image"
+          ref={strategyImageRef}
+          style={{
+            transform: `translate(${strategy.x}px, ${strategy.y}px) scale(${strategy.scale})`,
+            cursor: isDragging ? 'grabbing' : 'grab',
+          }}
+        />
+      </div>
+      <div className="debug-info">
+        <div>Scale: {strategy.scale.toFixed(2)}</div>
+        <div>Translate: ({strategy.x.toFixed(0)}, {strategy.y.toFixed(0)})</div>
+      </div>
     </div>
   )
 }
