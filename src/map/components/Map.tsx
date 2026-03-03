@@ -13,9 +13,9 @@ export default function Map() {
   const computeScale = () => (Math.max(800, window.innerWidth) / 7170) * 1.25
   const [scale, setScale] = useState<number>(() => computeScale())
   const [strategy, setStrategy] = useState<StrategyTransform>({
-    x: 0,
-    y: 0,
-    scale: 0.2,
+    x: 582,
+    y: 6,
+    scale: 0.1,
   })
   const [isDragging, setIsDragging] = useState(false)
   const backgroundRef = useRef<HTMLDivElement | null>(null)
