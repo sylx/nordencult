@@ -1,0 +1,15 @@
+/* Auto-generated from map_overlay.svg – do not edit manually */
+/* Regenerate with: npm run generate:map-overlay */
+
+.map-overlay .route {
+  fill: none;
+  stroke: #afdfb3;
+  stroke-miterlimit: 10;
+  stroke-width: 20px;
+  filter: url(#map-overlay-glow);
+  transition: stroke 0.3s ease;
+}
+
+.map-overlay .route.active {
+  stroke: #ffd700;
+}

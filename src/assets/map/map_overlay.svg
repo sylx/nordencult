@@ -1,0 +1,862 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 8192 8192">
+  <!-- Generator: Adobe Illustrator 29.8.5, SVG Export Plug-In . SVG Version: 2.1.1 Build 2)  -->
+  <defs>
+    <style>
+      .st0 {
+        filter: url(#outer-glow-4);
+      }
+
+      .st0, .st1, .st2, .st3, .st4, .st5, .st6, .st7, .st8, .st9, .st10, .st11, .st12, .st13, .st14, .st15, .st16, .st17, .st18, .st19, .st20, .st21, .st22, .st23, .st24, .st25, .st26, ._x00E3__x0082__x00B0_ラフィックスタイル_x0020_3, .st27, .st28, .st29, .st30, .st31, .st32, .st33, .st34, .st35, .st36, .st37 {
+        fill: none;
+      }
+
+      .st0, .st1, .st2, .st3, .st4, .st5, .st6, .st7, .st8, .st9, .st11, .st12, .st13, .st14, .st15, .st16, .st17, .st18, .st19, .st20, .st21, .st22, .st23, .st24, .st25, .st26, ._x00E3__x0082__x00B0_ラフィックスタイル_x0020_3, .st27, .st28, .st29, .st30, .st31, .st32, .st33, .st34, .st35, .st36, .st37 {
+        stroke: #afdfb3;
+        stroke-miterlimit: 10;
+        stroke-width: 20px;
+      }
+
+      .st1 {
+        filter: url(#outer-glow-22);
+      }
+
+      .st2 {
+        filter: url(#outer-glow-33);
+      }
+
+      .st3 {
+        filter: url(#outer-glow-7);
+      }
+
+      .st38 {
+        clip-path: url(#clippath-21);
+      }
+
+      .st39 {
+        clip-path: url(#clippath-6);
+      }
+
+      .st40 {
+        clip-path: url(#clippath-7);
+      }
+
+      .st41 {
+        clip-path: url(#clippath-17);
+      }
+
+      .st42 {
+        clip-path: url(#clippath-31);
+      }
+
+      .st43 {
+        clip-path: url(#clippath-15);
+      }
+
+      .st4 {
+        filter: url(#outer-glow-10);
+      }
+
+      .st44 {
+        clip-path: url(#clippath-18);
+      }
+
+      .st5 {
+        filter: url(#outer-glow-25);
+      }
+
+      .st45 {
+        clip-path: url(#clippath-4);
+      }
+
+      .st6 {
+        filter: url(#outer-glow-32);
+      }
+
+      .st7 {
+        filter: url(#outer-glow-6);
+      }
+
+      .st46 {
+        clip-path: url(#clippath-22);
+      }
+
+      .st47 {
+        clip-path: url(#clippath-23);
+      }
+
+      .st8 {
+        filter: url(#outer-glow-3);
+      }
+
+      .st48 {
+        clip-path: url(#clippath-9);
+      }
+
+      .st49 {
+        clip-path: url(#clippath-10);
+      }
+
+      .st9 {
+        filter: url(#outer-glow-20);
+      }
+
+      .st50 {
+        clip-path: url(#clippath-25);
+      }
+
+      .st51 {
+        clip-path: url(#clippath-27);
+      }
+
+      .st52 {
+        clip-path: url(#clippath-11);
+      }
+
+      .st11 {
+        filter: url(#outer-glow-24);
+      }
+
+      .st53 {
+        clip-path: url(#clippath-28);
+      }
+
+      .st54 {
+        clip-path: url(#clippath-1);
+      }
+
+      .st12 {
+        filter: url(#outer-glow-31);
+      }
+
+      .st13 {
+        filter: url(#outer-glow-28);
+      }
+
+      .st14 {
+        filter: url(#outer-glow-35);
+      }
+
+      .st15 {
+        filter: url(#outer-glow-26);
+      }
+
+      .st55 {
+        clip-path: url(#clippath-5);
+      }
+
+      .st56 {
+        clip-path: url(#clippath-20);
+      }
+
+      .st57 {
+        clip-path: url(#clippath-8);
+      }
+
+      .st16 {
+        filter: url(#outer-glow-14);
+      }
+
+      .st17 {
+        filter: url(#outer-glow-9);
+      }
+
+      .st18 {
+        filter: url(#outer-glow-16);
+      }
+
+      .st58 {
+        clip-path: url(#clippath-3);
+      }
+
+      .st59 {
+        clip-path: url(#clippath-26);
+      }
+
+      .st60 {
+        clip-path: url(#clippath-12);
+      }
+
+      .st61 {
+        clip-path: url(#clippath-14);
+      }
+
+      .st19 {
+        filter: url(#outer-glow-36);
+      }
+
+      .st62 {
+        clip-path: url(#clippath-30);
+      }
+
+      .st63 {
+        clip-path: url(#clippath-19);
+      }
+
+      .st20 {
+        filter: url(#outer-glow-27);
+      }
+
+      .st21 {
+        filter: url(#outer-glow-23);
+      }
+
+      .st22 {
+        filter: url(#outer-glow-8);
+      }
+
+      .st23 {
+        filter: url(#outer-glow-13);
+      }
+
+      .st24 {
+        filter: url(#outer-glow-5);
+      }
+
+      .st25 {
+        filter: url(#outer-glow-12);
+      }
+
+      .st26 {
+        filter: url(#outer-glow-19);
+      }
+
+      ._x00E3__x0082__x00B0_ラフィックスタイル_x0020_3 {
+        filter: url(#outer-glow-1);
+      }
+
+      .st27 {
+        filter: url(#outer-glow-2);
+      }
+
+      .st28 {
+        filter: url(#outer-glow-37);
+      }
+
+      .st64 {
+        clip-path: url(#clippath-16);
+      }
+
+      .st29 {
+        filter: url(#outer-glow-15);
+      }
+
+      .st65 {
+        clip-path: url(#clippath-2);
+      }
+
+      .st66 {
+        clip-path: url(#clippath-29);
+      }
+
+      .st67 {
+        clip-path: url(#clippath-13);
+      }
+
+      .st30 {
+        filter: url(#outer-glow-21);
+      }
+
+      .st31 {
+        filter: url(#outer-glow-18);
+      }
+
+      .st68 {
+        clip-path: url(#clippath-24);
+      }
+
+      .st69 {
+        clip-path: url(#clippath);
+      }
+
+      .st32 {
+        filter: url(#outer-glow-34);
+      }
+
+      .st33 {
+        filter: url(#outer-glow-11);
+      }
+
+      .st34 {
+        filter: url(#outer-glow-1-1);
+      }
+
+      .st35 {
+        filter: url(#outer-glow-30);
+      }
+
+      .st36 {
+        filter: url(#outer-glow-29);
+      }
+
+      .st37 {
+        filter: url(#outer-glow-17);
+      }
+    </style>
+    <filter id="outer-glow-1" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <clipPath id="clippath">
+      <rect class="st10" width="8192" height="8192"/>
+    </clipPath>
+    <filter id="outer-glow-1-1" x="2052" y="5683" width="1061" height="775" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur1" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur1" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-2" x="2988" y="5532" width="1025" height="259" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur2" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur2" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-3" x="2805" y="5033" width="492" height="683" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur3" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur3" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-4" x="1702" y="5565" width="1286" height="183" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur4" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur4" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-5" x="3979" y="5066" width="164" height="694" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur5" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur5" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-6" x="3961" y="5713" width="1492" height="832" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur6" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur6" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-7" x="4024" y="5270" width="1508" height="514" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur7" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur7" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-8" x="3273" y="4978" width="775" height="125" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur8" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur8" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-9" x="2230" y="4527" width="1092" height="573" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur9" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur9" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-10" x="4057" y="4553" width="639" height="523" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur10" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur10" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-11" x="5451" y="6253" width="837" height="293" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur11" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur11" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-12" x="5561" y="5273" width="854" height="1045" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur12" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur12" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-13" x="5592" y="4678" width="696" height="586" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur13" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur13" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-14" x="5389" y="4288" width="204" height="1026" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur14" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur14" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-15" x="5438" y="4251" width="861" height="459" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur15" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur15" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-16" x="6287" y="3949" width="462" height="770" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur16" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur16" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-17" x="4685" y="4302" width="731" height="305" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur17" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur17" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-18" x="3931" y="4097" width="765" height="486" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur18" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur18" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-19" x="5300" y="3476" width="714" height="860" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur19" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur19" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-20" x="1679" y="3776" width="552" height="856" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur20" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur20" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-21" x="3938" y="2665" width="386" height="765" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur21" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur21" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-22" x="3535" y="2009" width="568" height="687" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur22" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur22" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-23" x="2109" y="3326" width="746" height="481" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur23" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur23" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-24" x="2842" y="3173" width="1462" height="355" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur24" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur24" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-25" x="2142" y="3671" width="1068" height="268" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur25" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur25" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-26" x="3243" y="3800" width="628" height="318" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur26" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur26" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-27" x="6987" y="2274" width="284" height="591" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur27" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur27" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-28" x="5747" y="2259" width="1363" height="411" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur28" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur28" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-29" x="5733" y="2619" width="491" height="923" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur29" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur29" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-30" x="5376" y="2024" width="509" height="673" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur30" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur30" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-31" x="3938" y="3379" width="534" height="758" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur31" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur31" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-32" x="6048" y="3461" width="701" height="489" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur32" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur32" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-33" x="3782" y="1843" width="941" height="195" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur33" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur33" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-34" x="2745.2" y="2022.1" width="1001" height="322" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur34" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur34" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-35" x="3588" y="1310" width="1084" height="730" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur35" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur35" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-36" x="4689" y="1973" width="698" height="210" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur36" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur36" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-37" x="5410" y="1569" width="266" height="504" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur37" stdDeviation="10"/>
+      <feFlood flood-color="#000" flood-opacity="1"/>
+      <feComposite in2="blur37" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <clipPath id="clippath-1">
+      <rect class="st10" x="4747.1" y="2632.8" width="512" height="512"/>
+    </clipPath>
+    <clipPath id="clippath-2">
+      <rect class="st10" x="1965" y="6288.1" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-3">
+      <rect class="st10" x="2828" y="5572.9" width="355.2" height="268.8"/>
+    </clipPath>
+    <clipPath id="clippath-4">
+      <rect class="st10" x="3860.1" y="5619.7" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-5">
+      <rect class="st10" x="3159.1" y="4936.7" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-6">
+      <rect class="st10" x="3920.1" y="4936.7" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-7">
+      <rect class="st10" x="5293" y="6380.6" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-8">
+      <rect class="st10" x="6169" y="6156.7" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-9">
+      <rect class="st10" x="5381.5" y="5142.7" width="355.2" height="268.8"/>
+    </clipPath>
+    <clipPath id="clippath-10">
+      <rect class="st10" x="6171.2" y="4567.4" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-11">
+      <rect class="st10" x="4561.9" y="4442" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-12">
+      <rect class="st10" x="5293.9" y="4166.6" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-13">
+      <rect class="st10" x="2109" y="4467.8" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-14">
+      <rect class="st10" x="3970.7" y="2531.1" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-15">
+      <rect class="st10" x="2716.6" y="3213.7" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-16">
+      <rect class="st10" x="3117.4" y="3683.1" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-17">
+      <rect class="st10" x="2612.6" y="2150.6" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-18">
+      <rect class="st10" x="6896.1" y="2700" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-19">
+      <rect class="st10" x="5626.8" y="2509.7" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-20">
+      <rect class="st10" x="6946.8" y="2144.4" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-21">
+      <rect class="st10" x="5392.6" y="1464.4" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-22">
+      <rect class="st10" x="4509.5" y="1200.4" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-23">
+      <rect class="st10" x="6605.9" y="3808.4" width="250.7" height="250.7"/>
+    </clipPath>
+    <clipPath id="clippath-24">
+      <rect class="st10" x="3576.1" y="3939.4" width="688" height="384"/>
+    </clipPath>
+    <clipPath id="clippath-25">
+      <rect class="st10" x="5839.3" y="3333.3" width="307.2" height="307.2"/>
+    </clipPath>
+    <clipPath id="clippath-26">
+      <rect class="st10" x="4174.5" y="3237" width="307.2" height="307.2"/>
+    </clipPath>
+    <clipPath id="clippath-27">
+      <rect class="st10" x="1912.7" y="3674" width="355.2" height="268.8"/>
+    </clipPath>
+    <clipPath id="clippath-28">
+      <rect class="st10" x="5215" y="1912.6" width="355.2" height="268.8"/>
+    </clipPath>
+    <clipPath id="clippath-29">
+      <rect class="st10" x="3578.5" y="1912.6" width="355.2" height="268.8"/>
+    </clipPath>
+    <clipPath id="clippath-30">
+      <rect class="st10" x="4529" y="1835.3" width="307.2" height="307.2"/>
+    </clipPath>
+    <clipPath id="clippath-31">
+      <rect class="st10" x="1587.1" y="5461.7" width="250.7" height="250.7"/>
+    </clipPath>
+  </defs>
+  <g id="bg">
+    <g id="map_x5F_island2.psd">
+      <g class="st69">
+        <image id="_レイヤー_1" data-name="レイヤー_1" width="8179" height="6696" transform="translate(0 740)" xlink:href="map_overlay-1.png"/>
+      </g>
+    </g>
+  </g>
+  <g id="roads">
+    <path id="P001-P002" class="st34" d="M2090.3,6420.6l103.1-115.6s92.4-60.4,129.8-67.6c37.3-7.1,99.6-37.3,119.1-58.7,19.6-21.3,37.3-58.7,74.7-80,37.3-21.3,115.6-30.2,136.9-40.9,21.3-10.7,112-17.8,113.8-60.4,1.8-42.7,71.1-78.2,138.7-92.4,67.6-14.2,158.2-65.8,165.3-104.9,7.1-39.1-49.8-78.2-49.8-78.2"/>
+    <path id="P002-P003" class="st27" d="M3023.7,5711.2s129.6-69.3,142.2-83c14.5-15.7,26.7-53.3,65.8-55.1,39.1-1.8,94.2,5.3,113.8,37.3,19.6,32,151.1,60.4,206.2,55.1s134.8-75.6,192-60.4c35.7,9.4,129.8,42.7,156.4,78.2,26.7,35.6,76.4,69.3,76.4,69.3"/>
+    <path id="P002-P004" class="st8" d="M3011.2,5684.6s12-131.6-27.1-174.2c-39.1-42.7,3.6-112-65.8-152.9-69.3-40.9-88.9-56.9-60.4-113.8,28.4-56.9,119.9-80,155.1-96,27.5-12.5,176.9-53.2,251-74.1"/>
+    <path id="P002-P030" class="st0" d="M1741.3,5606.4c24.9,40.3,96.5,55.7,170.7,50.7s78.2-32.3,172.4-47.4c94.2-15.1,158,47.2,158,47.2,21.7,37.2,103.7,53.6,149.3,50.5,45.7-3.1,173.3-98.2,261.3-100.9,79.1-2.4,108.5,3.2,126.6,3.7,15,.4,47.8,4.8,74.1,8.1,13.7,1.7,65.9.6,94.5,62.5"/>
+    <path id="P003-P005" class="st24" d="M4017,5722.6s59.8-70.8,79-136.7c19.2-65.9-7.4-124.6-11-156.6-3.6-32-26.7-67.6-12.4-108.4,14.2-40.9,19.6-138.7,7.1-156.4-12.4-17.8-34.2-64-34.2-64"/>
+    <path id="P003-P006" class="st7" d="M3995.7,5752.7s226.7,117.8,309.3,115.1c82.7-2.7,194.9-55.3,245.3-31.3,70.9,33.8,232,95.3,269.3,140.6,37.3,45.3,189.1,243.2,231.8,251.2,42.7,8,241.6,122.1,241.6,170.1s125.3,107.4,125.3,107.4"/>
+    <path id="P003-P008" class="st3" d="M4059.9,5745s107.5-65.4,168.8-82.2c61.3-16.8,122.7-102.2,232-70.2,109.3,32,175.6-2.7,226.5-34.7,50.9-32,117.5-77.3,234.9-61.3,117.3,16,301.3-52.9,325.3-85.1s120.5-21.6,170.9-66.9c50.4-45.3,79.7-32.9,79.7-32.9"/>
+    <path id="P004-P005" class="st22" d="M3305.8,5062c87.1-17.8,55.2-33.5,156.6-42.4,101.3-8.9,241.8,23.1,254.2,23.1s152.9,24.3,188.4,19.3,112,0,112,0"/>
+    <path id="P004-P012" class="st17" d="M3284.5,5062s-99.9-93.2-170.1-99.4c-70.2-6.2-292.4-38.7-320.9-70.7-28.4-32-103.1,5.3-138.7-48-35.6-53.3-92.4-75-112-125.5-19.6-50.5-69.3-109.2-90.7-118.1-21.3-8.9-40.9-34.1-92.4-33s-96,17-96,17"/>
+    <path id="P005-P010" class="st4" d="M4096,5040.4s69.3-132.2,136.9-128.7c67.6,3.6,174.2-24.9,220.4-42.7,46.2-17.8,64.2-174.2,108.6-216.9,44.3-42.7,101.2-59,101.2-59"/>
+    <path id="P006-P007" class="st33" d="M5484.1,6505.9s93.3-20.6,152-76.6c58.7-56,98.7-96,133.3-96s157.3,2.7,250.7,18.7c93.3,16,152,2.7,165.3-18.7,13.3-21.3,69.3-40,69.3-40"/>
+    <path id="P007-P008" class="st25" d="M5597.6,5311.7s121.7,85.3,139.1,156.4c17.4,71.1,30.8,103.9-41.7,151.5-72.5,47.6-36.1,111.6,41.7,161.4,77.8,49.8,273,76.9,286.4,120.5,17.2,55.7,107.8,121.3,107.8,139.1s63.9,122.2,74.7,131.6c8,7,120.2,17.7,120.2,17.7,0,0,49.8,17.2,48.6,35.6-1.2,18.4-65.2,53.3-65.2,53.3"/>
+    <path id="P008-P009" class="st23" d="M5629.6,5226.4s106.7-113.8,163.6-64c56.9,49.8,184.9,53.3,216.9,42.7,32-10.7,135.1-18,138.7-62.4,3.6-44.3,61.9-50.1,20.3-102.3-41.6-52.2-137.6-112.7-137.6-148.2s35.6-88.9,56.9-113.8c21.3-24.9,116.1-71.1,166.5-56.9"/>
+    <path id="P008-P011" class="st16" d="M5442.9,4325.7s109.3,106.7,93.3,136-82.9,142.5-66,190.5c16.9,48,94.4,90.7,74.3,144-20.1,53.3,38.6,152-17.4,189.3-56,37.3-109.3,111.7-96,157.2,13.3,45.5,82.7,134.4,82.7,134.4"/>
+    <path id="P009-P011" class="st29" d="M5470.2,4302s97.2-12.9,116.7-10c19.6,2.9,280.9,8.2,448,66.9,167.1,58.7,94.9,168.1,115.6,208.5,20.7,40.4,112,104.4,112,104.4"/>
+    <path id="P009-P022" class="st18" d="M6319.4,4678.9s101.3-23.1,126.2-90.7c24.9-67.6,135.1-128.4,108.4-170.9-26.7-42.4-28.4-103.3-17.8-125.3,10.7-22,49.8-82.4,80-105.6,30.2-23.1,71.1-21.3,81.8-56.9,10.7-35.6,17.8-117.3,0-144"/>
+    <path id="P010-P011" class="st37" d="M4720,4567.4s174.2-82.3,245.3-75.2c71.1,7.1,177.8-68,199.1-74.9s167.1-78,220.4-74.4"/>
+    <path id="P010-P023" class="st31" d="M4663.1,4542.9c-109.4-24.1-198-52.4-261-75-145.5-52.2-229.5-83.2-309.3-159.6-65.8-62.9-102.2-131.1-122.1-176.8"/>
+    <path id="P011-P024" class="st26" d="M5976.8,3519.9c-24.9-25.1-113.5,100.7-162.3,97.4-48.3-3.2-99.6,58.9-124.8,83.8-25.3,24.9-24.5,53.3-3.2,107.3,21.3,54-71.1,59.8-81.8,98.9-10.7,39.1-98.9,69-119.3,72.6-22.8,4-90.5,98.1-66.3,137.2s-62.1,83.8-62.1,83.8c0,0-54,39,32.2,95.9"/>
+    <path id="P012-P016" class="st9" d="M2071.4,3808.4c5.3,26.4-101.3,176.2-197.3,218.9-96,42.7-96,106.7-144,217.8-48,111.1,69.3,123.6,176,172.2,106.7,48.7,153.4-51.2,220.1-3.2,52.2,37.6,41.7,68.4,35.5,79-2.1,3.7-3.4,7.9-3.7,12.2-1.5,18.6-.8,64.5,37.5,87.9"/>
+    <path id="P013-P025" class="st30" d="M4289.5,3390.6s-157.6-74.3-167.1-152.9c-7.3-59.9-36.2-41.9-49.5-103-11.2-51.2,0-127.5-18.1-179-25.2-71.4-67.9-96.9-74.2-127.7-11-54.2,29.6-67.3,78.6-126.2"/>
+    <path id="P013-P028" class="st1" d="M3756.1,2047c112.5,86.8,47.5,147.7,30.6,171.9-8.7,12.5-66.7,62.2-128,59.6-46.5-2-70.8,38.3-79.9,57.9s-4.1,14.5-2.5,21.9c12.8,58.2,77.8,84,129.1,109.2,26.1,12.8,362.1,189.4,362.1,189.4"/>
+    <path id="P014-P026" class="st21" d="M2139.9,3765.7c208.6,8,288-77.7,320-127.8,13.8-21.6,19.6-44.7,48-69.3,55.7-48.4,115.5-30.9,181.3-51.9,44-14,69.7-55.1,126.2-155.6"/>
+    <path id="P014-P025" class="st11" d="M4264.1,3418s-36,73.4-62.8,68.9c-26.8-4.6-258.6-10.6-281.2-68.9-22.6-58.3-179.9-78.1-211.9-78.9-32-.8-152-67.4-205.3-70.1-53.3-2.7-93.3-62.4-173.3-55.2-80,7.2-194.7,25.9-237.3,41.9-42.7,16-146.7,27.2-213.3,77.6"/>
+    <path id="P015-P026" class="st5" d="M3173.1,3803.2l-41.8-32.9c-48.4-44.4-163.9,75.7-268.1,70.3-104.2-5.3-190.4-144.6-250.7-128-29.6,8.1-4.4,51-63,104.3-34.4,31.2-132.5,73.1-222.7,80.3-63.8,5.1-126.8-14.2-147-35.3"/>
+    <path id="P015-P023" class="st15" d="M3832.9,4081.5s-61.3-82.7-138.7-72c-77.3,10.7-152-2.7-157.3-16-5.3-13.3-21.3-36.9-69.3-59.8s-76.2-63.9-99.4-59.4-32.1,28.3-62.3,9.7c-30.2-18.5-21.3-50.5-21.3-50.5"/>
+    <path id="P017-P019" class="st20" d="M7112.8,2313.3s52.1,35.2,52.1,72.7c0,37.5-55.7,78.4-41.5,145.1,14.2,66.6,64,105.7,103.1,152,39.1,46.2-205.1,142.3-205.1,142.3"/>
+    <path id="P018-P019" class="st13" d="M5784.8,2632.8s101.3-115,136.9-123.1c35.6-8,138.7-75.6,177.8-72s152.9,28.2,263.1-.1c110.2-28.3,224-17.6,270.2-42.5,46.2-24.9,113.8-74.7,177.8-64,64,10.7,70.6,73.4,142.2,50.2,68.7-22.2,119.3-85.8,119.3-85.8"/>
+    <path id="P018-P024" class="st36" d="M5769.9,2656.4s174.2,166,184.9,240.7c10.7,74.7,54.2,212.4,124.4,220.4,80.6,9.2,128,113.8,92.4,163.6-35.6,49.8-106.7,224-152.9,220.4"/>
+    <path id="P018-P027" class="st35" d="M5415.5,2058.7s35.8,83.3,132.3,122.7c96.5,39.4,173.5,51.9,222.1,88.3,48.6,36.4,90.1,178.6,69.4,192.9-20.7,14.2-159.4,67.6-159.4,92.4s54.4,101.4,72.2,101.4"/>
+    <path id="P023-P025" class="st12" d="M4328.1,3418s122.7,87.1,101.4,126.2c-21.3,39.1-98.7,207.1-133.3,185.8-34.7-21.3-64,69.3-146.7,90.7-82.7,21.3-82.7,108.4-82.7,136.9s-59,147.2-96.1,138.5"/>
+    <path id="P022-P024" class="st6" d="M6079.9,3501.6s134.7,18.8,216.7,86.4c82,67.6,213.1,199.2,309.3,220.5s103,110.2,103,110.2"/>
+    <path id="P028-P029" class="st2" d="M3821.6,2002.1s39.4-67.6,190.6-74.7c151.2-7.1,171-53.3,209.1-42.7,38.1,10.7,148.5,60.4,210.6,42.7,62.1-17.8,250.6,67.6,250.6,74.7"/>
+    <path id="P016-P028" class="st32" d="M3708.4,2058.7s-88.9,108.5-160,120c-71.1,11.5-164,127.1-226,119.1-62-8-321.6-32.9-382-18.7-60.4,14.2-163.3,24.9-163.3,24.9"/>
+    <path id="P021-P028" class="st14" d="M3708.4,2002.1s-74.8-70.7-78.3-118.9c-3.6-48.2-6.9-197.5,78.3-254.4,85.2-56.9,204.6,17.9,262.2-39.1,57.7-56.9,8.3-76.4,97-125.3,88.7-48.9,291.4-88,334-91.6,42.7-3.6,224.6-17.8,233.2-24.9"/>
+    <path id="P027-P029" class="st19" d="M4723.4,2012.8s181.3,69.3,229.3,69.3,131.6-21.3,181.3-17.8c49.8,3.6,81.8,85.8,119.1,77.6,37.3-8.2,78.2-27.9,94.2-64.3"/>
+    <path id="P020-P027" class="st28" d="M5444.3,2032.9s96-40,99.6-70.1c3.6-30.1,90.2-105.9,91.3-155.6,1.1-49.8-55.8-206.1-112.7-197.3"/>
+  </g>
+  <g id="places">
+    <g id="P000">
+      <g class="st54">
+        <image id="_レイヤー_11" data-name="レイヤー_1" width="1024" height="696" transform="translate(4747.1 2714.8) scale(.5)" xlink:href="map_overlay-2.png"/>
+      </g>
+    </g>
+    <g id="P001">
+      <g class="st65">
+        <image id="_レイヤー_12" data-name="レイヤー_1" width="1010" height="893" transform="translate(1966.7 6304) scale(.2)" xlink:href="map_overlay-3.png"/>
+      </g>
+    </g>
+    <g id="P002">
+      <g class="st58">
+        <image id="_レイヤー_13" data-name="レイヤー_1" width="1130" height="839" transform="translate(2836.1 5580.1) scale(.3)" xlink:href="map_overlay-4.png"/>
+      </g>
+    </g>
+    <g id="P003">
+      <g class="st45">
+        <image id="_レイヤー_14" data-name="レイヤー_1" width="1010" height="893" transform="translate(3861.8 5635.6) scale(.2)" xlink:href="map_overlay-5.png"/>
+      </g>
+    </g>
+    <g id="P004">
+      <g class="st55">
+        <image id="_レイヤー_15" data-name="レイヤー_1" width="1010" height="893" transform="translate(3160.8 4952.6) scale(.2)" xlink:href="map_overlay-6.png"/>
+      </g>
+    </g>
+    <g id="P005">
+      <g class="st39">
+        <image id="_レイヤー_16" data-name="レイヤー_1" width="1010" height="893" transform="translate(3921.8 4952.6) scale(.2)" xlink:href="map_overlay-7.png"/>
+      </g>
+    </g>
+    <g id="P006">
+      <g class="st40">
+        <image id="_レイヤー_17" data-name="レイヤー_1" width="1010" height="893" transform="translate(5294.7 6396.5) scale(.2)" xlink:href="map_overlay-8.png"/>
+      </g>
+    </g>
+    <g id="P007">
+      <g class="st57">
+        <image id="_レイヤー_18" data-name="レイヤー_1" width="1010" height="893" transform="translate(6170.7 6172.6) scale(.2)" xlink:href="map_overlay-9.png"/>
+      </g>
+    </g>
+    <g id="P008">
+      <g class="st48">
+        <image id="_レイヤー_19" data-name="レイヤー_1" width="1130" height="839" transform="translate(5389.6 5149.9) scale(.3)" xlink:href="map_overlay-10.png"/>
+      </g>
+    </g>
+    <g id="P009">
+      <g class="st49">
+        <image id="_レイヤー_110" data-name="レイヤー_1" width="1010" height="893" transform="translate(6172.9 4583.3) scale(.2)" xlink:href="map_overlay-11.png"/>
+      </g>
+    </g>
+    <g id="P010">
+      <g class="st52">
+        <image id="_レイヤー_111" data-name="レイヤー_1" width="1010" height="893" transform="translate(4563.6 4457.9) scale(.2)" xlink:href="map_overlay-12.png"/>
+      </g>
+    </g>
+    <g id="P011">
+      <g class="st60">
+        <image id="_レイヤー_112" data-name="レイヤー_1" width="1010" height="893" transform="translate(5295.6 4182.5) scale(.2)" xlink:href="map_overlay-13.png"/>
+      </g>
+    </g>
+    <g id="P012">
+      <g class="st67">
+        <image id="_レイヤー_113" data-name="レイヤー_1" width="1010" height="893" transform="translate(2110.7 4483.7) scale(.2)" xlink:href="map_overlay-14.png"/>
+      </g>
+    </g>
+    <g id="P013">
+      <g class="st61">
+        <image id="_レイヤー_114" data-name="レイヤー_1" width="1010" height="893" transform="translate(3972.4 2547) scale(.2)" xlink:href="map_overlay-15.png"/>
+      </g>
+    </g>
+    <g id="P014">
+      <g class="st43">
+        <image id="_レイヤー_115" data-name="レイヤー_1" width="1010" height="893" transform="translate(2718.3 3229.7) scale(.2)" xlink:href="map_overlay-16.png"/>
+      </g>
+    </g>
+    <g id="P015">
+      <g class="st64">
+        <image id="_レイヤー_116" data-name="レイヤー_1" width="1010" height="893" transform="translate(3119.2 3699) scale(.2)" xlink:href="map_overlay-17.png"/>
+      </g>
+    </g>
+    <g id="P016">
+      <g class="st41">
+        <image id="_レイヤー_117" data-name="レイヤー_1" width="1010" height="893" transform="translate(2614.3 2166.5) scale(.2)" xlink:href="map_overlay-18.png"/>
+      </g>
+    </g>
+    <g id="P017">
+      <g class="st44">
+        <image id="_レイヤー_118" data-name="レイヤー_1" width="1010" height="893" transform="translate(6897.8 2715.9) scale(.2)" xlink:href="map_overlay-19.png"/>
+      </g>
+    </g>
+    <g id="P018">
+      <g class="st63">
+        <image id="_レイヤー_119" data-name="レイヤー_1" width="1010" height="893" transform="translate(5628.5 2525.7) scale(.2)" xlink:href="map_overlay-20.png"/>
+      </g>
+    </g>
+    <g id="P019">
+      <g class="st56">
+        <image id="_レイヤー_120" data-name="レイヤー_1" width="1010" height="893" transform="translate(6948.5 2160.3) scale(.2)" xlink:href="map_overlay-21.png"/>
+      </g>
+    </g>
+    <g id="P020">
+      <g class="st38">
+        <image id="_レイヤー_121" data-name="レイヤー_1" width="1010" height="893" transform="translate(5394.3 1480.3) scale(.2)" xlink:href="map_overlay-22.png"/>
+      </g>
+    </g>
+    <g id="P021">
+      <g class="st46">
+        <image id="_レイヤー_122" data-name="レイヤー_1" width="1010" height="893" transform="translate(4511.2 1216.3) scale(.2)" xlink:href="map_overlay-23.png"/>
+      </g>
+    </g>
+    <g id="P022">
+      <g class="st47">
+        <image id="_レイヤー_123" data-name="レイヤー_1" width="1010" height="893" transform="translate(6607.6 3824.3) scale(.2)" xlink:href="map_overlay-24.png"/>
+      </g>
+    </g>
+    <g id="P023">
+      <g class="st68">
+        <image id="_レイヤー_124" data-name="レイヤー_1" width="1251" height="764" transform="translate(3607.1 3940.4) scale(.5)" xlink:href="map_overlay-25.png"/>
+      </g>
+    </g>
+    <g id="P024">
+      <g class="st50">
+        <image id="_レイヤー_125" data-name="レイヤー_1" width="994" height="549" transform="translate(5848.3 3405.3) scale(.3)" xlink:href="map_overlay-26.png"/>
+      </g>
+    </g>
+    <g id="P025">
+      <g class="st59">
+        <image id="_レイヤー_126" data-name="レイヤー_1" width="994" height="549" transform="translate(4183.5 3309) scale(.3)" xlink:href="map_overlay-27.png"/>
+      </g>
+    </g>
+    <g id="P026">
+      <g class="st51">
+        <image id="_レイヤー_127" data-name="レイヤー_1" width="1130" height="839" transform="translate(1920.8 3681.2) scale(.3)" xlink:href="map_overlay-28.png"/>
+      </g>
+    </g>
+    <g id="P027">
+      <g class="st53">
+        <image id="_レイヤー_128" data-name="レイヤー_1" width="1130" height="839" transform="translate(5223.1 1919.8) scale(.3)" xlink:href="map_overlay-29.png"/>
+      </g>
+    </g>
+    <g id="P028">
+      <g class="st66">
+        <image id="_レイヤー_129" data-name="レイヤー_1" width="1130" height="839" transform="translate(3586.6 1919.8) scale(.3)" xlink:href="map_overlay-30.png"/>
+      </g>
+    </g>
+    <g id="P029">
+      <g class="st62">
+        <image id="_レイヤー_130" data-name="レイヤー_1" width="930" height="746" transform="translate(4549.1 1877) scale(.3)" xlink:href="map_overlay-31.png"/>
+      </g>
+    </g>
+    <g id="P030">
+      <g class="st42">
+        <image id="_レイヤー_131" data-name="レイヤー_1" width="1010" height="893" transform="translate(1588.8 5477.6) scale(.2)" xlink:href="map_overlay-32.png"/>
+      </g>
+    </g>
+  </g>
+</svg>
