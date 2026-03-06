@@ -68,6 +68,18 @@
   transition: 0.1s transform ease-out;
 }
 
+.background .map-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8192px;
+  height: 8192px;
+  z-index: 2;
+  transform-origin: top left;
+  pointer-events: none;
+  transition: 0.1s transform ease-out;
+}
+
 @keyframes seaAnimation {
   from {
     background-position: 0 0;

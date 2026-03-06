@@ -143,7 +143,8 @@ const routesSrc = routes
 const placesSrc = places
   .map(
     (p) =>
-      `  { id: ${JSON.stringify(p.id)}, cx: ${p.centerX}, cy: ${p.centerY}, s: ${p.scale}, w: ${p.w}, h: ${p.h}, href: ${JSON.stringify(p.href)} },`,
+//      `  { id: ${JSON.stringify(p.id)}, cx: ${p.centerX}, cy: ${p.centerY}, s: ${p.scale}, w: ${p.w}, h: ${p.h}, href: ${JSON.stringify(p.href)} },`,
+        `  { id: ${JSON.stringify(p.id)}, cx: ${p.centerX}, cy: ${p.centerY}, s: 0.2, w: ${p.w}, h: ${p.h}, href: ${JSON.stringify(p.href)} },`,
   )
   .join('\n');
 

@@ -1,6 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 import MagBackground from '../../assets/map/map_background.webp'
 import MapStrategy from '../../assets/map/map_strategy.webp'
+import PlaceCity from '../../assets/map/place_city.webp'
+import PlaceFortress1 from '../../assets/map/place_fortress1.webp'
+import PlaceFortress2 from '../../assets/map/place_fortress2.webp'
+import PlaceMetropolice from '../../assets/map/place_metropolice.webp'
+import PlaceTemple from '../../assets/map/place_temple.webp'
+import PlaceTown from '../../assets/map/place_town.webp'
+import MapOverlay, { type MapOverlayProps } from './MapOverlay'
 import './Map.css'
 
 // --- Tunable constants ---------------------------------------------------
@@ -25,6 +32,40 @@ interface StrategyTransform {
   x: number
   y: number
   scale: number
+}
+
+const OVERLAY_PLACES: NonNullable<MapOverlayProps['places']> = {
+  P000: { imageSrc: PlaceTemple,imageScale: 3.0 },
+  P001: { imageSrc: PlaceTown },
+  P002: { imageSrc: PlaceFortress1 },
+  P003: { imageSrc: PlaceTown },
+  P004: { imageSrc: PlaceMetropolice },
+  P005: { imageSrc: PlaceCity },
+  P006: { imageSrc: PlaceFortress2 },
+  P007: { imageSrc: PlaceTown },
+  P008: { imageSrc: PlaceCity },
+  P009: { imageSrc: PlaceFortress1 },
+  P010: { imageSrc: PlaceTown },
+  P011: { imageSrc: PlaceMetropolice },
+  P012: { imageSrc: PlaceFortress2 },
+  P013: { imageSrc: PlaceCity },
+  P014: { imageSrc: PlaceTown },
+  P015: { imageSrc: PlaceFortress1 },
+  P016: { imageSrc: PlaceTown },
+  P017: { imageSrc: PlaceFortress2 },
+  P018: { imageSrc: PlaceCity },
+  P019: { imageSrc: PlaceTown },
+  P020: { imageSrc: PlaceMetropolice },
+  P021: { imageSrc: PlaceTown },
+  P022: { imageSrc: PlaceFortress1 },
+  P023: { imageSrc: PlaceMetropolice, },
+  P024: { imageSrc: PlaceFortress2 },
+  P025: { imageSrc: PlaceCity },
+  P026: { imageSrc: PlaceTown },
+  P027: { imageSrc: PlaceFortress1 },
+  P028: { imageSrc: PlaceTown },
+  P029: { imageSrc: PlaceCity },
+  P030: { imageSrc: PlaceTown },
 }
 
 /**
@@ -175,7 +216,7 @@ export default function Map() {
     }
   }, [])
 
-  const handleStrategyPointerDown = (event: React.PointerEvent<HTMLImageElement>) => {
+  const handleStrategyPointerDown = (event: React.PointerEvent<HTMLElement>) => {
     event.preventDefault()
 
     dragStateRef.current = {
@@ -218,6 +259,12 @@ export default function Map() {
           style={{
             transform: `translate(${strategy.x}px, ${strategy.y}px) scale(${strategy.scale})`,
             cursor: isDragging ? 'grabbing' : 'grab',
+          }}
+        />
+        <MapOverlay
+          places={OVERLAY_PLACES}
+          style={{
+            transform: `translate(${strategy.x}px, ${strategy.y}px) scale(${strategy.scale})`,
           }}
         />
       </div>
