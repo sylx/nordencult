@@ -65,7 +65,7 @@
   height: 8192px;
   touch-action: none;
   user-select: none;
-  transition: 0.1s transform ease-out;
+  transition: 0.2s transform ease-out;
 }
 
 .background .map-overlay {
@@ -77,7 +77,7 @@
   z-index: 2;
   transform-origin: top left;
   pointer-events: none;
-  transition: 0.1s transform ease-out;
+  transition: 0.2s transform ease-out;
 }
 
 @keyframes seaAnimation {

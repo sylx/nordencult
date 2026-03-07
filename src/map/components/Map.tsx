@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import MagBackground from '../../assets/map/map_background.webp'
-import MapStrategy from '../../assets/map/map_strategy.webp'
+import MapStrategy from '../../assets/map/map_strategy_low.webp'
 import PlaceCity from '../../assets/map/place_city.webp'
 import PlaceFortress1 from '../../assets/map/place_fortress1.webp'
 import PlaceFortress2 from '../../assets/map/place_fortress2.webp'
