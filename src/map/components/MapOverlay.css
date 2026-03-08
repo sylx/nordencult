@@ -1,15 +1,47 @@
-/* Auto-generated from map_overlay.svg – do not edit manually */
-/* Regenerate with: npm run generate:map-overlay */
-
 .map-overlay .route {
   fill: none;
   stroke: #afdfb3;
   stroke-miterlimit: 10;
   stroke-width: 20px;
-  filter: url(#map-overlay-glow);
-  transition: stroke 0.3s ease;
+  filter: url(#map-overlay-route-glow);
+  pointer-events: none;
+  transition: stroke 0.3s ease, opacity 0.3s ease;
 }
 
 .map-overlay .route.active {
   stroke: #ffd700;
+}
+
+.map-overlay .route.interactive {
+  cursor: pointer;
+  pointer-events: stroke;
+}
+
+.map-overlay .place-graphic,
+.map-overlay .place-emblem,
+.map-overlay .place-label {
+  pointer-events: none;
+  user-select: none;
+}
+
+.map-overlay .place-hit-area {
+  fill: transparent;
+  cursor: pointer;
+  pointer-events: all;
+}
+
+.map-overlay .place-label {
+  fill: #fff9df;
+  font-size: 88px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  paint-order: stroke fill;
+  stroke: rgba(0, 0, 0, 0.85);
+  stroke-width: 18px;
+  text-anchor: middle;
+  dominant-baseline: hanging;
+}
+
+.map-overlay .place.is-active .place-label {
+  fill: #ffffff;
 }

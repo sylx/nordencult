@@ -1,25 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import MagBackground from '../../assets/map/map_background.webp'
 import MapStrategy from '../../assets/map/map_strategy_low.webp'
-import PlaceCity from '../../assets/map/place_city.webp'
-import PlaceFortress1 from '../../assets/map/place_fortress1.webp'
-import PlaceFortress2 from '../../assets/map/place_fortress2.webp'
-import PlaceMetropolice from '../../assets/map/place_metropolice.webp'
-import PlaceTemple from '../../assets/map/place_temple.webp'
-import PlaceTown from '../../assets/map/place_town.webp'
-
-import Emblem01 from '../../assets/map/emblem_01.png'
-import Emblem02 from '../../assets/map/emblem_02.png'
-import Emblem03 from '../../assets/map/emblem_03.png'
-import Emblem04 from '../../assets/map/emblem_04.png'
-import Emblem05 from '../../assets/map/emblem_05.png'
-import Emblem06 from '../../assets/map/emblem_06.png'
-import Emblem07 from '../../assets/map/emblem_07.png'
-import Emblem08 from '../../assets/map/emblem_08.png'
-import Emblem09 from '../../assets/map/emblem_09.png'
-import Emblem10 from '../../assets/map/emblem_10.png'
-
-import MapOverlay, { type MapOverlayProps } from './MapOverlay'
+import MapOverlay, { type PlaceConfig } from './MapOverlay'
 import './Map.css'
 
 // --- Tunable constants ---------------------------------------------------
@@ -46,59 +28,38 @@ interface StrategyTransform {
   scale: number
 }
 
-const OVERLAY_PLACES: NonNullable<MapOverlayProps['places']> = {
-  P000: { imageSrc: PlaceTemple,imageScale: 3.0  },
-  P001: { imageSrc: PlaceTown, imageScale: 1.5,
-    emblem: {
-      src: Emblem02,
-      size: 200,
-      offsetX: -150,
-      offsetY: -150,
-    }
-   },
-  P002: { imageSrc: PlaceCity, imageScale: 2.0,
-    emblem: {
-      src: Emblem02,
-      size: 200,
-      offsetX: -150,
-      offsetY: -150,
-    }
-  },
-  P003: { imageSrc: PlaceTown, imageScale: 1.5,
-    emblem: {
-      src: Emblem02,
-      size: 200,
-      offsetX: -150,
-      offsetY: -150,
-    }
-   },
-  P004: { imageSrc: PlaceCity, imageScale: 2.0},
-  P005: { imageSrc: PlaceCity },
-  P006: { imageSrc: PlaceFortress2 },
-  P007: { imageSrc: PlaceTown },
-  P008: { imageSrc: PlaceCity },
-  P009: { imageSrc: PlaceFortress1 },
-  P010: { imageSrc: PlaceTown },
-  P011: { imageSrc: PlaceMetropolice },
-  P012: { imageSrc: PlaceFortress2 },
-  P013: { imageSrc: PlaceCity },
-  P014: { imageSrc: PlaceTown },
-  P015: { imageSrc: PlaceFortress1 },
-  P016: { imageSrc: PlaceTown },
-  P017: { imageSrc: PlaceFortress2 },
-  P018: { imageSrc: PlaceCity },
-  P019: { imageSrc: PlaceTown },
-  P020: { imageSrc: PlaceMetropolice },
-  P021: { imageSrc: PlaceTown },
-  P022: { imageSrc: PlaceFortress1 },
-  P023: { imageSrc: PlaceMetropolice, },
-  P024: { imageSrc: PlaceFortress2 },
-  P025: { imageSrc: PlaceCity },
-  P026: { imageSrc: PlaceTown },
-  P027: { imageSrc: PlaceFortress1 },
-  P028: { imageSrc: PlaceTown },
-  P029: { imageSrc: PlaceCity },
-  P030: { imageSrc: PlaceTown },
+const OVERLAY_PLACES: Readonly<Record<string, PlaceConfig>> = {
+  P000: { type: 'temple', name: 'ザイオン' },
+  P001: { type: 'town', belongTo: 2, name: 'P001' },
+  P002: { type: 'city', belongTo: 2, name: 'P002' },
+  P003: { type: 'town', belongTo: 2, name: 'P003' },
+  P004: { type: 'town', belongTo: 6,name: 'P004' },
+  P005: { type: 'town', belongTo: 6,name: 'P005' },
+  P006: { type: 'town', belongTo: 1,name: 'P006' },
+  P007: { type: 'town', belongTo: 1,name: 'P007' },
+  P008: { type: 'city', belongTo: 1, name: 'P008' },
+  P009: { type: 'town', belongTo: 4,name: 'P009' },
+  P010: { type: 'town', belongTo: 6,name: 'P010' },
+  P011: { type: 'city', belongTo: 6, name: 'P011' },
+  P012: { type: 'town', belongTo: 7, name: 'P012' },
+  P013: { type: 'town', belongTo: 5, name: 'P013' },
+  P014: { type: 'town', belongTo: 6, name: 'P014' },
+  P015: { type: 'town', belongTo: 6, name: 'P015' },
+  P016: { type: 'town', belongTo: 5, name: 'P016' },
+  P017: { type: 'town', belongTo: 3, name: 'P017' },
+  P018: { type: 'city', belongTo: 3, name: 'P018' },
+  P019: { type: 'town', belongTo: 3, name: 'P019' },
+  P020: { type: 'town', belongTo: 3, name: 'P020' },
+  P021: { type: 'town', belongTo: 6 , name: 'P021' },
+  P022: { type: 'town', belongTo: 4, name: 'P022' },
+  P023: { type: 'metropolice', belongTo: 6, name: 'P023' },
+  P024: { type: 'fortress1', belongTo: 6, name: 'P024' },
+  P025: { type: 'fortress1', belongTo: 6, name: 'P025' },
+  P026: { type: 'city', belongTo: 7, name: 'P026' },
+  P027: { type: 'city', belongTo: 3, name: 'P027' },
+  P028: { type: 'city', belongTo: 5, name: 'P028' },
+  P029: { type: 'fortress2', belongTo: 5, name: 'P029' },
+  P030: { type: 'town', belongTo: 2,name: 'P030' },
 }
 
 /**
@@ -125,6 +86,7 @@ function clampStrategy(
 export default function Map() {
   const computeScale = () => (Math.max(800, window.innerWidth) / 7170) * 1.25
   const [scale, setScale] = useState<number>(() => computeScale())
+  const [activePlace, setActivePlace] = useState<string>('P002')
   const [strategy, setStrategy] = useState<StrategyTransform>(() =>
     clampStrategy(
       { x: 582, y: 6, scale: 0.1 },
@@ -295,7 +257,12 @@ export default function Map() {
           }}
         />
         <MapOverlay
+          activePlace={activePlace}
           places={OVERLAY_PLACES}
+          scale={strategy.scale}
+          onPlaceClick={(placeId) => {
+            setActivePlace(placeId)
+          }}
           style={{
             transform: `translate(${strategy.x}px, ${strategy.y}px) scale(${strategy.scale})`,
           }}

@@ -1,134 +1,142 @@
-// Auto-generated from map_overlay.svg – do not edit manually
-// Regenerate with: npm run generate:map-overlay
+import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react'
 
-import type { CSSProperties } from 'react';
-import './MapOverlay.css';
+import Emblem01 from '../../assets/map/emblem_01.png'
+import Emblem02 from '../../assets/map/emblem_02.png'
+import Emblem03 from '../../assets/map/emblem_03.png'
+import Emblem04 from '../../assets/map/emblem_04.png'
+import Emblem05 from '../../assets/map/emblem_05.png'
+import Emblem06 from '../../assets/map/emblem_06.png'
+import Emblem07 from '../../assets/map/emblem_07.png'
+import Emblem08 from '../../assets/map/emblem_08.png'
+import Emblem09 from '../../assets/map/emblem_09.png'
+import Emblem10 from '../../assets/map/emblem_10.png'
+import PlaceCity from '../../assets/map/place_city.webp'
+import PlaceFortress1 from '../../assets/map/place_fortress1.webp'
+import PlaceFortress2 from '../../assets/map/place_fortress2.webp'
+import PlaceMetropolice from '../../assets/map/place_metropolice.webp'
+import PlaceTemple from '../../assets/map/place_temple.webp'
+import PlaceTown from '../../assets/map/place_town.webp'
+import { PLACES, ROUTES } from './MapOvarlayPlaceRoute'
+import './MapOverlay.css'
 
-// ── Types ──────────────────────────────────────────────────────
+export type PlaceType =
+  | 'town'
+  | 'city'
+  | 'metropolice'
+  | 'fortress1'
+  | 'fortress2'
+  | 'temple'
 
-/** Per-place configuration passed from game state */
+export type PlaceBelongTo = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+
 export interface PlaceConfig {
-  /** Override the default image source (absolute or imported URL) */
-  imageSrc?: string;
-  /** Scale multiplier applied on top of the default scale (1 = original size) */
-  imageScale?: number;
-  /** Emblem to render near the place */
-  emblem?: {
-    src: string;
-    size?: number;
-    offsetX?: number;
-    offsetY?: number;
-  };
+  type: PlaceType
+  belongTo?: PlaceBelongTo
+  name: string
 }
 
 export interface MapOverlayProps {
-  /** Route IDs to visually highlight (e.g. "P001-P002") */
-  activeRoutes?: ReadonlySet<string> | readonly string[];
-  /** Per-place overrides keyed by place ID (e.g. "P000") */
-  places?: Readonly<Record<string, PlaceConfig>>;
-  className?: string;
-  style?: CSSProperties;
+  activeRoutes?: ReadonlySet<string> | readonly string[]
+  activePlace?: string
+  places?: Readonly<Record<string, PlaceConfig>>
+  scale?: number
+  className?: string
+  style?: CSSProperties
+  onPlaceClick?: (placeId: string, event: ReactMouseEvent<SVGGElement>) => void
+  onRouteClick?: (routeId: string, event: ReactMouseEvent<SVGPathElement>) => void
 }
 
-// ── Static data extracted from SVG ─────────────────────────────
-
-interface RouteData { id: string; d: string }
-interface PlaceData {
-  id: string; cx: number; cy: number;
-  s: number; w: number; h: number; href: string;
+interface PlaceGraphicMeta {
+  src: string
+  width: number
+  height: number
+  scaleMultiplier: number
+  labelOffsetY: number
 }
 
-const ROUTES: RouteData[] = [
-  { id: "P001-P002", d: "M2090.3,6420.6l103.1-115.6s92.4-60.4,129.8-67.6c37.3-7.1,99.6-37.3,119.1-58.7,19.6-21.3,37.3-58.7,74.7-80,37.3-21.3,115.6-30.2,136.9-40.9,21.3-10.7,112-17.8,113.8-60.4,1.8-42.7,71.1-78.2,138.7-92.4,67.6-14.2,158.2-65.8,165.3-104.9,7.1-39.1-49.8-78.2-49.8-78.2" },
-  { id: "P002-P003", d: "M3023.7,5711.2s129.6-69.3,142.2-83c14.5-15.7,26.7-53.3,65.8-55.1,39.1-1.8,94.2,5.3,113.8,37.3,19.6,32,151.1,60.4,206.2,55.1s134.8-75.6,192-60.4c35.7,9.4,129.8,42.7,156.4,78.2,26.7,35.6,76.4,69.3,76.4,69.3" },
-  { id: "P002-P004", d: "M3011.2,5684.6s12-131.6-27.1-174.2c-39.1-42.7,3.6-112-65.8-152.9-69.3-40.9-88.9-56.9-60.4-113.8,28.4-56.9,119.9-80,155.1-96,27.5-12.5,176.9-53.2,251-74.1" },
-  { id: "P002-P030", d: "M1741.3,5606.4c24.9,40.3,96.5,55.7,170.7,50.7s78.2-32.3,172.4-47.4c94.2-15.1,158,47.2,158,47.2,21.7,37.2,103.7,53.6,149.3,50.5,45.7-3.1,173.3-98.2,261.3-100.9,79.1-2.4,108.5,3.2,126.6,3.7,15,.4,47.8,4.8,74.1,8.1,13.7,1.7,106.4,27.5,135,89.5" },
-  { id: "P003-P005", d: "M4017,5722.6s59.8-70.8,79-136.7c19.2-65.9-7.4-124.6-11-156.6-3.6-32-26.7-67.6-12.4-108.4,14.2-40.9,19.6-138.7,7.1-156.4-12.4-17.8-34.2-64-34.2-64" },
-  { id: "P003-P006", d: "M3995.7,5752.7s226.7,117.8,309.3,115.1c82.7-2.7,194.9-55.3,245.3-31.3,70.9,33.8,232,95.3,269.3,140.6,37.3,45.3,189.1,243.2,231.8,251.2,42.7,8,241.6,122.1,241.6,170.1s125.3,107.4,125.3,107.4" },
-  { id: "P003-P008", d: "M4059.9,5745s107.5-65.4,168.8-82.2c61.3-16.8,122.7-102.2,232-70.2,109.3,32,175.6-2.7,226.5-34.7,50.9-32,117.5-77.3,234.9-61.3,117.3,16,301.3-52.9,325.3-85.1s120.5-21.6,170.9-66.9c50.4-45.3,79.7-32.9,79.7-32.9" },
-  { id: "P004-P005", d: "M3305.8,5062c87.1-17.8,55.2-33.5,156.6-42.4,101.3-8.9,241.8,23.1,254.2,23.1s152.9,24.3,188.4,19.3,112,0,112,0" },
-  { id: "P004-P012", d: "M3284.5,5062s-99.9-93.2-170.1-99.4c-70.2-6.2-292.4-38.7-320.9-70.7-28.4-32-103.1,5.3-138.7-48-35.6-53.3-92.4-75-112-125.5-19.6-50.5-69.3-109.2-90.7-118.1-21.3-8.9-40.9-34.1-92.4-33s-96,17-96,17" },
-  { id: "P005-P010", d: "M4096,5040.4s69.3-132.2,136.9-128.7c67.6,3.6,174.2-24.9,220.4-42.7,46.2-17.8,64.2-174.2,108.6-216.9,44.3-42.7,101.2-59,101.2-59" },
-  { id: "P006-P007", d: "M5484.1,6505.9s93.3-20.6,152-76.6c58.7-56,98.7-96,133.3-96s157.3,2.7,250.7,18.7c93.3,16,152,2.7,165.3-18.7,13.3-21.3,69.3-40,69.3-40" },
-  { id: "P007-P008", d: "M5597.6,5311.7s121.7,85.3,139.1,156.4c17.4,71.1,30.8,103.9-41.7,151.5-72.5,47.6-36.1,111.6,41.7,161.4,77.8,49.8,273,76.9,286.4,120.5,17.2,55.7,107.8,121.3,107.8,139.1s63.9,122.2,74.7,131.6c8,7,120.2,17.7,120.2,17.7,0,0,49.8,17.2,48.6,35.6-1.2,18.4-65.2,53.3-65.2,53.3" },
-  { id: "P008-P009", d: "M5580.7,5277.1s155.6-164.5,212.5-114.7c56.9,49.8,184.9,53.3,216.9,42.7,32-10.7,135.1-18,138.7-62.4,3.6-44.3,61.9-50.1,20.3-102.3-41.6-52.2-137.6-112.7-137.6-148.2s24.2-116,56.9-113.8c123.9,8.3,191.1-59,186-86.5" },
-  { id: "P008-P011", d: "M5442.9,4325.7s109.3,106.7,93.3,136-82.9,142.5-66,190.5c16.9,48,94.4,90.7,74.3,144-20.1,53.3,38.6,152-17.4,189.3-56,37.3-109.3,111.7-96,157.2,13.3,45.5,82.7,134.4,82.7,134.4" },
-  { id: "P009-P011", d: "M5470.2,4302s97.2-12.9,116.7-10c19.6,2.9,280.9,8.2,448,66.9,167.1,58.7,94.9,168.1,115.6,208.5,20.7,40.4,112,104.4,112,104.4" },
-  { id: "P009-P022", d: "M6294.5,4680.3s126.3-24.6,151.1-92.1c24.9-67.6,135.1-128.4,108.4-170.9-26.7-42.4-28.4-103.3-17.8-125.3,10.7-22,49.8-82.4,80-105.6,30.2-23.1,71.1-21.3,81.8-56.9,10.7-35.6,112.7-87.4,94.9-114.1,0,0-11.1-27.1-37.8-42.2s-31.1-.4-38.7-20.4" },
-  { id: "P010-P011", d: "M4720,4567.4s174.2-82.3,245.3-75.2c71.1,7.1,177.8-68,199.1-74.9s167.1-78,220.4-74.4" },
-  { id: "P010-P023", d: "M4663.1,4542.9c-109.4-24.1-198-52.4-261-75-145.5-52.2-229.5-83.2-309.3-159.6-65.8-62.9-102.2-131.1-122.1-176.8" },
-  { id: "P011-P024", d: "M5976.8,3519.9c-24.9-25.1-113.5,100.7-162.3,97.4-48.3-3.2-99.6,58.9-124.8,83.8-25.3,24.9-24.5,53.3-3.2,107.3,21.3,54-71.1,59.8-81.8,98.9-10.7,39.1-98.9,69-119.3,72.6-22.8,4-90.5,98.1-66.3,137.2s-62.1,83.8-62.1,83.8c0,0-54,39,32.2,95.9" },
-  { id: "P012-P016", d: "M2103.4,3809.8c1.7,8.5-93.7,44.8-111.1,71.1-36.6,55.6-53.1,117.4-118.2,146.4-96,42.7-96,106.7-144,217.8-48,111.1,69.3,123.6,176,172.2,106.7,48.7,153.4-51.2,220.1-3.2,52.2,37.6,41.7,68.4,35.5,79-2.1,3.7-3.4,7.9-3.7,12.2-1.5,18.6-.8,64.5,37.5,87.9" },
-  { id: "P013-P025", d: "M4289.5,3390.6s-157.6-74.3-167.1-152.9c-7.3-59.9-36.2-41.9-49.5-103-11.2-51.2,0-127.5-18.1-179-25.2-71.4-67.9-96.9-74.2-127.7-11-54.2,107.7-153.3,107.7-153.3" },
-  { id: "P013-P028", d: "M3756.1,2047c112.5,86.8,47.5,147.7,30.6,171.9-8.7,12.5-66.7,62.2-128,59.6-46.5-2-70.8,38.3-79.9,57.9s-4.1,14.5-2.5,21.9c12.8,58.2,77.8,84,129.1,109.2,26.1,12.8,362.1,189.4,362.1,189.4" },
-  { id: "P014-P026", d: "M2130.9,3784.9c28.4-33.8,51.2-74.7,80-78.2,20.5-2.5,65.2,49.3,82.3,44.9,98.1-25.4,144.1-78.4,166.6-113.6,13.8-21.6,19.6-44.7,48-69.3,55.7-48.4,115.5-30.9,181.3-51.9,44-14,69.7-55.1,126.2-155.6" },
-  { id: "P014-P025", d: "M4264.1,3418s-36,73.4-62.8,68.9c-26.8-4.6-258.6-10.6-281.2-68.9-22.6-58.3-179.9-78.1-211.9-78.9-32-.8-152-67.4-205.3-70.1-53.3-2.7-93.3-62.4-173.3-55.2-80,7.2-194.7,25.9-237.3,41.9-42.7,16-146.7,27.2-213.3,77.6" },
-  { id: "P015-P026", d: "M3173.1,3803.2l-41.8-32.9c-48.4-44.4-163.9,75.7-268.1,70.3-104.2-5.3-190.4-144.6-250.7-128-29.6,8.1-4.4,51-63,104.3-34.4,31.2-132.5,73.1-222.7,80.3-63.8,5.1-164.7-27.9-189.6-85.7" },
-  { id: "P015-P023", d: "M3284.5,3833.5s-8.9,32,21.3,50.5c30.2,18.5,39.1-5.2,62.3-9.7s51.4,36.5,99.4,59.4,64,46.4,69.3,59.8c5.3,13.3,80,26.7,157.3,16,42.5-5.9,85.9,41.1,131.1,71s79.5,32.1,88.3,33.2c19.6,2.4,28.4.6,28.4.6" },
-  { id: "P017-P019", d: "M7112.8,2313.3s52.1,35.2,52.1,72.7c0,37.5-55.7,78.4-41.5,145.1,14.2,66.6,64,105.7,103.1,152,39.1,46.2-205.1,142.3-205.1,142.3" },
-  { id: "P018-P019", d: "M5784.8,2632.8s101.3-115,136.9-123.1c35.6-8,138.7-75.6,177.8-72s152.9,28.2,263.1-.1c110.2-28.3,224-17.6,270.2-42.5,46.2-24.9,113.8-74.7,177.8-64,64,10.7,70.6,73.4,142.2,50.2,68.7-22.2,119.3-85.8,119.3-85.8" },
-  { id: "P018-P024", d: "M5769.9,2656.4s174.2,166,184.9,240.7c10.7,74.7,54.2,212.4,124.4,220.4,80.6,9.2,128,113.8,92.4,163.6-35.6,49.8-106.7,224-152.9,220.4" },
-  { id: "P018-P027", d: "M5415.5,2058.7s35.8,83.3,132.3,122.7c96.5,39.4,173.5,51.9,222.1,88.3,48.6,36.4,90.1,178.6,69.4,192.9-20.7,14.2-159.4,67.6-159.4,92.4s54.4,101.4,72.2,101.4" },
-  { id: "P023-P025", d: "M4328.1,3418s122.7,87.1,101.4,126.2c-21.3,39.1-98.7,207.1-133.3,185.8-34.7-21.3-64,69.3-146.7,90.7-82.7,21.3-82.7,108.4-82.7,136.9s-59,147.2-96.1,138.5" },
-  { id: "P022-P024", d: "M6079.9,3501.6s134.7,18.8,216.7,86.4c82,67.6,214.9,192.4,309.3,220.5,35.8,10.6,26.1,47.6,39.6,70.6s53.8,60.4,53.8,60.4" },
-  { id: "P028-P029", d: "M4682.6,2002.1c0-7.1-188.4-92.4-250.6-74.7-62.1,17.8-172.5-32-210.6-42.7-38.1-10.7-57.9,35.6-209.1,42.7-60.5,2.8-84.4,50.1-121.9,62.2-56.1,18.2-99.7,37.4-111.1,46.2-19,14.8-27.6,11.1-27.6,11.1" },
-  { id: "P016-P028", d: "M2771.8,2294.3s48.5-24.6,85.3-46.2c30.2-17.8,48.9,37.3,83.3,31.1,61.1-11,320,10.7,382,18.7,62,8,154.9-107.6,226-119.1,71.1-11.5,185.4-137.5,185.4-137.5" },
-  { id: "P021-P028", d: "M4639.5,1342.9s-28.9,59.1-72.6,63.4-141.2-35.5-165.3-33.4c-42.7,3.6-245.3,42.7-334,91.6-88.7,48.9-39.3,68.4-97,125.3-57.7,56.9-177-17.8-262.2,39.1-85.2,56.9-81.9,206.2-78.3,254.4,3.6,48.2,102,144.7,102,144.7" },
-  { id: "P027-P029", d: "M4723.4,2012.8s181.3,69.3,229.3,69.3,131.6-21.3,181.3-17.8c49.8,3.6,81.8,85.8,119.1,77.6,37.3-8.2,106.4-64.3,139.3-93.6" },
-  { id: "P020-P027", d: "M5444.3,2032.9s96-40,99.6-70.1c3.6-30.1,90.2-105.9,91.3-155.6,1.1-49.8-55.8-206.1-112.7-197.3" },
-];
+const EMBLEM_SIZE = 200
+const PLACE_GRAPHIC_MIN_SCALE = 0.14
+const PLACE_NAME_MIN_SCALE = 0.24
 
-const PLACES: PlaceData[] = [
-  { id: "P000", cx: 5003.1, cy: 2888.8, s: 0.2, w: 1024, h: 696, href: "map_overlay-2.png" },
-  { id: "P001", cx: 2067.7, cy: 6393.3, s: 0.2, w: 1010, h: 893, href: "map_overlay-3.png" },
-  { id: "P002", cx: 3024.8, cy: 5720.4, s: 0.2, w: 1130, h: 839, href: "map_overlay-4.png" },
-  { id: "P003", cx: 3962.8, cy: 5724.9, s: 0.2, w: 1010, h: 893, href: "map_overlay-5.png" },
-  { id: "P004", cx: 3261.8, cy: 5041.9, s: 0.2, w: 1010, h: 893, href: "map_overlay-6.png" },
-  { id: "P005", cx: 4022.8, cy: 5041.9, s: 0.2, w: 1010, h: 893, href: "map_overlay-7.png" },
-  { id: "P006", cx: 5395.7, cy: 6485.8, s: 0.2, w: 1010, h: 893, href: "map_overlay-8.png" },
-  { id: "P007", cx: 6271.7, cy: 6261.9, s: 0.2, w: 1010, h: 893, href: "map_overlay-9.png" },
-  { id: "P008", cx: 5578.3, cy: 5290.2, s: 0.2, w: 1130, h: 839, href: "map_overlay-10.png" },
-  { id: "P009", cx: 6273.9, cy: 4672.6, s: 0.2, w: 1010, h: 893, href: "map_overlay-11.png" },
-  { id: "P010", cx: 4664.6, cy: 4547.2, s: 0.2, w: 1010, h: 893, href: "map_overlay-12.png" },
-  { id: "P011", cx: 5396.6, cy: 4271.8, s: 0.2, w: 1010, h: 893, href: "map_overlay-13.png" },
-  { id: "P012", cx: 2211.7, cy: 4573, s: 0.2, w: 1010, h: 893, href: "map_overlay-14.png" },
-  { id: "P013", cx: 4073.4, cy: 2636.3, s: 0.2, w: 1010, h: 893, href: "map_overlay-15.png" },
-  { id: "P014", cx: 2819.3, cy: 3319, s: 0.2, w: 1010, h: 893, href: "map_overlay-16.png" },
-  { id: "P015", cx: 3220.2, cy: 3788.3, s: 0.2, w: 1010, h: 893, href: "map_overlay-17.png" },
-  { id: "P016", cx: 2715.3, cy: 2255.8, s: 0.2, w: 1010, h: 893, href: "map_overlay-18.png" },
-  { id: "P017", cx: 6998.8, cy: 2805.2, s: 0.2, w: 1010, h: 893, href: "map_overlay-19.png" },
-  { id: "P018", cx: 5729.5, cy: 2615, s: 0.2, w: 1010, h: 893, href: "map_overlay-20.png" },
-  { id: "P019", cx: 7082.8, cy: 2275.4, s: 0.2, w: 1010, h: 893, href: "map_overlay-21.png" },
-  { id: "P020", cx: 5495.3, cy: 1569.6, s: 0.2, w: 1010, h: 893, href: "map_overlay-22.png" },
-  { id: "P021", cx: 4612.2, cy: 1305.6, s: 0.2, w: 1010, h: 893, href: "map_overlay-23.png" },
-  { id: "P022", cx: 6708.6, cy: 3913.6, s: 0.2, w: 1010, h: 893, href: "map_overlay-24.png" },
-  { id: "P023", cx: 3916.8, cy: 4129.5, s: 0.2, w: 1251, h: 764, href: "map_overlay-25.png" },
-  { id: "P024", cx: 5997.4, cy: 3487.7, s: 0.2, w: 994, h: 549, href: "map_overlay-26.png" },
-  { id: "P025", cx: 4332.6, cy: 3391.3, s: 0.2, w: 994, h: 549, href: "map_overlay-27.png" },
-  { id: "P026", cx: 2109.5, cy: 3821.4, s: 0.2, w: 1130, h: 839, href: "map_overlay-28.png" },
-  { id: "P027", cx: 5411.8, cy: 2060.1, s: 0.2, w: 1130, h: 839, href: "map_overlay-29.png" },
-  { id: "P028", cx: 3775.3, cy: 2060.1, s: 0.2, w: 1130, h: 839, href: "map_overlay-30.png" },
-  { id: "P029", cx: 4688.6, cy: 1988.9, s: 0.2, w: 930, h: 746, href: "map_overlay-31.png" },
-  { id: "P030", cx: 1689.8, cy: 5566.9, s: 0.2, w: 1010, h: 893, href: "map_overlay-32.png" },
-];
-
-/** Resolve an asset filename relative to src/assets/map/ */
-function assetUrl(filename: string): string {
-  return new URL(`../../assets/map/${filename}`, import.meta.url).href;
+const PLACE_GRAPHICS: Record<PlaceType, PlaceGraphicMeta> = {
+  town: {
+    src: PlaceTown,
+    width: 1010,
+    height: 893,
+    scaleMultiplier: 1.5,
+    labelOffsetY: 0,
+  },
+  city: {
+    src: PlaceCity,
+    width: 1130,
+    height: 839,
+    scaleMultiplier: 2,
+    labelOffsetY: -20,
+  },
+  metropolice: {
+    src: PlaceMetropolice,
+    width: 1251,
+    height: 764,
+    scaleMultiplier: 4,
+    labelOffsetY: -100,
+  },
+  fortress1: {
+    src: PlaceFortress1,
+    width: 994,
+    height: 549,
+    scaleMultiplier: 2,
+    labelOffsetY: -20,
+  },
+  fortress2: {
+    src: PlaceFortress2,
+    width: 1130,
+    height: 839,
+    scaleMultiplier: 1.5,
+    labelOffsetY: -20,
+  },
+  temple: {
+    src: PlaceTemple,
+    width: 1024,
+    height: 696,
+    scaleMultiplier: 3,
+    labelOffsetY: -60,
+  },
 }
 
-// ── Component ──────────────────────────────────────────────────
+const EMBLEMS: Record<PlaceBelongTo, string> = {
+  1: Emblem01,
+  2: Emblem02,
+  3: Emblem03,
+  4: Emblem04,
+  5: Emblem05,
+  6: Emblem06,
+  7: Emblem07,
+  8: Emblem08,
+  9: Emblem09,
+  10: Emblem10,
+}
+
+function getDefaultPlaceConfig(placeId: string): PlaceConfig {
+  return {
+    type: 'town',
+    name: placeId,
+  }
+}
 
 export default function MapOverlay({
   activeRoutes,
+  activePlace,
   places: placeConfigs,
+  scale = 1,
   className,
   style,
+  onPlaceClick,
+  onRouteClick,
 }: MapOverlayProps) {
-  const activeSet =
-    activeRoutes instanceof Set
-      ? (activeRoutes as ReadonlySet<string>)
-      : new Set(activeRoutes);
+  const activeRouteSet =
+    activeRoutes instanceof Set ? activeRoutes : new Set(activeRoutes ?? [])
+  const showPlaceGraphic = scale >= PLACE_GRAPHIC_MIN_SCALE
+  const showPlaceName = scale >= PLACE_NAME_MIN_SCALE
 
   return (
     <svg
@@ -138,60 +146,115 @@ export default function MapOverlay({
       style={style}
     >
       <defs>
-        <filter id="map-overlay-glow">
+        <filter id="map-overlay-route-glow">
           <feOffset dx="0" dy="0" />
           <feGaussianBlur result="blur" stdDeviation="10" />
           <feFlood floodColor="#000" floodOpacity="1" />
           <feComposite in2="blur" operator="in" />
           <feComposite in="SourceGraphic" />
         </filter>
+        <filter id="map-overlay-place-glow">
+          <feOffset dx="0" dy="0" />
+          <feGaussianBlur result="blur" stdDeviation="24" />
+          <feFlood floodColor="#fff" floodOpacity="0.95" />
+          <feComposite in2="blur" operator="in" />
+          <feComposite in="SourceGraphic" />
+        </filter>
       </defs>
 
       <g id="roads">
-        {ROUTES.map(({ id, d }) => (
-          <path
-            key={id}
-            id={id}
-            className={`route${activeSet.has(id) ? ' active' : ''}`}
-            d={d}
-          />
-        ))}
+        {ROUTES.map(({ id, d }) => {
+          const isInteractive = Boolean(onRouteClick)
+
+          return (
+            <path
+              key={id}
+              id={id}
+              className={`route${activeRouteSet.has(id) ? ' active' : ''}${isInteractive ? ' interactive' : ''}`}
+              d={d}
+              onClick={
+                onRouteClick
+                  ? (event) => {
+                      event.stopPropagation()
+                      onRouteClick(id, event)
+                    }
+                  : undefined
+              }
+            />
+          )
+        })}
       </g>
 
       <g id="places">
         {PLACES.map((place) => {
-          const config = placeConfigs?.[place.id];
-          const scale = place.s * (config?.imageScale ?? 1);
-          const halfW = (place.w * scale) / 2;
-          const halfH = (place.h * scale) / 2;
-          const href = config?.imageSrc ?? assetUrl(place.href);
-          const emblem = config?.emblem;
+          const config = placeConfigs?.[place.id] ?? getDefaultPlaceConfig(place.id)
+          const graphic = PLACE_GRAPHICS[config.type]
+          const emblemSrc = config.belongTo ? EMBLEMS[config.belongTo] : undefined
+          const shouldRenderGraphic = showPlaceGraphic || !emblemSrc
+          const imageScale = place.s * graphic.scaleMultiplier
+          const halfW = (graphic.width * imageScale) / 2
+          const halfH = (graphic.height * imageScale) / 2
+          const emblemCenterX = -Math.min(halfW * 0.85, 150)
+          const emblemCenterY = -Math.min(halfH * 0.85, 150)
+          const hitAreaRadius = Math.max(halfW, halfH, EMBLEM_SIZE / 2) + 48
+          const isActive = activePlace === place.id
+          const isInteractive = Boolean(onPlaceClick)
 
           return (
             <g
               key={place.id}
               id={place.id}
+              className={`place${isActive ? ' is-active' : ''}`}
               transform={`translate(${place.cx}, ${place.cy})`}
             >
-              <image
-                width={place.w}
-                height={place.h}
-                href={href}
-                transform={`translate(${-halfW}, ${-halfH}) scale(${scale})`}
-              />
-              {emblem && (
-                <image
-                  href={emblem.src}
-                  width={emblem.size ?? 64}
-                  height={emblem.size ?? 64}
-                  x={(emblem.offsetX ?? 0) - (emblem.size ?? 64) / 2}
-                  y={(emblem.offsetY ?? 0) - (emblem.size ?? 64) / 2}
-                />
+              <g
+                className="place-visual"
+                filter={isActive ? 'url(#map-overlay-place-glow)' : undefined}
+              >
+                {shouldRenderGraphic && (
+                  <image
+                    className="place-graphic"
+                    width={graphic.width}
+                    height={graphic.height}
+                    href={graphic.src}
+                    transform={`translate(${-halfW}, ${-halfH}) scale(${imageScale})`}
+                  />
+                )}
+                {emblemSrc && (
+                  <image
+                    className="place-emblem"
+                    href={emblemSrc}
+                    width={EMBLEM_SIZE}
+                    height={EMBLEM_SIZE}
+                    x={emblemCenterX - EMBLEM_SIZE / 2}
+                    y={emblemCenterY - EMBLEM_SIZE / 2}
+                  />
+                )}
+                {showPlaceName && (
+                  <text
+                    className="place-label"
+                    x={0}
+                    y={halfH + graphic.labelOffsetY}
+                  >
+                    {config.name}
+                  </text>
+                )}
+              </g>
+              {isInteractive && (
+                <g
+                  className="place-hit-target"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onPlaceClick?.(place.id, event)
+                  }}
+                >
+                  <circle className="place-hit-area" r={hitAreaRadius} />
+                </g>
               )}
             </g>
-          );
+          )
         })}
       </g>
     </svg>
-  );
+  )
 }
