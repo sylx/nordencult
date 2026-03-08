@@ -191,12 +191,13 @@ export default function MapOverlay({
           const graphic = PLACE_GRAPHICS[config.type]
           const emblemSrc = config.belongTo ? EMBLEMS[config.belongTo] : undefined
           const shouldRenderGraphic = showPlaceGraphic || !emblemSrc
+          const emblemSize = shouldRenderGraphic ? EMBLEM_SIZE : EMBLEM_SIZE * 2.2
           const imageScale = place.s * graphic.scaleMultiplier
           const halfW = (graphic.width * imageScale) / 2
           const halfH = (graphic.height * imageScale) / 2
-          const emblemCenterX = -Math.min(halfW * 0.85, 150)
-          const emblemCenterY = -Math.min(halfH * 0.85, 150)
-          const hitAreaRadius = Math.max(halfW, halfH, EMBLEM_SIZE / 2) + 48
+          const emblemCenterX = shouldRenderGraphic ? -Math.min(halfW * 0.85, 150) : 0
+          const emblemCenterY = shouldRenderGraphic ? -Math.min(halfH * 0.85, 150) : 0
+          const hitAreaRadius = Math.max(halfW, halfH, emblemSize / 2) + 48
           const isActive = activePlace === place.id
           const isInteractive = Boolean(onPlaceClick)
 
@@ -224,10 +225,10 @@ export default function MapOverlay({
                   <image
                     className="place-emblem"
                     href={emblemSrc}
-                    width={EMBLEM_SIZE}
-                    height={EMBLEM_SIZE}
-                    x={emblemCenterX - EMBLEM_SIZE / 2}
-                    y={emblemCenterY - EMBLEM_SIZE / 2}
+                    width={emblemSize}
+                    height={emblemSize}
+                    x={emblemCenterX - emblemSize / 2}
+                    y={emblemCenterY - emblemSize / 2}
                   />
                 )}
                 {showPlaceName && (
