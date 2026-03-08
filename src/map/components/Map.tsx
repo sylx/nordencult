@@ -7,6 +7,18 @@ import PlaceFortress2 from '../../assets/map/place_fortress2.webp'
 import PlaceMetropolice from '../../assets/map/place_metropolice.webp'
 import PlaceTemple from '../../assets/map/place_temple.webp'
 import PlaceTown from '../../assets/map/place_town.webp'
+
+import Emblem01 from '../../assets/map/emblem_01.png'
+import Emblem02 from '../../assets/map/emblem_02.png'
+import Emblem03 from '../../assets/map/emblem_03.png'
+import Emblem04 from '../../assets/map/emblem_04.png'
+import Emblem05 from '../../assets/map/emblem_05.png'
+import Emblem06 from '../../assets/map/emblem_06.png'
+import Emblem07 from '../../assets/map/emblem_07.png'
+import Emblem08 from '../../assets/map/emblem_08.png'
+import Emblem09 from '../../assets/map/emblem_09.png'
+import Emblem10 from '../../assets/map/emblem_10.png'
+
 import MapOverlay, { type MapOverlayProps } from './MapOverlay'
 import './Map.css'
 
@@ -35,11 +47,32 @@ interface StrategyTransform {
 }
 
 const OVERLAY_PLACES: NonNullable<MapOverlayProps['places']> = {
-  P000: { imageSrc: PlaceTemple,imageScale: 3.0 },
-  P001: { imageSrc: PlaceTown },
-  P002: { imageSrc: PlaceFortress1 },
-  P003: { imageSrc: PlaceTown },
-  P004: { imageSrc: PlaceMetropolice },
+  P000: { imageSrc: PlaceTemple,imageScale: 3.0  },
+  P001: { imageSrc: PlaceTown, imageScale: 1.5,
+    emblem: {
+      src: Emblem02,
+      size: 200,
+      offsetX: -150,
+      offsetY: -150,
+    }
+   },
+  P002: { imageSrc: PlaceCity, imageScale: 2.0,
+    emblem: {
+      src: Emblem02,
+      size: 200,
+      offsetX: -150,
+      offsetY: -150,
+    }
+  },
+  P003: { imageSrc: PlaceTown, imageScale: 1.5,
+    emblem: {
+      src: Emblem02,
+      size: 200,
+      offsetX: -150,
+      offsetY: -150,
+    }
+   },
+  P004: { imageSrc: PlaceCity, imageScale: 2.0},
   P005: { imageSrc: PlaceCity },
   P006: { imageSrc: PlaceFortress2 },
   P007: { imageSrc: PlaceTown },
