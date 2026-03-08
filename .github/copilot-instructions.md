@@ -23,8 +23,8 @@
 - Preview production build: `npm run preview`
 - Regenerate map overlay assets/components: `npm run generate:map-overlay`
   - Input: `src/assets/map/map_overlay.svg`
-  - Outputs: `src/assets/map/map_overlay_optimized.svg`, `src/map/components/MapOverlay.tsx`, `src/map/components/MapOverlay.css`
-  - Note: `MapOverlay.tsx` and `MapOverlay.css` are generated files; update source SVG and re-run instead of manual editing.
+  - Outputs: `src/assets/map/map_overlay_optimized.svg`, `src/map/components/MapOverlayPlaceRoute.tsx`
+  - Note: `MapOverlayPlaceRoute.tsx` is a generated file; update source SVG and re-run instead of manual editing.
 
 ## Code and style conventions observed in this repo
 - Use function components and hooks (`useState` pattern in `src/App.tsx`).
