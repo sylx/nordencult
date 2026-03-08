@@ -24,7 +24,6 @@ export default function InfoWindow({
   y = 0,
 }: InfoWindowProps) {
 
-  const contentHeight = height
   return (
     <div
       className={`info-window ${resizeable ? 'resizeable' : ''} ${className || ''}`}
