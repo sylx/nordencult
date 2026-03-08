@@ -101,3 +101,31 @@
   animation: seaAnimation 40s linear infinite;
   transition: 0.1s transform ease-out;
 }
+
+.background .map-fg-card {
+    position: absolute;
+    top: -50px;
+    left: 11%;
+    width: 300px;
+    height: 234px;
+    background: url(../../assets/map/map_fg_card.webp) no-repeat;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.background .map-fg-coin {
+    position: absolute;
+    bottom: -20px;
+    right: -100px;
+    width: 400px;
+    height: 241px;
+    background: url(../../assets/map/map_fg_coin.webp) no-repeat;
+    z-index: 4;
+    pointer-events: none;
+}
+
+@media screen and (max-width: 1160px) {
+  .background .map-fg-card, .background .map-fg-coin {
+    display: none;
+  }
+}

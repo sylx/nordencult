@@ -299,6 +299,8 @@ export default function Map() {
           }}
         />
       </div>
+      <div className="map-fg-coin" style={{ transform: `scale(${scale * 4})` }}/>
+      <div className="map-fg-card" style={{ transform: `scale(${scale * 3.5})` }} />
       <div className="debug-info">
         <div>Scale: {strategy.scale.toFixed(2)}</div>
         <div>Translate: ({strategy.x.toFixed(0)}, {strategy.y.toFixed(0)})</div>
