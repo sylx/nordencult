@@ -50,7 +50,7 @@ const OVERLAY_PLACES: Readonly<Record<string, PlaceConfig>> = {
   P018: { type: 'city', belongTo: 3, name: 'P018' },
   P019: { type: 'town', belongTo: 3, name: 'P019' },
   P020: { type: 'town', belongTo: 3, name: 'P020' },
-  P021: { type: 'town', belongTo: 6 , name: 'P021' },
+  P021: { type: 'town', belongTo: 5 , name: 'P021' },
   P022: { type: 'town', belongTo: 4, name: 'P022' },
   P023: { type: 'metropolice', belongTo: 6, name: 'P023' },
   P024: { type: 'fortress1', belongTo: 6, name: 'P024' },
