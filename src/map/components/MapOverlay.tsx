@@ -1,4 +1,4 @@
-import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react'
+import { useEffect, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react'
 
 import Emblem01 from '../../assets/map/emblem_01.png'
 import Emblem02 from '../../assets/map/emblem_02.png'
@@ -42,6 +42,7 @@ export interface MapOverlayProps {
   scale?: number
   className?: string
   style?: CSSProperties
+  onActivatePlace?: (place: { id: string; x: number; y: number } | null) => void
   onPlaceClick?: (placeId: string, event: ReactMouseEvent<SVGGElement>) => void
   onRouteClick?: (routeId: string, event: ReactMouseEvent<SVGPathElement>) => void
 }
@@ -55,8 +56,8 @@ interface PlaceGraphicMeta {
 }
 
 const EMBLEM_SIZE = 200
-const PLACE_GRAPHIC_MIN_SCALE = 0.14
-const PLACE_NAME_MIN_SCALE = 0.24
+const PLACE_GRAPHIC_MIN_SCALE = 0.2
+const PLACE_NAME_MIN_SCALE = 0.3
 
 const PLACE_GRAPHICS: Record<PlaceType, PlaceGraphicMeta> = {
   town: {
@@ -130,6 +131,7 @@ export default function MapOverlay({
   scale = 1,
   className,
   style,
+  onActivatePlace,
   onPlaceClick,
   onRouteClick,
 }: MapOverlayProps) {
@@ -137,6 +139,27 @@ export default function MapOverlay({
     activeRoutes instanceof Set ? activeRoutes : new Set(activeRoutes ?? [])
   const showPlaceGraphic = scale >= PLACE_GRAPHIC_MIN_SCALE
   const showPlaceName = scale >= PLACE_NAME_MIN_SCALE
+
+  useEffect(() => {
+    if (!onActivatePlace) return
+
+    if (!activePlace) {
+      onActivatePlace(null)
+      return
+    }
+
+    const place = PLACES.find(({ id }) => id === activePlace)
+
+    onActivatePlace(
+      place
+        ? {
+            id: place.id,
+            x: place.cx,
+            y: place.cy,
+          }
+        : null,
+    )
+  }, [activePlace, onActivatePlace])
 
   return (
     <svg
@@ -200,6 +223,7 @@ export default function MapOverlay({
           const hitAreaRadius = Math.max(halfW, halfH, emblemSize / 2) + 48
           const isActive = activePlace === place.id
           const isInteractive = Boolean(onPlaceClick)
+          const shouldShowPlaceName = showPlaceName || isActive
 
           return (
             <g
@@ -231,7 +255,7 @@ export default function MapOverlay({
                     y={emblemCenterY - emblemSize / 2}
                   />
                 )}
-                {showPlaceName && (
+                {shouldShowPlaceName && (
                   <text
                     className="place-label"
                     x={0}

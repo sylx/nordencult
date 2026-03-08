@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import MagBackground from '../../assets/map/map_background.webp'
 import MapStrategy from '../../assets/map/map_strategy_low.webp'
 import MapOverlay, { type PlaceConfig } from './MapOverlay'
@@ -87,6 +87,11 @@ export default function Map() {
   const computeScale = () => (Math.max(800, window.innerWidth) / 7170) * 1.25
   const [scale, setScale] = useState<number>(() => computeScale())
   const [activePlace, setActivePlace] = useState<string>('P002')
+  const activePlacePositionRef = useRef<{
+    id: string
+    x: number
+    y: number
+  } | null>(null)
   const [strategy, setStrategy] = useState<StrategyTransform>(() =>
     clampStrategy(
       { x: 582, y: 6, scale: 0.1 },
@@ -211,6 +216,31 @@ export default function Map() {
     }
   }, [])
 
+  const handleActivatePlace = useCallback(
+    (place: { id: string; x: number; y: number } | null) => {
+      activePlacePositionRef.current = place
+
+      if (!place || place.id !== activePlace) return
+
+      const rect = backgroundRef.current?.getBoundingClientRect()
+      const viewW = rect?.width ?? window.innerWidth
+      const viewH = rect?.height ?? window.innerHeight
+
+      setStrategy((prev) =>
+        clampStrategy(
+          {
+            ...prev,
+            x: viewW / 2 - place.x * prev.scale,
+            y: viewH / 2 - place.y * prev.scale,
+          },
+          viewW,
+          viewH,
+        ),
+      )
+    },
+    [activePlace],
+  )
+
   const handleStrategyPointerDown = (event: React.PointerEvent<HTMLElement>) => {
     event.preventDefault()
 
@@ -260,6 +290,7 @@ export default function Map() {
           activePlace={activePlace}
           places={OVERLAY_PLACES}
           scale={strategy.scale}
+          onActivatePlace={handleActivatePlace}
           onPlaceClick={(placeId) => {
             setActivePlace(placeId)
           }}
