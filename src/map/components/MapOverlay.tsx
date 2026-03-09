@@ -257,7 +257,7 @@ export default function MapOverlay({
                 )}
                 {shouldShowPlaceName && (
                   <text
-                    className="place-label"
+                    className={`place-label${showPlaceName ? ' --small' : ''}`}
                     x={0}
                     y={halfH + graphic.labelOffsetY}
                   >
