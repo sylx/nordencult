@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import MagBackground from '../../assets/map/map_background.webp'
 import MapStrategy from '../../assets/map/map_strategy_low.webp'
-import MapOverlay, { type PlaceConfig } from './MapOverlay'
+import MapOverlay, { type PlaceBelongTo, type PlaceConfig, type PlaceType } from './MapOverlay'
+import { CITY_MAP } from '../../data/city'
+import FACTIONS from '../../data/faction'
 import './Map.css'
 
 // --- Tunable constants ---------------------------------------------------
@@ -28,39 +30,29 @@ interface StrategyTransform {
   scale: number
 }
 
-const OVERLAY_PLACES: Readonly<Record<string, PlaceConfig>> = {
-  P000: { type: 'temple', name: 'ザイオン' },
-  P001: { type: 'town', belongTo: 2, name: 'P001' },
-  P002: { type: 'city', belongTo: 2, name: 'P002' },
-  P003: { type: 'town', belongTo: 2, name: 'P003' },
-  P004: { type: 'town', belongTo: 6,name: 'P004' },
-  P005: { type: 'town', belongTo: 6,name: 'P005' },
-  P006: { type: 'town', belongTo: 1,name: 'P006' },
-  P007: { type: 'town', belongTo: 1,name: 'P007' },
-  P008: { type: 'city', belongTo: 1, name: 'P008' },
-  P009: { type: 'town', belongTo: 4,name: 'P009' },
-  P010: { type: 'town', belongTo: 6,name: 'P010' },
-  P011: { type: 'city', belongTo: 6, name: 'P011' },
-  P012: { type: 'town', belongTo: 7, name: 'P012' },
-  P013: { type: 'town', belongTo: 5, name: 'P013' },
-  P014: { type: 'town', belongTo: 6, name: 'P014' },
-  P015: { type: 'town', belongTo: 6, name: 'P015' },
-  P016: { type: 'town', belongTo: 5, name: 'P016' },
-  P017: { type: 'town', belongTo: 3, name: 'P017' },
-  P018: { type: 'city', belongTo: 3, name: 'P018' },
-  P019: { type: 'town', belongTo: 3, name: 'P019' },
-  P020: { type: 'town', belongTo: 3, name: 'P020' },
-  P021: { type: 'town', belongTo: 5 , name: 'P021' },
-  P022: { type: 'town', belongTo: 4, name: 'P022' },
-  P023: { type: 'metropolice', belongTo: 6, name: 'P023' },
-  P024: { type: 'fortress1', belongTo: 6, name: 'P024' },
-  P025: { type: 'fortress1', belongTo: 6, name: 'P025' },
-  P026: { type: 'city', belongTo: 7, name: 'P026' },
-  P027: { type: 'city', belongTo: 3, name: 'P027' },
-  P028: { type: 'city', belongTo: 5, name: 'P028' },
-  P029: { type: 'fortress2', belongTo: 5, name: 'P029' },
-  P030: { type: 'town', belongTo: 2,name: 'P030' },
+// faction id → emblem番号のマップ（taurus/rosaliaはfaction.tsに未登録のため手動設定）
+const FACTION_EMBLEM: Record<string, PlaceBelongTo> = {
+  ...Object.fromEntries(FACTIONS.map((f) => [f.id, f.emblem as PlaceBelongTo])),
 }
+
+function populationToPlaceType(population: number): PlaceType {
+  if (population >= 15000) return 'metropolice'
+  if (population >= 8000) return 'city'
+  return 'town'
+}
+
+function resolvePlaceType(city: { type: string; image?: string; population: number }): PlaceType {
+  if (city.image) return city.image as PlaceType
+  return populationToPlaceType(city.population)
+}
+
+const OVERLAY_PLACES: Readonly<Record<string, PlaceConfig>> = Object.fromEntries(
+  Object.entries(CITY_MAP).map(([id, city]) => {
+    const placeType = resolvePlaceType(city)
+    const belongTo = city.belongTo ? FACTION_EMBLEM[city.belongTo] : undefined
+    return [id, { type: placeType, belongTo, name: city.name } satisfies PlaceConfig]
+  })
+)
 
 /**
  * Clamp scale and pan position.
@@ -230,7 +222,7 @@ export default function Map() {
         clampStrategy(
           {
             ...prev,
-            x: viewW / 2 - place.x * prev.scale,
+            x: viewW / 2 - place.x * prev.scale + 200 * prev.scale, // 少し右にズラす
             y: viewH / 2 - place.y * prev.scale,
           },
           viewW,
@@ -301,10 +293,6 @@ export default function Map() {
       </div>
       <div className="map-fg-coin" style={{ transform: `scale(${scale * 4})` }}/>
       <div className="map-fg-card" style={{ transform: `scale(${scale * 3.5})` }} />
-      <div className="debug-info">
-        <div>Scale: {strategy.scale.toFixed(2)}</div>
-        <div>Translate: ({strategy.x.toFixed(0)}, {strategy.y.toFixed(0)})</div>
-      </div>
     </div>
   )
 }

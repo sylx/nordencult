@@ -220,7 +220,7 @@ export default function MapOverlay({
           const halfH = (graphic.height * imageScale) / 2
           const emblemCenterX = shouldRenderGraphic ? -Math.min(halfW * 0.85, 150) : 0
           const emblemCenterY = shouldRenderGraphic ? -Math.min(halfH * 0.85, 150) : 0
-          const hitAreaRadius = Math.max(halfW, halfH, emblemSize / 2) + 48
+          const hitAreaRadius = shouldRenderGraphic ? (emblemSize / 2 * imageScale * 3) : emblemSize / 2
           const isActive = activePlace === place.id
           const isInteractive = Boolean(onPlaceClick)
           const shouldShowPlaceName = showPlaceName || isActive
@@ -273,7 +273,7 @@ export default function MapOverlay({
                     onPlaceClick?.(place.id, event)
                   }}
                 >
-                  <circle className="place-hit-area" r={hitAreaRadius} />
+                  <circle className="place-hit-area" r={hitAreaRadius}/>
                 </g>
               )}
             </g>
