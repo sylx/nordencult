@@ -22,6 +22,9 @@
   left: 50%;
   transform: translateX(-50%);
   top: -18px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
 
   .info-window-title-corner {
     width: 34px;
@@ -45,10 +48,16 @@
   }
 }
 
+.info-window.is-dragging {
+  .info-window-title {
+    cursor: grabbing;
+  }
+}
+
 
 .info-window-content {
   position: relative;
-  padding: 20px 40px;
+  margin: 40px 40px 20px 40px;
   color: #333;
 }
 

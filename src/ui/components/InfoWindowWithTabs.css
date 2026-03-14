@@ -1,0 +1,66 @@
+.info-window-with-tabs {
+  .info-window-content {
+    overflow: visible;
+    min-height: 240px;
+  }
+}
+
+.info-window-with-tabs-layout {
+  position: relative;
+  min-height: 200px;
+}
+
+.info-window-with-tabs-tab-list {
+  position: absolute;
+  top: 60px;
+  left: -88px;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.info-window-with-tabs-tab {
+  width: 80px;
+  height: 80px;
+  border: none;
+  background: url("../../assets/ui/tab_inactive.png") no-repeat left top;
+  background-size: contain;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 6px;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease;
+
+  &:hover {
+    transform: translateX(4px);
+    background-image: url("../../assets/ui/tab_active.png");
+  }
+
+  &.is-active {
+    border-color: #6b4c22;
+    transform: translateX(4px);
+    background-image: url("../../assets/ui/tab_active.png")
+  }
+}
+
+.info-window-with-tabs-tab-icon {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  left: -8px;
+}
+
+.info-window-with-tabs-tab-name {
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.info-window-with-tabs-panel {
+  min-height: 200px;
+}
