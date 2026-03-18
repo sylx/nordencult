@@ -1,6 +1,7 @@
 import type { Faction } from "./faction"
 
 export interface City {
+  id: string
   name: string
   nameEn: string
   type: string,
@@ -14,8 +15,9 @@ export interface City {
   belongTo?: Faction['id']
 }
 
-export const CITY_MAP: Record<string, City> = {
-  "P000": {
+export const CITY_LIST: City[] = [
+  {
+    "id": "P000",
     "name": "灰都 アシュダール",
     "nameEn": "Ashdal",
     "type": "pope_city",
@@ -26,7 +28,8 @@ export const CITY_MAP: Record<string, City> = {
     "market": 400,
     "military": 0,
   },
-  "P001": {
+  {
+    "id": "P001",
     "name": "カルデア",
     "nameEn": "Caldea",
     "type": "port_city",
@@ -37,7 +40,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 250,
     "belongTo": "taurus"
   },
-  "P002": {
+  {
+    "id": "P002",
     "name": "ハルヴァン",
     "nameEn": "Halvan",
     "type": "farm_city",
@@ -48,7 +52,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 160,
     "belongTo": "taurus"
   },
-  "P003": {
+  {
+    "id": "P003",
     "name": "ダルム",
     "nameEn": "Dalm",
     "type": "farm_city",
@@ -59,7 +64,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 140,
     "belongTo": "taurus"
   },
-  "P004": {
+  {
+    "id": "P004",
     "name": "アンバリア",
     "nameEn": "Ambaria",
     "type": "farm_city",
@@ -70,7 +76,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 220,
     "belongTo": "leonis"
   },
-  "P005": {
+  {
+    "id": "P005",
     "name": "ヴェルスタ",
     "nameEn": "Versta",
     "type": "farm_city",
@@ -81,7 +88,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 220,
     "belongTo": "leonis"
   },
-  "P006": {
+  {
+    "id": "P006",
     "name": "サルビア",
     "nameEn": "Salvia",
     "type": "farm_city",
@@ -92,7 +100,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 220,
     "belongTo": "rosalia"
   },
-  "P007": {
+  {
+    "id": "P007",
     "name": "アクアルム",
     "nameEn": "Aquarum",
     "type": "port_city",
@@ -103,7 +112,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 220,
     "belongTo": "rosalia"
   },
-  "P008": {
+  {
+    "id": "P008",
     "name": "ティルナ",
     "nameEn": "Tirna",
     "type": "ruin_city",
@@ -115,7 +125,8 @@ export const CITY_MAP: Record<string, City> = {
     "special": "ゴーレム遺跡",
     "belongTo": "rosalia"
   },
-  "P009": {
+  {
+    "id": "P009",
     "name": "デルタ・ポルト",
     "nameEn": "Delta Porto",
     "type": "port_city",
@@ -126,7 +137,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 280,
     "belongTo": "aqua"
   },
-  "P010": {
+  {
+    "id": "P010",
     "name": "ソルナ",
     "nameEn": "Solna",
     "type": "farm_city",
@@ -137,7 +149,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 220,
     "belongTo": "leonis"
   },
-  "P011": {
+  {
+    "id": "P011",
     "name": "コルネリア",
     "nameEn": "Cornelia",
     "type": "trade_city",
@@ -148,7 +161,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 220,
     "belongTo": "leonis"
   },
-  "P012": {
+  {
+    "id": "P012",
     "name": "フルーエン",
     "nameEn": "Fluen",
     "type": "port_city",
@@ -159,7 +173,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 220,
     "belongTo": "carta"
   },
-  "P013": {
+  {
+    "id": "P013",
     "name": "エルドラン",
     "nameEn": "Eldoran",
     "type": "military_city",
@@ -170,7 +185,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 460,
     "belongTo": "valhardt"
   },
-  "P023": {
+  {
+    "id": "P023",
     "name": "メディア",
     "nameEn": "Media",
     "type": "trade_city",
@@ -181,7 +197,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 280,
     "belongTo": "leonis"
   },
-  "P015": {
+  {
+    "id": "P015",
     "name": "ブルムハーゲン",
     "nameEn": "Blumhagen",
     "type": "farm_city",
@@ -192,7 +209,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 140,
     "belongTo": "leonis"
   },
-  "P016": {
+  {
+    "id": "P016",
     "name": "アルガルデ",
     "nameEn": "Algarde",
     "type": "frontier_city",
@@ -203,7 +221,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 300,
     "belongTo": "valhardt"
   },
-  "P017": {
+  {
+    "id": "P017",
     "name": "オスタリア",
     "nameEn": "Ostaria",
     "type": "trade_city",
@@ -214,7 +233,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 220,
     "belongTo": "dracken"
   },
-  "P018": {
+  {
+    "id": "P018",
     "name": "セルニア",
     "nameEn": "Sernia",
     "type": "ruin_city",
@@ -225,7 +245,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 140,
     "belongTo": "dracken"
   },
-  "P019": {
+  {
+    "id": "P019",
     "name": "ノルデン",
     "nameEn": "Norden",
     "type": "frontier_city",
@@ -237,7 +258,8 @@ export const CITY_MAP: Record<string, City> = {
     "special": "未知領域への入口",
     "belongTo": "dracken"
   },
-  "P020": {
+  {
+    "id": "P020",
     "name": "ラドゥン",
     "nameEn": "Radun",
     "type": "military_city",
@@ -248,7 +270,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 460,
     "belongTo": "dracken"
   },
-  "P021": {
+  {
+    "id": "P021",
     "name": "コーカサ",
     "nameEn": "Caucasa",
     "type": "military_city",
@@ -259,7 +282,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 560,
     "belongTo": "valhardt"
   },
-  "P022": {
+  {
+    "id": "P022",
     "name": "マルカヴァ",
     "nameEn": "Marcava",
     "type": "port_city",
@@ -270,7 +294,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 280,
     "belongTo": "aqua"
   },
-  "P014": {
+  {
+    "id": "P014",
     "name": "イグニス",
     "nameEn": "Ignis",
     "type": "ruin_city",
@@ -282,7 +307,8 @@ export const CITY_MAP: Record<string, City> = {
     "special": "旧帝国鍛冶遺跡",
     "belongTo": "leonis" 
   },
-  "P024": {
+  {
+    "id": "P024",
     "name": "ガルドハイム",
     "nameEn": "Gardheim",
     "type": "military_city",
@@ -295,7 +321,8 @@ export const CITY_MAP: Record<string, City> = {
     "special": "誓約騎士団の本拠地",
     "belongTo": "leonis"
   },
-  "P025": {
+  {
+    "id": "P025",
     "name": "ヴェサンタ",
     "nameEn": "Vesanta",
     "type": "military_city",
@@ -307,7 +334,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 560,
     "belongTo": "leonis"
   },
-  "P026": {
+  {
+    "id": "P026",
     "name": "シルヴァ",
     "nameEn": "Silva",
     "type": "frontier_city",
@@ -318,7 +346,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 300,
     "belongTo": "carta"
   },
-  "P027": {
+  {
+    "id": "P027",
     "name": "アルカナム",
     "nameEn": "Arcanum",
     "type": "ruin_city",
@@ -330,7 +359,8 @@ export const CITY_MAP: Record<string, City> = {
     "special": "魔法師ギルド本部",
     "belongTo": "dracken"
   },
-  "P028": {
+  {
+    "id": "P028",
     "name": "レンハウス",
     "nameEn": "Renhaus",
     "type": "frontier_city",
@@ -341,7 +371,8 @@ export const CITY_MAP: Record<string, City> = {
     "military": 300,
     "belongTo": "valhardt"
   },
-  "P029": {
+  {
+    "id": "P029",
     "name": "ヘクサリア",
     "nameEn": "Hexalia",
     "type": "ruin_city",
@@ -354,7 +385,8 @@ export const CITY_MAP: Record<string, City> = {
     "special": "禁忌魔法の発生源",
     "belongTo": "valhardt"
   },
-  "P030": {
+  {
+    "id": "P030",
     "name": "タルガル",
     "nameEn": "Talgar",
     "type": "military_city",
@@ -365,6 +397,10 @@ export const CITY_MAP: Record<string, City> = {
     "military": 460,
     "belongTo": "taurus"
   }
-}
 
-export const CITY_LIST = Object.entries(CITY_MAP).map(([id, city]) => ({ id, ...city }))
+]
+
+export const CITY_MAP: Record<string, City> = CITY_LIST.reduce((acc, city) => {
+  acc[city.id] = city
+  return acc
+}, {} as Record<string, City>)
