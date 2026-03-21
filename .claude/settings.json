@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc:*)",
-      "Bash(uv run python -c \":*)"
+      "Bash(uv run python -c \":*)",
+      "Bash(pip list:*)",
+      "Bash(python -c \"import streamlit_image_coordinates\")",
+      "Bash(python -c \"import streamlit_drawable_canvas\")",
+      "Bash(python3 -c \"import streamlit_image_coordinates; print\\(''ok''\\)\")",
+      "Bash(python3 -c \"import streamlit_drawable_canvas; print\\(''ok''\\)\")",
+      "Read(//home/sylx/.local/**)",
+      "Bash(uv run:*)",
+      "Bash(uv add:*)"
     ]
   }
 }
