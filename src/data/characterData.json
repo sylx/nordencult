@@ -1,0 +1,52 @@
+[
+  {
+    "id": "001",
+    "name": "キャラクター001",
+    "type": "knight",
+    "imageInfo": {
+      "sprite": {
+        "url": "character.webp",
+        "x": 0,
+        "y": 0
+      },
+      "faceRect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 49.99680000000001,
+        "height": 49.99680000000001
+      }
+    },
+    "politics": 50,
+    "intelligence": 50,
+    "leadership": 50,
+    "charm": 50,
+    "belongTo": null,
+    "belongToFaction": null,
+    "bloodRelations": null
+  },
+  {
+    "id": "002",
+    "name": "キャラクター002",
+    "type": "knight",
+    "imageInfo": {
+      "sprite": {
+        "url": "character.webp",
+        "x": 537,
+        "y": 0
+      },
+      "faceRect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 49.99680000000001,
+        "height": 49.99680000000001
+      }
+    },
+    "politics": 50,
+    "intelligence": 50,
+    "leadership": 50,
+    "charm": 50,
+    "belongTo": null,
+    "belongToFaction": null,
+    "bloodRelations": null
+  }
+]

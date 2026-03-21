@@ -1,0 +1,77 @@
+[
+  {
+    "id": "001",
+    "name": "キャラクター001",
+    "type": "magician",
+    "imageInfo": {
+      "sprite": {
+        "url": "001.webp",
+        "x": 0,
+        "y": 0
+      },
+      "faceRect": {
+        "x": 271.36,
+        "y": 81.92,
+        "width": 614.4,
+        "height": 614.4
+      }
+    },
+    "politics": 90,
+    "intelligence": 95,
+    "leadership": 73,
+    "charm": 90,
+    "belongTo": "P000",
+    "belongToFaction": null,
+    "bloodRelations": null
+  },
+  {
+    "id": "002",
+    "name": "キャラクター002",
+    "type": "magician",
+    "imageInfo": {
+      "sprite": {
+        "url": "001.webp",
+        "x": 1,
+        "y": 0
+      },
+      "faceRect": {
+        "x": 250.88,
+        "y": 81.92,
+        "width": 512.0,
+        "height": 512.0
+      }
+    },
+    "politics": 83,
+    "intelligence": 77,
+    "leadership": 74,
+    "charm": 71,
+    "belongTo": null,
+    "belongToFaction": "valhardt",
+    "bloodRelations": null
+  },
+  {
+    "id": "003",
+    "name": "キャラクター003",
+    "type": "magician",
+    "imageInfo": {
+      "sprite": {
+        "url": "001.webp",
+        "x": 2,
+        "y": 0
+      },
+      "faceRect": {
+        "x": 327.68,
+        "y": 133.12,
+        "width": 512.0,
+        "height": 512.0
+      }
+    },
+    "politics": 50,
+    "intelligence": 50,
+    "leadership": 50,
+    "charm": 50,
+    "belongTo": null,
+    "belongToFaction": null,
+    "bloodRelations": null
+  }
+]
