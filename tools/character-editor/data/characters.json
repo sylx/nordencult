@@ -36,7 +36,7 @@
       },
       "faceRect": {
         "x": 250.88,
-        "y": 81.92,
+        "y": 66.56,
         "width": 512.0,
         "height": 512.0
       }
@@ -60,16 +60,91 @@
         "y": 0
       },
       "faceRect": {
-        "x": 327.68,
-        "y": 133.12,
-        "width": 512.0,
-        "height": 512.0
+        "x": 343.04,
+        "y": 143.36,
+        "width": 460.8,
+        "height": 460.8
       }
     },
-    "politics": 50,
-    "intelligence": 50,
-    "leadership": 50,
-    "charm": 50,
+    "politics": 64,
+    "intelligence": 84,
+    "leadership": 38,
+    "charm": 86,
+    "belongTo": null,
+    "belongToFaction": "rosalia",
+    "bloodRelations": null
+  },
+  {
+    "id": "004",
+    "name": "キャラクター004",
+    "type": "magician",
+    "imageInfo": {
+      "sprite": {
+        "url": "001.webp",
+        "x": 3,
+        "y": 0
+      },
+      "faceRect": {
+        "x": 256.0,
+        "y": 194.56,
+        "width": 460.8,
+        "height": 460.8
+      }
+    },
+    "politics": 45,
+    "intelligence": 82,
+    "leadership": 61,
+    "charm": 63,
+    "belongTo": null,
+    "belongToFaction": "aqua",
+    "bloodRelations": null
+  },
+  {
+    "id": "005",
+    "name": "キャラクター005",
+    "type": "magician",
+    "imageInfo": {
+      "sprite": {
+        "url": "001.webp",
+        "x": 4,
+        "y": 0
+      },
+      "faceRect": {
+        "x": 286.72,
+        "y": 189.44,
+        "width": 460.8,
+        "height": 460.8
+      }
+    },
+    "politics": 36,
+    "intelligence": 87,
+    "leadership": 67,
+    "charm": 87,
+    "belongTo": null,
+    "belongToFaction": "taurus",
+    "bloodRelations": null
+  },
+  {
+    "id": "006",
+    "name": "キャラクター006",
+    "type": "knight",
+    "imageInfo": {
+      "sprite": {
+        "url": "001.webp",
+        "x": 0,
+        "y": 1
+      },
+      "faceRect": {
+        "x": 378.88,
+        "y": 61.44,
+        "width": 460.8,
+        "height": 460.8
+      }
+    },
+    "politics": 28,
+    "intelligence": 42,
+    "leadership": 84,
+    "charm": 54,
     "belongTo": null,
     "belongToFaction": null,
     "bloodRelations": null

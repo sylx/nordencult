@@ -109,6 +109,8 @@ def render() -> None:
         st.subheader("顔エリア (faceRect) 設定")
 
         if selected_sheet_path and selected_sheet_path.exists():
+            from streamlit_image_coordinates import streamlit_image_coordinates
+
             cur_x = st.session_state.draft_sprite_x
             cur_y = st.session_state.draft_sprite_y
 
@@ -122,32 +124,76 @@ def render() -> None:
             current_face_rect = st.session_state.get("draft_face_rect") or {}
             fr_x = int(round(current_face_rect.get("x", 0) / SCALE))
             fr_y = int(round(current_face_rect.get("y", 0) / SCALE))
-            fr_size = max(1, int(round(current_face_rect.get("width", 50) / SCALE)))
+            stored_w = current_face_rect.get("width", 0)
+            fr_size = int(round(stored_w / SCALE)) if stored_w else 100
+            fr_size = max(1, fr_size)
 
             face_key = f"{editing_id}_{cur_x}_{cur_y}"
-            slider_x = st.slider("X", 0, CANVAS_DISPLAY_W - 1, min(fr_x, CANVAS_DISPLAY_W - 1), key=f"fr_x_{face_key}")
-            slider_y = st.slider("Y", 0, CANVAS_DISPLAY_H - 1, min(fr_y, CANVAS_DISPLAY_H - 1), key=f"fr_y_{face_key}")
-            max_size = min(CANVAS_DISPLAY_W - slider_x, CANVAS_DISPLAY_H - slider_y)
-            slider_size = st.slider("サイズ", 1, max(1, max_size), max(1, min(fr_size, max_size)), key=f"fr_size_{face_key}")
+            sk_x = f"fr_x_{face_key}"
+            sk_y = f"fr_y_{face_key}"
+            sk_size = f"fr_size_{face_key}"
+            click_key = f"img_click_{face_key}"
+            last_click_key = f"last_click_{face_key}"
+
+            # Initialize slider session state from stored face_rect on first render
+            if sk_x not in st.session_state:
+                st.session_state[sk_x] = min(max(0, fr_x), CANVAS_DISPLAY_W - 1)
+            if sk_y not in st.session_state:
+                st.session_state[sk_y] = min(max(0, fr_y), CANVAS_DISPLAY_H - 1)
+            if sk_size not in st.session_state:
+                st.session_state[sk_size] = max(1, min(fr_size, CANVAS_DISPLAY_W))
+
+            # Process click BEFORE sliders are instantiated (avoids "cannot modify after instantiation" error)
+            raw_coords = st.session_state.get(click_key)
+            if raw_coords is not None and raw_coords != st.session_state.get(last_click_key):
+                st.session_state[last_click_key] = raw_coords
+                cx, cy = raw_coords["x"], raw_coords["y"]
+                cur_size = st.session_state[sk_size]
+                st.session_state[sk_x] = max(0, min(cx - cur_size // 2, CANVAS_DISPLAY_W - 1))
+                st.session_state[sk_y] = max(0, min(cy - cur_size // 2, CANVAS_DISPLAY_H - 1))
+
+            # Size slider has a fixed max so it never gets auto-clamped by Streamlit
+            # when X/Y position changes. Rectangle is clipped to image bounds when drawing.
+            FACE_SIZE_MAX = min(CANVAS_DISPLAY_W, CANVAS_DISPLAY_H)
+            slider_x = st.slider("X", 0, CANVAS_DISPLAY_W - 1, key=sk_x)
+            slider_y = st.slider("Y", 0, CANVAS_DISPLAY_H - 1, key=sk_y)
+            slider_size = st.slider("サイズ", 1, FACE_SIZE_MAX, key=sk_size)
+
+            # Clamp rect to image bounds for stored values
+            eff_w = min(slider_size, CANVAS_DISPLAY_W - slider_x)
+            eff_h = min(slider_size, CANVAS_DISPLAY_H - slider_y)
 
             st.session_state.draft_face_rect = {
                 "x": slider_x * SCALE,
                 "y": slider_y * SCALE,
-                "width": slider_size * SCALE,
-                "height": slider_size * SCALE,
+                "width": eff_w * SCALE,
+                "height": eff_h * SCALE,
             }
 
-            # Draw preview with square overlay
+            # Build composite image (character + rectangle overlay)
+            x2 = min(slider_x + slider_size, CANVAS_DISPLAY_W)
+            y2 = min(slider_y + slider_size, CANVAS_DISPLAY_H)
             preview = cell_img.convert("RGBA")
             overlay = Image.new("RGBA", preview.size, (0, 0, 0, 0))
             draw = ImageDraw.Draw(overlay)
             draw.rectangle(
-                [slider_x, slider_y, slider_x + slider_size - 1, slider_y + slider_size - 1],
+                [slider_x, slider_y, x2 - 1, y2 - 1],
                 fill=(255, 165, 0, 76),
                 outline=(255, 68, 0, 255),
                 width=2,
             )
-            st.image(Image.alpha_composite(preview, overlay), width=CANVAS_DISPLAY_W)
+            composite = Image.alpha_composite(preview, overlay)
+
+            # Clickable image: clicking moves rect center to clicked point
+            st.caption("クリックで顔エリアの中心を移動")
+            streamlit_image_coordinates(composite, key=click_key, width=CANVAS_DISPLAY_W)
+
+            # Face crop preview
+            crop_box = [slider_x, slider_y, x2, y2]
+            face_crop = cell_img.crop(crop_box)
+            if face_crop.width > 0 and face_crop.height > 0:
+                st.caption("顔プレビュー（80×80）")
+                st.image(face_crop.resize((80, 80), Image.LANCZOS), width=80)
 
             face = st.session_state.draft_face_rect
             st.caption(
