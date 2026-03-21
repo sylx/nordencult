@@ -10,19 +10,21 @@
         "y": 0
       },
       "faceRect": {
-        "x": 271.36,
-        "y": 81.92,
-        "width": 614.4,
-        "height": 614.4
+        "x": 253,
+        "y": 160.84000000000003,
+        "width": 518,
+        "height": 518
       }
     },
-    "politics": 90,
+    "politics": 97,
     "intelligence": 95,
     "leadership": 73,
     "charm": 90,
     "belongTo": "P000",
-    "belongToFaction": null,
-    "bloodRelations": null
+    "belongToFaction": "sede",
+    "bloodRelations": null,
+    "strength": 9,
+    "gender": "female"
   },
   {
     "id": "002",
@@ -37,8 +39,8 @@
       "faceRect": {
         "x": 250.88,
         "y": 66.56,
-        "width": 512.0,
-        "height": 512.0
+        "width": 512,
+        "height": 512
       }
     },
     "politics": 83,
@@ -47,7 +49,9 @@
     "charm": 71,
     "belongTo": null,
     "belongToFaction": "valhardt",
-    "bloodRelations": null
+    "bloodRelations": null,
+    "strength": 25,
+    "gender": "female"
   },
   {
     "id": "003",
@@ -72,7 +76,9 @@
     "charm": 86,
     "belongTo": null,
     "belongToFaction": "rosalia",
-    "bloodRelations": null
+    "bloodRelations": null,
+    "gender": "female",
+    "strength": 14
   },
   {
     "id": "004",
@@ -85,7 +91,7 @@
         "y": 0
       },
       "faceRect": {
-        "x": 256.0,
+        "x": 256,
         "y": 194.56,
         "width": 460.8,
         "height": 460.8
@@ -97,7 +103,8 @@
     "charm": 63,
     "belongTo": null,
     "belongToFaction": "aqua",
-    "bloodRelations": null
+    "bloodRelations": null,
+    "strength": 33
   },
   {
     "id": "005",
@@ -122,7 +129,9 @@
     "charm": 87,
     "belongTo": null,
     "belongToFaction": "taurus",
-    "bloodRelations": null
+    "bloodRelations": null,
+    "strength": 38,
+    "gender": "female"
   },
   {
     "id": "006",
@@ -143,10 +152,12 @@
     },
     "politics": 28,
     "intelligence": 42,
-    "leadership": 84,
+    "leadership": 73,
     "charm": 54,
     "belongTo": null,
     "belongToFaction": null,
-    "bloodRelations": null
+    "bloodRelations": null,
+    "gender": "female",
+    "strength": 81
   }
 ]

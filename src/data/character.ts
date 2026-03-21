@@ -50,6 +50,10 @@ export interface Character {
   //血縁関係
   bloodRelations?: BloodRelation[]
 
+
+  // 略歴
+  biography?: string
+
   //所属都市
   belongTo?: City['id'] //P000-P030
   //所属派閥

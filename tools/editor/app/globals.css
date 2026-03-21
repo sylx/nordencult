@@ -1,0 +1,3 @@
+@import "tailwindcss";
+@import "../node_modules/daisyui/daisyui.css" layer(components);
+@import "../node_modules/daisyui/themes.css" layer(components);
