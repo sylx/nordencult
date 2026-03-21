@@ -1,7 +1,11 @@
+import type { Character } from "./character"
+
 export interface Faction {
   id: string
   name: string
   emblem: number,
+  // 当主
+  // patriarch: Character
   patriarchLabel: string
 }
 
@@ -47,5 +51,11 @@ export default [
     name: "タウルス自由都市連合",
     emblem: 2,
     patriarchLabel: "議長"
+  },
+  {
+    id: "sede",
+    name: "法王府",
+    emblem: 9,
+    patriarchLabel: "法王"
   }
 ] satisfies Faction[]

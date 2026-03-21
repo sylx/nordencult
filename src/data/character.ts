@@ -38,10 +38,11 @@ export interface Character {
   gender?: "male" | "female"
   type: CharacterType
   imageInfo: ImageInfo
-  //能力値 政治 知力 統率 魅力（0-100）
+  //能力値 政治 知力 統率 武力 魅力（0-100）
   politics: number
   intelligence: number
   leadership: number
+  strength: number
   charm: number
 
   //傭兵情報

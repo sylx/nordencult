@@ -27,6 +27,7 @@ export const CITY_LIST: City[] = [
     "agriculture": 80,
     "market": 400,
     "military": 0,
+    "belongTo": "sede"
   },
   {
     "id": "P001",
