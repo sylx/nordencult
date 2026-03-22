@@ -15,7 +15,7 @@ export const CHARACTER_TYPE_LABELS: Record<string, string> = {
   hunter: "狩人",
 };
 
-export const BLOOD_RELATION_TYPES = ["father", "mother", "son", "daughter", "brother", "sister"] as const;
+export const RELATION_TYPES = ["father", "mother", "son", "daughter", "brother", "sister", "married", "best_friend"] as const;
 
 export const FACTIONS = [
   { id: "valhardt", name: "ヴァルハルト家" },

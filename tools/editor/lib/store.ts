@@ -49,6 +49,6 @@ export function createDefaultCharacter(id: string): Character {
     charm: 50,
     belongTo: null,
     belongToFaction: null,
-    bloodRelations: null,
+    relations: null,
   };
 }

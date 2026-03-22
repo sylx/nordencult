@@ -21,8 +21,8 @@ export interface MercenaryInfo {
   fee: number;
 }
 
-export interface BloodRelation {
-  relation: "father" | "mother" | "son" | "daughter" | "brother" | "sister";
+export interface Relation {
+  relation: "father" | "mother" | "son" | "daughter" | "brother" | "sister" | "married" | "best_friend";
   characterId: string;
 }
 
@@ -38,8 +38,10 @@ export interface Character {
   strength: number;
   charm: number;
   mercenaryInfo?: MercenaryInfo | null;
-  bloodRelations?: BloodRelation[] | null;
+  relations?: Relation[] | null;
   biography?: string;
   belongTo?: string | null;
+  isLord?: boolean;
   belongToFaction?: string | null;
+  isPatriarch?: boolean;
 }

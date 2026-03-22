@@ -27,8 +27,8 @@ interface MercenaryInfo {
 }
 
 // 血縁関係
-interface BloodRelation {
-  relation: "father" | "mother" | "son" | "daughter" | "brother" | "sister"
+interface Relation {
+  relation: "father" | "mother" | "son" | "daughter" | "brother" | "sister" | "married" | "best_friend"
   characterId: Character['id']
 }
 
@@ -48,7 +48,7 @@ export interface Character {
   //傭兵情報
   mercenaryInfo?: MercenaryInfo
   //血縁関係
-  bloodRelations?: BloodRelation[]
+  relations?: Relation[]
 
 
   // 略歴
@@ -56,8 +56,12 @@ export interface Character {
 
   //所属都市
   belongTo?: City['id'] //P000-P030
+  // 領主か？
+  isLord?: boolean
   //所属派閥
   belongToFaction?: Faction['id']
+  // 当主か？
+  isPatriarch?: boolean
 }
 
 export const CHARACTER_LIST: Character[] = CharacterData as Character[]

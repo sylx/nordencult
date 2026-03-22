@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useRef, useCallback, use } from "react";
 import Link from "next/link";
-import type { Character, BloodRelation } from "@/lib/types";
+import type { Character, Relation } from "@/lib/types";
 import {
   CHARACTER_TYPES,
   CHARACTER_TYPE_LABELS,
   FACTIONS,
   CITIES,
-  BLOOD_RELATION_TYPES,
+  RELATION_TYPES,
   SPRITE_COLS,
   SPRITE_ROWS,
   CELL_W,
@@ -276,7 +276,7 @@ export default function CharacterEditorPage({
     );
   }
 
-  const bloodRelations = char.bloodRelations || [];
+  const relations = char.relations || [];
 
   return (
     <div className="container mx-auto p-4 max-w-6xl">
@@ -464,6 +464,17 @@ export default function CharacterEditorPage({
                     </option>
                   ))}
                 </select>
+                <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-sm"
+                    checked={!!char.isLord}
+                    onChange={(e) =>
+                      updateChar({ isLord: e.target.checked || undefined })
+                    }
+                  />
+                  <span className="text-xs">領主</span>
+                </label>
               </div>
               <div>
                 <label className="label text-xs">所属派閥</label>
@@ -481,6 +492,17 @@ export default function CharacterEditorPage({
                     </option>
                   ))}
                 </select>
+                <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-sm"
+                    checked={!!char.isPatriarch}
+                    onChange={(e) =>
+                      updateChar({ isPatriarch: e.target.checked || undefined })
+                    }
+                  />
+                  <span className="text-xs">当主</span>
+                </label>
               </div>
             </div>
           </div>
@@ -540,22 +562,22 @@ export default function CharacterEditorPage({
           </div>
 
           <div className="card bg-base-200 p-4">
-            <h2 className="font-semibold mb-3">血縁関係</h2>
-            {bloodRelations.map((rel, i) => (
+            <h2 className="font-semibold mb-3">関係</h2>
+            {relations.map((rel, i) => (
               <div key={i} className="flex items-center gap-2 mb-2">
                 <select
                   className="select select-bordered select-xs"
                   value={rel.relation}
                   onChange={(e) => {
-                    const newRels = [...bloodRelations];
+                    const newRels = [...relations];
                     newRels[i] = {
                       ...newRels[i],
-                      relation: e.target.value as BloodRelation["relation"],
+                      relation: e.target.value as Relation["relation"],
                     };
-                    updateChar({ bloodRelations: newRels });
+                    updateChar({ relations: newRels });
                   }}
                 >
-                  {BLOOD_RELATION_TYPES.map((r) => (
+                  {RELATION_TYPES.map((r) => (
                     <option key={r} value={r}>
                       {r}
                     </option>
@@ -565,9 +587,9 @@ export default function CharacterEditorPage({
                   className="select select-bordered select-xs flex-1"
                   value={rel.characterId}
                   onChange={(e) => {
-                    const newRels = [...bloodRelations];
+                    const newRels = [...relations];
                     newRels[i] = { ...newRels[i], characterId: e.target.value };
-                    updateChar({ bloodRelations: newRels });
+                    updateChar({ relations: newRels });
                   }}
                 >
                   <option value="">-- キャラ選択 --</option>
@@ -583,9 +605,9 @@ export default function CharacterEditorPage({
                   className="btn btn-xs btn-error btn-outline"
                   type="button"
                   onClick={() => {
-                    const newRels = bloodRelations.filter((_, j) => j !== i);
+                    const newRels = relations.filter((_, j) => j !== i);
                     updateChar({
-                      bloodRelations: newRels.length > 0 ? newRels : null,
+                      relations: newRels.length > 0 ? newRels : null,
                     });
                   }}
                 >
@@ -598,8 +620,8 @@ export default function CharacterEditorPage({
               type="button"
               onClick={() =>
                 updateChar({
-                  bloodRelations: [
-                    ...bloodRelations,
+                  relations: [
+                    ...relations,
                     { relation: "father", characterId: "" },
                   ],
                 })
