@@ -42,6 +42,7 @@ export interface MapOverlayProps {
   scale?: number
   className?: string
   style?: CSSProperties
+  showP000Route?: boolean
   onActivatePlace?: (place: { id: string; x: number; y: number } | null) => void
   onPlaceClick?: (placeId: string, event: ReactMouseEvent<SVGGElement>) => void
   onRouteClick?: (routeId: string, event: ReactMouseEvent<SVGPathElement>) => void
@@ -131,6 +132,7 @@ export default function MapOverlay({
   scale = 1,
   className,
   style,
+  showP000Route = false,
   onActivatePlace,
   onPlaceClick,
   onRouteClick,
@@ -139,6 +141,7 @@ export default function MapOverlay({
     activeRoutes instanceof Set ? activeRoutes : new Set(activeRoutes ?? [])
   const showPlaceGraphic = scale >= PLACE_GRAPHIC_MIN_SCALE
   const showPlaceName = scale >= PLACE_NAME_MIN_SCALE
+  const shownRoute = showP000Route ? ROUTES : ROUTES.filter(({ id }) => !id.includes('P000'))
 
   useEffect(() => {
     if (!onActivatePlace) return
@@ -186,7 +189,7 @@ export default function MapOverlay({
       </defs>
 
       <g id="roads">
-        {ROUTES.map(({ id, d }) => {
+        {shownRoute.map(({ id, d }) => {
           const isInteractive = Boolean(onRouteClick)
 
           return (

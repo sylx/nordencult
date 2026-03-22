@@ -223,7 +223,7 @@ export const CITY_LIST: City[] = [
     "belongTo": "valhardt"
   },
   {
-    "id": "P017",
+    "id": "P027",
     "name": "オスタリア",
     "nameEn": "Ostaria",
     "type": "trade_city",
@@ -348,7 +348,7 @@ export const CITY_LIST: City[] = [
     "belongTo": "carta"
   },
   {
-    "id": "P027",
+    "id": "P017",
     "name": "アルカナム",
     "nameEn": "Arcanum",
     "type": "ruin_city",
