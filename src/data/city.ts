@@ -63,7 +63,7 @@ export const CITY_LIST: City[] = [
     "agriculture": 560,
     "market": 160,
     "military": 140,
-    "belongTo": "taurus"
+    "belongTo": "leonis"
   },
   {
     "id": "P004",
@@ -184,7 +184,7 @@ export const CITY_LIST: City[] = [
     "agriculture": 220,
     "market": 240,
     "military": 460,
-    "belongTo": "valhardt"
+    "belongTo": "leonis"
   },
   {
     "id": "P023",
@@ -244,7 +244,7 @@ export const CITY_LIST: City[] = [
     "agriculture": 140,
     "market": 180,
     "military": 140,
-    "belongTo": "dracken"
+    "belongTo": "leonis"
   },
   {
     "id": "P019",
