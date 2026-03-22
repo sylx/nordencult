@@ -13,7 +13,10 @@ interface ExportInfo {
 interface ExportResult {
   ok: boolean;
   jsonPath: string;
+  webpPath: string;
   characterCount: number;
+  webpSize: string;
+  imageSize: string;
 }
 
 export default function ExportPage() {
@@ -96,7 +99,13 @@ export default function ExportPage() {
               <div>
                 <p>エクスポート完了</p>
                 <p className="text-sm opacity-80">
-                  {result.characterCount} キャラクターを出力しました → {result.jsonPath}
+                  {result.characterCount} キャラクター出力
+                </p>
+                <p className="text-sm opacity-80">
+                  WebP: {result.webpSize} ({result.imageSize}) → {result.webpPath}
+                </p>
+                <p className="text-sm opacity-80">
+                  JSON → {result.jsonPath}
                 </p>
               </div>
             </div>
