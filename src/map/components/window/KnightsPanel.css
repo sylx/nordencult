@@ -21,8 +21,8 @@
 }
 
 .knights-panel-face {
-  width: 48px;
-  height: 48px;
+  width: 96px;
+  height: 96px;
   border-radius: 4px;
   overflow: hidden;
   flex-shrink: 0;

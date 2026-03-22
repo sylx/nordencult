@@ -107,7 +107,7 @@ export default function CityInfoPanel({ city, lord }: { city: City; lord?: Chara
           </div>
         </div>
         <div className="spacer" />
-        <div className="map-window-city-graphic">
+        <div className={`map-window-city-graphic ${placeType}`}>
           <img src={PLACE_IMAGES[placeType]} alt={city.name} className="map-window-city-graphic-img" />
         </div>
         <div className="map-window-city-stats">
