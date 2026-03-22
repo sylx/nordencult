@@ -1,0 +1,138 @@
+.map-window-no-city {
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  padding: 40px 0;
+}
+
+.map-window-city-info {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  position: absolute;
+  inset: 0;
+}
+
+.map-window-city-header {
+  width: 250px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+  padding-bottom: 8px;
+}
+
+.map-window-city-name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #2a1a0a;
+}
+
+.map-window-city-type {
+  font-size: 13px;
+  color: #8a7050;
+}
+
+/* 領主セクション */
+.map-window-lord {
+  position: absolute;
+  top: -20px;
+  right: -24px;
+}
+
+.map-window-lord-image {
+  width: 256px;
+  overflow: hidden;
+  
+}
+
+.map-window-city-description {
+  display: grid;
+  grid-template-rows: auto 10px auto auto 1fr;
+  gap: 12px;
+}
+
+/* 基礎情報 */
+.map-window-city-basements {
+  width: 250px;
+  font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ステータス */
+.map-window-city-stats {
+  position: relative;
+  left: -10px;
+  top: 0;
+  width: 300px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 110;
+}
+
+.map-window-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-window-stat-label {
+  width: 36px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #8a7050;
+  font-weight: 600;
+}
+
+.map-window-stat-value {
+  font-size: 13px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.map-window-stat-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.map-window-stat-bar-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #b08840, #d4a84a);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.map-window-stat-number {
+  font-size: 12px;
+  color: #666;
+  min-width: 30px;
+  text-align: right;
+}
+
+/* タグ */
+.map-window-city-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.map-window-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  color: #666;
+}

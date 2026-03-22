@@ -1,0 +1,15 @@
+.character-image {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.character-image-inner {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+}
+
+.character-image--face {
+  border-radius: 50%;
+}

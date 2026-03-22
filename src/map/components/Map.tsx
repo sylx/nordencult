@@ -75,10 +75,20 @@ function clampStrategy(
   return { x: viewW / 2 - cx * scale, y: viewH / 2 - cy * scale, scale }
 }
 
-export default function Map() {
+export interface MapProps {
+  activePlace?: string
+  onActivePlaceChange?: (placeId: string) => void
+}
+
+export default function Map({ activePlace: activePlaceProp, onActivePlaceChange }: MapProps = {}) {
   const computeScale = () => (Math.max(800, window.innerWidth) / 7170) * 1.25
   const [scale, setScale] = useState<number>(() => computeScale())
-  const [activePlace, setActivePlace] = useState<string>('P002')
+  const [internalActivePlace, setInternalActivePlace] = useState<string>('P002')
+  const activePlace = activePlaceProp ?? internalActivePlace
+  const setActivePlace = (placeId: string) => {
+    setInternalActivePlace(placeId)
+    onActivePlaceChange?.(placeId)
+  }
   const activePlacePositionRef = useRef<{
     id: string
     x: number

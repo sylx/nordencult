@@ -41,7 +41,7 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 537,
+        "x": 512,
         "y": 0
       },
       "faceRect": {
@@ -69,7 +69,7 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 1074,
+        "x": 1024,
         "y": 0
       },
       "faceRect": {
@@ -84,6 +84,7 @@
     "leadership": 38,
     "charm": 86,
     "belongTo": "P017",
+    "isLord": true,
     "belongToFaction": "dracken",
     "gender": "female",
     "strength": 14,
@@ -102,7 +103,7 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 1611,
+        "x": 1536,
         "y": 0
       },
       "faceRect": {
@@ -130,7 +131,7 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 2148,
+        "x": 2048,
         "y": 0
       },
       "faceRect": {
@@ -159,7 +160,7 @@
       "sprite": {
         "url": "character.webp",
         "x": 0,
-        "y": 793
+        "y": 768
       },
       "faceRect": {
         "x": 189.44,
@@ -186,8 +187,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 537,
-        "y": 793
+        "x": 512,
+        "y": 768
       },
       "faceRect": {
         "x": 119.57,
@@ -215,8 +216,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 1074,
-        "y": 793
+        "x": 1024,
+        "y": 768
       },
       "faceRect": {
         "x": 104.09,
@@ -243,8 +244,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 1611,
-        "y": 793
+        "x": 1536,
+        "y": 768
       },
       "faceRect": {
         "x": 132.51,
@@ -271,8 +272,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 2148,
-        "y": 793
+        "x": 2048,
+        "y": 768
       },
       "faceRect": {
         "x": 142.57999999999998,
@@ -300,7 +301,7 @@
       "sprite": {
         "url": "character.webp",
         "x": 0,
-        "y": 1586
+        "y": 1536
       },
       "faceRect": {
         "x": 204.22000000000003,
@@ -327,8 +328,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 537,
-        "y": 1586
+        "x": 512,
+        "y": 1536
       },
       "faceRect": {
         "x": 235.59000000000003,
@@ -355,8 +356,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 1074,
-        "y": 1586
+        "x": 1024,
+        "y": 1536
       },
       "faceRect": {
         "x": 132.28000000000003,
@@ -383,8 +384,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 1611,
-        "y": 1586
+        "x": 1536,
+        "y": 1536
       },
       "faceRect": {
         "x": 155.32,
@@ -413,8 +414,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 2148,
-        "y": 1586
+        "x": 2048,
+        "y": 1536
       },
       "faceRect": {
         "x": 125.84000000000003,
@@ -447,7 +448,7 @@
       "sprite": {
         "url": "character.webp",
         "x": 0,
-        "y": 2354
+        "y": 2304
       },
       "faceRect": {
         "x": 140.5,
@@ -474,8 +475,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 537,
-        "y": 2354
+        "x": 512,
+        "y": 2304
       },
       "faceRect": {
         "x": 166.74,
@@ -502,8 +503,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 1074,
-        "y": 2354
+        "x": 1024,
+        "y": 2304
       },
       "faceRect": {
         "x": 174.7,
@@ -532,8 +533,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 1611,
-        "y": 2354
+        "x": 1536,
+        "y": 2304
       },
       "faceRect": {
         "x": 213.16000000000003,
@@ -560,8 +561,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 2148,
-        "y": 2354
+        "x": 2048,
+        "y": 2304
       },
       "faceRect": {
         "x": 174.76,
@@ -589,7 +590,7 @@
       "sprite": {
         "url": "character.webp",
         "x": 0,
-        "y": 3147
+        "y": 3072
       },
       "faceRect": {
         "x": 139.41,
@@ -616,8 +617,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 537,
-        "y": 3147
+        "x": 512,
+        "y": 3072
       },
       "faceRect": {
         "x": 180.69,
@@ -644,8 +645,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 1074,
-        "y": 3147
+        "x": 1024,
+        "y": 3072
       },
       "faceRect": {
         "x": 157.94,
@@ -677,8 +678,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 1611,
-        "y": 3147
+        "x": 1536,
+        "y": 3072
       },
       "faceRect": {
         "x": 167.49,
@@ -705,8 +706,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 2148,
-        "y": 3147
+        "x": 2048,
+        "y": 3072
       },
       "faceRect": {
         "x": 69.15,
@@ -734,7 +735,7 @@
       "sprite": {
         "url": "character.webp",
         "x": 0,
-        "y": 3940
+        "y": 3840
       },
       "faceRect": {
         "x": 120.14999999999998,
@@ -766,8 +767,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 537,
-        "y": 3940
+        "x": 512,
+        "y": 3840
       },
       "faceRect": {
         "x": 175.96,
@@ -794,8 +795,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 1074,
-        "y": 3940
+        "x": 1024,
+        "y": 3840
       },
       "faceRect": {
         "x": 173.85000000000002,
@@ -826,8 +827,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 1611,
-        "y": 3940
+        "x": 1536,
+        "y": 3840
       },
       "faceRect": {
         "x": 144.01999999999998,
@@ -861,8 +862,8 @@
     "imageInfo": {
       "sprite": {
         "url": "character.webp",
-        "x": 2148,
-        "y": 3940
+        "x": 2048,
+        "y": 3840
       },
       "faceRect": {
         "x": 149,

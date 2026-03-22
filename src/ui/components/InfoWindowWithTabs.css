@@ -6,8 +6,8 @@
 }
 
 .info-window-with-tabs-layout {
-  position: relative;
-  min-height: 200px;
+  position: absolute;
+  inset: 0;
 }
 
 .info-window-with-tabs-tab-list {
@@ -62,5 +62,6 @@
 }
 
 .info-window-with-tabs-panel {
-  min-height: 200px;
+  position: absolute;
+  inset: 0;
 }

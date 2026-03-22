@@ -59,6 +59,8 @@
   position: relative;
   margin: 40px 40px 20px 40px;
   color: #333;
+  position: absolute;
+  inset: 0;
 }
 
 .info-window-corner {
