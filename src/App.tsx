@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import Map from './map/components/Map'
-import MapWindow from './ui/components/MapWindow'
+import MapWindow from './map/components/MapWindow'
 
 function App() {
   const [activePlace, setActivePlace] = useState<string>('P002')

@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 
-import InfoWindowWithTabs, { type TabInfo } from './InfoWindowWithTabs'
-import type { InfoWindowProps } from './InfoWindow'
-import CharacterImage from './CharacterImage'
+import InfoWindowWithTabs, { type TabInfo } from '../../ui/components/InfoWindowWithTabs'
+import type { InfoWindowProps } from '../../ui/components/InfoWindow'
+import CharacterImage from '../../ui/components/CharacterImage'
 import { CITY_MAP, type City } from '../../data/city'
 import { CHARACTER_LIST, type Character } from '../../data/character'
 import FACTIONS from '../../data/faction'
