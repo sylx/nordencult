@@ -1,0 +1,84 @@
+{
+  "instruments": [
+    {
+      "id": "yamaha-grand-piano",
+      "name": "Yamaha Grand Piano",
+      "bank": 0,
+      "program": 0,
+      "url": "yamaha-grand-piano.json",
+      "bytes": 946251
+    },
+    {
+      "id": "violin",
+      "name": "Violin",
+      "bank": 0,
+      "program": 40,
+      "url": "violin.json",
+      "bytes": 355466
+    },
+    {
+      "id": "viola",
+      "name": "Viola",
+      "bank": 0,
+      "program": 41,
+      "url": "viola.json",
+      "bytes": 461349
+    },
+    {
+      "id": "cello",
+      "name": "Cello",
+      "bank": 0,
+      "program": 42,
+      "url": "cello.json",
+      "bytes": 587191
+    },
+    {
+      "id": "contrabass",
+      "name": "Contrabass",
+      "bank": 0,
+      "program": 43,
+      "url": "contrabass.json",
+      "bytes": 187367
+    },
+    {
+      "id": "pizzicato-section",
+      "name": "Pizzicato Section",
+      "bank": 0,
+      "program": 45,
+      "url": "pizzicato-section.json",
+      "bytes": 442894
+    },
+    {
+      "id": "harp",
+      "name": "Harp",
+      "bank": 0,
+      "program": 46,
+      "url": "harp.json",
+      "bytes": 200680
+    },
+    {
+      "id": "timpani",
+      "name": "Timpani",
+      "bank": 0,
+      "program": 47,
+      "url": "timpani.json",
+      "bytes": 156244
+    },
+    {
+      "id": "ahh-choir",
+      "name": "Ahh Choir",
+      "bank": 0,
+      "program": 52,
+      "url": "ahh-choir.json",
+      "bytes": 661899
+    },
+    {
+      "id": "ohh-voices",
+      "name": "Ohh Voices",
+      "bank": 0,
+      "program": 53,
+      "url": "ohh-voices.json",
+      "bytes": 173343
+    }
+  ]
+}
