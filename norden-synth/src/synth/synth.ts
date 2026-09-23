@@ -93,8 +93,10 @@ export class Synth {
     time: number,
     target: VoiceTarget,
   ): Voice[] {
+    // キーは小数 (微分音) でもよい。リージョンは最も近い半音で選び、音程は小数のまま使う
+    velocity = Math.max(1, Math.min(127, Math.round(velocity)))
     const started: Voice[] = []
-    for (const region of instrument.findRegions(key, velocity)) {
+    for (const region of instrument.findRegions(Math.round(key), velocity)) {
       const voice = new Voice(this.ctx, region, instrument.samples[region.sample], key, velocity, time, target)
       voice.onended = (v) => this.voices.delete(v)
       this.voices.add(voice)

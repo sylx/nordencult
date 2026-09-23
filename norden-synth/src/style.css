@@ -211,3 +211,141 @@ button.stop {
 .key.down {
   background: var(--key-down);
 }
+
+/* BGM 生成 */
+
+.seed input {
+  width: 7em;
+  font: inherit;
+}
+
+.now {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-height: 7em;
+}
+
+.now .key {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.now .key span {
+  margin-left: 10px;
+  font-size: 0.85rem;
+  font-weight: normal;
+  color: var(--muted);
+}
+
+.now dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.now dt {
+  color: var(--muted);
+}
+
+.now dd {
+  margin: 0;
+}
+
+.meter {
+  display: inline-block;
+  width: 160px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  vertical-align: middle;
+  overflow: hidden;
+}
+
+.meter span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 0.85rem;
+}
+
+.parts label {
+  color: var(--muted);
+}
+
+.parts label.active {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.params {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.param {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.param label {
+  grid-column: 1 / -1;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.param input[type='range'],
+.param select {
+  width: 100%;
+}
+
+.param select {
+  grid-column: 1 / -1;
+  font: inherit;
+}
+
+.param output {
+  min-width: 2.5em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.param p {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.param .applies {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--fg);
+  font-size: 0.72rem;
+}
+
+.buttons.footer {
+  margin-top: 16px;
+}

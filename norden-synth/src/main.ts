@@ -1,4 +1,5 @@
 import './style.css'
+import { setupBgmPage } from './bgm-page.ts'
 import { setupSequencerDemo } from './sequencer-demo.ts'
 import { Synth, type Channel, type Instrument, type InstrumentIndexEntry } from './synth/index.ts'
 
@@ -21,6 +22,7 @@ app.innerHTML = `
   <nav class="tabs">
     <a href="#instrument" data-tab="instrument">音源チェック</a>
     <a href="#sequencer" data-tab="sequencer">シーケンサ</a>
+    <a href="#bgm" data-tab="bgm">BGM 生成</a>
   </nav>
 
   <div data-page="instrument">
@@ -63,14 +65,21 @@ app.innerHTML = `
       <div id="sequencer"></div>
     </section>
   </div>
+
+  <div data-page="bgm" hidden>
+    <section>
+      <h2>プロシージャル BGM</h2>
+      <div id="bgm"></div>
+    </section>
+  </div>
 `
 
 const $ = <T extends HTMLElement>(sel: string) => app.querySelector<T>(sel)!
 
 // --- タブ ---
-// URL のハッシュで開くページを決める (#instrument / #sequencer)
+// URL のハッシュで開くページを決める (#instrument / #sequencer / #bgm)
 
-const pages = ['instrument', 'sequencer'] as const
+const pages = ['instrument', 'sequencer', 'bgm'] as const
 type Page = (typeof pages)[number]
 let page: Page = 'instrument'
 
@@ -269,6 +278,7 @@ window.addEventListener('keyup', (e) => {
 
 setBaseKey(baseKey)
 setupSequencerDemo(synth, $('#sequencer'))
+setupBgmPage(synth, $('#bgm'))
 showPage()
 
 // --- ステータス表示 ---
