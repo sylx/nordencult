@@ -1,4 +1,5 @@
 import './style.css'
+import { setupSequencerDemo } from './sequencer-demo.ts'
 import { Synth, type Channel, type Instrument, type InstrumentIndexEntry } from './synth/index.ts'
 
 const synth = new Synth()
@@ -17,40 +18,71 @@ app.innerHTML = `
     <span id="status" class="status"></span>
   </header>
 
-  <section>
-    <h2>音色</h2>
-    <div id="instruments" class="instruments"></div>
-    <p id="info" class="info">音色を選ぶと読み込みます</p>
-  </section>
+  <nav class="tabs">
+    <a href="#instrument" data-tab="instrument">音源チェック</a>
+    <a href="#sequencer" data-tab="sequencer">シーケンサ</a>
+  </nav>
 
-  <section>
-    <h2>テスト再生</h2>
-    <div class="buttons">
-      <button data-phrase="scale">音階</button>
-      <button data-phrase="chords">和音</button>
-      <button data-phrase="arpeggio">アルペジオ</button>
-      <button data-phrase="sweep">全音域</button>
-      <button data-phrase="long">ロングトーン</button>
-      <button data-phrase="stop" class="stop">停止</button>
-    </div>
-    <div class="controls">
-      <label>ベロシティ <input id="velocity" type="range" min="1" max="127" value="${velocity}" /><output>${velocity}</output></label>
-      <label>リバーブ <input id="reverb" type="range" min="0" max="2" step="0.05" value="${reverbLevel}" /><output>${reverbLevel}</output></label>
-      <label>音量 <input id="volume" type="range" min="0" max="1.5" step="0.05" value="${masterLevel}" /><output>${masterLevel}</output></label>
-      <label>オクターブ
-        <button id="oct-down">−</button><output id="octave"></output><button id="oct-up">+</button>
-      </label>
-    </div>
-  </section>
+  <div data-page="instrument">
+    <section>
+      <h2>音色</h2>
+      <div id="instruments" class="instruments"></div>
+      <p id="info" class="info">音色を選ぶと読み込みます</p>
+    </section>
 
-  <section>
-    <h2>鍵盤</h2>
-    <div id="keyboard" class="keyboard"></div>
-    <p class="hint">PC キーボード: Z〜M 行が下のオクターブ、Q〜U 行が上のオクターブ</p>
-  </section>
+    <section>
+      <h2>テスト再生</h2>
+      <div class="buttons">
+        <button data-phrase="scale">音階</button>
+        <button data-phrase="chords">和音</button>
+        <button data-phrase="arpeggio">アルペジオ</button>
+        <button data-phrase="sweep">全音域</button>
+        <button data-phrase="long">ロングトーン</button>
+        <button data-phrase="stop" class="stop">停止</button>
+      </div>
+      <div class="controls">
+        <label>ベロシティ <input id="velocity" type="range" min="1" max="127" value="${velocity}" /><output>${velocity}</output></label>
+        <label>リバーブ <input id="reverb" type="range" min="0" max="2" step="0.05" value="${reverbLevel}" /><output>${reverbLevel}</output></label>
+        <label>音量 <input id="volume" type="range" min="0" max="1.5" step="0.05" value="${masterLevel}" /><output>${masterLevel}</output></label>
+        <label>オクターブ
+          <button id="oct-down">−</button><output id="octave"></output><button id="oct-up">+</button>
+        </label>
+      </div>
+    </section>
+
+    <section>
+      <h2>鍵盤</h2>
+      <div id="keyboard" class="keyboard"></div>
+      <p class="hint">PC キーボード: Z〜M 行が下のオクターブ、Q〜U 行が上のオクターブ</p>
+    </section>
+  </div>
+
+  <div data-page="sequencer" hidden>
+    <section>
+      <h2>デモ曲</h2>
+      <div id="sequencer"></div>
+    </section>
+  </div>
 `
 
 const $ = <T extends HTMLElement>(sel: string) => app.querySelector<T>(sel)!
+
+// --- タブ ---
+// URL のハッシュで開くページを決める (#instrument / #sequencer)
+
+const pages = ['instrument', 'sequencer'] as const
+type Page = (typeof pages)[number]
+let page: Page = 'instrument'
+
+function showPage() {
+  const hash = location.hash.slice(1)
+  page = pages.find((p) => p === hash) ?? 'instrument'
+  for (const el of app.querySelectorAll<HTMLElement>('[data-page]')) el.hidden = el.dataset.page !== page
+  for (const el of app.querySelectorAll<HTMLElement>('[data-tab]')) el.classList.toggle('selected', el.dataset.tab === page)
+  // 別のページに移ったら鍵盤で押しっぱなしの音を離す
+  if (page !== 'instrument') for (const key of [...pressed]) release(key)
+}
+window.addEventListener('hashchange', showPage)
 
 // --- 音色の選択と読み込み ---
 
@@ -226,7 +258,7 @@ function pcKeyToNote(k: string): number | undefined {
   }
 }
 window.addEventListener('keydown', (e) => {
-  if (e.repeat || e.ctrlKey || e.metaKey || e.target instanceof HTMLInputElement) return
+  if (page !== 'instrument' || e.repeat || e.ctrlKey || e.metaKey || e.target instanceof HTMLInputElement) return
   const key = pcKeyToNote(e.key)
   if (key !== undefined) press(key)
 })
@@ -236,6 +268,8 @@ window.addEventListener('keyup', (e) => {
 })
 
 setBaseKey(baseKey)
+setupSequencerDemo(synth, $('#sequencer'))
+showPage()
 
 // --- ステータス表示 ---
 

@@ -10,17 +10,18 @@ BGM 用途なので、低遅延より「時刻を指定して先読みで予約�
 
 - [x] SF2 → 楽器データ (JSON + Ogg Vorbis) の変換ツール
 - [x] Web Audio によるサンプラー (エンベロープ・フィルタ・ループ・リバーブ)
-- [x] 音色の試聴・鍵盤演奏ができるテストページ
-- [ ] テンポ/小節単位で先読み再生するシーケンサ
+- [x] 音色の試聴・鍵盤演奏・シーケンサのデモができるテストページ
+- [x] テンポ/小節単位で先読み再生するシーケンサ
 - [ ] 楽曲のプロシージャル生成
 
 ## 使い方
 
 ```sh
 npm install
-npm run dev                # テストページ (http://localhost:5173)
+npm run dev                # テストページ (http://localhost:5173 。シーケンサのタブは #sequencer)
 npm run build:instruments  # soundfonts/*.sf2 から public/instruments/ を作り直す (ffmpeg が必要)
 npm run typecheck
+npm test                   # テンポマップとシーケンサのテスト (Node)
 npm run build
 ```
 
@@ -44,7 +45,11 @@ src/synth/                  シンセ本体
   loop.ts                     ループの継ぎ目のクロスフェード
   reverb.ts                   リバーブのインパルス応答の合成
   synth.ts                    Synth / Channel (公開 API)
+  tempo.ts                    テンポマップ (拍 ⇔ 時刻の変換、テンポのランプ)
+  sequencer.ts                小節単位で先読み再生するシーケンサ
 src/main.ts                 テストページ
+src/sequencer-demo.ts       テストページのシーケンサのデモ曲
+test/                       node --test で動かすテスト
 ```
 
 ## 音色
@@ -121,6 +126,49 @@ violin.noteOff(60)
 
 未対応: LFO (この音源では深さがすべて 0)、サンプルアドレスのオフセット、chorus、exclusiveClass、
 その他のモジュレータ、ピッチベンドなどの MIDI コントローラ。未対応のジェネレータが使われていると変換時に警告が出る。
+
+## シーケンサ
+
+小節の頭が先読み範囲に入るたびにコールバックを呼んで、その小節の音符を作らせる。
+曲のデータを前もって全部作る必要がないので、プロシージャル生成をそのまま載せられる。
+
+```ts
+import { Sequencer } from './synth/index.ts'
+
+const seq = new Sequencer(synth.ctx, { tempo: 96, timeSignature: [4, 4] })
+
+// 小節ごとに最初に呼ばれる (任意)。拍子とテンポを決める
+seq.conductor = (bar) => {
+  if (bar.index === 8) bar.timeSignature = [3, 4]     // この小節から 3/4 (以降も引き継ぐ)
+  if (bar.index === 15) bar.rampTempo(72, 0, 4)       // 小節頭から 4 拍かけて 72 まで
+  if (bar.index === 16) bar.setTempo(96)              // 小節頭で 96 に戻す
+}
+
+// トラックごとに、その小節の音符を書き込む
+const cello = seq.addTrack(celloChannel, (bar) => {
+  bar.note(0, 36, 90, bar.beats)                      // 拍, キー, ベロシティ, 長さ(拍)
+})
+
+seq.start()                  // 省略時は currentTime + 0.05 を小節 0 の頭にする
+seq.tempo = 120              // 再生中でも変えられる
+seq.timeSignature = [6, 8]   // 次に生成する小節から
+cello.muted = true           // 生成は続け、予約だけしない
+seq.position()               // { bar, beat, timeSignature, tempo } (今鳴っている位置)
+seq.stop()                   // 未来の音は取り消し、鳴っている音はリリースする
+```
+
+- 位置・長さの単位は四分音符 = 1 拍 (6/8 の小節は 3 拍)。テンポも四分音符/分。`bar.note` の拍は小節頭から数え、小節の長さを超えてもよい
+- 小節の生成と音符の予約を分けている。小節は頭が先読み範囲に入った時点で conductor → 各トラックの順に作り、
+  音符は先読み範囲 (`lookahead`, 既定 0.3 秒) に入った時点でその時点のテンポマップで時刻に変換して `playNote` で予約する。
+  そのため `seq.tempo` の変更は、生成済みの小節の途中でも先読み分の遅れで反映される
+- `seq.tempo` の変更は予約済みの範囲の終わりから効く。conductor がその後の位置でテンポを決めていれば、そこからはそちらが優先される
+- ページが非表示のときは、バックグラウンドのタイマー間引きに備えて先読みを `hiddenLookahead` (既定 1.5 秒) に広げる
+- タイマーが遅れて開始時刻を過ぎた音符は、まだ終わっていなければ今から鳴らし、終わっていれば捨てる (`seq.droppedNotes` に数える)
+- conductor / トラックが例外を投げても、その小節のその部分が抜けるだけで再生は続く (コンソールにエラーを出す)
+- `stop()` はリリースで止めるので、ハープやピチカートのようにリリースの長い音色は余韻が残る
+
+テストページのデモ (`src/sequencer-demo.ts`) は、8 小節のコード進行 (Am–F–C–G–F–C–Dm–E) の上で
+各パートが小節ごとに音符を作る。メロディ・ピチカートの音型は乱数で変わる。フレーズの最後の小節でリタルダンドする。
 
 ## 既知の制限
 

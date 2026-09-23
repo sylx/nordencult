@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && tsc -p tools && vite build",
+    "build": "tsc && tsc -p tools && tsc -p test && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc && tsc -p tools",
+    "typecheck": "tsc && tsc -p tools && tsc -p test",
+    "test": "node --test test/*.test.ts",
     "build:instruments": "node tools/sf2-extract/main.ts soundfonts/FluidR3_GM.sf2 public/instruments"
   },
   "devDependencies": {

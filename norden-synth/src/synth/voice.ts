@@ -133,9 +133,14 @@ export class Voice {
     return this.region.exclusiveClass
   }
 
+  // 予約済みのリリースがある場合は、それより早める方向にだけ置き直す (シーケンサの停止用)
   release(time: number): void {
-    if (this.ended || this.releaseTime !== undefined) return
+    if (this.ended || this.killed) return
     time = Math.max(time, this.startTime)
+    if (this.releaseTime !== undefined) {
+      if (time >= this.releaseTime) return
+      this.releaseGain.gain.cancelScheduledValues(time)
+    }
     this.releaseTime = time
 
     const t = time - this.startTime
