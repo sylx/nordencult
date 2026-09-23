@@ -259,8 +259,9 @@ export function parseSf2(data: Uint8Array): Sf2 {
   }
 
   const smpl = need('smpl')
-  // smpl の開始位置が奇数バイトの場合があるのでコピーして整列させる
-  const pcm = new Int16Array(data.slice(smpl.offset, smpl.offset + smpl.size).buffer)
+  // smpl の開始位置が奇数バイトの場合があるのでコピーして整列させる。
+  // Node の Buffer.slice はコピーせず元のメモリを参照するので、new Uint8Array で明示的にコピーする
+  const pcm = new Int16Array(new Uint8Array(data.subarray(smpl.offset, smpl.offset + smpl.size)).buffer)
 
   return { presets, instruments, samples: shdr.slice(0, -1), pcm }
 }
