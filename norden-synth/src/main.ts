@@ -20,12 +20,12 @@ app.innerHTML = `
   </header>
 
   <nav class="tabs">
+    <a href="#bgm" data-tab="bgm">BGM 生成</a>
     <a href="#instrument" data-tab="instrument">音源チェック</a>
     <a href="#sequencer" data-tab="sequencer">シーケンサ</a>
-    <a href="#bgm" data-tab="bgm">BGM 生成</a>
   </nav>
 
-  <div data-page="instrument">
+  <div data-page="instrument" hidden>
     <section>
       <h2>音色</h2>
       <div id="instruments" class="instruments"></div>
@@ -66,7 +66,7 @@ app.innerHTML = `
     </section>
   </div>
 
-  <div data-page="bgm" hidden>
+  <div data-page="bgm">
     <section>
       <h2>プロシージャル BGM</h2>
       <div id="bgm"></div>
@@ -77,15 +77,15 @@ app.innerHTML = `
 const $ = <T extends HTMLElement>(sel: string) => app.querySelector<T>(sel)!
 
 // --- タブ ---
-// URL のハッシュで開くページを決める (#instrument / #sequencer / #bgm)
+// URL のハッシュで開くページを決める (#bgm / #instrument / #sequencer)。既定は BGM 生成
 
-const pages = ['instrument', 'sequencer', 'bgm'] as const
+const pages = ['bgm', 'instrument', 'sequencer'] as const
 type Page = (typeof pages)[number]
-let page: Page = 'instrument'
+let page: Page = 'bgm'
 
 function showPage() {
   const hash = location.hash.slice(1)
-  page = pages.find((p) => p === hash) ?? 'instrument'
+  page = pages.find((p) => p === hash) ?? 'bgm'
   for (const el of app.querySelectorAll<HTMLElement>('[data-page]')) el.hidden = el.dataset.page !== page
   for (const el of app.querySelectorAll<HTMLElement>('[data-tab]')) el.classList.toggle('selected', el.dataset.tab === page)
   // 別のページに移ったら鍵盤で押しっぱなしの音を離す

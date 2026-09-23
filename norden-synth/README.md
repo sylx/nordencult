@@ -18,7 +18,7 @@ BGM 用途なので、低遅延より「時刻を指定して先読みで予約�
 
 ```sh
 npm install
-npm run dev                # テストページ (http://localhost:5173 。タブは #sequencer / #bgm)
+npm run dev                # テストページ (http://localhost:5173 。最初は BGM 生成、#instrument で音源チェック、#sequencer でシーケンサ)
 npm run build:instruments  # soundfonts/*.sf2 から public/instruments/ を作り直す (ffmpeg が必要)
 npm run typecheck
 npm test                   # テンポマップ・シーケンサ・BGM 生成のテスト (Node)
