@@ -30,6 +30,17 @@ function render(params: Partial<BgmParams>, bars: number) {
       } as unknown as Channel,
     ]),
   )
+  // リードの小節ごとの発音位置 (拍)
+  const leadBeats = new Map<number, number[]>()
+  const addTrack = seq.addTrack.bind(seq)
+  seq.addTrack = (channel, generate) =>
+    addTrack(channel, (bar) => {
+      if (channel !== channels.lead) return generate(bar)
+      const beats: number[] = []
+      leadBeats.set(bar.index, beats)
+      const note = bar.note.bind(bar)
+      generate({ ...bar, note: (beat, key, velocity, duration) => (beats.push(beat), note(beat, key, velocity, duration)) })
+    })
   composer.attach(seq, channels)
   const error = console.error
   const errors: unknown[] = []
@@ -44,7 +55,7 @@ function render(params: Partial<BgmParams>, bars: number) {
     console.error = error
   }
   const snapshots = [...Array(bars).keys()].map((i) => composer.snapshot(i)).filter((s) => s !== undefined)
-  return { played, errors, composer, snapshots }
+  return { played, errors, composer, snapshots, leadBeats }
 }
 
 const RANGES: Record<PartId, [number, number]> = {
@@ -101,4 +112,23 @@ test('微分音 0 なら 4 分音を使わない', () => {
   assert.ok(played.every((n) => Number.isInteger(n.key)))
   const micro = render({ microtones: 1, exoticism: 0.8, modulationRate: 1, sectionBars: 4 }, 96).played
   assert.ok(micro.some((n) => !Number.isInteger(n.key)))
+})
+
+test('メロディは A と A\' の句で同じリズムを繰り返す', () => {
+  let checked = 0
+  for (const seed of [1, 2, 3, 4]) {
+    const { snapshots, leadBeats } = render({ seed, sectionBars: 8, oddMeter: 0, humanize: 0, ornaments: 0 }, 64)
+    for (const s of snapshots) {
+      // 最初のセクションの最初の句と静かなセクションの奇数番目の句は休むので除く
+      if (s.barInSection !== 0 || s.section === 0 || s.energy < 0.3 || !s.parts.includes('lead')) continue
+      for (let i = 0; i < 4; i++) {
+        const a = leadBeats.get(s.bar + i)
+        const b = leadBeats.get(s.bar + 4 + i)
+        if (!a || !b) continue
+        assert.deepEqual(b, a, `seed ${seed} bar ${s.bar + i}`)
+        checked++
+      }
+    }
+  }
+  assert.ok(checked > 20, `${checked} bars checked`)
 })

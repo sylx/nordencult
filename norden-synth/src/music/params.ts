@@ -87,7 +87,7 @@ export const PARAM_DEFS: ParamDef[] = [
     key: 'colorTones',
     label: '特性音の強調',
     group: '調と転調',
-    description: 'スケールらしさを決める音 (ヒジャーズの ♭2 と長 3 度など) を根音にした和音やメロディの強拍に使う割合',
+    description: 'スケールらしさを決める音 (ヒジャーズの ♭2 と長 3 度など) を根音にした和音を使う割合',
     min: 0, max: 1, step: 0.05, applies: 'bar',
   },
   {

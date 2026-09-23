@@ -2,7 +2,7 @@
 
 import { chordAt, type BarContext, type NoteWriter, type PartId } from './context.ts'
 import { chordPitchClasses, type Chord } from './harmony.ts'
-import { Lead } from './melody.ts'
+import { Lead, type MelodyInfo } from './melody.ts'
 import type { Random } from './random.ts'
 import type { Key } from './scales.ts'
 
@@ -31,6 +31,8 @@ export const PART_DEFS: PartDef[] = [
 
 export interface Part {
   generate(ctx: BarContext, out: NoteWriter, rng: Random): void
+  // 表示用に、直前に作った小節のメロディの状態を返す (リードだけ)
+  melody?(): MelodyInfo | undefined
 }
 
 const EPS = 1e-6
@@ -237,7 +239,7 @@ export function createParts(): Record<PartId, Part> {
   const lead = new Lead(50, 77)
   return {
     drone: drone(),
-    lead: { generate: (ctx, out, rng) => lead.generate(ctx, out, rng) },
+    lead: { generate: (ctx, out, rng) => lead.generate(ctx, out, rng), melody: () => lead.info },
     counter: counter(lead),
     pad: sustained(55, 71, 2, 48),
     choir: sustained(55, 74, 3, 42),

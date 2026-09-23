@@ -295,6 +295,10 @@ button.stop {
   margin: 0;
 }
 
+.now dd .muted {
+  color: var(--muted);
+}
+
 .meter {
   display: inline-block;
   width: 160px;

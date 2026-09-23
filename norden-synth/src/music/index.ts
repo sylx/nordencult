@@ -1,5 +1,6 @@
 export { Composer, type BarSnapshot } from './composer.ts'
 export type { PartId } from './context.ts'
+export type { MelodyInfo } from './melody.ts'
 export { DEFAULT_PARAMS, PARAM_DEFS, type BgmParams, type ParamDef } from './params.ts'
 export { PART_DEFS, type PartDef } from './parts.ts'
 export { Key, SCALES, pitchName, type ScaleDef } from './scales.ts'

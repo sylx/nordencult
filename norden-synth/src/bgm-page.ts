@@ -1,6 +1,6 @@
 // テストページの「BGM 生成」タブ
 
-import { Composer, DEFAULT_PARAMS, PARAM_DEFS, PART_DEFS, type BgmParams, type PartId } from './music/index.ts'
+import { Composer, DEFAULT_PARAMS, PARAM_DEFS, PART_DEFS, type BgmParams, type MelodyInfo, type PartId } from './music/index.ts'
 import { Sequencer, type Synth, type Track } from './synth/index.ts'
 
 const STORAGE_KEY = 'norden-synth:bgm-params'
@@ -187,6 +187,12 @@ export function setupBgmPage(synth: Synth, root: HTMLElement): void {
   // --- 今鳴っている位置 ---
 
   const partName = new Map(PART_DEFS.map((d) => [d.id, d.label]))
+  // 句の役割と音型の並び。今の小節の音型を強調する
+  function melodyHtml(m: MelodyInfo | undefined): string {
+    if (!m) return '<span class="muted">休み</span>'
+    const figures = m.figures.map((f, i) => (i === m.bar ? `<b>${f}</b>` : `<span class="muted">${f}</span>`)).join(' → ')
+    return `${m.role}${m.theme ? ' <span class="muted">主題</span>' : ''} · ${figures}${m.detail ? ` · ${m.detail}` : ''}`
+  }
   let shown = ''
   function update() {
     const pos = seq.position()
@@ -200,6 +206,7 @@ export function setupBgmPage(synth: Synth, root: HTMLElement): void {
           <dt>セクション</dt><dd>${snap.section + 1} (${snap.barInSection + 1}/${snap.sectionBars} 小節)</dd>
           <dt>拍子</dt><dd>${snap.meter} · ♩=${pos.tempo.toFixed(0)}</dd>
           <dt>和音</dt><dd>${snap.chords.join(' / ')}${snap.modulatingTo ? ` → <b>${snap.modulatingTo}</b> へ転調` : ''}</dd>
+          ${snap.parts.includes('lead') ? `<dt>メロディ</dt><dd>${melodyHtml(snap.melody)}</dd>` : ''}
           <dt>盛り上がり</dt><dd><span class="meter"><span style="width:${energy}%"></span></span></dd>
           <dt>編成</dt><dd>${snap.parts.map((id) => partName.get(id)!.replace(/ \(.*\)$/, '')).join('、')}</dd>
         </dl>`

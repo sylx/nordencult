@@ -8,6 +8,7 @@ import type { Channel, ConductorBar, Sequencer, Track, TrackBar } from '../synth
 import { NoteWriter, type BarContext, type ChordSpan, type PartId, type Section } from './context.ts'
 import { chooseEnergy, chooseMeter, firstKey, meterBeats, meterGroups, meterLabel, nextKey } from './form.ts'
 import { chooseChord, chordName, type Chord } from './harmony.ts'
+import type { MelodyInfo } from './melody.ts'
 import { DEFAULT_PARAMS, type BgmParams } from './params.ts'
 import { PART_DEFS, createParts, type Part } from './parts.ts'
 import { Random } from './random.ts'
@@ -27,6 +28,8 @@ export interface BarSnapshot {
   parts: PartId[]
   // セクション最後の小節で、次に転調する調
   modulatingTo?: string
+  // メロディの句と音型 (リードが休んでいる・編成にないなら undefined)
+  melody?: MelodyInfo
 }
 
 export class Composer {
@@ -121,7 +124,10 @@ export class Composer {
     const ctx = this.ctx
     if (!ctx || ctx.index !== bar.index || !ctx.section.parts.has(id)) return
     const rng = this.partRng[id]
-    this.parts[id].generate(ctx, new NoteWriter(bar, rng, this.params.humanize), rng)
+    const part = this.parts[id]
+    part.generate(ctx, new NoteWriter(bar, rng, this.params.humanize), rng)
+    const snapshot = this.snapshots.get(ctx.index)
+    if (part.melody && snapshot) snapshot.melody = part.melody()
   }
 
   private startSection(startBar: number): void {
