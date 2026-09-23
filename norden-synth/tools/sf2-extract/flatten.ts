@@ -69,7 +69,8 @@ const ATTENUATION_SCALE = 0.4
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
 const round = (v: number) => Number(v.toPrecision(4))
-const timecents = (tc: number, max: number) => (tc <= -12000 ? 0 : round(2 ** (clamp(tc, -12000, max) / 1200)))
+// SF2 の仕様・FluidSynth と同じく下限 -12000 は約 1ms。0 秒になるのは -32768 のときだけ
+const timecents = (tc: number, max: number) => (tc <= -32768 ? 0 : round(2 ** (clamp(tc, -12000, max) / 1200)))
 
 function intersect(a: Range | undefined, b: Range | undefined): Range {
   const lo = Math.max(a?.[0] ?? 0, b?.[0] ?? 0)
