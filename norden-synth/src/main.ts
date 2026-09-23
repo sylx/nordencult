@@ -1,5 +1,6 @@
 import './style.css'
 import { setupBgmPage } from './bgm-page.ts'
+import { setupMixer } from './mixer-panel.ts'
 import { setupSequencerDemo } from './sequencer-demo.ts'
 import { Synth, type Channel, type Instrument, type InstrumentIndexEntry } from './synth/index.ts'
 
@@ -7,10 +8,6 @@ const synth = new Synth()
 let channel: Channel | undefined
 let velocity = 100
 let baseKey = 48
-// AudioParam の値は float32 なので表示用に丸める
-const fmt = (v: number) => String(Math.round(v * 100) / 100)
-const reverbLevel = fmt(synth.reverbReturn.gain.value)
-const masterLevel = fmt(synth.master.gain.value)
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 app.innerHTML = `
@@ -24,6 +21,8 @@ app.innerHTML = `
     <a href="#instrument" data-tab="instrument">音源チェック</a>
     <a href="#sequencer" data-tab="sequencer">シーケンサ</a>
   </nav>
+
+  <section id="mixer" class="mixer"></section>
 
   <div data-page="instrument" hidden>
     <section>
@@ -44,8 +43,6 @@ app.innerHTML = `
       </div>
       <div class="controls">
         <label>ベロシティ <input id="velocity" type="range" min="1" max="127" value="${velocity}" /><output>${velocity}</output></label>
-        <label>リバーブ <input id="reverb" type="range" min="0" max="2" step="0.05" value="${reverbLevel}" /><output>${reverbLevel}</output></label>
-        <label>音量 <input id="volume" type="range" min="0" max="1.5" step="0.05" value="${masterLevel}" /><output>${masterLevel}</output></label>
         <label>オクターブ
           <button id="oct-down">−</button><output id="octave"></output><button id="oct-up">+</button>
         </label>
@@ -150,8 +147,6 @@ function bindRange(sel: string, apply: (v: number) => void) {
   })
 }
 bindRange('#velocity', (v) => (velocity = v))
-bindRange('#reverb', (v) => (synth.reverbReturn.gain.value = v))
-bindRange('#volume', (v) => (synth.master.gain.value = v))
 
 const octave = $('#octave')
 function setBaseKey(key: number) {
@@ -279,6 +274,7 @@ window.addEventListener('keyup', (e) => {
 setBaseKey(baseKey)
 setupSequencerDemo(synth, $('#sequencer'))
 setupBgmPage(synth, $('#bgm'))
+setupMixer(synth, $('#mixer'))
 showPage()
 
 // --- ステータス表示 ---

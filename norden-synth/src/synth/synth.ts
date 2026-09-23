@@ -1,5 +1,5 @@
 import { Instrument, loadInstrument } from './instrument.ts'
-import { createReverbImpulse } from './reverb.ts'
+import { createReverbImpulse, type ReverbOptions } from './reverb.ts'
 import type { InstrumentIndex, InstrumentIndexEntry } from './types.ts'
 import { Voice, type VoiceTarget } from './voice.ts'
 
@@ -10,13 +10,21 @@ export interface SynthOptions {
   maxVoices?: number
 }
 
+export type ReverbSettings = Required<ReverbOptions>
+
 export class Synth {
   readonly ctx: AudioContext
   readonly master: GainNode
-  readonly reverb: ConvolverNode
+  // チャンネルのリバーブ送りの行き先
+  readonly reverb: GainNode
+  // リバーブの戻りの量 (全体のリバーブの深さ)
   readonly reverbReturn: GainNode
+  // 原音の量
+  readonly dry: GainNode
   readonly maxVoices: number
-  private readonly dry: GainNode
+  private readonly convolvers: { node: ConvolverNode; input: GainNode }[]
+  private activeConvolver = 0
+  private reverbOptions: ReverbSettings = { duration: 2.4, preDelay: 0.02, damping: 0.6 }
   private readonly indexUrl: URL
   private index?: Promise<InstrumentIndexEntry[]>
   private readonly instruments = new Map<string, Promise<Instrument>>()
@@ -35,9 +43,35 @@ export class Synth {
     this.dry = new GainNode(ctx)
     this.dry.connect(this.master)
 
-    this.reverb = new ConvolverNode(ctx, { buffer: createReverbImpulse(ctx) })
+    // インパルス応答を差し替えるときに残響が途切れないよう、コンボルバを 2 つ用意して入力を切り替える
+    this.reverb = new GainNode(ctx)
     this.reverbReturn = new GainNode(ctx, { gain: 0.6 })
-    this.reverb.connect(this.reverbReturn).connect(this.master)
+    this.reverbReturn.connect(this.master)
+    this.convolvers = [0, 1].map((i) => {
+      const input = new GainNode(ctx, { gain: i === 0 ? reverbGain(this.reverbOptions.duration) : 0 })
+      const node = new ConvolverNode(ctx, { buffer: i === 0 ? createReverbImpulse(ctx, this.reverbOptions) : null })
+      this.reverb.connect(input).connect(node).connect(this.reverbReturn)
+      return { node, input }
+    })
+  }
+
+  get reverbSettings(): ReverbSettings {
+    return { ...this.reverbOptions }
+  }
+
+  // リバーブの残響時間などを変える。インパルス応答を作り直すので、スライダーの操作中などは間引いて呼ぶ。
+  // 鳴っている残響はそのまま減衰させ、新しい音から新しい残響になる
+  setReverb(options: ReverbOptions): void {
+    this.reverbOptions = { ...this.reverbOptions, ...options }
+    const next = 1 - this.activeConvolver
+    const from = this.convolvers[this.activeConvolver]
+    const to = this.convolvers[next]
+    to.node.buffer = createReverbImpulse(this.ctx, this.reverbOptions)
+    const t = this.ctx.currentTime
+    from.input.gain.setTargetAtTime(0, t, 0.02)
+    to.input.gain.cancelScheduledValues(t)
+    to.input.gain.setTargetAtTime(reverbGain(this.reverbOptions.duration), t, 0.02)
+    this.activeConvolver = next
   }
 
   // ブラウザの自動再生制限で suspended の場合があるので、ユーザー操作の中で呼ぶ
@@ -119,6 +153,12 @@ export class Synth {
       v.kill(time)
     }
   }
+}
+
+// ConvolverNode はインパルス応答のエネルギーを揃えるので、長い残響ほど薄く聞こえる。
+// 残響時間に応じて少し持ち上げる (2.4 秒で 1 倍、12 秒で約 1.5 倍)
+function reverbGain(duration: number): number {
+  return (duration / 2.4) ** 0.25
 }
 
 // 1 つの楽器を鳴らすパート。音量・パン・リバーブ量を持つ

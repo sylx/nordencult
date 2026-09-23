@@ -58,6 +58,7 @@ src/music/                  プロシージャル BGM 生成
 src/main.ts                 テストページ
 src/sequencer-demo.ts       テストページのシーケンサのデモ曲
 src/bgm-page.ts             テストページの BGM 生成タブ
+src/mixer-panel.ts          テストページ全体の音量・リバーブ (プリセット付き)
 test/                       node --test で動かすテスト
 ```
 
@@ -112,6 +113,11 @@ violin.reverb = 1                                 // 音色ごとのリバーブ
 const t = synth.currentTime + 0.1
 violin.playNote(67, 100, t, 0.5)                  // キー, ベロシティ, 開始時刻, 長さ(秒)
 
+// 全体のリバーブ。残響時間は 15 秒程度の深いものまで
+synth.setReverb({ duration: 10, preDelay: 0.07, damping: 0.3 })  // 残響時間(秒), プリディレイ(秒), 高域の減衰 0..1
+synth.reverbReturn.gain.value = 1.8               // リバーブの戻りの量
+synth.dry.gain.value = 0.75                       // 原音の量
+
 // 鍵盤のようなリアルタイム演奏
 violin.noteOn(60, 100)
 violin.noteOff(60)
@@ -122,6 +128,7 @@ violin.noteOff(60)
 - `loadInstrument` は id (`"violin"`) または音色名を受け付け、同じ音色は一度だけ読み込む
 - 同時発音数は `maxVoices` (既定 96) を超えるとリリース中→古い順に止める
 - 出力は dry + リバーブ → マスター (`synth.master`) → リミッタ代わりのコンプレッサ
+- `setReverb` はインパルス応答を作り直す (15 秒で約 0.2 秒かかり、その間メインスレッドが止まる)。コンボルバを 2 つ持って入力を切り替えるので、鳴っている残響は途切れずに減衰する
 
 ### 対応している SF2 の機能
 

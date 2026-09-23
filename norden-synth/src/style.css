@@ -212,6 +212,44 @@ button.stop {
   background: var(--key-down);
 }
 
+/* 音量・リバーブ (全タブ共通) */
+
+.mixer {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.mixer .controls {
+  margin-top: 8px;
+}
+
+.mixer-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.mixer .buttons {
+  gap: 6px;
+}
+
+.mixer button {
+  padding: 3px 10px;
+  font-size: 0.85rem;
+}
+
+.mixer button.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.mixer input[type='range'] {
+  width: 110px;
+}
+
 /* BGM 生成 */
 
 .seed input {
