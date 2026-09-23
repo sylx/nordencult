@@ -331,6 +331,11 @@ button.stop {
   font-weight: 600;
 }
 
+.parts .role {
+  font-weight: normal;
+  color: var(--muted);
+}
+
 .params {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));

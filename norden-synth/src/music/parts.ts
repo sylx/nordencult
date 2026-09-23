@@ -1,37 +1,58 @@
-// リード以外のパート。どれも小節の文脈から、その小節の音符をその場で作る
+// 役割と奏者。役割は小節の文脈と、受け持つ奏者の席 (音域など) から、その小節の音符をその場で作る
 
-import { chordAt, type BarContext, type NoteWriter, type PartId } from './context.ts'
+import { chordAt, type BarContext, type NoteWriter, type PlayerId, type RoleId, type Seat } from './context.ts'
 import { chordPitchClasses, type Chord } from './harmony.ts'
 import { Lead, type MelodyInfo } from './melody.ts'
 import type { Random } from './random.ts'
 import type { Key } from './scales.ts'
 
-export interface PartDef {
-  id: PartId
+export interface PlayerDef {
+  id: PlayerId
   label: string
   instrument: string
   volume: number
   pan: number
+  // 音が減衰する (持続する役割では弾き直す)
+  decays: boolean
+}
+
+export const PLAYER_DEFS: PlayerDef[] = [
+  { id: 'contrabass', label: 'コントラバス', instrument: 'contrabass', volume: 0.8, pan: 0.3, decays: false },
+  { id: 'cello', label: 'チェロ', instrument: 'cello', volume: 0.75, pan: -0.1, decays: false },
+  { id: 'viola', label: 'ビオラ', instrument: 'viola', volume: 0.55, pan: 0.2, decays: false },
+  { id: 'violin', label: 'バイオリン', instrument: 'violin', volume: 0.55, pan: -0.4, decays: false },
+  { id: 'choir', label: 'クワイア', instrument: 'ahh-choir', volume: 0.45, pan: 0, decays: false },
+  { id: 'pizzicato', label: 'ピチカート', instrument: 'pizzicato-section', volume: 0.6, pan: 0.15, decays: true },
+  { id: 'harp', label: 'ハープ', instrument: 'harp', volume: 0.65, pan: 0.35, decays: true },
+  { id: 'timpani', label: 'ティンパニ', instrument: 'timpani', volume: 0.75, pan: 0, decays: true },
+  { id: 'piano', label: 'ピアノ', instrument: 'yamaha-grand-piano', volume: 0.55, pan: -0.25, decays: true },
+]
+
+const decays = (player: PlayerId) => PLAYER_DEFS.find((d) => d.id === player)?.decays ?? false
+
+export interface RoleDef {
+  id: RoleId
+  label: string
   // セクションの盛り上がりがこの範囲にあるときに加わる
   energy: [number, number]
 }
 
-// 並び順が生成順。対旋律はリードの後に作る (リードの音を参照するため)
-export const PART_DEFS: PartDef[] = [
-  { id: 'drone', label: 'ドローン / 低音 (コントラバス)', instrument: 'contrabass', volume: 0.8, pan: 0.3, energy: [0, 1] },
-  { id: 'lead', label: 'メロディ (チェロ)', instrument: 'cello', volume: 0.75, pan: -0.1, energy: [0.2, 1] },
-  { id: 'counter', label: '対旋律 (バイオリン)', instrument: 'violin', volume: 0.5, pan: -0.4, energy: [0.55, 1] },
-  { id: 'pad', label: '和音 (ビオラ)', instrument: 'viola', volume: 0.5, pan: 0.2, energy: [0.25, 1] },
-  { id: 'choir', label: 'クワイア', instrument: 'ahh-choir', volume: 0.45, pan: 0, energy: [0.75, 1] },
-  { id: 'ostinato', label: 'オスティナート (ピチカート)', instrument: 'pizzicato-section', volume: 0.6, pan: 0.15, energy: [0.35, 1] },
-  { id: 'harp', label: 'ハープ', instrument: 'harp', volume: 0.65, pan: 0.35, energy: [0.3, 1] },
-  { id: 'percussion', label: '打楽器 (ティンパニ)', instrument: 'timpani', volume: 0.75, pan: 0, energy: [0.5, 1] },
-  { id: 'shimmer', label: '鐘 (ピアノ)', instrument: 'yamaha-grand-piano', volume: 0.45, pan: -0.25, energy: [0, 0.5] },
+// 並び順が生成順。対旋律はメロディの後に作る (メロディの音を参照するため)
+export const ROLE_DEFS: RoleDef[] = [
+  { id: 'bass', label: '低音', energy: [0, 1] },
+  { id: 'melody', label: 'メロディ', energy: [0.2, 1] },
+  { id: 'counter', label: '対旋律', energy: [0.55, 1] },
+  { id: 'chords', label: '和音', energy: [0.25, 1] },
+  { id: 'pad', label: '厚い和音', energy: [0.75, 1] },
+  { id: 'ostinato', label: 'オスティナート', energy: [0.35, 1] },
+  { id: 'arpeggio', label: 'アルペジオ', energy: [0.3, 1] },
+  { id: 'percussion', label: '打楽器', energy: [0.5, 1] },
+  { id: 'bells', label: '鐘', energy: [0, 0.5] },
 ]
 
-export interface Part {
-  generate(ctx: BarContext, out: NoteWriter, rng: Random): void
-  // 表示用に、直前に作った小節のメロディの状態を返す (リードだけ)
+export interface Role {
+  generate(ctx: BarContext, out: NoteWriter, rng: Random, seat: Seat): void
+  // 表示用に、直前に作った小節のメロディの状態を返す (メロディだけ)
   melody?(): MelodyInfo | undefined
 }
 
@@ -53,11 +74,11 @@ function lowestPc(key: Key, pc: number, lo: number, hi: number): number {
 }
 
 // 主音を持続するか、和音の根音を追う
-function drone(): Part {
+function bass(): Role {
   let droning = true
   let section = -1
   return {
-    generate(ctx, out, rng) {
+    generate(ctx, out, rng, seat) {
       const s = ctx.section
       if (s.index !== section) {
         section = s.index
@@ -65,67 +86,81 @@ function drone(): Part {
       }
       const vel = 68 + s.energy * 22
       if (droning) {
-        // 4 小節ごとに弾き直す
-        if (ctx.barInSection % 4 !== 0) return
-        const bars = Math.min(4, s.bars - ctx.barInSection)
-        const tonic = s.key.tonicIn(28)
+        // 持続する楽器は 4 小節ごと、減衰する楽器は毎小節弾き直す
+        const every = decays(seat.player) ? 1 : 4
+        if (ctx.barInSection % every !== 0) return
+        const bars = Math.min(every, s.bars - ctx.barInSection)
+        const tonic = s.key.tonicIn(seat.lo)
         out.note(0, tonic, vel, bars * ctx.beats)
-        if (s.energy > 0.6) out.note(0, tonic + 12, vel - 15, bars * ctx.beats)
+        if (s.energy > 0.6 && tonic + 12 <= seat.hi) out.note(0, tonic + 12, vel - 15, bars * ctx.beats)
         return
       }
       for (const span of ctx.chords) {
         if (!span.isNew) continue
         const rootPc = chordPitchClasses(s.key, span.chord)[0]
-        out.note(span.start, lowestPc(s.key, rootPc, 28, 40), vel, span.length)
+        out.note(span.start, lowestPc(s.key, rootPc, seat.lo, seat.lo + 12), vel, span.length)
       }
     },
   }
 }
 
-// 持続する和音。voices 声部を前の音に近いところで保つ
-function sustained(lo: number, hi: number, voices: number, velBase: number): Part {
+// 持続する和音。voices 声部を前の音に近いところで保つ。減衰する楽器は毎小節弾き直す
+function sustained(voices: number, velBase: number): Role {
   let prev: number[] = []
+  let player: PlayerId | undefined
   return {
-    generate(ctx, out) {
+    generate(ctx, out, _rng, seat) {
+      if (seat.player !== player) {
+        player = seat.player
+        prev = []
+      }
       const s = ctx.section
+      const restrike = decays(seat.player)
       for (const span of ctx.chords) {
-        if (!span.isNew) continue
-        const candidates = chordKeys(s.key, span.chord, lo, hi)
+        if (!span.isNew && !(restrike && span.start === 0)) continue
+        const candidates = chordKeys(s.key, span.chord, seat.lo, seat.hi)
         if (candidates.length === 0) continue
         const chosen: number[] = []
         for (let v = 0; v < voices; v++) {
-          const target = prev[v] ?? lo + ((hi - lo) * (v + 1)) / (voices + 1)
+          const target = prev[v] ?? seat.lo + ((seat.hi - seat.lo) * (v + 1)) / (voices + 1)
           // 同じ音名を重ねない
           const free = candidates.filter((k) => !chosen.some((c) => Math.abs(pcOf(c) - pcOf(k)) < EPS))
           if (free.length === 0) break
           chosen.push(nearest(free, target))
         }
         prev = chosen
-        for (const k of chosen) out.note(span.start, k, velBase + s.energy * 25, span.length)
+        const vel = velBase + s.energy * 25 - (span.isNew ? 0 : 8)
+        for (const k of chosen) out.note(span.start, k, vel, span.length)
       }
     },
   }
 }
 
-// 対旋律: 高音の持続音。盛り上がっているときはリードの前の小節をこだまする
-function counter(lead: Lead): Part {
-  let prev = 79
+// 対旋律: 持続音。盛り上がっているときは同じ小節のメロディを別のオクターブで重ねる
+function counter(lead: Lead): Role {
+  let prev: number | undefined
   return {
-    generate(ctx, out, rng) {
+    generate(ctx, out, rng, seat) {
       const s = ctx.section
+      const inRange = (k: number) => k >= seat.lo && k <= seat.hi
       const echo = s.energy > 0.7 && Math.floor(ctx.barInSection / 2) % 2 === 1 && lead.lastBar.length > 0
       if (echo && rng.chance(0.7)) {
-        for (const n of lead.lastBar) {
-          const k = n.key + (n.key + 12 < 64 ? 24 : 12)
-          if (k <= 91) out.note(n.beat, k, n.velocity * 0.7, n.duration)
-        }
+        const keys = lead.lastBar.map((n) => n.key)
+        const centre = (Math.min(...keys) + Math.max(...keys)) / 2
+        const shift = 12 * Math.round(((seat.lo + seat.hi) / 2 - centre) / 12)
+        // 同じ高さなら、音域に多く収まるほうへ 1 オクターブずらす
+        const shifts = shift !== 0 ? [shift] : [12, -12]
+        const fit = (d: number) => keys.filter((k) => inRange(k + d)).length
+        const d = shifts.reduce((a, b) => (fit(b) > fit(a) ? b : a))
+        for (const n of lead.lastBar) if (inRange(n.key + d)) out.note(n.beat, n.key + d, n.velocity * 0.7, n.duration)
         return
       }
+      const restrike = decays(seat.player)
       for (const span of ctx.chords) {
-        if (!span.isNew) continue
-        const candidates = chordKeys(s.key, span.chord, 67, 88)
+        if (!span.isNew && !(restrike && span.start === 0)) continue
+        const candidates = chordKeys(s.key, span.chord, seat.lo, seat.hi)
         if (candidates.length === 0) continue
-        prev = nearest(candidates, prev)
+        prev = nearest(candidates, prev !== undefined && inRange(prev) ? prev : seat.lo + (seat.hi - seat.lo) * 0.6)
         out.note(span.start, prev, 55 + s.energy * 25, span.length)
       }
     },
@@ -133,12 +168,12 @@ function counter(lead: Lead): Part {
 }
 
 // 拍のまとまりに沿った音型。セクションの頭で決め、毎小節その時点の和音に当てはめる
-function ostinato(): Part {
+function ostinato(): Role {
   type Slot = { role: number; accent: boolean } | undefined
   let pattern: Slot[] = []
   let section = -1
   return {
-    generate(ctx, out, rng) {
+    generate(ctx, out, rng, seat) {
       const s = ctx.section
       if (s.index !== section) {
         section = s.index
@@ -155,7 +190,7 @@ function ostinato(): Part {
       pattern.forEach((slot, i) => {
         if (!slot) return
         const beat = i * 0.5
-        const tones = chordKeys(s.key, chordAt(ctx, beat).chord, 48, 67)
+        const tones = chordKeys(s.key, chordAt(ctx, beat).chord, seat.lo, seat.hi)
         if (tones.length === 0) return
         const k = tones[Math.min(slot.role, tones.length - 1)]
         out.note(beat, k, (slot.accent ? 80 : 62) + s.energy * 15, 0.45)
@@ -164,46 +199,66 @@ function ostinato(): Part {
   }
 }
 
-// ハープ: 和音が変わるところでアルペジオ。セクションの頭ではスケールを駆け上がる
-function harp(): Part {
+// 分散和音。
+//   roll: 和音が変わるところで掻き鳴らし、セクションの頭ではスケールを駆け上がる (ハープ)
+//   flow: 根音から 4 つの和音の音を 8 分音符で上下し続ける。減衰する楽器は 1 拍ぶん響かせる
+function arpeggio(): Role {
+  let step = 0
   return {
-    generate(ctx, out, rng) {
+    generate(ctx, out, rng, seat) {
       const s = ctx.section
       const vel = 58 + s.energy * 22
-      if (ctx.first && rng.chance(0.6)) {
-        const run = s.key.keysInRange(52, 90)
-        const start = rng.int(0, Math.max(0, run.length - 14))
-        const notes = run.slice(start, start + rng.int(9, 14))
-        notes.forEach((k, i) => out.note(i * 0.125, k, vel - 6 + i, ctx.beats - i * 0.125))
+      if (seat.style === 'roll') {
+        if (ctx.first && rng.chance(0.6)) {
+          const run = s.key.keysInRange(seat.lo + 2, seat.hi)
+          const start = rng.int(0, Math.max(0, run.length - 14))
+          const notes = run.slice(start, start + rng.int(9, 14))
+          notes.forEach((k, i) => out.note(i * 0.125, k, vel - 6 + i, ctx.beats - i * 0.125))
+          return
+        }
+        for (const span of ctx.chords) {
+          if (!span.isNew || !rng.chance(0.35 + s.energy * 0.4)) continue
+          const tones = chordKeys(s.key, span.chord, seat.lo, seat.hi - 4)
+          const from = rng.int(0, Math.max(0, tones.length - 8))
+          const count = rng.int(4, 8)
+          tones.slice(from, from + count).forEach((k, i) => {
+            const t = span.start + i * 0.25
+            if (t < span.end) out.note(t, k, vel - i * 2, span.length - i * 0.25)
+          })
+        }
         return
       }
-      for (const span of ctx.chords) {
-        if (!span.isNew || !rng.chance(0.35 + s.energy * 0.4)) continue
-        const tones = chordKeys(s.key, span.chord, 50, 86)
-        const from = rng.int(0, Math.max(0, tones.length - 8))
-        const count = rng.int(4, 8)
-        tones.slice(from, from + count).forEach((k, i) => {
-          const t = span.start + i * 0.25
-          if (t < span.end) out.note(t, k, vel - i * 2, span.length - i * 0.25)
-        })
+      const ring = decays(seat.player) ? 1 : 0.5
+      for (let t = 0; t < ctx.beats - EPS; t += 0.5) {
+        const span = chordAt(ctx, t)
+        if (span.isNew && Math.abs(t - span.start) < EPS) step = 0
+        const tones = chordKeys(s.key, span.chord, seat.lo, seat.hi)
+        const rootPc = chordPitchClasses(s.key, span.chord)[0]
+        const root = Math.max(0, tones.findIndex((k) => Math.abs(pcOf(k) - rootPc) < EPS))
+        const figure = tones.slice(root, root + 4)
+        if (figure.length === 0) continue
+        const cycle = Math.max(1, 2 * figure.length - 2)
+        const i = step++ % cycle
+        const head = ctx.groups.some((g) => Math.abs(g.start - t) < EPS)
+        out.note(t, figure[i < figure.length ? i : cycle - i], vel + (head ? 6 : -4), Math.min(ring, ctx.beats - t) * 0.95)
       }
     },
   }
 }
 
 // 打楽器: まとまりの頭を叩く。セクションの最後はロールでつなぐ
-function percussion(): Part {
+function percussion(): Role {
   let hits: boolean[] = []
   let section = -1
   return {
-    generate(ctx, out, rng) {
+    generate(ctx, out, rng, seat) {
       const s = ctx.section
       if (s.index !== section) {
         section = s.index
         hits = ctx.groups.map((_, i) => i === 0 || rng.chance(0.6))
       }
-      const tonic = s.key.tonicIn(40)
-      const fifth = s.key.contains(s.key.tonic + 7) ? tonic + 7 : tonic
+      const tonic = s.key.tonicIn(seat.lo)
+      const fifth = s.key.contains(s.key.tonic + 7) && tonic + 7 <= seat.hi ? tonic + 7 : tonic
       const rollFrom = ctx.last ? ctx.groups[ctx.groups.length - 1].start : Infinity
       ctx.groups.forEach((g, i) => {
         if (g.start >= rollFrom || !hits[i]) return
@@ -219,12 +274,12 @@ function percussion(): Part {
 }
 
 // 鐘のような高音。静かなセクションで特性音をぽつりと鳴らす
-function shimmer(): Part {
+function bells(): Role {
   return {
-    generate(ctx, out, rng) {
+    generate(ctx, out, rng, seat) {
       const s = ctx.section
       if (!rng.chance(0.5)) return
-      const color = s.key.keysInRange(72, 96, (d) => s.key.scale.color.includes(d) || d === 0)
+      const color = s.key.keysInRange(seat.lo, seat.hi, (d) => s.key.scale.color.includes(d) || d === 0)
       if (color.length === 0) return
       const count = rng.int(1, 2)
       for (let i = 0; i < count; i++) {
@@ -235,17 +290,17 @@ function shimmer(): Part {
   }
 }
 
-export function createParts(): Record<PartId, Part> {
-  const lead = new Lead(50, 77)
+export function createRoles(): Record<RoleId, Role> {
+  const lead = new Lead()
   return {
-    drone: drone(),
-    lead: { generate: (ctx, out, rng) => lead.generate(ctx, out, rng), melody: () => lead.info },
+    bass: bass(),
+    melody: { generate: (ctx, out, rng, seat) => lead.generate(ctx, out, rng, seat.lo, seat.hi), melody: () => lead.info },
     counter: counter(lead),
-    pad: sustained(55, 71, 2, 48),
-    choir: sustained(55, 74, 3, 42),
+    chords: sustained(2, 48),
+    pad: sustained(3, 42),
     ostinato: ostinato(),
-    harp: harp(),
+    arpeggio: arpeggio(),
     percussion: percussion(),
-    shimmer: shimmer(),
+    bells: bells(),
   }
 }

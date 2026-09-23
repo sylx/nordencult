@@ -1,16 +1,19 @@
 // プロシージャル BGM の作曲者。Sequencer の conductor とトラックとしてつなぐ。
 //
 // セクション (既定 8 小節) ごとに調・拍子・盛り上がり・編成を決め、
-// 和音は和音の枠ごとに、パートの音符は小節ごとにその場で作る。
+// 和音は和音の枠ごとに、役割の音符は小節ごとにその場で作る。
 // セクション最後の和音の枠に入ったところで次の調を決め、両方の調に含まれる和音 (ピボット) で転調する。
+// アーティクル (既定 4 セクション) ごとに伴奏セットを替え、役割を受け持つ奏者を入れ替える。
+// 役割は conductor の中で役割の順に作り (対旋律がメロディを参照するため)、奏者のトラックはそれを書き込むだけ。
 
-import type { Channel, ConductorBar, Sequencer, Track, TrackBar } from '../synth/index.ts'
-import { NoteWriter, type BarContext, type ChordSpan, type PartId, type Section } from './context.ts'
+import type { Channel, ConductorBar, Sequencer, Track } from '../synth/index.ts'
+import { chooseArrangement, seatOf, type Arrangement } from './arrangement.ts'
+import { NoteWriter, type BarContext, type ChordSpan, type PlayerId, type RoleId, type Section, type WrittenNote } from './context.ts'
 import { chooseEnergy, chooseMeter, firstKey, meterBeats, meterGroups, meterLabel, nextKey } from './form.ts'
 import { chooseChord, chordName, type Chord } from './harmony.ts'
 import type { MelodyInfo } from './melody.ts'
 import { DEFAULT_PARAMS, type BgmParams } from './params.ts'
-import { PART_DEFS, createParts, type Part } from './parts.ts'
+import { PLAYER_DEFS, ROLE_DEFS, createRoles, type Role } from './parts.ts'
 import { Random } from './random.ts'
 import type { Key } from './scales.ts'
 
@@ -25,7 +28,13 @@ export interface BarSnapshot {
   meter: string
   chords: string[]
   energy: number
-  parts: PartId[]
+  article: number
+  // アーティクルの中で何番目のセクションか
+  sectionInArticle: number
+  articleSections: number
+  arrangement: string
+  // 鳴っている役割と、受け持つ奏者 (役割の順)
+  roles: { role: RoleId; player: PlayerId }[]
   // セクション最後の小節で、次に転調する調
   modulatingTo?: string
   // メロディの句と音型 (リードが休んでいる・編成にないなら undefined)
@@ -37,8 +46,13 @@ export class Composer {
   params: BgmParams
   private formRng!: Random
   private harmonyRng!: Random
-  private partRng!: Record<PartId, Random>
-  private parts!: Record<PartId, Part>
+  private arrangementRng!: Random
+  private roleRng!: Record<RoleId, Random>
+  private roles!: Record<RoleId, Role>
+  private arrangement!: Arrangement
+  private article = { index: -1, startSection: 0, sections: 0 }
+  // この小節で各奏者が鳴らす音符
+  private written = new Map<PlayerId, WrittenNote[]>()
   private section?: Section
   private next?: Key
   private ctx?: BarContext
@@ -54,21 +68,29 @@ export class Composer {
     const seed = this.params.seed
     this.formRng = Random.derive(seed, 'form')
     this.harmonyRng = Random.derive(seed, 'harmony')
-    this.partRng = Object.fromEntries(PART_DEFS.map((d) => [d.id, Random.derive(seed, d.id)])) as Record<PartId, Random>
-    this.parts = createParts()
+    this.arrangementRng = Random.derive(seed, 'arrangement')
+    this.roleRng = Object.fromEntries(ROLE_DEFS.map((d) => [d.id, Random.derive(seed, d.id)])) as Record<RoleId, Random>
+    this.roles = createRoles()
+    this.article = { index: -1, startSection: 0, sections: 0 }
+    this.written.clear()
     this.section = undefined
     this.next = undefined
     this.ctx = undefined
     this.snapshots.clear()
   }
 
-  // seq の conductor を置き換え、channels にあるパートのトラックを足す
-  attach(seq: Sequencer, channels: Partial<Record<PartId, Channel>>): Map<PartId, Track> {
+  // seq の conductor を置き換え、channels にある奏者のトラックを足す
+  attach(seq: Sequencer, channels: Partial<Record<PlayerId, Channel>>): Map<PlayerId, Track> {
     seq.conductor = (bar) => this.conduct(bar)
-    const tracks = new Map<PartId, Track>()
-    for (const def of PART_DEFS) {
+    const tracks = new Map<PlayerId, Track>()
+    for (const def of PLAYER_DEFS) {
       const channel = channels[def.id]
-      if (channel) tracks.set(def.id, seq.addTrack(channel, (bar) => this.play(def.id, bar)))
+      if (!channel) continue
+      const track = seq.addTrack(channel, (bar) => {
+        if (this.ctx?.index !== bar.index) return
+        for (const n of this.written.get(def.id) ?? []) bar.note(n.beat, n.key, n.velocity, n.duration)
+      })
+      tracks.set(def.id, track)
     }
     return tracks
   }
@@ -104,6 +126,25 @@ export class Composer {
       params: p,
     }
 
+    const roles = ROLE_DEFS.flatMap((d) => {
+      const seat = s.roles.has(d.id) ? seatOf(this.arrangement, d.id) : undefined
+      return seat ? [seat] : []
+    })
+    this.written.clear()
+    let melody: MelodyInfo | undefined
+    for (const seat of roles) {
+      const rng = this.roleRng[seat.role]
+      const role = this.roles[seat.role]
+      const out = new NoteWriter(rng, p.humanize, seat.gain)
+      try {
+        role.generate(this.ctx, out, rng, seat)
+      } catch (err) {
+        console.error(`composer: ${seat.role} failed at bar ${bar.index}`, err)
+      }
+      this.written.set(seat.player, out.events)
+      if (role.melody) melody = role.melody()
+    }
+
     this.snapshots.set(bar.index, {
       bar: bar.index,
       section: s.index,
@@ -114,20 +155,15 @@ export class Composer {
       meter: meterLabel(s.meter),
       chords: chords.map((c) => chordName(s.key, c.chord)),
       energy: s.energy,
-      parts: PART_DEFS.map((d) => d.id).filter((id) => s.parts.has(id)),
+      article: this.article.index,
+      sectionInArticle: s.index - this.article.startSection,
+      articleSections: this.article.sections,
+      arrangement: this.arrangement.name,
+      roles: roles.map((seat) => ({ role: seat.role, player: seat.player })),
       modulatingTo: modulating ? this.next!.name : undefined,
+      melody,
     })
     this.snapshots.delete(bar.index - 64)
-  }
-
-  private play(id: PartId, bar: TrackBar): void {
-    const ctx = this.ctx
-    if (!ctx || ctx.index !== bar.index || !ctx.section.parts.has(id)) return
-    const rng = this.partRng[id]
-    const part = this.parts[id]
-    part.generate(ctx, new NoteWriter(bar, rng, this.params.humanize), rng)
-    const snapshot = this.snapshots.get(ctx.index)
-    if (part.melody && snapshot) snapshot.melody = part.melody()
   }
 
   private startSection(startBar: number): void {
@@ -138,18 +174,25 @@ export class Composer {
     this.next = undefined
     const meter = chooseMeter(prev?.meter, p, rng)
     const energy = chooseEnergy(prev?.energy, p, rng)
+    const index = prev ? prev.index + 1 : 0
 
-    // 盛り上がりに応じて編成を決め、ときどき 1 パート抜いて変化をつける
-    const parts = new Set<PartId>()
-    for (const def of PART_DEFS) {
+    // アーティクルの頭で伴奏セットを替える
+    if (this.article.index < 0 || index - this.article.startSection >= this.article.sections) {
+      this.arrangement = chooseArrangement(this.article.index < 0 ? undefined : this.arrangement, this.arrangementRng)
+      this.article = { index: this.article.index + 1, startSection: index, sections: Math.max(1, Math.round(p.articleSections)) }
+    }
+
+    // 盛り上がりに応じて編成を決め、ときどき 1 つ抜いて変化をつける
+    const roles = new Set<RoleId>()
+    for (const def of ROLE_DEFS) {
       const [lo, hi] = def.energy
       if (energy < lo || energy > hi) continue
-      if (def.id !== 'drone' && def.id !== 'lead' && rng.chance(0.15)) continue
-      parts.add(def.id)
+      if (def.id !== 'bass' && def.id !== 'melody' && rng.chance(0.15)) continue
+      roles.add(def.id)
     }
 
     this.section = {
-      index: prev ? prev.index + 1 : 0,
+      index,
       startBar,
       // 5/8 のような短い小節では、セクションが短くなりすぎないよう小節数を倍にする
       bars: meterBeats(meter) < 3 ? p.sectionBars * 2 : p.sectionBars,
@@ -158,7 +201,7 @@ export class Composer {
       meter,
       energy,
       chordBars: p.chordBars,
-      parts,
+      roles,
       chords: [],
     }
   }

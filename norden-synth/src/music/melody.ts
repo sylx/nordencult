@@ -218,16 +218,17 @@ function formOf(n: number): Role[] {
 }
 
 export class Lead {
-  // 前の小節の音符 (対旋律のこだまに使う)
+  // 最後に作った小節の音符 (対旋律がオクターブで重ねるのに使う)
   lastBar: { beat: number; key: number; velocity: number; duration: number }[] = []
   // 最後に作った小節のメロディの状態 (休みなら undefined)
   info?: MelodyInfo
-  private readonly lo: number
-  private readonly hi: number
+  // 音域。伴奏セットで受け持つ楽器が変わると変わる
+  private lo = 0
+  private hi = 0
   // 音域内のスケール音
   private keys: number[] = []
   // 最後に鳴らした (休符なら鳴らすはずだった) 音
-  private pos: number
+  private pos = 0
   private section = -1
   private phraseBars = 4
   private form: Role[] = []
@@ -239,14 +240,9 @@ export class Lead {
   // クリシェの線
   private line?: { start: number; sign: 1 | -1; offset: number; dir: 1 | -1; max: number; chromatic: boolean }
 
-  constructor(lo: number, hi: number) {
-    this.lo = lo
-    this.hi = hi
-    this.pos = (lo + hi) / 2
-  }
-
-  generate(ctx: BarContext, out: NoteWriter, rng: Random): void {
+  generate(ctx: BarContext, out: NoteWriter, rng: Random, lo: number, hi: number): void {
     const s = ctx.section
+    if (lo !== this.lo || hi !== this.hi) this.setRange(ctx, lo, hi)
     if (s.index !== this.section) this.startSection(ctx, rng)
     const phrase = Math.floor(ctx.barInSection / this.phraseBars)
     const bar = ctx.barInSection % this.phraseBars
@@ -309,6 +305,16 @@ export class Lead {
     this.lastBar = out.notes.slice()
   }
 
+  // 楽器が変わったら音域を移す。最初は真ん中から、以降は句の頭でオクターブを直して続ける
+  private setRange(ctx: BarContext, lo: number, hi: number): void {
+    if (this.keys.length === 0) this.pos = (lo + hi) / 2
+    this.lo = lo
+    this.hi = hi
+    this.keys = ctx.section.key.keysInRange(lo, hi)
+    this.line = undefined
+    this.prevStart = undefined
+  }
+
   private startSection(ctx: BarContext, rng: Random): void {
     const s = ctx.section
     this.section = s.index
@@ -348,11 +354,11 @@ export class Lead {
     return { figures, pickup, meter }
   }
 
-  // 句の頭で、音域の端に寄っていたら 1 オクターブ戻す
+  // 句の頭で、音域の端に寄っていたらオクターブ単位で戻す (楽器が変わって音域が大きくずれたときも)
   private startPhrase(): void {
     const mid = (this.lo + this.hi) / 2
-    if (this.pos > mid + 8) this.pos -= 12
-    else if (this.pos < mid - 8) this.pos += 12
+    while (this.pos > mid + 8) this.pos -= 12
+    while (this.pos < mid - 8) this.pos += 12
     this.line = undefined
     this.prevStart = undefined
   }

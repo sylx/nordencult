@@ -9,6 +9,7 @@ export interface BgmParams {
   modulationDistance: number
   oddMeter: number
   sectionBars: number
+  articleSections: number
   chordBars: number
   drone: number
   colorTones: number
@@ -43,6 +44,7 @@ export const DEFAULT_PARAMS: BgmParams = {
   modulationDistance: 0.5,
   oddMeter: 0.5,
   sectionBars: 8,
+  articleSections: 4,
   chordBars: 2,
   drone: 0.7,
   colorTones: 0.6,
@@ -110,6 +112,13 @@ export const PARAM_DEFS: ParamDef[] = [
     group: 'リズムと構成',
     description: '小節数。調・拍子・編成はセクション単位で変わる',
     min: 4, max: 16, step: 4, options: [4, 8, 12, 16], applies: 'section',
+  },
+  {
+    key: 'articleSections',
+    label: 'アーティクルの長さ',
+    group: 'リズムと構成',
+    description: 'セクション数。伴奏セット (どの楽器がメロディ・和音・アルペジオなどを受け持つか) はアーティクルごとに切り替わる',
+    min: 1, max: 8, step: 1, options: [1, 2, 4, 8], applies: 'section',
   },
   {
     key: 'chordBars',

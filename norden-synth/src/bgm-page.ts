@@ -1,6 +1,6 @@
 // テストページの「BGM 生成」タブ
 
-import { Composer, DEFAULT_PARAMS, PARAM_DEFS, PART_DEFS, type BgmParams, type MelodyInfo, type PartId } from './music/index.ts'
+import { Composer, DEFAULT_PARAMS, PARAM_DEFS, PLAYER_DEFS, ROLE_DEFS, type BgmParams, type MelodyInfo, type PlayerId } from './music/index.ts'
 import { Sequencer, type Synth, type Track } from './synth/index.ts'
 
 const STORAGE_KEY = 'norden-synth:bgm-params'
@@ -28,8 +28,8 @@ export function setupBgmPage(synth: Synth, root: HTMLElement): void {
   const composer = new Composer(loadParams())
   const p = composer.params
   const seq = new Sequencer(synth.ctx, { tempo: p.tempo })
-  const tracks = new Map<PartId, Track>()
-  const muted = new Set<PartId>()
+  const tracks = new Map<PlayerId, Track>()
+  const muted = new Set<PlayerId>()
 
   const groups = [...new Set(PARAM_DEFS.map((d) => d.group))]
   root.innerHTML = `
@@ -43,7 +43,7 @@ export function setupBgmPage(synth: Synth, root: HTMLElement): void {
 
     <div id="bgm-now" class="now"></div>
 
-    <h2>パート</h2>
+    <h2>奏者</h2>
     <div id="bgm-parts" class="parts"></div>
 
     ${groups
@@ -78,13 +78,15 @@ export function setupBgmPage(synth: Synth, root: HTMLElement): void {
   const message = $('#bgm-message')
   const now = $('#bgm-now')
 
-  // --- パート ---
+  // --- 奏者 (チェックを外すと鳴らさない。受け持っている役割を横に出す) ---
 
   const partList = $('#bgm-parts')
-  const partLabels = new Map<PartId, HTMLElement>()
-  for (const def of PART_DEFS) {
+  const partLabels = new Map<PlayerId, HTMLElement>()
+  const partRoles = new Map<PlayerId, HTMLElement>()
+  for (const def of PLAYER_DEFS) {
     const label = document.createElement('label')
-    label.innerHTML = `<input type="checkbox" checked /> ${def.label}`
+    label.innerHTML = `<input type="checkbox" checked /> ${def.label}<span class="role"></span>`
+    partRoles.set(def.id, label.querySelector('.role')!)
     label.querySelector('input')!.addEventListener('change', (e) => {
       if ((e.target as HTMLInputElement).checked) muted.delete(def.id)
       else muted.add(def.id)
@@ -139,9 +141,9 @@ export function setupBgmPage(synth: Synth, root: HTMLElement): void {
 
   let loading: Promise<void> | undefined
   function load(): Promise<void> {
-    loading ??= Promise.all(PART_DEFS.map((d) => synth.loadInstrument(d.instrument))).then((instruments) => {
+    loading ??= Promise.all(PLAYER_DEFS.map((d) => synth.loadInstrument(d.instrument))).then((instruments) => {
       const channels = Object.fromEntries(
-        PART_DEFS.map((d, i) => {
+        PLAYER_DEFS.map((d, i) => {
           const ch = synth.createChannel(instruments[i])
           ch.volume = d.volume
           ch.pan = d.pan
@@ -186,7 +188,8 @@ export function setupBgmPage(synth: Synth, root: HTMLElement): void {
 
   // --- 今鳴っている位置 ---
 
-  const partName = new Map(PART_DEFS.map((d) => [d.id, d.label]))
+  const playerName = new Map(PLAYER_DEFS.map((d) => [d.id, d.label]))
+  const roleName = new Map(ROLE_DEFS.map((d) => [d.id, d.label]))
   // 句の役割と音型の並び。今の小節の音型を強調する
   function melodyHtml(m: MelodyInfo | undefined): string {
     if (!m) return '<span class="muted">休み</span>'
@@ -200,20 +203,27 @@ export function setupBgmPage(synth: Synth, root: HTMLElement): void {
     let html = ''
     if (pos && snap) {
       const energy = Math.round(snap.energy * 100)
+      const lead = snap.roles.find((r) => r.role === 'melody')
       html = `
         <div class="key">${snap.key}${snap.scaleNote ? `<span>${snap.scaleNote}</span>` : ''}</div>
         <dl>
           <dt>セクション</dt><dd>${snap.section + 1} (${snap.barInSection + 1}/${snap.sectionBars} 小節)</dd>
           <dt>拍子</dt><dd>${snap.meter} · ♩=${pos.tempo.toFixed(0)}</dd>
           <dt>和音</dt><dd>${snap.chords.join(' / ')}${snap.modulatingTo ? ` → <b>${snap.modulatingTo}</b> へ転調` : ''}</dd>
-          ${snap.parts.includes('lead') ? `<dt>メロディ</dt><dd>${melodyHtml(snap.melody)}</dd>` : ''}
+          <dt>アーティクル</dt><dd>${snap.article + 1} (${snap.sectionInArticle + 1}/${snap.articleSections} セクション) · ${snap.arrangement}</dd>
+          ${lead ? `<dt>メロディ</dt><dd>${playerName.get(lead.player)} · ${melodyHtml(snap.melody)}</dd>` : ''}
           <dt>盛り上がり</dt><dd><span class="meter"><span style="width:${energy}%"></span></span></dd>
-          <dt>編成</dt><dd>${snap.parts.map((id) => partName.get(id)!.replace(/ \(.*\)$/, '')).join('、')}</dd>
+          <dt>編成</dt><dd>${snap.roles.map((r) => `${roleName.get(r.role)}: ${playerName.get(r.player)}`).join('、')}</dd>
         </dl>`
-      for (const [id, label] of partLabels) label.classList.toggle('active', snap.parts.includes(id))
+      for (const [id, label] of partLabels) {
+        const role = snap.roles.find((r) => r.player === id)?.role
+        label.classList.toggle('active', role !== undefined)
+        partRoles.get(id)!.textContent = role ? ` · ${roleName.get(role)}` : ''
+      }
     } else if (!seq.playing) {
       html = '<p class="info">「再生」で生成を始めます。同じシードとパラメータなら同じ曲になります</p>'
       for (const label of partLabels.values()) label.classList.remove('active')
+      for (const role of partRoles.values()) role.textContent = ''
     }
     if (html && html !== shown) {
       now.innerHTML = html
