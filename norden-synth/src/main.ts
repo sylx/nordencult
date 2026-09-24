@@ -1,7 +1,7 @@
 import './style.css'
 import { setupBgmPage } from './bgm-page.ts'
 import { setupMixer } from './mixer-panel.ts'
-import { setupSequencerDemo } from './sequencer-demo.ts'
+import { setupSongsPage } from './songs-page.ts'
 import { Synth, type Channel, type Instrument, type InstrumentIndexEntry } from './synth/index.ts'
 
 const synth = new Synth()
@@ -19,7 +19,7 @@ app.innerHTML = `
   <nav class="tabs">
     <a href="#bgm" data-tab="bgm">BGM 生成</a>
     <a href="#instrument" data-tab="instrument">音源チェック</a>
-    <a href="#sequencer" data-tab="sequencer">シーケンサ</a>
+    <a href="#songs" data-tab="songs">LLM 作成曲</a>
   </nav>
 
   <section id="mixer" class="mixer"></section>
@@ -56,10 +56,10 @@ app.innerHTML = `
     </section>
   </div>
 
-  <div data-page="sequencer" hidden>
+  <div data-page="songs" hidden>
     <section>
-      <h2>デモ曲</h2>
-      <div id="sequencer"></div>
+      <h2>LLM 作成曲</h2>
+      <div id="songs"></div>
     </section>
   </div>
 
@@ -74,9 +74,9 @@ app.innerHTML = `
 const $ = <T extends HTMLElement>(sel: string) => app.querySelector<T>(sel)!
 
 // --- タブ ---
-// URL のハッシュで開くページを決める (#bgm / #instrument / #sequencer)。既定は BGM 生成
+// URL のハッシュで開くページを決める (#bgm / #instrument / #songs)。既定は BGM 生成
 
-const pages = ['bgm', 'instrument', 'sequencer'] as const
+const pages = ['bgm', 'instrument', 'songs'] as const
 type Page = (typeof pages)[number]
 let page: Page = 'bgm'
 
@@ -272,7 +272,7 @@ window.addEventListener('keyup', (e) => {
 })
 
 setBaseKey(baseKey)
-setupSequencerDemo(synth, $('#sequencer'))
+setupSongsPage(synth, $('#songs'))
 setupBgmPage(synth, $('#bgm'))
 setupMixer(synth, $('#mixer'))
 showPage()

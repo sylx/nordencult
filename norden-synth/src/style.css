@@ -403,3 +403,12 @@ button.stop {
 .buttons.footer {
   margin-top: 16px;
 }
+
+/* LLM 作成曲 */
+
+.now .description {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
