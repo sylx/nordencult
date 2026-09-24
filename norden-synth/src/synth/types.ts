@@ -79,6 +79,12 @@ export interface RegionData {
   modEnv: Envelope
   modEnvToPitch: number
   modEnvToFilterFc: number
+  // モジュレーション LFO (三角波)。delay は秒、freq は Hz
+  modLfoDelay: number
+  modLfoFreq: number
+  // LFO の振幅 ±1 あたりのピッチ/カットオフの変化量 (セント)
+  modLfoToPitch: number
+  modLfoToFilterFc: number
   // 0..1
   reverbSend: number
   exclusiveClass: number

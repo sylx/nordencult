@@ -54,9 +54,7 @@ const UNSUPPORTED = [
   Gen.endAddrsCoarseOffset,
   Gen.startloopAddrsCoarseOffset,
   Gen.endloopAddrsCoarseOffset,
-  Gen.modLfoToPitch,
   Gen.vibLfoToPitch,
-  Gen.modLfoToFilterFc,
   Gen.modLfoToVolume,
 ]
 
@@ -136,6 +134,10 @@ export function flattenPreset(sf: Sf2, preset: Sf2Preset, warn: (msg: string) =>
         modEnv: envelope(Gen.delayModEnv, 1000),
         modEnvToPitch: clamp(gen(Gen.modEnvToPitch), -12000, 12000),
         modEnvToFilterFc: clamp(gen(Gen.modEnvToFilterFc), -12000, 12000),
+        modLfoDelay: timecents(gen(Gen.delayModLFO), 5000),
+        modLfoFreq: round(8.176 * 2 ** (clamp(gen(Gen.freqModLFO), -16000, 4500) / 1200)),
+        modLfoToPitch: clamp(gen(Gen.modLfoToPitch), -12000, 12000),
+        modLfoToFilterFc: clamp(gen(Gen.modLfoToFilterFc), -12000, 12000),
         reverbSend: clamp(gen(Gen.reverbEffectsSend), 0, 1000) / 1000,
         exclusiveClass: instGen(Gen.exclusiveClass),
       })

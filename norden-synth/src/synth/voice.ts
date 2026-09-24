@@ -2,6 +2,8 @@
 //
 //   source → [lowpass] → envGain → releaseGain → [panner] → output
 //                                              └→ reverbSend → reverb
+//   [modLfo] → lfoToPitch → source.detune
+//            → lfoToFilter → lowpass.detune
 //
 // envGain は attack〜sustain をノートオン時に一度だけ書き込み、
 // releaseGain はノートオフ時にだけ書き込む。これで cancelAndHoldAtTime に頼らず
@@ -26,6 +28,7 @@ export class Voice {
   private readonly region: RegionData
   private readonly source: AudioBufferSourceNode
   private readonly filter?: BiquadFilterNode
+  private readonly modLfo?: OscillatorNode
   private readonly releaseGain: GainNode
   // attenuation とベロシティによる固定のゲイン
   private readonly level: number
@@ -73,7 +76,7 @@ export class Voice {
     // FluidSynth の既定モジュレータ: ベロシティ < 64 のときだけカットオフを下げる
     const velFilter = velocity < 64 ? region.velToFilterFc * (1 - velocity / 128) : 0
     const fc = region.filterFc + velFilter
-    if (fc < FILTER_FC_MAX || region.modEnvToFilterFc !== 0) {
+    if (fc < FILTER_FC_MAX || region.modEnvToFilterFc !== 0 || region.modLfoToFilterFc !== 0) {
       const filter = new BiquadFilterNode(ctx, {
         type: 'lowpass',
         frequency: Math.min(8.176 * 2 ** (fc / 1200), ctx.sampleRate / 2),
@@ -117,6 +120,24 @@ export class Voice {
     if (this.modEnv) {
       if (region.modEnvToPitch !== 0) this.modEnv.scheduleModulation(source.detune, time, region.modEnvToPitch)
       if (this.filter) this.modEnv.scheduleModulation(this.filter.detune, time, region.modEnvToFilterFc)
+    }
+
+    // Web Audio の三角波は SF2 の LFO と同じく 0 から上昇し始める。start までは出力 0
+    if (region.modLfoToPitch !== 0 || (this.filter && region.modLfoToFilterFc !== 0)) {
+      const lfo = new OscillatorNode(ctx, { type: 'triangle', frequency: region.modLfoFreq })
+      this.nodes.push(lfo)
+      if (region.modLfoToPitch !== 0) {
+        const toPitch = new GainNode(ctx, { gain: region.modLfoToPitch })
+        lfo.connect(toPitch).connect(source.detune)
+        this.nodes.push(toPitch)
+      }
+      if (this.filter && region.modLfoToFilterFc !== 0) {
+        const toFilter = new GainNode(ctx, { gain: region.modLfoToFilterFc })
+        lfo.connect(toFilter).connect(this.filter.detune)
+        this.nodes.push(toFilter)
+      }
+      lfo.start(time + region.modLfoDelay)
+      this.modLfo = lfo
     }
 
     source.onended = () => this.dispose()
@@ -181,11 +202,14 @@ export class Voice {
     if (this.ended || time >= this.stopTime) return
     this.stopTime = time
     this.source.stop(time)
+    this.modLfo?.stop(time)
   }
 
   private dispose(): void {
     if (this.ended) return
     this.ended = true
+    // ループなしのサンプルは stop を予約しないまま終わるので、ここで LFO も止める
+    this.modLfo?.stop()
     for (const n of this.nodes) n.disconnect()
     this.onended?.(this)
   }

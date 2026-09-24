@@ -6,7 +6,23 @@
       "bank": 0,
       "program": 0,
       "url": "yamaha-grand-piano.json",
-      "bytes": 955554
+      "bytes": 971052
+    },
+    {
+      "id": "accordian",
+      "name": "Accordian",
+      "bank": 0,
+      "program": 21,
+      "url": "accordian.json",
+      "bytes": 239740
+    },
+    {
+      "id": "nylon-string-guitar",
+      "name": "Nylon String Guitar",
+      "bank": 0,
+      "program": 24,
+      "url": "nylon-string-guitar.json",
+      "bytes": 228667
     },
     {
       "id": "violin",
@@ -14,7 +30,7 @@
       "bank": 0,
       "program": 40,
       "url": "violin.json",
-      "bytes": 356754
+      "bytes": 357902
     },
     {
       "id": "viola",
@@ -22,7 +38,7 @@
       "bank": 0,
       "program": 41,
       "url": "viola.json",
-      "bytes": 472175
+      "bytes": 483245
     },
     {
       "id": "cello",
@@ -30,7 +46,7 @@
       "bank": 0,
       "program": 42,
       "url": "cello.json",
-      "bytes": 605736
+      "bytes": 619020
     },
     {
       "id": "contrabass",
@@ -38,7 +54,7 @@
       "bank": 0,
       "program": 43,
       "url": "contrabass.json",
-      "bytes": 195400
+      "bytes": 201304
     },
     {
       "id": "pizzicato-section",
@@ -46,7 +62,7 @@
       "bank": 0,
       "program": 45,
       "url": "pizzicato-section.json",
-      "bytes": 364258
+      "bytes": 374590
     },
     {
       "id": "harp",
@@ -54,7 +70,7 @@
       "bank": 0,
       "program": 46,
       "url": "harp.json",
-      "bytes": 198830
+      "bytes": 199978
     },
     {
       "id": "timpani",
@@ -62,7 +78,7 @@
       "bank": 0,
       "program": 47,
       "url": "timpani.json",
-      "bytes": 157485
+      "bytes": 159699
     },
     {
       "id": "ahh-choir",
@@ -70,7 +86,7 @@
       "bank": 0,
       "program": 52,
       "url": "ahh-choir.json",
-      "bytes": 672635
+      "bytes": 683705
     },
     {
       "id": "ohh-voices",
@@ -78,7 +94,31 @@
       "bank": 0,
       "program": 53,
       "url": "ohh-voices.json",
-      "bytes": 177361
+      "bytes": 182527
+    },
+    {
+      "id": "trumpet",
+      "name": "Trumpet",
+      "bank": 0,
+      "program": 56,
+      "url": "trumpet.json",
+      "bytes": 83257
+    },
+    {
+      "id": "trombone",
+      "name": "Trombone",
+      "bank": 0,
+      "program": 57,
+      "url": "trombone.json",
+      "bytes": 154560
+    },
+    {
+      "id": "french-horns",
+      "name": "French Horns",
+      "bank": 0,
+      "program": 60,
+      "url": "french-horns.json",
+      "bytes": 397436
     }
   ]
 }
