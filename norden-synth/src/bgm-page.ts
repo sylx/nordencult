@@ -58,7 +58,7 @@ export function setupBgmPage(synth: Synth, root: HTMLElement): void {
             <label for="bgm-${d.key}">${d.label}</label>
             ${
               d.options
-                ? `<select id="bgm-${d.key}">${d.options.map((o) => `<option value="${o}" ${o === p[d.key] ? 'selected' : ''}>${o}</option>`).join('')}</select>`
+                ? `<select id="bgm-${d.key}">${d.options.map((o) => `<option value="${o}" ${o === p[d.key] ? 'selected' : ''}>${d.optionLabels?.[o] ?? o}</option>`).join('')}</select>`
                 : `<input id="bgm-${d.key}" type="range" min="${d.min}" max="${d.max}" step="${d.step}" value="${p[d.key]}" /><output>${fmt(p[d.key])}</output>`
             }
             <p>${d.description}<span class="applies">${d.applies === 'bar' ? '次の小節から' : '次のセクションから'}</span></p>
@@ -207,6 +207,7 @@ export function setupBgmPage(synth: Synth, root: HTMLElement): void {
       html = `
         <div class="key">${snap.key}${snap.scaleNote ? `<span>${snap.scaleNote}</span>` : ''}</div>
         <dl>
+          <dt>ソング</dt><dd>${snap.song + 1} (${snap.songRepeat + 1}${snap.songRepeats ? `/${snap.songRepeats}` : ''} 回目) · ${snap.sectionInSong + 1}/${snap.songSections} セクション${snap.theme ? ` · <b>${snap.theme === 'statement' ? '主題' : '主題の再現'}</b>` : ''}</dd>
           <dt>セクション</dt><dd>${snap.section + 1} (${snap.barInSection + 1}/${snap.sectionBars} 小節)</dd>
           <dt>拍子</dt><dd>${snap.meter} · ♩=${pos.tempo.toFixed(0)}</dd>
           <dt>和音</dt><dd>${snap.chords.join(' / ')}${snap.modulatingTo ? ` → <b>${snap.modulatingTo}</b> へ転調` : ''} <span class="muted">${snap.progression}</span></dd>

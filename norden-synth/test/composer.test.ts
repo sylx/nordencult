@@ -59,6 +59,12 @@ function render(params: Partial<BgmParams>, bars: number) {
   return { played, errors, composer, snapshots, barNotes }
 }
 
+// メロディを受け持つ奏者の、その小節の音符
+function melodyNotes(r: ReturnType<typeof render>, bar: number): { beat: number; key: number }[] {
+  const player = r.snapshots.find((s) => s.bar === bar)?.roles.find((x) => x.role === 'melody')?.player
+  return (player && r.barNotes.get(bar)?.get(player)) || []
+}
+
 // メロディを受け持つ奏者の、その小節の発音位置
 function melodyBeats(r: ReturnType<typeof render>, bar: number): number[] | undefined {
   const player = r.snapshots.find((s) => s.bar === bar)?.roles.find((x) => x.role === 'melody')?.player
@@ -108,9 +114,10 @@ test('同じシードとパラメータなら同じ曲になる', () => {
 })
 
 test('転調の頻度 0 なら調が変わらず、1 ならセクションごとに変わる', () => {
-  const keys = (p: Partial<BgmParams>) => [...new Set(render({ ...p, sectionBars: 4 }, 64).snapshots.map((s) => s.key))]
+  // 主題の再現は主題の調 (か同じスケールで移した調) に戻るので、1 でも数は 16 セクションより少ない
+  const keys = (p: Partial<BgmParams>) => [...new Set(render({ ...p, sectionBars: 4, songRepeats: 1 }, 64).snapshots.map((s) => s.key))]
   assert.equal(keys({ modulationRate: 0 }).length, 1)
-  assert.ok(keys({ modulationRate: 1 }).length >= 12)
+  assert.ok(keys({ modulationRate: 1 }).length >= 9)
 })
 
 test('微分音 0 なら 4 分音を使わない', () => {
@@ -154,8 +161,8 @@ test('アーティクルごとに伴奏セットが替わる', () => {
   const { snapshots } = render({ seed: 5, sectionBars: 4, oddMeter: 0, articleSections: 2 }, 48)
   const sections = snapshots.filter((s) => s.barInSection === 0)
   for (const s of sections) {
-    assert.equal(s.article, Math.floor(s.section / 2))
-    assert.equal(s.sectionInArticle, s.section % 2)
+    assert.equal(s.article, Math.floor(s.sectionInSong / 2))
+    assert.equal(s.sectionInArticle, s.sectionInSong % 2)
     const prev = sections.find((p) => p.section === s.section - 1)
     if (!prev) continue
     if (s.sectionInArticle === 0) assert.notEqual(s.arrangement, prev.arrangement)
@@ -169,7 +176,7 @@ test('低音・和音パートの弾き方と根音の動かし方はセクシ�
   const chords = new Set<string>()
   const progressions = new Set<string>()
   for (const seed of [1, 2, 3, 4]) {
-    const r = render({ seed, sectionBars: 4, energy: 0.7, dynamics: 0.6, drone: 0.3, bassMotion: 0.7 }, 60)
+    const r = render({ seed, sectionBars: 4, energy: 0.7, dynamics: 0.6, drone: 0.3, bassMotion: 0.7, songRepeats: 1 }, 60)
     for (const s of r.snapshots) {
       for (const x of s.roles) {
         if (x.role === 'bass' && x.style) bass.add(x.style)
@@ -207,7 +214,53 @@ test('和音の彩り 0 なら 4 音の和音を使わず、1 なら使う', () 
   // 7 の和音・add9 か、名前のない 4 音の和音 (音程が 3 つ並ぶ)
   const fourNote = (name: string) => /(7|add9)$/.test(name) || /\([^,)]+,[^,)]+,[^,)]+\)$/.test(name)
   const names = (chordColor: number) =>
-    render({ chordColor, exoticism: 0.3, microtones: 0, modulationRate: 1, sectionBars: 4 }, 60).snapshots.flatMap((s) => s.chords)
+    render({ chordColor, exoticism: 0.3, microtones: 0, modulationRate: 1, sectionBars: 4, songRepeats: 1 }, 60).snapshots.flatMap((s) => s.chords)
   assert.ok(!names(0).some(fourNote), names(0).filter(fourNote).join(' '))
   assert.ok(names(1).filter(fourNote).length >= 5)
+})
+
+test('ソングの中で主題を 3 回鳴らし、再現では同じ拍子・和音・旋律になる', () => {
+  let checked = 0
+  for (const seed of [1, 2, 3, 4, 5]) {
+    const r = render({ seed, sectionBars: 4, humanize: 0, ornaments: 0 }, 60)
+    const song = r.snapshots.filter((s) => s.song === 0 && s.songRepeat === 0)
+    const heads = song.filter((s) => s.barInSection === 0)
+    assert.deepEqual(heads.map((s) => s.theme ?? '-'), ['statement', '-', '-', '-', 'return', '-', 'return', '-'], `seed ${seed}`)
+    const statement = song.filter((s) => s.theme === 'statement')
+    for (const head of heads.filter((s) => s.theme === 'return')) {
+      const bars = song.filter((s) => s.section === head.section)
+      assert.equal(bars.length, statement.length, `seed ${seed}`)
+      bars.forEach((b, i) => {
+        const t = statement[i]
+        assert.equal(b.meter, t.meter)
+        // 最後の和音は次の調へつなぐために選び直す
+        if (i < bars.length - 1) assert.equal(b.chords.length, t.chords.length)
+        // 移調とオクターブの折り返しがあっても、最初の音からの音程 (12 を法として) と拍は同じ
+        const a = melodyNotes(r, t.bar)
+        const m = melodyNotes(r, b.bar)
+        assert.deepEqual(m.map((n) => n.beat), a.map((n) => n.beat), `seed ${seed} bar ${b.bar}`)
+        const shape = (ns: { key: number }[]) => ns.map((n) => (((n.key - ns[0].key) % 12) + 12) % 12)
+        assert.deepEqual(shape(m), shape(a), `seed ${seed} bar ${b.bar}`)
+        checked++
+      })
+    }
+  }
+  assert.ok(checked >= 40, `${checked} bars checked`)
+})
+
+test('ソングは決めた回数だけ同じ音楽を繰り返し、そのあと別のソングになる', () => {
+  // 4 小節 × 8 セクションのソングを 2 回
+  const r = render({ seed: 9, sectionBars: 4, oddMeter: 0, songRepeats: 2 }, 70)
+  const at = (bar: number) => r.snapshots.find((s) => s.bar === bar)!
+  assert.equal(at(8).songRepeat, 0)
+  assert.equal(at(32).songRepeat, 1)
+  assert.equal(at(32).song, 0)
+  assert.equal(at(64).song, 1)
+  // 最後の和音 (2 小節) は次のソングの調へつなぐので、1 回目 (同じソングへ) と 2 回目 (次のソングへ) で違いうる
+  for (let bar = 0; bar < 30; bar++) {
+    const a = r.barNotes.get(bar)!
+    const b = r.barNotes.get(bar + 32)!
+    for (const [player, notes] of a) assert.deepEqual(b.get(player) ?? [], notes, `bar ${bar} ${player}`)
+  }
+  assert.notDeepEqual(r.barNotes.get(64), r.barNotes.get(0))
 })

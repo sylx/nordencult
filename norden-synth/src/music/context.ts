@@ -37,6 +37,8 @@ export interface Section {
   chordBars: number
   // このセクションで鳴る役割
   roles: Set<RoleId>
+  // ソングの主題を示す (statement) か再現する (return) セクション
+  theme?: 'statement' | 'return'
   // 根音の動かし方
   progression: Progression
   // 生成済みの和音 (和音の枠ごと)

@@ -7,7 +7,8 @@
 //   分散クリシェ クリシェの線を強拍に置き、間を線の下の和音の音で埋める (無伴奏チェロ組曲のような 2 声)
 // 句 (4 か 2 小節) は音型の並びと最後の終止の小節からなる。セクションは A (半終止) A' (全終止) B A' のように並べ、
 // A と A' は同じ音型 (同じリズムと形) なので、和音が違っても問いと答えに聞こえる。
-// 最初の A は主題として、拍子が同じならあとのセクションでも再現する。
+// 主題を示すセクションの音は主音からの半音数で覚えておき、主題を再現するセクションでそのまま鳴らす
+// (再現では和音も同じなので、調が移っていても同じ旋律に聞こえる)。それ以外のセクションでも、主題の句の音型をときどき使う。
 
 import { chordAt, type BarContext, type ChordSpan, type NoteWriter } from './context.ts'
 import { chordPitchClasses, type Chord } from './harmony.ts'
@@ -26,6 +27,12 @@ interface Onset {
 
 interface Note extends Onset {
   key: number
+}
+
+// 主題として覚えた 1 小節。音は主音 (0..11) からの半音数
+interface ThemeBar {
+  notes: (Onset & { offset: number; velocity: number; legato: number })[]
+  info: MelodyInfo
 }
 
 type Kind = 'arpeggio' | 'run' | 'cliche' | 'broken'
@@ -235,6 +242,8 @@ export class Lead {
   private planA?: Plan
   private planB?: Plan
   private theme?: Plan
+  // 主題を示したセクションの小節ごとの音
+  private themeBars: ThemeBar[] = []
   // 同じ音型が続いたときに反復進行にするための、前の小節の最初の音
   private prevStart?: { kind: Kind; key: number; dir: 1 | -1 }
   // クリシェの線
@@ -249,8 +258,14 @@ export class Lead {
     this.lastBar = []
     this.info = undefined
 
-    // 最初のセクションの最初の句と、静かなセクションの奇数番目の句は休む
-    if ((s.index === 0 && phrase === 0) || (s.energy < 0.3 && phrase % 2 === 1)) {
+    const themeBar = s.theme === 'return' && this.themeBars.length === s.bars ? this.themeBars[ctx.barInSection] : undefined
+    if (themeBar) {
+      this.replay(ctx, out, rng, themeBar)
+      return
+    }
+
+    // 静かなセクションの奇数番目の句は休む (主題のセクションは休まない)
+    if (!s.theme && s.energy < 0.3 && phrase % 2 === 1) {
       this.line = undefined
       this.prevStart = undefined
       return
@@ -293,15 +308,40 @@ export class Lead {
     }
 
     const velBase = 60 + s.energy * 32
+    const played: ThemeBar['notes'] = []
     notes.forEach((n, i) => {
-      if (n.rest) return
       const final = bar === this.phraseBars - 1 && i === notes.length - 1
       // 強拍と高い音を少し強く、句の終わりは抜く
-      const vel = velBase + (n.strong ? 6 : -3) + (n.key - 64) * 0.4 - (final ? 5 : 0)
+      const velocity = velBase + (n.strong ? 6 : -3) + (n.key - 64) * 0.4 - (final ? 5 : 0)
       const legato = final ? 0.9 : plan.figures[bar]?.kind === 'arpeggio' ? 0.92 : 0.97
-      this.emit(ctx, out, rng, n, vel, legato)
+      played.push({ ...n, offset: n.key - s.key.tonic, velocity, legato })
+      if (!n.rest) this.emit(ctx, out, rng, n, velocity, legato)
     })
+    if (s.theme === 'statement') this.themeBars[ctx.barInSection] = { notes: played, info: this.info }
     this.pos = notes[notes.length - 1].key
+    this.lastBar = out.notes.slice()
+  }
+
+  // 主題の小節を、今の調の主音に移して鳴らす。
+  // オクターブは主題全体の真ん中が音域の真ん中に近くなるように選び、はみ出す音だけオクターブを折り返す
+  private replay(ctx: BarContext, out: NoteWriter, rng: Random, bar: ThemeBar): void {
+    const tonic = ctx.section.key.tonic
+    const offsets = this.themeBars.flatMap((b) => b.notes.map((n) => n.offset))
+    const centre = tonic + (Math.min(...offsets) + Math.max(...offsets)) / 2
+    const shift = 12 * Math.round(((this.lo + this.hi) / 2 - centre) / 12)
+    const keys = bar.notes.map((n) => {
+      let k = tonic + n.offset + shift
+      while (k > this.hi + EPS) k -= 12
+      while (k < this.lo - EPS) k += 12
+      return k
+    })
+    bar.notes.forEach((n, i) => {
+      if (!n.rest) this.emit(ctx, out, rng, { ...n, key: keys[i] }, n.velocity, n.legato)
+    })
+    this.info = { ...bar.info, theme: true, detail: '主題の再現' }
+    this.line = undefined
+    this.prevStart = undefined
+    this.pos = keys[keys.length - 1]
     this.lastBar = out.notes.slice()
   }
 
@@ -324,9 +364,14 @@ export class Lead {
     this.line = undefined
     this.prevStart = undefined
     const meter = `${ctx.groups.map((g) => g.length).join('+')}/${this.phraseBars}`
-    this.planA = this.theme?.meter === meter && rng.chance(0.5) ? this.theme : this.makePlan(ctx, meter, rng)
+    if (s.theme === 'statement') {
+      this.planA = this.makePlan(ctx, meter, rng)
+      this.theme = this.planA
+      this.themeBars = []
+    } else {
+      this.planA = this.theme?.meter === meter && rng.chance(0.5) ? this.theme : this.makePlan(ctx, meter, rng)
+    }
     this.planB = this.makePlan(ctx, meter, rng)
-    this.theme ??= this.planA
   }
 
   private makePlan(ctx: BarContext, meter: string, rng: Random): Plan {

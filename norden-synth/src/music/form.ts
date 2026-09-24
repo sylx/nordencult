@@ -77,6 +77,14 @@ export function nextKey(prev: Key, p: BgmParams, rng: Random): Key {
   return rng.weighted(candidates, (c) => c.weight).key
 }
 
+// 主題を再現するときの調。スケールはそのままで、転調の頻度に応じてときどき主音を移す
+export function transposedKey(home: Key, p: BgmParams, rng: Random): Key {
+  if (!rng.chance(p.modulationRate * 0.6)) return home
+  const target = 0.08 + 0.72 * p.modulationDistance
+  const keys = [...Array(12).keys()].filter((t) => t !== home.tonic).map((t) => new Key(home.scale, t))
+  return rng.weighted(keys, (k) => gauss(home.distance(k) - target, 0.12) + 1e-3)
+}
+
 export function chooseMeter(prev: Meter | undefined, p: BgmParams, rng: Random): Meter {
   return rng.weighted(METERS, (m) => (m.odd ? p.oddMeter : 1 - p.oddMeter) * (m === prev ? 2.5 : 1) + 1e-3)
 }

@@ -108,7 +108,7 @@ export function seatOf(arrangement: Arrangement, role: RoleId): Seat | undefined
   return arrangement.seats.find((s) => s.role === role)
 }
 
-// 次のアーティクルの伴奏セット。直前と同じものは選ばない
-export function chooseArrangement(prev: Arrangement | undefined, rng: Random): Arrangement {
-  return rng.pick(ARRANGEMENTS.filter((a) => a !== prev))
+// 次のアーティクルの伴奏セット。直前と avoid (ソングの最後では最初のセット) は選ばない
+export function chooseArrangement(prev: Arrangement | undefined, rng: Random, avoid?: Arrangement): Arrangement {
+  return rng.pick(ARRANGEMENTS.filter((a) => a !== prev && a !== avoid))
 }

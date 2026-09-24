@@ -10,6 +10,8 @@ export interface BgmParams {
   oddMeter: number
   sectionBars: number
   articleSections: number
+  songArticles: number
+  songRepeats: number
   chordBars: number
   drone: number
   bassMotion: number
@@ -33,6 +35,8 @@ export interface ParamDef {
   step: number
   // 値の候補が離散的な場合 (選択肢として出す)
   options?: number[]
+  // 選択肢の表示名 (既定は数値のまま)
+  optionLabels?: Record<number, string>
   // いつから反映されるか
   applies: 'bar' | 'section'
 }
@@ -47,6 +51,8 @@ export const DEFAULT_PARAMS: BgmParams = {
   oddMeter: 0.5,
   sectionBars: 8,
   articleSections: 4,
+  songArticles: 2,
+  songRepeats: 2,
   chordBars: 2,
   drone: 0.4,
   bassMotion: 0.5,
@@ -130,6 +136,20 @@ export const PARAM_DEFS: ParamDef[] = [
     group: 'リズムと構成',
     description: 'セクション数。伴奏セット (どの楽器がメロディ・和音・アルペジオなどを受け持つか) はアーティクルごとに切り替わる',
     min: 1, max: 8, step: 1, options: [1, 2, 4, 8], applies: 'section',
+  },
+  {
+    key: 'songArticles',
+    label: 'ソングの長さ',
+    group: 'リズムと構成',
+    description: 'アーティクル数。ソングの最初のセクションで主題を示し、アーティクルの頭と最後から 2 番目のセクションで再現する',
+    min: 1, max: 4, step: 1, options: [1, 2, 3, 4], applies: 'section',
+  },
+  {
+    key: 'songRepeats',
+    label: 'ソングの繰り返し',
+    group: 'リズムと構成',
+    description: '同じソングを何回繰り返してから次のソングに移るか。次のソングの頭から反映される',
+    min: 0, max: 8, step: 1, options: [1, 2, 4, 0], optionLabels: { 0: 'ずっと' }, applies: 'section',
   },
   {
     key: 'chordBars',

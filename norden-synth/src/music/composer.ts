@@ -4,12 +4,15 @@
 // 和音は和音の枠ごとに、役割の音符は小節ごとにその場で作る。
 // セクション最後の和音の枠に入ったところで次の調を決め、両方の調に含まれる和音 (ピボット) で転調する。
 // アーティクル (既定 4 セクション) ごとに伴奏セットを替え、役割を受け持つ奏者を入れ替える。
+// ソング (既定 2 アーティクル) の最初のセクションで主題を示し、あとのセクションで同じ拍子・和音・メロディで再現する。
+// ソングの頭では乱数と役割の状態をソングの番号から作り直すので、同じソングを繰り返すと同じ音楽になる。
+// 繰り返しを終えると次の番号のソングに移る。再現の前とソングの終わりでは、次の調へピボットで転調する。
 // 役割は conductor の中で役割の順に作り (対旋律がメロディを参照するため)、奏者のトラックはそれを書き込むだけ。
 
 import type { Channel, ConductorBar, Sequencer, Track } from '../synth/index.ts'
 import { chooseArrangement, seatOf, type Arrangement } from './arrangement.ts'
 import { NoteWriter, type BarContext, type ChordSpan, type PlayerId, type RoleId, type Section, type WrittenNote } from './context.ts'
-import { chooseEnergy, chooseMeter, firstKey, meterBeats, meterGroups, meterLabel, nextKey } from './form.ts'
+import { chooseEnergy, chooseMeter, firstKey, meterBeats, meterGroups, meterLabel, nextKey, transposedKey } from './form.ts'
 import { chooseChord, chooseProgression, chordName, progressionLabel, type Chord } from './harmony.ts'
 import type { MelodyInfo } from './melody.ts'
 import { DEFAULT_PARAMS, type BgmParams } from './params.ts'
@@ -30,6 +33,15 @@ export interface BarSnapshot {
   // 根音の動かし方
   progression: string
   energy: number
+  // ソングの番号 (繰り返しでは同じ) と、何回目の繰り返しか。songRepeats は 0 でずっと
+  song: number
+  songRepeat: number
+  songRepeats: number
+  sectionInSong: number
+  songSections: number
+  // 主題を示す・再現するセクションか
+  theme?: 'statement' | 'return'
+  // ソングの中の何番目のアーティクルか
   article: number
   // アーティクルの中で何番目のセクションか
   sectionInArticle: number
@@ -43,6 +55,28 @@ export interface BarSnapshot {
   melody?: MelodyInfo
 }
 
+interface Song {
+  number: number
+  repeat: number
+  repeats: number
+  startSection: number
+  articles: number
+  articleSections: number
+  sections: number
+  key: Key
+  firstArrangement?: Arrangement
+  // 主題を示したセクション
+  theme?: Section
+}
+
+// ソングの中で主題を示す・再現するセクションか。
+// 最初のセクションで示し、アーティクルの頭と最後から 2 番目で再現する。最後のセクションは次の頭へのつなぎにする
+function themeSlot(song: Song, i: number): boolean {
+  if (i === 0) return true
+  if (i >= song.sections - 1) return false
+  return (song.articleSections >= 2 && i % song.articleSections === 0) || i === song.sections - 2
+}
+
 export class Composer {
   // 変更は次の小節 / 次のセクションから反映される (ParamDef.applies)
   params: BgmParams
@@ -51,8 +85,12 @@ export class Composer {
   private arrangementRng!: Random
   private roleRng!: Record<RoleId, Random>
   private roles!: Record<RoleId, Role>
+  private seed = 0
   private arrangement!: Arrangement
   private article = { index: -1, startSection: 0, sections: 0 }
+  private song?: Song
+  // 今のソングの次に鳴らすソング (ソングの最後のセクションで決める)
+  private upcoming?: { number: number; repeat: number; key: Key }
   // この小節で各奏者が鳴らす音符
   private written = new Map<PlayerId, WrittenNote[]>()
   private section?: Section
@@ -67,13 +105,10 @@ export class Composer {
 
   // params.seed から最初からやり直す。Sequencer.start() の前に呼ぶ
   reset(): void {
-    const seed = this.params.seed
-    this.formRng = Random.derive(seed, 'form')
-    this.harmonyRng = Random.derive(seed, 'harmony')
-    this.arrangementRng = Random.derive(seed, 'arrangement')
-    this.roleRng = Object.fromEntries(ROLE_DEFS.map((d) => [d.id, Random.derive(seed, d.id)])) as Record<RoleId, Random>
-    this.roles = createRoles()
+    this.seed = this.params.seed
     this.article = { index: -1, startSection: 0, sections: 0 }
+    this.song = undefined
+    this.upcoming = undefined
     this.written.clear()
     this.section = undefined
     this.next = undefined
@@ -113,7 +148,11 @@ export class Composer {
     const chords = this.chordSpans(s, barInSection, beats)
     const last = barInSection === s.bars - 1
     const modulating = last && this.next !== undefined && !this.next.equals(s.key)
-    if (modulating && p.ritardando > 0) bar.rampTempo(p.tempo * (1 - 0.3 * p.ritardando), 0, beats)
+    const song = this.song!
+    const sectionInSong = s.index - song.startSection
+    // 転調の直前と、ソングの終わりでテンポを落とす
+    const songEnd = last && sectionInSong === song.sections - 1
+    if ((modulating || songEnd) && p.ritardando > 0) bar.rampTempo(p.tempo * (1 - 0.3 * p.ritardando), 0, beats)
 
     this.ctx = {
       index: bar.index,
@@ -160,6 +199,12 @@ export class Composer {
       chords: chords.map((c) => chordName(s.key, c.chord)),
       progression: progressionLabel(s.progression),
       energy: s.energy,
+      song: song.number,
+      songRepeat: song.repeat,
+      songRepeats: song.repeats,
+      sectionInSong,
+      songSections: song.sections,
+      theme: s.theme,
       article: this.article.index,
       sectionInArticle: s.index - this.article.startSection,
       articleSections: this.article.sections,
@@ -174,20 +219,35 @@ export class Composer {
   private startSection(startBar: number): void {
     const p = this.params
     const prev = this.section
-    const rng = this.formRng
-    const key = prev ? (this.next ?? nextKey(prev.key, p, rng)) : firstKey(p, rng)
-    this.next = undefined
-    const meter = chooseMeter(prev?.meter, p, rng)
-    const energy = chooseEnergy(prev?.energy, p, rng)
     const index = prev ? prev.index + 1 : 0
+    if (!this.song || index - this.song.startSection >= this.song.sections) this.startSong(index)
+    const song = this.song!
+    const inSong = index - song.startSection
+    const rng = this.formRng
 
-    // アーティクルの頭で伴奏セットを替える
-    if (this.article.index < 0 || index - this.article.startSection >= this.article.sections) {
-      this.arrangement = chooseArrangement(this.article.index < 0 ? undefined : this.arrangement, this.arrangementRng)
-      this.article = { index: this.article.index + 1, startSection: index, sections: Math.max(1, Math.round(p.articleSections)) }
+    // 主題の再現は、主題と同じ長さになるときだけ (途中でパラメータが変わったら示し直す)
+    let theme: Section | undefined
+    if (themeSlot(song, inSong) && inSong > 0 && song.theme) {
+      const t = song.theme
+      if (t.chordBars === p.chordBars && t.bars === this.sectionBars(t.meter)) theme = t
+    }
+    const statement = themeSlot(song, inSong) && !theme
+
+    const key = inSong === 0 ? song.key : (this.next ?? theme?.key ?? nextKey(prev!.key, p, rng))
+    this.next = undefined
+    const meter = theme?.meter ?? chooseMeter(inSong === 0 ? undefined : prev?.meter, p, rng)
+    const energy = chooseEnergy(inSong === 0 ? undefined : prev?.energy, p, rng)
+
+    // アーティクルの頭で伴奏セットを替える。ソングの最後のアーティクルは、繰り返しの頭と同じセットを避ける
+    if (inSong % song.articleSections === 0) {
+      const article = inSong / song.articleSections
+      const avoid = article > 0 && article === song.articles - 1 ? song.firstArrangement : undefined
+      this.arrangement = chooseArrangement(inSong === 0 ? undefined : this.arrangement, this.arrangementRng, avoid)
+      if (inSong === 0) song.firstArrangement = this.arrangement
+      this.article = { index: article, startSection: index, sections: song.articleSections }
     }
 
-    // 盛り上がりに応じて編成を決め、ときどき 1 つ抜いて変化をつける
+    // 盛り上がりに応じて編成を決め、ときどき 1 つ抜いて変化をつける。主題のセクションはメロディを必ず入れる
     const roles = new Set<RoleId>()
     for (const def of ROLE_DEFS) {
       const [lo, hi] = def.energy
@@ -195,9 +255,11 @@ export class Composer {
       if (def.id !== 'bass' && def.id !== 'melody' && rng.chance(0.15)) continue
       roles.add(def.id)
     }
+    if (theme || statement) roles.add('melody')
 
-    // 5/8 のような短い小節では、セクションが短くなりすぎないよう小節数を倍にする
-    const bars = meterBeats(meter) < 3 ? p.sectionBars * 2 : p.sectionBars
+    const bars = theme?.bars ?? this.sectionBars(meter)
+    const chordBars = theme?.chordBars ?? p.chordBars
+    const total = chordSlots(bars, chordBars)
     this.section = {
       index,
       startBar,
@@ -206,10 +268,65 @@ export class Composer {
       modulated: prev ? !prev.key.equals(key) : false,
       meter,
       energy,
-      chordBars: p.chordBars,
+      chordBars,
       roles,
-      progression: chooseProgression(key, chordSlots(bars, p.chordBars), p, this.harmonyRng),
-      chords: [],
+      theme: theme ? 'return' : statement ? 'statement' : undefined,
+      progression: theme?.progression ?? chooseProgression(key, total, p, this.harmonyRng),
+      // 再現では最後の和音だけ、次の調へつなぐために選び直す
+      chords: theme ? theme.chords.slice(0, total - 1) : [],
+    }
+    if (statement) song.theme = this.section
+
+    // 次のセクションの調を先に決めておく (最後の和音をピボットにするため)
+    if (inSong === song.sections - 1) this.next = this.planUpcoming().key
+    else if (themeSlot(song, inSong + 1) && song.theme) {
+      const home = song.theme.key
+      this.next = inSong + 1 === song.sections - 2 ? home : transposedKey(home, p, rng)
+    }
+  }
+
+  // 5/8 のような短い小節では、セクションが短くなりすぎないよう小節数を倍にする
+  private sectionBars(meter: Section['meter']): number {
+    return meterBeats(meter) < 3 ? this.params.sectionBars * 2 : this.params.sectionBars
+  }
+
+  // 次のソング。繰り返しが残っていれば同じ番号と調、なければ次の番号で新しい調
+  private planUpcoming(): { number: number; repeat: number; key: Key } {
+    if (this.upcoming) return this.upcoming
+    const s = this.song!
+    s.repeats = Math.max(0, Math.round(this.params.songRepeats))
+    if (s.repeats === 0 || s.repeat + 1 < s.repeats) this.upcoming = { number: s.number, repeat: s.repeat + 1, key: s.key }
+    else this.upcoming = { number: s.number + 1, repeat: 0, key: this.songKey(s.number + 1, s.key) }
+    return this.upcoming
+  }
+
+  private songKey(number: number, prev?: Key): Key {
+    const rng = Random.derive(this.seed, `song${number}:key`)
+    return prev ? nextKey(prev, this.params, rng) : firstKey(this.params, rng)
+  }
+
+  // ソングの頭。乱数と役割の状態をソングの番号から作り直す
+  private startSong(index: number): void {
+    const p = this.params
+    const next = this.song ? this.planUpcoming() : { number: 0, repeat: 0, key: this.songKey(0) }
+    this.upcoming = undefined
+    const derive = (name: string) => Random.derive(this.seed, `song${next.number}:${name}`)
+    this.formRng = derive('form')
+    this.harmonyRng = derive('harmony')
+    this.arrangementRng = derive('arrangement')
+    this.roleRng = Object.fromEntries(ROLE_DEFS.map((d) => [d.id, derive(d.id)])) as Record<RoleId, Random>
+    this.roles = createRoles()
+    const articles = Math.max(1, Math.round(p.songArticles))
+    const articleSections = Math.max(1, Math.round(p.articleSections))
+    this.song = {
+      number: next.number,
+      repeat: next.repeat,
+      repeats: Math.max(0, Math.round(p.songRepeats)),
+      startSection: index,
+      articles,
+      articleSections,
+      sections: articles * articleSections,
+      key: next.key,
     }
   }
 
