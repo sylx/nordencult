@@ -61,6 +61,7 @@ src/songs/                  LLM が書いた曲
   song.ts                     曲データの形式と、小節ごとの音符への展開
   index.ts                    曲の一覧 (SONGS)
   hokuten.ts                  『北天の灯』
+  fairy-ring.ts               『妖精の環』
 src/main.ts                 テストページ
 src/songs-page.ts           テストページの LLM 作成曲タブ
 src/bgm-page.ts             テストページの BGM 生成タブ
