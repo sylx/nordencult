@@ -12,7 +12,9 @@ export interface BgmParams {
   articleSections: number
   chordBars: number
   drone: number
+  bassMotion: number
   colorTones: number
+  chordColor: number
   melodyDensity: number
   ornaments: number
   energy: number
@@ -46,8 +48,10 @@ export const DEFAULT_PARAMS: BgmParams = {
   sectionBars: 8,
   articleSections: 4,
   chordBars: 2,
-  drone: 0.7,
+  drone: 0.4,
+  bassMotion: 0.5,
   colorTones: 0.6,
+  chordColor: 0.4,
   melodyDensity: 0.5,
   ornaments: 0.5,
   energy: 0.55,
@@ -90,6 +94,13 @@ export const PARAM_DEFS: ParamDef[] = [
     label: '特性音の強調',
     group: '調と転調',
     description: 'スケールらしさを決める音 (ヒジャーズの ♭2 と長 3 度など) を根音にした和音を使う割合',
+    min: 0, max: 1, step: 0.05, applies: 'bar',
+  },
+  {
+    key: 'chordColor',
+    label: '和音の彩り',
+    group: '調と転調',
+    description: '0 で 3 和音と空虚 5 度が中心、1 で 7 の和音・add9・sus2・4 度堆積が増える (7 音のスケールのみ)',
     min: 0, max: 1, step: 0.05, applies: 'bar',
   },
   {
@@ -138,7 +149,14 @@ export const PARAM_DEFS: ParamDef[] = [
     key: 'drone',
     label: 'ドローン',
     group: 'アレンジ',
-    description: '低音が和音に関係なく主音を持続する割合 (セクションごとに決める)。0 で低音は和音の根音を追う',
+    description: '低音が和音に関係なく主音を持続する割合 (セクションごとに決める)。0 で低音は常に和音を追う',
+    min: 0, max: 1, step: 0.05, applies: 'section',
+  },
+  {
+    key: 'bassMotion',
+    label: '低音の動き',
+    group: 'アレンジ',
+    description: '和音を追う低音の弾き方。0 で根音の持続や転回形のなめらかな線、1 で刻む・5 度と行き来する・経過音で歩く低音が増える',
     min: 0, max: 1, step: 0.05, applies: 'section',
   },
   {

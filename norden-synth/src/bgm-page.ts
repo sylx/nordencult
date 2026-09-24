@@ -209,11 +209,11 @@ export function setupBgmPage(synth: Synth, root: HTMLElement): void {
         <dl>
           <dt>セクション</dt><dd>${snap.section + 1} (${snap.barInSection + 1}/${snap.sectionBars} 小節)</dd>
           <dt>拍子</dt><dd>${snap.meter} · ♩=${pos.tempo.toFixed(0)}</dd>
-          <dt>和音</dt><dd>${snap.chords.join(' / ')}${snap.modulatingTo ? ` → <b>${snap.modulatingTo}</b> へ転調` : ''}</dd>
+          <dt>和音</dt><dd>${snap.chords.join(' / ')}${snap.modulatingTo ? ` → <b>${snap.modulatingTo}</b> へ転調` : ''} <span class="muted">${snap.progression}</span></dd>
           <dt>アーティクル</dt><dd>${snap.article + 1} (${snap.sectionInArticle + 1}/${snap.articleSections} セクション) · ${snap.arrangement}</dd>
           ${lead ? `<dt>メロディ</dt><dd>${playerName.get(lead.player)} · ${melodyHtml(snap.melody)}</dd>` : ''}
           <dt>盛り上がり</dt><dd><span class="meter"><span style="width:${energy}%"></span></span></dd>
-          <dt>編成</dt><dd>${snap.roles.map((r) => `${roleName.get(r.role)}: ${playerName.get(r.player)}`).join('、')}</dd>
+          <dt>編成</dt><dd>${snap.roles.map((r) => `${roleName.get(r.role)}: ${playerName.get(r.player)}${r.style ? ` <span class="muted">(${r.style})</span>` : ''}`).join('、')}</dd>
         </dl>`
       for (const [id, label] of partLabels) {
         const role = snap.roles.find((r) => r.player === id)?.role

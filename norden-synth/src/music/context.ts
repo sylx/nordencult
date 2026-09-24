@@ -1,7 +1,7 @@
 // パートの生成に渡す小節の文脈
 
 import type { Meter } from './form.ts'
-import type { Chord } from './harmony.ts'
+import type { Chord, Progression } from './harmony.ts'
 import type { BgmParams } from './params.ts'
 import type { Random } from './random.ts'
 import type { Key } from './scales.ts'
@@ -37,6 +37,8 @@ export interface Section {
   chordBars: number
   // このセクションで鳴る役割
   roles: Set<RoleId>
+  // 根音の動かし方
+  progression: Progression
   // 生成済みの和音 (和音の枠ごと)
   chords: Chord[]
 }
@@ -50,6 +52,8 @@ export interface ChordSpan {
   // この小節で鳴り始める和音か (前の小節から続いているなら false)
   isNew: boolean
   chord: Chord
+  // セクションの中で次に来る和音 (セクション最後の和音なら undefined)
+  next?: Chord
 }
 
 export interface BarContext {

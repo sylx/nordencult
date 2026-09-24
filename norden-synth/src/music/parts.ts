@@ -1,6 +1,6 @@
 // 役割と奏者。役割は小節の文脈と、受け持つ奏者の席 (音域など) から、その小節の音符をその場で作る
 
-import { chordAt, type BarContext, type NoteWriter, type PlayerId, type RoleId, type Seat } from './context.ts'
+import { chordAt, type BarContext, type ChordSpan, type NoteWriter, type PlayerId, type RoleId, type Seat } from './context.ts'
 import { chordPitchClasses, type Chord } from './harmony.ts'
 import { Lead, type MelodyInfo } from './melody.ts'
 import type { Random } from './random.ts'
@@ -54,6 +54,8 @@ export interface Role {
   generate(ctx: BarContext, out: NoteWriter, rng: Random, seat: Seat): void
   // 表示用に、直前に作った小節のメロディの状態を返す (メロディだけ)
   melody?(): MelodyInfo | undefined
+  // 表示用の、今のセクションの弾き方
+  style?(): string | undefined
 }
 
 const EPS = 1e-6
@@ -73,53 +75,168 @@ function lowestPc(key: Key, pc: number, lo: number, hi: number): number {
   return key.keysInRange(lo, hi).find((k) => Math.abs(pcOf(k) - pc) < EPS) ?? key.tonicIn(lo)
 }
 
-// 主音を持続するか、和音の根音を追う
+// セクションの弾き方を選ぶ。直前と同じものは選ばれにくくする
+function chooseStyle<T extends string>(styles: Partial<Record<T, number>>, prev: T | undefined, rng: Random): T {
+  const list = Object.keys(styles) as T[]
+  return rng.weighted(list, (st) => styles[st]! * (st === prev ? 0.35 : 1))
+}
+
+// span が終わる小節で、最後の拍のまとまりの頭 (span の頭より後)。経過音を置く位置
+function tailOf(ctx: BarContext, span: ChordSpan): number | undefined {
+  const from = span.start + span.length <= ctx.beats + EPS ? span.start : 0
+  const end = span.start + span.length <= ctx.beats + EPS ? span.end : ctx.beats
+  const heads = ctx.groups.map((g) => g.start).filter((t) => t > from + EPS && t < end - EPS)
+  return heads.length > 0 ? heads[heads.length - 1] : undefined
+}
+
+// 低音。セクションごとに弾き方を選ぶ
+//   ドローン (ドローンのパラメータの割合)
+//     drone   主音を持続する        pedal   主音をまとまりの頭で刻む      open   主音と 5 度を持続する
+//   和音を追う (低音の動きが大きいほど後ろの 3 つが増える)
+//     root    根音を持続する        line    転回形で前の音に近い和音の音を選び、なめらかな線にする
+//     pulse   根音をまとまりの頭で刻む  fifths  根音と 5 度を行き来する  walk   和音の最後に次の根音への経過音を置く
+type BassStyle = 'drone' | 'pedal' | 'open' | 'root' | 'line' | 'pulse' | 'fifths' | 'walk'
+
+const BASS_LABELS: Record<BassStyle, string> = {
+  drone: '主音の持続',
+  pedal: '主音の刻み',
+  open: '空虚 5 度の持続',
+  root: '根音の持続',
+  line: '転回形の線',
+  pulse: '根音の刻み',
+  fifths: '根音と 5 度',
+  walk: '経過音',
+}
+
 function bass(): Role {
-  let droning = true
+  let style: BassStyle | undefined
   let section = -1
+  let prev: number | undefined
   return {
+    style: () => style && BASS_LABELS[style],
     generate(ctx, out, rng, seat) {
       const s = ctx.section
+      const e = s.energy
       if (s.index !== section) {
         section = s.index
-        droning = rng.chance(ctx.params.drone)
+        const m = ctx.params.bassMotion
+        style = rng.chance(ctx.params.drone)
+          ? chooseStyle<BassStyle>({ drone: 1.5 - e, pedal: e * 1.2, open: 0.5 }, style, rng)
+          : chooseStyle<BassStyle>(
+              { root: 1.3 * (1 - m) + 0.2, line: 1.1 - m * 0.6, pulse: m * (0.3 + e), fifths: m * (0.2 + e), walk: m * 0.9 },
+              style,
+              rng,
+            )
       }
-      const vel = 68 + s.energy * 22
-      if (droning) {
+      const vel = 68 + e * 22
+      const tonic = s.key.tonicIn(seat.lo)
+      const rootOf = (chord: Chord) => lowestPc(s.key, chordPitchClasses(s.key, chord)[0], seat.lo, seat.lo + 12)
+      const play = (beat: number, k: number, v: number, length: number) => {
+        out.note(beat, k, v, length)
+        prev = k
+      }
+
+      if (style === 'drone' || style === 'open') {
         // 持続する楽器は 4 小節ごと、減衰する楽器は毎小節弾き直す
         const every = decays(seat.player) ? 1 : 4
         if (ctx.barInSection % every !== 0) return
         const bars = Math.min(every, s.bars - ctx.barInSection)
-        const tonic = s.key.tonicIn(seat.lo)
-        out.note(0, tonic, vel, bars * ctx.beats)
-        if (s.energy > 0.6 && tonic + 12 <= seat.hi) out.note(0, tonic + 12, vel - 15, bars * ctx.beats)
+        play(0, tonic, vel, bars * ctx.beats)
+        const fifth = tonic + 7
+        if (style === 'open' && s.key.contains(fifth) && fifth <= seat.hi) out.note(0, fifth, vel - 12, bars * ctx.beats)
+        else if (e > 0.6 && tonic + 12 <= seat.hi) out.note(0, tonic + 12, vel - 15, bars * ctx.beats)
+        return
+      }
+      if (style === 'pedal') {
+        // 盛り上がっているときは最後のまとまりをオクターブ上に跳ねる
+        const last = ctx.groups.length - 1
+        ctx.groups.forEach((g, i) => {
+          const k = i === last && i > 0 && e > 0.6 && tonic + 12 <= seat.hi ? tonic + 12 : tonic
+          play(g.start, k, vel + (i === 0 ? 4 : -8), g.length * 0.85)
+        })
+        return
+      }
+      if (style === 'pulse' || style === 'fifths') {
+        let n = 0
+        ctx.groups.forEach((g, i) => {
+          const span = chordAt(ctx, g.start)
+          if (Math.abs(g.start - span.start) < EPS) n = 0
+          const root = rootOf(span.chord)
+          let k = root
+          if (style === 'fifths' && n % 2 === 1) {
+            // 和音の 5 度の音 (なければ 1 オクターブ上)。上に収まらなければ下の 5 度
+            const up = chordKeys(s.key, span.chord, root + 6, root + 8)[0] ?? root + 12
+            k = up <= seat.hi ? up : root - 5 >= seat.lo ? root - 5 : root
+          }
+          n++
+          const length = Math.min(g.length, span.end - g.start) * (style === 'pulse' ? 0.8 : 0.9)
+          play(g.start, k, vel + (i === 0 ? 4 : -6), length)
+        })
         return
       }
       for (const span of ctx.chords) {
-        if (!span.isNew) continue
-        const rootPc = chordPitchClasses(s.key, span.chord)[0]
-        out.note(span.start, lowestPc(s.key, rootPc, seat.lo, seat.lo + 12), vel, span.length)
+        const endsHere = span.start + span.length <= ctx.beats + EPS
+        const tail = style === 'walk' && span.next ? tailOf(ctx, span) : undefined
+        if (span.isNew) {
+          let k = rootOf(span.chord)
+          // 転回形の線: セクションの最初と最後の和音は根音にし、あいだは前の音に近い和音の音を選ぶ (根音を少し優先)
+          if (style === 'line' && prev !== undefined && !ctx.first && span.next) {
+            const last = prev
+            const tones = chordKeys(s.key, span.chord, seat.lo, Math.min(seat.hi, seat.lo + 14))
+            // 同じ音に留まり続けないよう、同じ音は少し不利にする
+            const score = (t: number) => Math.abs(t - last) - (t === k ? 1.5 : 0) + (Math.abs(t - last) < EPS ? 1 : 0)
+            if (tones.length > 0) k = tones.reduce((a, b) => (score(b) < score(a) ? b : a))
+          }
+          // 経過音で歩くときは、最後の小節の最後のまとまりの前で切る
+          const cut = tail !== undefined ? (endsHere ? span.end : ctx.beats) - tail : 0
+          play(span.start, k, vel, span.length - cut)
+        }
+        if (tail !== undefined && endsHere && span.next) {
+          // 次の根音の隣の音階の音から入る。今の音が次の根音より低ければ下から、高ければ上から。
+          // 隣が音域外か今の音と同じなら、2 つ隣から入る
+          const target = rootOf(span.next)
+          const scale = s.key.keysInRange(seat.lo, seat.hi)
+          const i = scale.findIndex((k) => Math.abs(k - target) < EPS)
+          const from = prev ?? target
+          const sides = from <= target ? [-1, 1] : [1, -1]
+          const options = [1, 2]
+            .flatMap((d) => sides.map((side) => scale[i + side * d]))
+            .filter((k) => k !== undefined && Math.abs(k - from) > EPS)
+          if (i >= 0 && options.length > 0) play(tail, options[0], vel - 8, span.end - tail)
+        }
       }
     },
   }
 }
 
-// 持続する和音。voices 声部を前の音に近いところで保つ。減衰する楽器は毎小節弾き直す
-function sustained(voices: number, velBase: number): Role {
+// 和音。voices 声部を前の音に近いところで保つ。
+// comp なら和音のパートとしてセクションごとに刻み方を選ぶ。そうでなければ持続する (減衰する楽器は毎小節弾き直す)
+//   hold     持続する        pulse    拍のまとまりの頭で刻む
+//   offbeat  和音の頭のあとは、まとまりの裏で刻む      split   まとまりの頭で一番低い音、裏で上の音を弾く
+type Comp = 'hold' | 'pulse' | 'offbeat' | 'split'
+
+const COMP_LABELS: Record<Comp, string> = { hold: '持続', pulse: '刻み', offbeat: '裏拍', split: '低い音と上の音' }
+
+function sustained(voices: number, velBase: number, comp: boolean): Role {
   let prev: number[] = []
   let player: PlayerId | undefined
+  let style: Comp = 'hold'
+  let section = -1
   return {
-    generate(ctx, out, _rng, seat) {
+    style: () => (comp ? COMP_LABELS[style] : undefined),
+    generate(ctx, out, rng, seat) {
       if (seat.player !== player) {
         player = seat.player
         prev = []
       }
       const s = ctx.section
-      const restrike = decays(seat.player)
-      for (const span of ctx.chords) {
-        if (!span.isNew && !(restrike && span.start === 0)) continue
+      const e = s.energy
+      if (comp && s.index !== section) {
+        section = s.index
+        style = chooseStyle<Comp>({ hold: 1.4 - e, pulse: e * 0.9, offbeat: e > 0.45 ? e * 0.7 : 0, split: 0.5 }, style, rng)
+      }
+      const voice = (span: ChordSpan) => {
         const candidates = chordKeys(s.key, span.chord, seat.lo, seat.hi)
-        if (candidates.length === 0) continue
         const chosen: number[] = []
         for (let v = 0; v < voices; v++) {
           const target = prev[v] ?? seat.lo + ((seat.hi - seat.lo) * (v + 1)) / (voices + 1)
@@ -128,10 +245,42 @@ function sustained(voices: number, velBase: number): Role {
           if (free.length === 0) break
           chosen.push(nearest(free, target))
         }
-        prev = chosen
-        const vel = velBase + s.energy * 25 - (span.isNew ? 0 : 8)
-        for (const k of chosen) out.note(span.start, k, vel, span.length)
+        if (chosen.length > 0) prev = chosen
+        return chosen
       }
+      const vel = velBase + e * 25
+
+      if (style === 'hold' || !comp) {
+        const restrike = decays(seat.player)
+        for (const span of ctx.chords) {
+          if (!span.isNew && !(restrike && span.start === 0)) continue
+          const chosen = span.isNew ? voice(span) : prev
+          for (const k of chosen) out.note(span.start, k, vel - (span.isNew ? 0 : 8), span.length)
+        }
+        return
+      }
+      // 小節の途中から続く和音は前の小節の声部のまま
+      const voicings = new Map(ctx.chords.map((span) => [span, span.isNew ? voice(span) : prev]))
+      ctx.groups.forEach((g, i) => {
+        const span = chordAt(ctx, g.start)
+        const chosen = [...voicings.get(span)!].sort((a, b) => a - b)
+        if (chosen.length === 0) return
+        const end = Math.min(g.start + g.length, span.end)
+        const accent = i === 0 ? 5 : -5
+        const head = Math.abs(g.start - span.start) < EPS && span.isNew
+        const off = g.start + 0.5
+        const hasOff = off < end - EPS
+        if (style === 'pulse') for (const k of chosen) out.note(g.start, k, vel + accent, (end - g.start) * 0.8)
+        // 裏拍の刻みでは、和音の頭の音を裏の手前で切る
+        if (style === 'offbeat' && head) for (const k of chosen) out.note(g.start, k, vel + accent, ((hasOff ? off : end) - g.start) * 0.9)
+        if (style === 'offbeat' && hasOff) {
+          for (const k of chosen) out.note(off, k, vel - 6, (end - off) * 0.7)
+        }
+        if (style === 'split') {
+          out.note(g.start, chosen[0], vel + accent, (end - g.start) * 0.9)
+          if (hasOff) for (const k of chosen.slice(1)) out.note(off, k, vel - 8, (end - off) * 0.9)
+        }
+      })
     },
   }
 }
@@ -296,8 +445,8 @@ export function createRoles(): Record<RoleId, Role> {
     bass: bass(),
     melody: { generate: (ctx, out, rng, seat) => lead.generate(ctx, out, rng, seat.lo, seat.hi), melody: () => lead.info },
     counter: counter(lead),
-    chords: sustained(2, 48),
-    pad: sustained(3, 42),
+    chords: sustained(2, 48, true),
+    pad: sustained(3, 42, false),
     ostinato: ostinato(),
     arpeggio: arpeggio(),
     percussion: percussion(),

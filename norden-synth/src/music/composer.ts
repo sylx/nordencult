@@ -10,7 +10,7 @@ import type { Channel, ConductorBar, Sequencer, Track } from '../synth/index.ts'
 import { chooseArrangement, seatOf, type Arrangement } from './arrangement.ts'
 import { NoteWriter, type BarContext, type ChordSpan, type PlayerId, type RoleId, type Section, type WrittenNote } from './context.ts'
 import { chooseEnergy, chooseMeter, firstKey, meterBeats, meterGroups, meterLabel, nextKey } from './form.ts'
-import { chooseChord, chordName, type Chord } from './harmony.ts'
+import { chooseChord, chooseProgression, chordName, progressionLabel, type Chord } from './harmony.ts'
 import type { MelodyInfo } from './melody.ts'
 import { DEFAULT_PARAMS, type BgmParams } from './params.ts'
 import { PLAYER_DEFS, ROLE_DEFS, createRoles, type Role } from './parts.ts'
@@ -27,14 +27,16 @@ export interface BarSnapshot {
   scaleNote: string
   meter: string
   chords: string[]
+  // 根音の動かし方
+  progression: string
   energy: number
   article: number
   // アーティクルの中で何番目のセクションか
   sectionInArticle: number
   articleSections: number
   arrangement: string
-  // 鳴っている役割と、受け持つ奏者 (役割の順)
-  roles: { role: RoleId; player: PlayerId }[]
+  // 鳴っている役割と、受け持つ奏者と弾き方 (役割の順)
+  roles: { role: RoleId; player: PlayerId; style?: string }[]
   // セクション最後の小節で、次に転調する調
   modulatingTo?: string
   // メロディの句と音型 (リードが休んでいる・編成にないなら undefined)
@@ -132,6 +134,7 @@ export class Composer {
     })
     this.written.clear()
     let melody: MelodyInfo | undefined
+    const styles = new Map<RoleId, string | undefined>()
     for (const seat of roles) {
       const rng = this.roleRng[seat.role]
       const role = this.roles[seat.role]
@@ -143,6 +146,7 @@ export class Composer {
       }
       this.written.set(seat.player, out.events)
       if (role.melody) melody = role.melody()
+      styles.set(seat.role, role.style?.())
     }
 
     this.snapshots.set(bar.index, {
@@ -154,12 +158,13 @@ export class Composer {
       scaleNote: s.key.scale.note,
       meter: meterLabel(s.meter),
       chords: chords.map((c) => chordName(s.key, c.chord)),
+      progression: progressionLabel(s.progression),
       energy: s.energy,
       article: this.article.index,
       sectionInArticle: s.index - this.article.startSection,
       articleSections: this.article.sections,
       arrangement: this.arrangement.name,
-      roles: roles.map((seat) => ({ role: seat.role, player: seat.player })),
+      roles: roles.map((seat) => ({ role: seat.role, player: seat.player, style: styles.get(seat.role) })),
       modulatingTo: modulating ? this.next!.name : undefined,
       melody,
     })
@@ -191,17 +196,19 @@ export class Composer {
       roles.add(def.id)
     }
 
+    // 5/8 のような短い小節では、セクションが短くなりすぎないよう小節数を倍にする
+    const bars = meterBeats(meter) < 3 ? p.sectionBars * 2 : p.sectionBars
     this.section = {
       index,
       startBar,
-      // 5/8 のような短い小節では、セクションが短くなりすぎないよう小節数を倍にする
-      bars: meterBeats(meter) < 3 ? p.sectionBars * 2 : p.sectionBars,
+      bars,
       key,
       modulated: prev ? !prev.key.equals(key) : false,
       meter,
       energy,
       chordBars: p.chordBars,
       roles,
+      progression: chooseProgression(key, chordSlots(bars, p.chordBars), p, this.harmonyRng),
       chords: [],
     }
   }
@@ -212,32 +219,47 @@ export class Composer {
       const slot = Math.floor(barInSection / cb)
       const within = barInSection % cb
       const bars = Math.min(cb, s.bars - slot * cb) - within
-      return [{ start: 0, end: beats, length: bars * beats, isNew: within === 0, chord: this.chord(s, slot) }]
+      return [{ start: 0, end: beats, length: bars * beats, isNew: within === 0, chord: this.chord(s, slot), next: this.nextChord(s, slot + 1) }]
     }
     // 小節の途中で変わる: 真ん中に最も近いまとまりの頭で分ける
     const starts = meterGroups(s.meter).map((g) => g.start).filter((t) => t > 0)
     const split = starts.reduce((a, b) => (Math.abs(b - beats / 2) < Math.abs(a - beats / 2) ? b : a), starts[0] ?? beats / 2)
     const slot = barInSection * 2
     return [
-      { start: 0, end: split, length: split, isNew: true, chord: this.chord(s, slot) },
-      { start: split, end: beats, length: beats - split, isNew: true, chord: this.chord(s, slot + 1) },
+      { start: 0, end: split, length: split, isNew: true, chord: this.chord(s, slot), next: this.chord(s, slot + 1) },
+      { start: split, end: beats, length: beats - split, isNew: true, chord: this.chord(s, slot + 1), next: this.nextChord(s, slot + 2) },
     ]
   }
 
+  // slot 番目の和音の枠の和音。セクションの枠を超えたら undefined
+  private nextChord(s: Section, slot: number): Chord | undefined {
+    return slot < chordSlots(s.bars, s.chordBars) ? this.chord(s, slot) : undefined
+  }
+
   private chord(s: Section, slot: number): Chord {
-    const total = s.chordBars >= 1 ? Math.ceil(s.bars / s.chordBars) : s.bars * 2
+    const total = chordSlots(s.bars, s.chordBars)
+    const period = s.progression.period
     while (s.chords.length <= slot) {
       const n = s.chords.length
       const final = n === total - 1
       if (final && !this.next) this.next = nextKey(s.key, this.params, this.formRng)
+      // 繰り返す進行でも、最後の枠は終止か転調のために選び直す
+      if (period && n >= period && !final) {
+        s.chords.push(s.chords[n - period])
+        continue
+      }
       s.chords.push(
         chooseChord(s.key, s.chords[n - 1], this.params, this.harmonyRng, {
           first: n === 0,
           final,
           next: final ? this.next : undefined,
+          progression: s.progression,
         }),
       )
     }
     return s.chords[slot]
   }
 }
+
+// セクションの和音の枠の数
+const chordSlots = (bars: number, chordBars: number) => (chordBars >= 1 ? Math.ceil(bars / chordBars) : bars * 2)

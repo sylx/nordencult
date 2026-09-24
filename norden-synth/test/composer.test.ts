@@ -163,3 +163,51 @@ test('アーティクルごとに伴奏セットが替わる', () => {
   }
   assert.ok(new Set(sections.map((s) => s.arrangement)).size >= 3)
 })
+
+test('低音・和音パートの弾き方と根音の動かし方はセクションごとに変わる', () => {
+  const bass = new Set<string>()
+  const chords = new Set<string>()
+  const progressions = new Set<string>()
+  for (const seed of [1, 2, 3, 4]) {
+    const r = render({ seed, sectionBars: 4, energy: 0.7, dynamics: 0.6, drone: 0.3, bassMotion: 0.7 }, 60)
+    for (const s of r.snapshots) {
+      for (const x of s.roles) {
+        if (x.role === 'bass' && x.style) bass.add(x.style)
+        if (x.role === 'chords' && x.style) chords.add(x.style)
+      }
+      progressions.add(s.progression.split(' · ')[0])
+    }
+  }
+  assert.ok(bass.size >= 6, [...bass].join(', '))
+  assert.ok(chords.size >= 4, [...chords].join(', '))
+  assert.equal(progressions.size, 4, [...progressions].join(', '))
+})
+
+test('往復や繰り返しの進行では、最後の和音を除いて同じ周期で和音が繰り返す', () => {
+  let checked = 0
+  for (const seed of [1, 2, 3, 4, 5, 6]) {
+    const r = render({ seed, sectionBars: 8, chordBars: 1, oddMeter: 0 }, 60)
+    const sections = new Map<number, typeof r.snapshots>()
+    for (const s of r.snapshots) sections.set(s.section, [...(sections.get(s.section) ?? []), s])
+    for (const bars of sections.values()) {
+      if (bars.length !== bars[0].sectionBars) continue
+      const label = bars[0].progression
+      const period = label.startsWith('2 和音の往復') ? 2 : Number(/(\d+) 和音ごとに繰り返し/.exec(label)?.[1] ?? 0)
+      if (!period) continue
+      const names = bars.map((b) => b.chords[0])
+      for (let i = period; i < names.length - 1; i++) assert.equal(names[i], names[i - period], `seed ${seed} ${label}`)
+      if (period === 2) assert.notEqual(names[0], names[1], `seed ${seed} ${names.join(' ')}`)
+      checked++
+    }
+  }
+  assert.ok(checked >= 3, `${checked} sections checked`)
+})
+
+test('和音の彩り 0 なら 4 音の和音を使わず、1 なら使う', () => {
+  // 7 の和音・add9 か、名前のない 4 音の和音 (音程が 3 つ並ぶ)
+  const fourNote = (name: string) => /(7|add9)$/.test(name) || /\([^,)]+,[^,)]+,[^,)]+\)$/.test(name)
+  const names = (chordColor: number) =>
+    render({ chordColor, exoticism: 0.3, microtones: 0, modulationRate: 1, sectionBars: 4 }, 60).snapshots.flatMap((s) => s.chords)
+  assert.ok(!names(0).some(fourNote), names(0).filter(fourNote).join(' '))
+  assert.ok(names(1).filter(fourNote).length >= 5)
+})
