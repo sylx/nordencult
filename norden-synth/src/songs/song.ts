@@ -9,6 +9,7 @@
 //   v90         以降のベロシティ。セクションの頭でパートの既定値に戻る
 // 長さは 0.5 / .5 / 1/3 のように書く。省略すると同じパートの直前の長さになる。
 // 空文字列はその小節全体の休み。各小節の長さの合計は拍子とちょうど一致しなければならない。
+// 拍子は曲全体で決め、セクションごと・小節ごとに変えられる (7/8 の小節は 3.5 拍、6/8 は 3 拍)。
 
 import type { TimeSignature } from '../synth/index.ts'
 
@@ -34,6 +35,8 @@ export interface SongSection {
   parts: Record<string, string[]>
   // 最後の小節でテンポをこの倍率まで落とす (0.9 など)
   ritardando?: number
+  // このセクションの拍子。配列なら小節ごと (長さは chords と同じ)。省略すると曲の拍子
+  timeSignature?: TimeSignature | TimeSignature[]
 }
 
 export interface Song {
@@ -63,6 +66,9 @@ export interface SongNote {
 export interface SongBar {
   section: SongSection
   barInSection: number
+  timeSignature: TimeSignature
+  // 小節の長さ (拍)
+  beats: number
   chord: string
   // パート id → この小節で始まる音符
   notes: Map<string, SongNote[]>
@@ -70,7 +76,6 @@ export interface SongBar {
 
 export interface CompiledSong {
   song: Song
-  beatsPerBar: number
   // intro と loop を 1 回ずつ並べた小節
   bars: SongBar[]
   introBars: number
@@ -98,8 +103,6 @@ interface PendingNote extends SongNote {
 }
 
 export function compileSong(song: Song): CompiledSong {
-  const [n, d] = song.timeSignature ?? [4, 4]
-  const beatsPerBar = (n * 4) / d
   const sections = new Map(song.sections.map((s) => [s.id, s]))
   const partIds = new Set(song.parts.map((p) => p.id))
   const order = [...song.intro, ...song.loop].map((id) => {
@@ -116,7 +119,15 @@ export function compileSong(song: Song): CompiledSong {
       if (list.length !== section.chords.length)
         throw new Error(`${song.id}/${section.id}/${id}: ${list.length} bars, expected ${section.chords.length}`)
     }
-    section.chords.forEach((chord, i) => bars.push({ section, barInSection: i, chord, notes: new Map() }))
+    const ts = section.timeSignature ?? song.timeSignature ?? [4, 4]
+    const perBar = typeof ts[0] === 'number' ? undefined : (ts as TimeSignature[])
+    if (perBar && perBar.length !== section.chords.length)
+      throw new Error(`${song.id}/${section.id}: ${perBar.length} time signatures, expected ${section.chords.length}`)
+    section.chords.forEach((chord, i) => {
+      const timeSignature = perBar ? perBar[i] : (ts as TimeSignature)
+      const beats = (timeSignature[0] * 4) / timeSignature[1]
+      bars.push({ section, barInSection: i, timeSignature, beats, chord, notes: new Map() })
+    })
   }
 
   for (const part of song.parts) {
@@ -156,8 +167,8 @@ export function compileSong(song: Song): CompiledSong {
           throw new Error(`${where}: ${(err as Error).message}`)
         }
       }
-      if (text.trim() === '') beat = beatsPerBar
-      if (Math.abs(beat - beatsPerBar) > 1e-6) throw new Error(`${where}: ${beat} beats, expected ${beatsPerBar}`)
+      if (text.trim() === '') beat = bar.beats
+      if (Math.abs(beat - bar.beats) > 1e-6) throw new Error(`${where}: ${beat} beats, expected ${bar.beats}`)
     })
     for (const { bar, ...note } of notes) {
       const list = bars[bar].notes.get(part.id) ?? []
@@ -166,7 +177,7 @@ export function compileSong(song: Song): CompiledSong {
     }
   }
 
-  return { song, beatsPerBar, bars, introBars: song.intro.reduce((sum, id) => sum + sections.get(id)!.chords.length, 0) }
+  return { song, bars, introBars: song.intro.reduce((sum, id) => sum + sections.get(id)!.chords.length, 0) }
 }
 
 // 再生中の小節番号 (0 から) に対応する小節。loop が false なら 1 回演奏したところで終わる

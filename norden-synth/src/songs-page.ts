@@ -32,7 +32,7 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): void {
   const songs = SONGS.map(compileSong)
   let current = songs.find((c) => c.song.id === loadSelection()) ?? songs[0]
   let loop = true
-  const seq = new Sequencer(synth.ctx, { tempo: current.song.tempo, timeSignature: current.song.timeSignature })
+  const seq = new Sequencer(synth.ctx, { tempo: current.song.tempo })
   // 曲 id → パート id → チャンネル。曲を切り替えても作り直さない
   const channels = new Map<string, Map<string, Channel>>()
   const tracks = new Map<string, Track>()
@@ -61,8 +61,8 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): void {
   const list = $('#song-list')
   const listButtons = new Map<string, HTMLButtonElement>()
   for (const c of songs) {
-    const { song, bars, introBars, beatsPerBar } = c
-    const loopSec = ((bars.length - introBars) * beatsPerBar * 60) / song.tempo
+    const { song, bars, introBars } = c
+    const loopSec = (bars.slice(introBars).reduce((sum, b) => sum + b.beats, 0) * 60) / song.tempo
     const b = document.createElement('button')
     b.innerHTML = `<span class="name">${escape(song.title)}</span><span class="meta">${bars.length} 小節 · ループ ${formatTime(loopSec)}</span>`
     b.addEventListener('click', () => select(c))
@@ -106,10 +106,11 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): void {
 
   // --- 再生 ---
 
-  // 小節ごとに最初に呼ばれる。リタルダンドの後はテンポを戻す
+  // 小節ごとに最初に呼ばれる。拍子を決め、リタルダンドの後はテンポを戻す
   let ramped = false
   seq.conductor = (bar) => {
     const b = barAt(current, bar.index, loop)
+    if (b) bar.timeSignature = b.timeSignature
     if (ramped) {
       bar.setTempo(current.song.tempo)
       ramped = false
@@ -164,7 +165,6 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): void {
     }
     ramped = false
     seq.tempo = c.song.tempo
-    seq.timeSignature = c.song.timeSignature ?? [4, 4]
     seq.start()
   }
 

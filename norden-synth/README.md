@@ -63,6 +63,7 @@ src/songs/                  LLM が書いた曲
   hokuten.ts                  『北天の灯』
   fairy-ring.ts               『妖精の環』
   imperial-triumph.ts         『大帝国の凱旋』
+  wandering-bird.ts           『気ままな渡り鳥』
 src/main.ts                 テストページ
 src/songs-page.ts           テストページの LLM 作成曲タブ
 src/bgm-page.ts             テストページの BGM 生成タブ
@@ -208,6 +209,7 @@ seq.stop()                   // 未来の音は取り消し、鳴っている音
     timp: ['v70 D3:1 r:3', ...],              // v でベロシティ、r で休符、- で直前の音を伸ばす
   },
   ritardando: 0.9,                            // 最後の小節でテンポを落とす (任意)
+  timeSignature: [6, 8],                      // セクションの拍子 (任意)。小節ごとの配列でもよい
 }
 ```
 

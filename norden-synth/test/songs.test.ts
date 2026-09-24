@@ -61,6 +61,29 @@ test('ループはイントロの後から繰り返し、ループしなけれ�
   assert.equal(barAt(c, 3, false), undefined)
 })
 
+test('拍子はセクションごと・小節ごとに変えられる', () => {
+  const song = structuredClone(tiny)
+  song.sections[1].timeSignature = [
+    [7, 8],
+    [2, 4],
+  ]
+  song.sections[1].parts.p = ['A4:3.5', 'B4:2']
+  const c = compileSong(song)
+  assert.deepEqual(
+    c.bars.map((b) => [b.timeSignature, b.beats]),
+    [
+      [[3, 4], 3],
+      [[7, 8], 3.5],
+      [[2, 4], 2],
+    ],
+  )
+  // 6/8 は 3/4 と同じ 3 拍なので通り、2/4 では長さが合わない
+  song.sections[0].timeSignature = [6, 8]
+  assert.equal(compileSong(song).bars[0].beats, 3)
+  song.sections[0].timeSignature = [2, 4]
+  assert.throws(() => compileSong(song), /tiny\/i\/p bar 1: 3 beats, expected 2/)
+})
+
 test('小節の長さが合わないとエラーになる', () => {
   const bad = structuredClone(tiny)
   bad.sections[1].parts.p[1] = 'B4:1'
