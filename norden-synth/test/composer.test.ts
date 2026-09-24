@@ -256,6 +256,10 @@ test('ソングは決めた回数だけ同じ音楽を繰り返し、そのあ�
   assert.equal(at(32).songRepeat, 1)
   assert.equal(at(32).song, 0)
   assert.equal(at(64).song, 1)
+  // 曲名は繰り返しでは同じで、次のソングでは付け直す
+  assert.ok(at(8).title.length > 0)
+  assert.equal(at(32).title, at(8).title)
+  assert.notEqual(at(64).title, at(8).title)
   // 最後の和音 (2 小節) は次のソングの調へつなぐので、1 回目 (同じソングへ) と 2 回目 (次のソングへ) で違いうる
   for (let bar = 0; bar < 30; bar++) {
     const a = r.barNotes.get(bar)!

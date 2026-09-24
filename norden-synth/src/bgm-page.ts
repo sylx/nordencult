@@ -205,6 +205,7 @@ export function setupBgmPage(synth: Synth, root: HTMLElement): void {
       const energy = Math.round(snap.energy * 100)
       const lead = snap.roles.find((r) => r.role === 'melody')
       html = `
+        <div class="title">『${snap.title}』</div>
         <div class="key">${snap.key}${snap.scaleNote ? `<span>${snap.scaleNote}</span>` : ''}</div>
         <dl>
           <dt>ソング</dt><dd>${snap.song + 1} (${snap.songRepeat + 1}${snap.songRepeats ? `/${snap.songRepeats}` : ''} 回目) · ${snap.sectionInSong + 1}/${snap.songSections} セクション${snap.theme ? ` · <b>${snap.theme === 'statement' ? '主題' : '主題の再現'}</b>` : ''}</dd>

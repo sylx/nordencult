@@ -18,6 +18,7 @@ import type { MelodyInfo } from './melody.ts'
 import { DEFAULT_PARAMS, type BgmParams } from './params.ts'
 import { PLAYER_DEFS, ROLE_DEFS, createRoles, type Role } from './parts.ts'
 import { Random } from './random.ts'
+import { songTitle } from './title.ts'
 import type { Key } from './scales.ts'
 
 // 表示用の、ある小節の状態
@@ -33,8 +34,9 @@ export interface BarSnapshot {
   // 根音の動かし方
   progression: string
   energy: number
-  // ソングの番号 (繰り返しでは同じ) と、何回目の繰り返しか。songRepeats は 0 でずっと
+  // ソングの番号 (繰り返しでは同じ) と曲名、何回目の繰り返しか。songRepeats は 0 でずっと
   song: number
+  title: string
   songRepeat: number
   songRepeats: number
   sectionInSong: number
@@ -64,6 +66,8 @@ interface Song {
   articleSections: number
   sections: number
   key: Key
+  // 最初のセクションの調と拍子が決まったところで付ける
+  title: string
   firstArrangement?: Arrangement
   // 主題を示したセクション
   theme?: Section
@@ -200,6 +204,7 @@ export class Composer {
       progression: progressionLabel(s.progression),
       energy: s.energy,
       song: song.number,
+      title: song.title,
       songRepeat: song.repeat,
       songRepeats: song.repeats,
       sectionInSong,
@@ -237,6 +242,7 @@ export class Composer {
     this.next = undefined
     const meter = theme?.meter ?? chooseMeter(inSong === 0 ? undefined : prev?.meter, p, rng)
     const energy = chooseEnergy(inSong === 0 ? undefined : prev?.energy, p, rng)
+    if (inSong === 0) song.title = songTitle(this.seed, song.number, key, meter)
 
     // アーティクルの頭で伴奏セットを替える。ソングの最後のアーティクルは、繰り返しの頭と同じセットを避ける
     if (inSong % song.articleSections === 0) {
@@ -327,6 +333,7 @@ export class Composer {
       articleSections,
       sections: articles * articleSections,
       key: next.key,
+      title: '',
     }
   }
 
