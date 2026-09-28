@@ -7,6 +7,7 @@
 //   r:1         休符
 //   -:2         直前の音符 (和音) を伸ばす。小節をまたいでつなぐときに使う
 //   v90         以降のベロシティ。セクションの頭でパートの既定値に戻る
+//   bd+cym:1    打楽器の音色 (DRUM_KEYS にある楽器) では、音名の代わりに打楽器の名前も書ける
 // 長さは 0.5 / .5 / 1/3 のように書く。省略すると同じパートの直前の長さになる。
 // 空文字列はその小節全体の休み。各小節の長さの合計は拍子とちょうど一致しなければならない。
 // 拍子は曲全体で決め、セクションごと・小節ごとに変えられる (7/8 の小節は 3.5 拍、6/8 は 3 拍)。
@@ -81,6 +82,45 @@ export interface CompiledSong {
   introBars: number
 }
 
+// 打楽器の音色で音名の代わりに書ける名前 (楽器 id → 名前 → キー)
+export const DRUM_KEYS: Record<string, Record<string, number>> = {
+  'orchestra-kit': {
+    bd: 36, // コンサート・バスドラム
+    rim: 37, // リムを軽く叩く音
+    sd: 38, // コンサート・スネア
+    clap: 39,
+    tamb: 54, // タンブリン
+    splash: 55, // 小さなシンバル
+    cowbell: 56,
+    cym: 57, // 合わせシンバル (左右に広がる。長さによらず鳴らし切る)
+    vibraslap: 58,
+    cym2: 59, // 合わせシンバル (中央。短く書くと早めに減衰する)
+    bongorim: 60,
+    bongo: 61,
+    slap: 62, // コンガを押さえて叩く乾いた音
+    conga: 63,
+    tumba: 64, // 低いコンガ
+    timbale: 65,
+    timbale2: 66,
+    agogo: 67,
+    agogo2: 68,
+    cabasa: 69,
+    maracas: 70,
+    guiro: 73,
+    guiro2: 74,
+    clave: 75,
+    wb: 76, // ウッドブロック (高)
+    wb2: 77, // ウッドブロック (低)
+    trimute: 80, // トライアングル (ミュート。鳴っている tri を止める)
+    tri: 81, // トライアングル (オープン。長さの分だけ伸びる)
+    shaker: 82,
+    sleigh: 83, // スレイベル
+    castanet: 85,
+    taiko: 86, // 和太鼓 (短い)
+    taiko2: 87, // 和太鼓 (長い。taiko と互いに止め合う)
+  },
+}
+
 const PITCH_CLASS: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }
 
 export function parsePitch(name: string): number {
@@ -131,6 +171,8 @@ export function compileSong(song: Song): CompiledSong {
   }
 
   for (const part of song.parts) {
+    const drums = DRUM_KEYS[part.instrument] ?? {}
+    const keyOf = (name: string) => (Object.hasOwn(drums, name) ? drums[name] : parsePitch(name))
     const gate = part.gate ?? 0.95
     const notes: PendingNote[] = []
     let last: PendingNote[] = []
@@ -159,7 +201,7 @@ export function compileSong(song: Song): CompiledSong {
             if (last.length === 0) throw new Error('nothing to extend')
             for (const note of last) note.duration += duration
           } else {
-            last = head.split('+').map((p) => ({ bar: index, beat, key: parsePitch(p), velocity, duration }))
+            last = head.split('+').map((p) => ({ bar: index, beat, key: keyOf(p), velocity, duration }))
             notes.push(...last)
           }
           beat += duration

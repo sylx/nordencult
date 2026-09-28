@@ -9,6 +9,7 @@ import type { Song } from './song.ts'
 // 最後の B♭–C (♭VI–♭VII) で D に戻る。C は A と同じ聖歌を、トランペット・合唱・バイオリンのオクターブで歌い、
 // 金管と弦とクワイアが教会のオルガンのようなコラールで和声を付ける。ドリアの長 IV (G) と ♭VII (C) を使い、
 // 最後だけ D を長三和音にして (ピカルディの 3 度)、テンポを落として荘厳に終える。
+// 打楽器は聖歌の邪魔をしないよう、B の終わりのシンバルのロールと、C の入りと最後の和音の大太鼓とシンバルだけにする。
 export const whiteSanctum: Song = {
   id: 'white-sanctum',
   title: '白亜の聖都',
@@ -30,6 +31,7 @@ export const whiteSanctum: Song = {
     { id: 'harp', label: 'ハープ', instrument: 'harp', volume: 0.45, pan: 0.4, velocity: 62, gate: 2 },
     { id: 'piano', label: 'ピアノ (鐘)', instrument: 'yamaha-grand-piano', volume: 0.35, pan: -0.1, velocity: 60, gate: 1 },
     { id: 'timp', label: 'ティンパニ', instrument: 'timpani', volume: 0.6, pan: 0, velocity: 84, gate: 1 },
+    { id: 'perc', label: 'シンバル・大太鼓', instrument: 'orchestra-kit', volume: 0.45, pan: 0, velocity: 70, gate: 1 },
   ],
   sections: [
     {
@@ -206,6 +208,13 @@ export const whiteSanctum: Song = {
           '',
           'r:2 v44 A2:.25 v50 A2 v56 A2 v62 A2 v68 A2 v74 A2 v80 A2 v88 A2',
         ],
+        // マレットで細かく叩くシンバルのロール
+        perc: [
+          '',
+          '',
+          '',
+          'r:2 v30 cym2:.125 v32 cym2 v34 cym2 v36 cym2 v38 cym2 v40 cym2 v42 cym2 v44 cym2 v46 cym2 v48 cym2 v50 cym2 v52 cym2 v54 cym2 v56 cym2 v58 cym2 v60 cym2',
+        ],
       },
     },
     {
@@ -344,6 +353,17 @@ export const whiteSanctum: Song = {
           '',
           'r:2 D2:1 r:2',
           'r:1 A2:1 v70 D2:.25 v76 D2 v82 D2 v88 D2 v94 D2 v100 D2 v106 D2 v112 D2',
+        ],
+        // コラールの入りと、最後のピカルディの 3 度でだけ鳴らす
+        perc: [
+          'v84 bd+cym:1 r:3',
+          '',
+          '',
+          '',
+          'v66 bd:1 r:3',
+          '',
+          '',
+          'r:1 v40 cym2:.125 v44 cym2 v48 cym2 v52 cym2 v56 cym2 v60 cym2 v64 cym2 v68 cym2 v96 bd+cym:2',
         ],
       },
     },

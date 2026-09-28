@@ -2,13 +2,15 @@ import type { Song } from './song.ts'
 
 // 南の神秘的な伝統国家の曲。アラブ音楽のマカーム・ヒジャーズ (ニ音上で D–E♭–F#–G–A–B♭–C) で書き、
 // E♭–F# の増 2 度と、D と A の持続音 (ドローン) の上で和声をあまり動かさないことで異国の響きにする。
-// リズムはマクスーム (ドゥム・テク・ー・テク・ドゥム・ー・テク・ー)。ドゥムをティンパニとコントラバス、
-// テクをピチカートが受け持ち、ギターがウードのように D–E♭–F#–G を行き来する 1 小節の音型を繰り返す。
-// イントロはドローンの上でバイオリンが即興風に歌うタクシーム。A はバイオリンが装飾音で揺れる主題を歌い、
+// リズムはマクスーム (ドゥム・テク・ー・テク・ドゥム・ー・テク・ー)。ダルブッカ役のコンガが低い音でドゥム、
+// 押さえた乾いた音でテクを叩き、ときどき縁の細かい音で飾る。ティンパニとコントラバスがドゥムを低く支え、
+// リク (タンブリン) が 8 分で鈴を鳴らす。ギターがウードのように D–E♭–F#–G を行き来する 1 小節の音型を繰り返す。
+// イントロはドローンの上でフルートがネイのように即興風に歌うタクシーム。A はバイオリンが装飾音で揺れる主題を歌い、
 // 後半はハープがカーヌーンのように分散和音を足す。B は 4 度上のト音のヒジャーズ (G–A♭–B–C–D–E♭–F) に
-// 転じ、打楽器を減らして合唱が呪文のように歌い、バイオリンが増 2 度の駆け上がりで合いの手を入れる。
-// B の最後の E♭ はニのヒジャーズの ♭II で、そこから半音下の D に戻る。A' はバイオリン 2 オクターブと
-// ホルンが主題を重ねる全合奏のヘテロフォニーで、合唱が D と A を持続する。
+// 転じ、打楽器をテクとフィンガー・シンバル代わりのトライアングルに減らして合唱が呪文のように歌い、
+// バイオリンが増 2 度の駆け上がりで合いの手を入れる。B の最後の E♭ はニのヒジャーズの ♭II で、
+// そこから半音下の D に戻る。A' はバイオリン 2 オクターブ・フルートとホルンが主題を重ねる全合奏の
+// ヘテロフォニーで、合唱が D と A を持続する。
 export const starReader: Song = {
   id: 'star-reader',
   title: '砂海の星詠み',
@@ -25,8 +27,10 @@ export const starReader: Song = {
     { id: 'cb', label: 'コントラバス', instrument: 'contrabass', volume: 0.6, pan: 0.3, velocity: 88, gate: 0.8 },
     { id: 'gtr', label: 'ギター (ウード)', instrument: 'nylon-string-guitar', volume: 0.55, pan: 0.2, velocity: 80, gate: 0.85 },
     { id: 'harp', label: 'ハープ (カーヌーン)', instrument: 'harp', volume: 0.5, pan: 0.35, velocity: 66, gate: 1.5 },
-    { id: 'pizz', label: 'ピチカート (テク)', instrument: 'pizzicato-section', volume: 0.4, pan: -0.25, velocity: 70, gate: 0.5 },
-    { id: 'timp', label: 'ティンパニ (ドゥム)', instrument: 'timpani', volume: 0.65, pan: 0, velocity: 92, gate: 1 },
+    { id: 'fl', label: 'フルート (ネイ)', instrument: 'flute', volume: 0.45, pan: -0.1, velocity: 78, gate: 0.97 },
+    { id: 'darbuka', label: 'ダルブッカ (コンガ)', instrument: 'orchestra-kit', volume: 0.5, pan: -0.2, velocity: 80, gate: 1 },
+    { id: 'riq', label: 'リク (タンブリン)', instrument: 'orchestra-kit', volume: 0.35, pan: 0.25, velocity: 60, gate: 1 },
+    { id: 'timp', label: 'ティンパニ (低いドゥム)', instrument: 'timpani', volume: 0.6, pan: 0, velocity: 92, gate: 1 },
     { id: 'voices', label: '合唱', instrument: 'ohh-voices', volume: 0.5, pan: 0, velocity: 76, gate: 1 },
     { id: 'choir', label: 'クワイア', instrument: 'ahh-choir', volume: 0.35, pan: 0, velocity: 56, gate: 1 },
   ],
@@ -42,7 +46,7 @@ export const starReader: Song = {
           '',
           '',
         ],
-        vn1: [
+        fl: [
           '',
           'r:1 A4:1.5 Bb4:.25 A4:.25 G4:.5 F#4:.5',
           'Eb4:1 F#4:.5 G4:.5 A4:.25 Bb4 A4 G4 F#4:1',
@@ -72,6 +76,7 @@ export const starReader: Song = {
           '',
           'r:2 v50 D2:.25 v56 D2 v62 D2 v68 D2 v74 D2 v80 D2 v86 D2 v92 D2',
         ],
+        darbuka: ['', '', '', 'r:2 v44 slap:.25 v50 slap v56 slap v62 slap v70 slap v78 slap v86 slap v96 tumba'],
       },
     },
     {
@@ -119,15 +124,26 @@ export const starReader: Song = {
           'D3+A3:4',
           'D3+A3:4',
         ],
-        pizz: [
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
+        // ドゥム (低いコンガ)・テク (押さえた音)・縁の細かい音
+        darbuka: [
+          'v96 tumba:.5 v68 slap:1 v62 slap:.5 v90 tumba:1 v70 slap:1',
+          'v96 tumba:.5 v68 slap:1 v62 slap:.5 v90 tumba:1 v70 slap:1',
+          'v96 tumba:.5 v68 slap:1 v62 slap:.5 v90 tumba:1 v70 slap:1',
+          'v96 tumba:.5 v68 slap:.5 v44 bongorim:.25 v50 bongorim v68 slap:.5 v90 tumba:1 v70 slap:.5 v46 bongorim:.25 v52 bongorim',
+          'v96 tumba:.5 v68 slap:1 v62 slap:.5 v90 tumba:1 v70 slap:1',
+          'v96 tumba:.5 v68 slap:.5 v44 bongorim:.25 v50 bongorim v68 slap:.5 v90 tumba:1 v70 slap:.5 v46 bongorim:.25 v52 bongorim',
+          'v96 tumba:.5 v68 slap:1 v62 slap:.5 v90 tumba:1 v70 slap:1',
+          'v96 tumba:.5 v68 slap:1 v62 slap:.5 v90 tumba:1 v80 tumba:.25 v88 tumba v96 tumba:.5',
+        ],
+        riq: [
+          '',
+          '',
+          '',
+          '',
+          'v58 tamb:.5 v50 tamb v32 tamb v50 tamb v58 tamb v32 tamb v50 tamb v36 tamb',
+          'v58 tamb:.5 v50 tamb v32 tamb v50 tamb v58 tamb v32 tamb v50 tamb v36 tamb',
+          'v58 tamb:.5 v50 tamb v32 tamb v50 tamb v58 tamb v32 tamb v50 tamb v36 tamb',
+          'v58 tamb:.5 v50 tamb v32 tamb v50 tamb v58 tamb v32 tamb v50 tamb v36 tamb',
         ],
         timp: [
           'D2:.5 r:1.5 D2:.5 r:1.5',
@@ -236,16 +252,18 @@ export const starReader: Song = {
           'G1:4',
           'Eb2:4',
         ],
-        pizz: [
-          'v58 r:1 G4+D5:1 r:1 G4+D5:.5 G4+D5:.5',
-          'r:1 G4+D5:1 r:1 G4+D5:.5 G4+D5:.5',
-          'r:1 G4+D5:1 r:1 G4+D5:.5 G4+D5:.5',
-          'r:1 G4+D5:1 r:1 G4+D5:.5 G4+D5:.5',
-          'r:1 G4+D5:1 r:1 G4+D5:.5 G4+D5:.5',
-          'r:1 G4+D5:1 r:1 G4+D5:.5 G4+D5:.5',
-          'r:1 G4+D5:1 r:1 G4+D5:.5 G4+D5:.5',
-          'r:1 G4+Bb4:1 r:2',
+        darbuka: [
+          'r:1 v50 slap:1 r:1 v46 slap:.5 v40 slap:.5',
+          'r:1 v50 slap:1 r:1 v46 slap:.5 v40 slap:.5',
+          'r:1 v50 slap:1 r:1 v46 slap:.5 v40 slap:.5',
+          'r:1 v50 slap:1 r:1 v46 slap:.5 v40 slap:.5',
+          'r:1 v50 slap:1 r:1 v46 slap:.5 v40 slap:.5',
+          'r:1 v50 slap:1 r:1 v46 slap:.5 v40 slap:.5',
+          'r:1 v50 slap:1 r:1 v46 slap:.5 v40 slap:.5',
+          'v70 tumba:1 r:1 v44 slap:.25 v50 slap v56 slap v62 slap v70 slap v78 slap v86 slap v96 tumba',
         ],
+        // フィンガー・シンバルの代わり
+        riq: ['v52 tri:.5 r:3.5', '', 'v48 tri:.5 r:3.5', '', 'v52 tri:.5 r:3.5', '', 'v48 tri:.5 r:3.5', ''],
         timp: [
           'v84 G2:1 r:3',
           'G2:1 r:3',
@@ -353,15 +371,35 @@ export const starReader: Song = {
           'D3+A3:4',
           'D3+A3:4',
         ],
-        pizz: [
-          'v80 r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
-          'r:.5 D4+A4:1 D4+A4:.5 r:1 D4+A4:.5 r:.5',
+        darbuka: [
+          'v104 tumba:.5 v74 slap:.5 v48 bongorim:.25 v54 bongorim v74 slap:.5 v98 tumba:1 v76 slap:.5 v90 tumba:.5',
+          'v104 tumba:.5 v74 slap:.5 v48 bongorim:.25 v54 bongorim v74 slap:.5 v98 tumba:1 v76 slap:.5 v90 tumba:.5',
+          'v104 tumba:.5 v74 slap:.5 v48 bongorim:.25 v54 bongorim v74 slap:.5 v98 tumba:1 v76 slap:.5 v90 tumba:.5',
+          'v104 tumba:.5 v74 slap:.5 v48 bongorim:.25 v54 bongorim v74 slap:.5 v98 tumba:1 v76 slap:.5 v90 tumba:.5',
+          'v104 tumba:.5 v74 slap:.5 v48 bongorim:.25 v54 bongorim v74 slap:.5 v98 tumba:1 v76 slap:.5 v90 tumba:.5',
+          'v104 tumba:.5 v74 slap:.5 v48 bongorim:.25 v54 bongorim v74 slap:.5 v98 tumba:1 v76 slap:.5 v90 tumba:.5',
+          'v104 tumba:.5 v74 slap:.5 v48 bongorim:.25 v54 bongorim v74 slap:.5 v98 tumba:1 v76 slap:.5 v90 tumba:.5',
+          'v104 tumba:.5 v74 slap:1 v68 slap:.5 v98 tumba:1 v86 tumba:.25 v94 tumba v100 tumba:.5',
+        ],
+        riq: [
+          'v70 tamb:.5 v62 tamb v44 tamb v62 tamb v70 tamb v44 tamb v62 tamb v48 tamb',
+          'v70 tamb:.5 v62 tamb v44 tamb v62 tamb v70 tamb v44 tamb v62 tamb v48 tamb',
+          'v70 tamb:.5 v62 tamb v44 tamb v62 tamb v70 tamb v44 tamb v62 tamb v48 tamb',
+          'v70 tamb:.5 v62 tamb v44 tamb v62 tamb v70 tamb v44 tamb v62 tamb v48 tamb',
+          'v70 tamb:.5 v62 tamb v44 tamb v62 tamb v70 tamb v44 tamb v62 tamb v48 tamb',
+          'v70 tamb:.5 v62 tamb v44 tamb v62 tamb v70 tamb v44 tamb v62 tamb v48 tamb',
+          'v70 tamb:.5 v62 tamb v44 tamb v62 tamb v70 tamb v44 tamb v62 tamb v48 tamb',
+          'v70 tamb:.5 v62 tamb v44 tamb v62 tamb v70 tamb v44 tamb v62 tamb v48 tamb',
+        ],
+        fl: [
+          'v80 A5:1.5 Bb5:.25 A5:.25 G5:.5 F#5:.5 G5:.5 A5:.5',
+          'Bb5:1 A5:.5 G5:.5 F#5:.25 G5:.25 F#5:.5 Eb5:1',
+          'D5:.5 Eb5:.5 F#5:.5 G5:.5 A5:1 D6:1',
+          'C6:.75 D6:.25 Eb6:.5 D6:.5 C6:1 Bb5:1',
+          'Bb5:.5 C6:.25 Bb5:.25 A5:.5 Bb5:.5 G5:2',
+          'G5:.5 Bb5:.5 Eb6:1 D6:.5 C6:.5 Bb5:1',
+          'A5:1 F#5:1 G5:.5 F#5:.5 Eb5:1',
+          'D5:3 r:1',
         ],
         timp: [
           'v100 D2:.5 r:1.5 D2:.5 r:1 D2:.5',

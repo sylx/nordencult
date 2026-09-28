@@ -5,6 +5,9 @@ import type { Song } from './song.ts'
 // 3–4 小節目の F–G (♭VII–I) で B5 まで駆け上がる。5 小節目は 1 小節目を 4 度上 (C) で繰り返す。
 // A はホルンが主題を示し、弦の低音が付点のリズムで刻んでトロンボーンがコラールで支える。
 // B は変ロ長調 (♭III) に移って弦がユニゾンで歌い、D7 でト長調に戻る。A' はトランペットが主題を吹く全合奏。
+// 打楽器は小節の 1・3 拍目のバスドラムと付点のスネアで行進の足取りを刻み、句の頭で合わせシンバルを鳴らす。
+// B では弦の歌を邪魔しないようシンバルとトライアングルだけにし、終わりのスネアのロールで A' を呼び込む。
+// A' ではピッコロがトランペットの 1 オクターブ上を重ねる。
 export const imperialTriumph: Song = {
   id: 'imperial-triumph',
   title: '大帝国の凱旋',
@@ -23,6 +26,8 @@ export const imperialTriumph: Song = {
     { id: 'cb', label: 'コントラバス', instrument: 'contrabass', volume: 0.7, pan: 0.35, velocity: 88, gate: 0.75 },
     { id: 'timp', label: 'ティンパニ', instrument: 'timpani', volume: 0.7, pan: 0, velocity: 95, gate: 1 },
     { id: 'choir', label: 'クワイア', instrument: 'ahh-choir', volume: 0.45, pan: 0, velocity: 70, gate: 1 },
+    { id: 'picc', label: 'ピッコロ', instrument: 'piccolo', volume: 0.3, pan: 0.05, velocity: 88, gate: 0.92 },
+    { id: 'perc', label: '打楽器', instrument: 'orchestra-kit', volume: 0.5, pan: -0.05, velocity: 80, gate: 1 },
   ],
   sections: [
     {
@@ -59,6 +64,12 @@ export const imperialTriumph: Song = {
           '',
           'r:2 v92 D5:.75 D5:.25 G5:1',
           'B5:.75 A5:.25 G5:1 D5:2',
+        ],
+        perc: [
+          'v36 sd:.25 v40 sd v44 sd v48 sd v52 sd v56 sd v60 sd v64 sd v68 sd v72 sd v76 sd v80 sd v84 sd v88 sd v92 sd v96 sd',
+          'v96 bd+cym:1 r:2 v60 sd:.5 v68 sd:.25 v76 sd',
+          'v96 bd:1 r:2 v60 sd:.5 v68 sd:.25 v76 sd',
+          'v104 bd+cym:1 r:1 v76 sd:.5 v84 sd v92 sd:.25 v98 sd v104 sd v110 sd',
         ],
         timp: [
           'v40 G2:.25 v43 G2 v46 G2 v49 G2 v52 G2 v55 G2 v58 G2 v61 G2 v64 G2 v67 G2 v70 G2 v73 G2 v76 G2 v79 G2 v82 G2 v88 G2',
@@ -112,6 +123,16 @@ export const imperialTriumph: Song = {
           'E1:.75 E1:.25 E1:.5 E1 E1:.75 E1:.25 E1:.5 E1',
           'A1:.75 A1:.25 A1:.5 A1 D2:.75 D2:.25 D2:.5 D2',
           'D2:.75 D2:.25 D2:.5 D2 D2:.75 D2:.25 D2:.5 D2',
+        ],
+        perc: [
+          'v84 bd+cym2:1 v54 sd:.75 v46 sd:.25 v68 bd:1 v54 sd:.5 v48 sd',
+          'v74 bd:1 v54 sd:.75 v46 sd:.25 v68 bd:1 v54 sd:.5 v48 sd',
+          'v74 bd:1 v54 sd:.75 v46 sd:.25 v68 bd:1 v54 sd:.5 v48 sd',
+          'v74 bd:1 v54 sd:.75 v46 sd:.25 v68 bd:1 v50 sd:.25 v56 sd v62 sd v68 sd',
+          'v74 bd:1 v54 sd:.75 v46 sd:.25 v68 bd:1 v54 sd:.5 v48 sd',
+          'v74 bd:1 v54 sd:.75 v46 sd:.25 v68 bd:1 v54 sd:.5 v48 sd',
+          'v76 bd:1 v54 sd:.75 v46 sd:.25 v72 bd:1 r:1',
+          'v40 sd:.25 v44 sd v48 sd v52 sd v56 sd v60 sd v64 sd v68 sd v72 sd v76 sd v80 sd v84 sd v88 sd v92 sd v96 sd v100 sd',
         ],
         timp: [
           'v96 G2:1 r:2 v64 D3:.5 v72 D3:.25 v80 D3:.25',
@@ -220,6 +241,16 @@ export const imperialTriumph: Song = {
           '',
           'r:2 v88 A4:.75 A4:.25 D5:.75 D5:.25',
         ],
+        perc: [
+          'v58 cym2:4',
+          '',
+          '',
+          'v52 tri:4',
+          'v54 cym2:4',
+          '',
+          'v72 bd:1 r:1 v60 sd:.5 v66 sd v72 sd v78 sd',
+          'v44 sd:.25 v48 sd v52 sd v56 sd v60 sd v64 sd v68 sd v72 sd v76 sd v80 sd v84 sd v88 sd v92 sd v96 sd v100 sd v104 sd',
+        ],
         timp: [
           'v70 Bb2:1 r:3',
           '',
@@ -246,6 +277,16 @@ export const imperialTriumph: Song = {
           'B5:1.5 A5:.5 G5:1 E5:1',
           'A5:.75 B5:.25 C6:1 A5:.75 F#5:.25 D5:1',
           'G5:4',
+        ],
+        picc: [
+          'v90 G5:.75 D6:.25 D6:2 G6:1',
+          'G6:1.5 F6:.5 Eb6:1 Bb5:1',
+          'A5:.75 C6:.25 F6:2 A6:1',
+          'G6:.75 A6:.25 B6:3',
+          'C6:.75 G6:.25 G6:2 C7:1',
+          'B6:1.5 A6:.5 G6:1 E6:1',
+          'A6:.75 B6:.25 C7:1 A6:.75 F#6:.25 D6:1',
+          'G6:4',
         ],
         vn1: [
           'v92 G4:.75 D5:.25 D5:2 G5:1',
@@ -327,6 +368,16 @@ export const imperialTriumph: Song = {
           'C4+E4+A4:2 A3+D4+F#4:2',
           'B3+D4+G4:4',
         ],
+        perc: [
+          'v112 bd+cym:1 v80 sd:.75 v68 sd:.25 v94 bd:1 v80 sd:.5 v74 sd',
+          'v100 bd:1 v80 sd:.75 v68 sd:.25 v94 bd:1 v80 sd:.5 v74 sd',
+          'v100 bd:1 v80 sd:.75 v68 sd:.25 v94 bd:1 v80 sd:.5 v74 sd',
+          'v96 bd:1 v76 sd:.75 v68 sd:.25 v90 bd:1 v66 sd:.25 v74 sd v82 sd v90 sd',
+          'v108 bd+cym2:1 v80 sd:.75 v68 sd:.25 v94 bd:1 v80 sd:.5 v74 sd',
+          'v100 bd:1 v80 sd:.75 v68 sd:.25 v94 bd:1 v80 sd:.5 v74 sd',
+          'v100 bd:1 v80 sd:.75 v68 sd:.25 v96 bd:1 v70 sd:.25 v78 sd v86 sd v94 sd',
+          'v120 bd+cym:1 v90 sd:.5 v98 sd v120 bd+cym:1 r:1',
+        ],
         timp: [
           'v96 G2:1 r:2 v64 D3:.5 v72 D3:.25 v80 D3:.25',
           'v96 Eb2:1 r:2 v64 Bb2:.5 v72 Bb2:.25 v80 Bb2:.25',
@@ -338,7 +389,8 @@ export const imperialTriumph: Song = {
           'v112 G2:1 v90 D3:.5 v96 D3 v112 G2:1 r:1',
         ],
       },
-    },  ],
+    },
+  ],
   intro: ['intro'],
   loop: ['A', 'B', 'A2'],
 }

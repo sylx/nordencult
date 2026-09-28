@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { SONGS, barAt, compileSong, type Song } from '../src/songs/index.ts'
-import { parsePitch } from '../src/songs/song.ts'
+import { DRUM_KEYS, parsePitch } from '../src/songs/song.ts'
 
 const instruments = new Set(
   (JSON.parse(readFileSync(new URL('../public/instruments/index.json', import.meta.url), 'utf8')) as { instruments: { id: string }[] }).instruments.map(
@@ -82,6 +82,36 @@ test('拍子はセクションごと・小節ごとに変えられる', () => {
   assert.equal(compileSong(song).bars[0].beats, 3)
   song.sections[0].timeSignature = [2, 4]
   assert.throws(() => compileSong(song), /tiny\/i\/p bar 1: 3 beats, expected 2/)
+})
+
+test('打楽器の音色では名前でキーを書け、ほかの音色では書けない', () => {
+  const song = structuredClone(tiny)
+  song.parts.push({ id: 'd', label: 'd', instrument: 'orchestra-kit', volume: 1, pan: 0, gate: 1 })
+  song.sections[0].parts.d = ['bd+cym:1 sd:.5 C2 r:1']
+  assert.deepEqual(
+    compileSong(song).bars[0].notes.get('d')!.map((n) => [n.beat, n.key]),
+    [
+      [0, 36],
+      [0, 57],
+      [1, 38],
+      [1.5, 36],
+    ],
+  )
+  song.sections[0].parts.p = ['bd:3']
+  assert.throws(() => compileSong(song), /tiny\/i\/p bar 1: invalid pitch: bd/)
+})
+
+test('打楽器の名前はどれも音色のリージョンに当たる', () => {
+  for (const [id, names] of Object.entries(DRUM_KEYS)) {
+    const data = JSON.parse(readFileSync(new URL(`../public/instruments/${id}.json`, import.meta.url), 'utf8')) as {
+      regions: { keyLo: number; keyHi: number }[]
+    }
+    for (const [name, key] of Object.entries(names))
+      assert.ok(
+        data.regions.some((r) => r.keyLo <= key && key <= r.keyHi),
+        `${id}: ${name} (${key})`,
+      )
+  }
 })
 
 test('小節の長さが合わないとエラーになる', () => {

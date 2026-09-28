@@ -10,6 +10,8 @@ import type { Song } from './song.ts'
 // B の最後の F7 からさらに短 3 度上の変ロ短調に転じ、B' で同じ軍歌をトランペットと全合奏で歌い上げる。
 // B' の G♭ を F# (ホ短調の V/V) と読み替えて B7 に進み、三全音離れたホ短調に戻る。
 // A・B・B' の終わりではトランペットが次の調の属音を連打して、次の旋律を呼び込む。
+// スネアとバスドラムも同じ 3+3+2 で刻み (イントロはスネアだけで始める)、句の頭でシンバルを鳴らし、
+// セクションの終わりはスネアのロールでつなぐ。全合奏の A' と B' ではピッコロがバイオリン I に重なる。
 export const tundraMarch: Song = {
   id: 'tundra-march',
   title: '凍土の鉄騎',
@@ -30,6 +32,8 @@ export const tundraMarch: Song = {
     { id: 'timp', label: 'ティンパニ', instrument: 'timpani', volume: 0.75, pan: 0, velocity: 96, gate: 1 },
     { id: 'voices', label: '合唱', instrument: 'ohh-voices', volume: 0.55, pan: 0, velocity: 88, gate: 0.97 },
     { id: 'choir', label: 'クワイア', instrument: 'ahh-choir', volume: 0.4, pan: 0, velocity: 70, gate: 1 },
+    { id: 'picc', label: 'ピッコロ', instrument: 'piccolo', volume: 0.28, pan: -0.1, velocity: 86, gate: 0.9 },
+    { id: 'drums', label: 'スネア・バスドラム', instrument: 'orchestra-kit', volume: 0.5, pan: 0.05, velocity: 80, gate: 1 },
   ],
   sections: [
     {
@@ -72,6 +76,12 @@ export const tundraMarch: Song = {
           '',
           'r:2 B4+E5:.75 B4+E5:.25 D5+G5:1',
           'B4+E5:1.5 A4+D5:.5 B4+E5:1 r:1',
+        ],
+        drums: [
+          'v84 sd:.5 v44 sd v52 sd v80 sd v44 sd v52 sd v84 sd v52 sd',
+          'v88 bd+sd:.5 v44 sd v52 sd v84 bd+sd v44 sd v52 sd v88 bd+sd v52 sd',
+          'v94 bd+sd:.5 v48 sd v56 sd v90 bd+sd v48 sd v56 sd v94 bd+sd v56 sd',
+          'v104 bd+cym:1 r:1 v60 sd:.25 v68 sd v76 sd v84 sd v92 sd v100 sd v108 sd v116 sd',
         ],
         timp: [
           '',
@@ -137,6 +147,16 @@ export const tundraMarch: Song = {
           'A1+A2:.5 r:1.5 B1+B2:.5 r:1.5',
           'E1+E2:.5 r:1 E1+E2:.5 r:1 E1+E2:.5 r:.5',
         ],
+        drums: [
+          'v88 bd+sd+cym2:.5 v40 sd v48 sd v84 bd+sd v40 sd v48 sd v88 bd+sd v48 sd',
+          'v84 bd+sd:.5 v40 sd v48 sd v80 bd+sd v40 sd v48 sd v84 bd+sd v48 sd',
+          'v84 bd+sd:.5 v40 sd v48 sd v80 bd+sd v40 sd v48 sd v84 bd+sd v48 sd',
+          'v84 bd+sd:.5 v40 sd v48 sd v80 bd+sd v40 sd v48 sd v84 bd+sd v48 sd',
+          'v88 bd+sd+cym2:.5 v40 sd v48 sd v84 bd+sd v40 sd v48 sd v88 bd+sd v48 sd',
+          'v84 bd+sd:.5 v40 sd v48 sd v52 sd v84 bd+sd:.5 v40 sd v48 sd v52 sd',
+          'v84 bd+sd:.5 v40 sd v48 sd v52 sd v84 bd+sd:.5 v60 sd:.25 v68 sd v76 sd v84 sd v92 sd v100 sd',
+          'v88 bd+sd:.5 v40 sd v48 sd v84 bd+sd v40 sd v48 sd v88 bd+sd v48 sd',
+        ],
         timp: [
           'E2:.5 r:1 E2:.5 r:1 B2:.5 r:.5',
           'G2:.5 r:1 G2:.5 r:1 D3:.5 r:.5',
@@ -166,6 +186,16 @@ export const tundraMarch: Song = {
         ],
         vn1: [
           'v92 E5:.75 E5:.25 B5:2 A5:.5 G5:.5',
+          'D6:1 B5:.5 A5:.5 B5:2',
+          'C6:.75 B5:.25 A5:1 G5:1 E5:1',
+          'F#5:1 G5:.5 A5:.5 D5:2',
+          'E5:.75 E5:.25 B5:2 D6:.5 E6:.5',
+          'G6:2 F#6:1 D6:1',
+          'E6:.75 D6:.25 C6:1 B5:1 D#6:1',
+          'E6:2 r:.5 D6:.5 F#6:.5 A6:.5',
+        ],
+        picc: [
+          'v84 E5:.75 E5:.25 B5:2 A5:.5 G5:.5',
           'D6:1 B5:.5 A5:.5 B5:2',
           'C6:.75 B5:.25 A5:1 G5:1 E5:1',
           'F#5:1 G5:.5 A5:.5 D5:2',
@@ -244,6 +274,16 @@ export const tundraMarch: Song = {
           'E4+G4+C5:2 D4+F#4+A4:2',
           'E4+A4+C5:2 D#4+F#4+B4:2',
           'E4+G4+B4:2 D4+F#4+C5:2',
+        ],
+        drums: [
+          'v100 bd+sd+cym:.5 v48 sd v56 sd v96 bd+sd v48 sd v56 sd v100 bd+sd v56 sd',
+          'v96 bd+sd:.5 v48 sd v56 sd v92 bd+sd v48 sd v56 sd v96 bd+sd v56 sd',
+          'v96 bd+sd:.5 v48 sd v56 sd v92 bd+sd v48 sd v56 sd v96 bd+sd v56 sd',
+          'v96 bd+sd:.5 v48 sd v56 sd v92 bd+sd v48 sd v56 sd v96 bd+sd v56 sd',
+          'v100 bd+sd+cym2:.5 v48 sd v56 sd v96 bd+sd v48 sd v56 sd v100 bd+sd v56 sd',
+          'v96 bd+sd:.5 v48 sd v56 sd v60 sd v96 bd+sd:.5 v48 sd v56 sd v60 sd',
+          'v96 bd+sd:.5 v48 sd v56 sd v60 sd v96 bd+sd:.5 v60 sd:.25 v68 sd v76 sd v84 sd v92 sd v100 sd',
+          'v110 bd+cym:1 r:1 v62 sd:.25 v70 sd v78 sd v86 sd v94 sd v102 sd v110 sd v118 sd',
         ],
         timp: [
           'v104 E2:.5 r:1 E2:.5 r:1 B2:.5 r:.5',
@@ -353,6 +393,16 @@ export const tundraMarch: Song = {
           'Eb2+Eb3:.5 r:1 Eb2+Eb3:.5 r:1 Eb2+Eb3:.5 r:.5',
           'F1+F2:.5 r:1 F1+F2:.5 r:1 F1+F2:.5 r:.5',
         ],
+        drums: [
+          'v90 bd+sd+cym2:.5 v42 sd v50 sd v86 bd+sd v42 sd v50 sd v90 bd+sd v50 sd',
+          'v90 bd+cym2:.5 r:3.5',
+          'v88 bd+sd:.5 v42 sd v50 sd v84 bd+sd v42 sd v50 sd v88 bd+sd v50 sd',
+          'v88 bd+sd:.5 v42 sd v50 sd v84 bd+sd v42 sd v50 sd v88 bd+sd v50 sd',
+          'v90 bd+sd:.5 v42 sd v50 sd v86 bd+sd v42 sd v50 sd v90 bd+sd v50 sd',
+          'v90 bd+cym2:.5 r:3.5',
+          'v88 bd+sd:.5 v42 sd v50 sd v84 bd+sd v42 sd v50 sd v88 bd+sd v50 sd',
+          'v90 bd+sd:.5 v42 sd v50 sd v54 sd v56 sd:.25 v64 sd v72 sd v80 sd v88 sd v96 sd v104 sd v112 sd',
+        ],
         timp: [
           'G2:.5 r:1 G2:.5 r:1 D3:.5 r:.5',
           'G2:.5 r:3.5',
@@ -382,6 +432,16 @@ export const tundraMarch: Song = {
         ],
         vn1: [
           'v92 Bb5:1.5 C6:.5 Db6:1 F6:1',
+          'Gb6:2 F6:.5 Eb6:.5 Db6:1',
+          'Eb6:1.5 F6:.5 Gb6:1 Bb6:1',
+          'A6:3 F6:1',
+          'Bb6:2 F6:1 Db6:1',
+          'Eb6:1.5 F6:.5 Eb6:1 C6:1',
+          'Bb5:1 Db6:1 Gb6:1 Bb6:1',
+          'B6:2 F#6:1 D#6:1',
+        ],
+        picc: [
+          'v84 Bb5:1.5 C6:.5 Db6:1 F6:1',
           'Gb6:2 F6:.5 Eb6:.5 Db6:1',
           'Eb6:1.5 F6:.5 Gb6:1 Bb6:1',
           'A6:3 F6:1',
@@ -469,6 +529,16 @@ export const tundraMarch: Song = {
           'Ab1+Ab2:.5 r:1 Ab1+Ab2:.5 r:1 Ab1+Ab2:.5 r:.5',
           'Gb1+Gb2:.5 r:1 Gb1+Gb2:.5 r:1 Gb1+Gb2:.5 r:.5',
           'B1+B2:.5 r:1 B1+B2:.5 r:1 B1+B2:.5 r:.5',
+        ],
+        drums: [
+          'v104 bd+sd+cym:.5 v50 sd v58 sd v100 bd+sd v50 sd v58 sd v104 bd+sd v58 sd',
+          'v108 bd+cym:.5 r:3.5',
+          'v100 bd+sd:.5 v50 sd v58 sd v96 bd+sd v50 sd v58 sd v100 bd+sd v58 sd',
+          'v100 bd+sd:.5 v50 sd v58 sd v96 bd+sd v50 sd v58 sd v100 bd+sd v58 sd',
+          'v104 bd+sd+cym2:.5 v50 sd v58 sd v100 bd+sd v50 sd v58 sd v104 bd+sd v58 sd',
+          'v108 bd+cym:.5 r:3.5',
+          'v100 bd+sd:.5 v50 sd v58 sd v96 bd+sd v50 sd v58 sd v100 bd+sd v58 sd',
+          'v100 bd+sd:.5 v50 sd v58 sd v62 sd v60 sd:.25 v68 sd v76 sd v84 sd v92 sd v100 sd v108 sd v116 sd',
         ],
         timp: [
           'v104 Bb2:.5 r:1 Bb2:.5 r:1 F2:.5 r:.5',

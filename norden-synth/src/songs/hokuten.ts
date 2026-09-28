@@ -3,6 +3,8 @@ import type { Song } from './song.ts'
 // ニ短調。A (主題、半終止) → B (ヘ長調寄りの王道進行、ピアノが歌う) → A' (主題を全合奏で、完全終止) を繰り返す。
 // 主題は「付点四分 + 8 分で 4 度跳躍して駆け上がる」動機と、「付点 8 分 + 16 分 + 四分」の応答でできていて、
 // 3 小節目で 4 度上に反復する。伸ばしの声部は小節の中でも動かし、4-3 の掛留や経過音を入れる。
+// フルートは A でバイオリンの伸ばしに答え、B の後半でピアノの旋律に重なり、A' では主題を 1 オクターブ上で吹く
+// (5 小節目で主題と同じ高さに下りる)。打楽器は句の頭のシンバルと、A' のバスドラムで山を作る。
 export const hokuten: Song = {
   id: 'hokuten',
   title: '北天の灯',
@@ -16,10 +18,12 @@ export const hokuten: Song = {
     { id: 'vc', label: 'チェロ', instrument: 'cello', volume: 0.6, pan: 0.3, velocity: 74, gate: 0.9 },
     { id: 'cb', label: 'コントラバス', instrument: 'contrabass', volume: 0.75, pan: 0.4, velocity: 80, gate: 1 },
     { id: 'piano', label: 'ピアノ', instrument: 'yamaha-grand-piano', volume: 0.6, pan: 0, velocity: 80, gate: 1 },
+    { id: 'fl', label: 'フルート', instrument: 'flute', volume: 0.45, pan: -0.1, velocity: 76, gate: 0.97 },
     { id: 'harp', label: 'ハープ', instrument: 'harp', volume: 0.55, pan: 0.25, velocity: 68, gate: 2.5 },
     { id: 'pizz', label: 'ピチカート', instrument: 'pizzicato-section', volume: 0.5, pan: -0.2, velocity: 66, gate: 0.6 },
     { id: 'timp', label: 'ティンパニ', instrument: 'timpani', volume: 0.7, pan: 0, velocity: 85, gate: 1 },
     { id: 'choir', label: 'クワイア', instrument: 'ahh-choir', volume: 0.42, pan: 0, velocity: 60, gate: 1 },
+    { id: 'perc', label: '打楽器', instrument: 'orchestra-kit', volume: 0.5, pan: 0, velocity: 80, gate: 1 },
   ],
   sections: [
     {
@@ -38,6 +42,7 @@ export const hokuten: Song = {
         vc: ['v58 D3:4', 'Bb2:4', 'G2:4', 'A2:4'],
         cb: ['v70 D2:4', 'Bb1:4', 'G1:4', 'A1:4'],
         timp: ['v70 D3:2 r:2', '', '', 'r:2 v45 A2:.25 v50 A2 v55 A2 v60 A2 v66 A2 v72 A2 v78 A2 v84 A2'],
+        perc: ['v56 bd+cym:4', '', '', ''],
       },
     },
     {
@@ -79,6 +84,9 @@ export const hokuten: Song = {
           'A2:.5 E3 A3 C#4 E4 A4 C#5 E5',
         ],
         timp: ['D3:1 r:3', '', '', '', '', '', '', 'r:2 v40 A2:.25 v46 A2 v52 A2 v58 A2 v64 A2 v70 A2 v76 A2 v82 A2'],
+        // バイオリンが伸ばしている間に下りてきて答える
+        fl: ['', 'r:2 A5:.5 G5 F5 E5', '', 'r:2 C6:.5 Bb5 A5 G5', '', '', '', 'r:1 A5:.5 C#6 E6:2'],
+        perc: ['v66 cym2:4', '', '', '', 'v60 cym2:4', '', '', ''],
       },
     },
     {
@@ -130,6 +138,9 @@ export const hokuten: Song = {
           '',
           'r:2 A3:.25 C#4 E4 G4 A4 C#5 E5 G5',
         ],
+        // 後半はピアノの旋律に重ねて持続させる
+        fl: ['', '', '', '', 'v70 G5:.5 Bb5 D6:1.5 C6:.5 Bb5:1', 'C6:1.5 Bb5:.5 G5:1 E5', 'F5:.5 A5 C6:2 A5:1', 'G5:.75 F5:.25 E5:1 C#5 A4'],
+        perc: ['v54 tri:4', '', 'v50 tri:4', '', 'v58 tri:4', '', 'v54 tri:4', 'r:2 v44 sd:.25 v50 sd v56 sd v62 sd v68 sd v74 sd v82 sd v90 sd'],
         timp: ['', '', '', '', '', '', '', 'v45 A2:.25 v48 A2 v51 A2 v54 A2 v57 A2 v60 A2 v63 A2 v66 A2 v70 A2 v74 A2 v78 A2 v82 A2 v86 A2 v90 A2 v95 A2 v100 A2'],
       },
     },
@@ -202,6 +213,17 @@ export const hokuten: Song = {
           'D4:.5 A4 F4 A4 D4:1 r:1',
         ],
         timp: ['v100 D3:1 r:3', '', '', '', '', 'D3:1 r:3', 'r:2 A2:1 A2:1', 'D3:1 r:3'],
+        fl: [
+          'v84 A5:1.5 D6:.5 E6 F6 A6:1',
+          'G6:.75 F6:.25 F6:1 D6:2',
+          'C6:1.5 F6:.5 G6 A6 C7:1',
+          'A6:.75 G6:.25 G6:1 E6:2',
+          'D6:1.5 C6:.5 Bb5 A5 G5:1',
+          'A5:1.5 F5:.5 D5:1 E5:.5 F5',
+          'G5:1 Bb5 A5:.5 G5 E5 C#5',
+          'D5:3 r:1',
+        ],
+        perc: ['v100 bd+cym:4', 'v60 bd:4', 'v72 bd:4', 'v60 bd:4', 'v92 bd+cym2:4', 'v72 bd:4', 'r:2 v84 bd:1 bd:1', 'v100 bd+cym:1 r:3'],
       },
     },
   ],

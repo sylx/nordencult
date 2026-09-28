@@ -1,7 +1,8 @@
 import type { Song } from './song.ts'
 
 // 気ままな散歩の曲。ニ長調の A は I–vi–IV–V (D–Bm–G–A) の上で、「タタ・ターン・タタ・ターン」(8 分 8 分 四分) の
-// 動機を繰り返し、4・8 小節目で長い音で答える。ギターが 8 分で刻み、ピチカートが弾む低音を弾く。
+// 動機を繰り返し、4・8 小節目で長い音で答える。ギターが 8 分で刻み、ウッドベースが弾む低音を弾く。
+// シェイカーが 8 分で歩き、反復からはタンブリンが 2・4 拍目に入る。長い音の後ろではフルートが鳥のように鳴く。
 // B は突然 6/8 の変ロ・リディアに移る (D → B♭ は長 3 度下の遠い転調)。C/B♭ の ♯4 (E) と A♭maj7 の ♯4 (D)、
 // B♭ の増三和音で浮遊させ、A7sus4–A7 でニ長調に戻る。旋律はボイス、ハープのグリッサンドとピアノの鈴のような分散和音で彩る。
 export const wanderingBird: Song = {
@@ -15,11 +16,13 @@ export const wanderingBird: Song = {
     { id: 'acc', label: 'アコーディオン', instrument: 'accordian', volume: 0.55, pan: -0.15, velocity: 84, gate: 0.9 },
     { id: 'vn', label: 'バイオリン', instrument: 'violin', volume: 0.5, pan: -0.35, velocity: 76, gate: 0.95 },
     { id: 'gtr', label: 'ギター', instrument: 'nylon-string-guitar', volume: 0.6, pan: 0.25, velocity: 76, gate: 1 },
-    { id: 'bass', label: 'ピチカート (低音)', instrument: 'pizzicato-section', volume: 0.6, pan: 0.1, velocity: 84, gate: 0.8 },
+    { id: 'bass', label: 'ウッドベース', instrument: 'acoustic-bass', volume: 0.42, pan: 0.1, velocity: 84, gate: 0.8 },
     { id: 'piano', label: 'ピアノ', instrument: 'yamaha-grand-piano', volume: 0.45, pan: 0.1, velocity: 70, gate: 1 },
     { id: 'harp', label: 'ハープ', instrument: 'harp', volume: 0.5, pan: 0.35, velocity: 70, gate: 1.5 },
     { id: 'voice', label: 'ボイス', instrument: 'ohh-voices', volume: 0.5, pan: 0, velocity: 76, gate: 1 },
     { id: 'vc', label: 'チェロ', instrument: 'cello', volume: 0.45, pan: 0.2, velocity: 62, gate: 1 },
+    { id: 'fl', label: 'フルート (鳥)', instrument: 'flute', volume: 0.4, pan: -0.25, velocity: 74, gate: 0.9 },
+    { id: 'perc', label: '打楽器', instrument: 'orchestra-kit', volume: 0.45, pan: 0.15, velocity: 60, gate: 1 },
   ],
   sections: [
     {
@@ -27,6 +30,12 @@ export const wanderingBird: Song = {
       label: 'イントロ',
       chords: ['D', 'G', 'D', 'A'],
       parts: {
+        perc: [
+          '',
+          '',
+          'v50 shaker:.5 v34 shaker v44 shaker v34 shaker v50 shaker v34 shaker v44 shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v44 shaker v34 shaker v50 shaker v34 shaker v44 shaker v34 shaker',
+        ],
         gtr: [
           'v86 D3+A3+D4+F#4:1 v66 D3+A3+D4+F#4:.5 v72 D3+A3+D4+F#4 r v70 D3+A3+D4+F#4 v64 D3+A3+D4+F#4 v74 D3+A3+D4+F#4',
           'v86 G2+D3+G3+B3:1 v66 G2+D3+G3+B3:.5 v72 G2+D3+G3+B3 r v70 G2+D3+G3+B3 v64 G2+D3+G3+B3 v74 G2+D3+G3+B3',
@@ -52,6 +61,16 @@ export const wanderingBird: Song = {
       label: 'A 散歩 (ニ長調)',
       chords: ['D', 'Bm', 'G', 'A', 'D', 'Bm', 'Em7 A7', 'A7'],
       parts: {
+        perc: [
+          'v50 shaker:.5 v34 shaker v44 shaker v34 shaker v50 shaker v34 shaker v44 shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v44 shaker v34 shaker v50 shaker v34 shaker v44 shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v44 shaker v34 shaker v50 shaker v34 shaker v44 shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v44 shaker v34 shaker v50 shaker v34 shaker v44 shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v44 shaker v34 shaker v50 shaker v34 shaker v44 shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v44 shaker v34 shaker v50 shaker v34 shaker v44 shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v44 shaker v34 shaker v50 shaker v34 shaker v44 shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v44 shaker v34 shaker v50 shaker v34 shaker v44 shaker v34 shaker',
+        ],
         acc: [
           'A4:.5 D5 F#5:1 E5:.5 D5 F#5:1',
           'D5:.5 F#5 B5:1 A5:.5 F#5 D5:1',
@@ -89,6 +108,26 @@ export const wanderingBird: Song = {
       label: 'A 散歩の反復',
       chords: ['D', 'Bm', 'G', 'A', 'D', 'Bm', 'Em7 A7', 'D'],
       parts: {
+        perc: [
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v80 tamb:1 r:1',
+        ],
+        fl: [
+          '',
+          '',
+          '',
+          'r:2.5 C#6:.25 E6 A6:1',
+          '',
+          '',
+          '',
+          'r:2.5 A5:.25 D6 F#6:1',
+        ],
         acc: [
           'v88 A4:.5 D5 F#5:1 E5:.5 D5 F#5:1',
           'D5:.5 F#5 B5:1 A5:.5 F#5 D5:1',
@@ -137,6 +176,34 @@ export const wanderingBird: Song = {
       chords: ['Bbmaj7', 'C/Bb', 'Bbmaj7', 'C/Bb', 'Gm7', 'Am7', 'Bbmaj7', 'C/Bb', 'Abmaj7', 'Bb+', 'A7sus4', 'A7'],
       timeSignature: [6, 8],
       parts: {
+        perc: [
+          'v50 tri:3',
+          '',
+          '',
+          '',
+          'v46 tri:3',
+          '',
+          '',
+          '',
+          'v50 tri:3',
+          '',
+          '',
+          '',
+        ],
+        fl: [
+          '',
+          'r:1.5 G6:.25 E6 G6:.5 r:.5',
+          '',
+          'r:2 C6:.25 E6 G6:.5',
+          '',
+          '',
+          '',
+          '',
+          '',
+          'r:1.5 D6:.25 F#6 Bb6:1',
+          '',
+          '',
+        ],
         voice: [
           'D5:1.5 C5:.5 D5 A4',
           'E5:3',
@@ -228,6 +295,26 @@ export const wanderingBird: Song = {
       label: "A' 散歩 (全員で)",
       chords: ['D', 'Bm', 'G', 'A', 'D', 'Bm', 'Em7 A7', 'D'],
       parts: {
+        perc: [
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v66 tamb+shaker v34 shaker v50 shaker v34 shaker v66 tamb+shaker v34 shaker',
+          'v50 shaker:.5 v34 shaker v70 tamb+shaker v34 shaker v84 tamb:1 r:1',
+        ],
+        fl: [
+          '',
+          '',
+          '',
+          'r:2.5 C#6:.25 E6 A6:1',
+          '',
+          '',
+          '',
+          'r:2 F#5:.25 A5 D6 F#6 A6:1',
+        ],
         acc: [
           'v94 A4:.5 D5 F#5:1 E5:.5 D5 F#5:1',
           'D5:.5 F#5 B5:1 A5:.5 F#5 D5:1',
@@ -289,7 +376,8 @@ export const wanderingBird: Song = {
           'D2:1 r:.5 A2:.5 D3:1 A2:1',
         ],
       },
-    },  ],
+    },
+  ],
   intro: ['intro'],
   loop: ['A', 'A2', 'B', 'A3'],
 }
