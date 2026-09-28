@@ -7,12 +7,14 @@ import type { Song } from './song.ts'
 // 5 小節目で同じ動機から G5 まで登って、導音 D# を通って主音に落ちる。
 // A はホルンとトロンボーンのオクターブ・ユニゾン、A' はトランペットとバイオリンの全合奏。
 // A' の最後の D7 からト短調 (短 3 度上) に転じ、B で合唱とトロンボーンが軍歌を歌う。
-// B は E♭–B7 (E♭ の G–B♭ が F#–B へ半音でずれる) でホ短調に戻り、トランペットの連打が A を呼び込む。
+// B の最後の F7 からさらに短 3 度上の変ロ短調に転じ、B' で同じ軍歌をトランペットと全合奏で歌い上げる。
+// B' の G♭ を F# (ホ短調の V/V) と読み替えて B7 に進み、三全音離れたホ短調に戻る。
+// A・B・B' の終わりではトランペットが次の調の属音を連打して、次の旋律を呼び込む。
 export const tundraMarch: Song = {
   id: 'tundra-march',
   title: '凍土の鉄騎',
   description:
-    'ホ短調 · ♩=152 · 4/4。3+3+2 で刻むオスティナートに乗せた短調の行進曲。金管のユニゾンで示した主題を全合奏で繰り返し、ト短調に転じて合唱が軍歌を歌う',
+    'ホ短調 · ♩=152 · 4/4。3+3+2 で刻むオスティナートに乗せた短調の行進曲。金管のユニゾンで示した主題を全合奏で繰り返し、ト短調、変ロ短調と短 3 度ずつ転じて合唱と全合奏が軍歌を歌う',
   tempo: 152,
   timeSignature: [4, 4],
   parts: [
@@ -258,7 +260,7 @@ export const tundraMarch: Song = {
     {
       id: 'B',
       label: 'B 軍歌 (ト短調)',
-      chords: ['Gm', 'Eb', 'Cm', 'D', 'Gm', 'F', 'Eb', 'B7'],
+      chords: ['Gm', 'Eb', 'Cm', 'D', 'Gm', 'F', 'Eb', 'F7'],
       parts: {
         voices: [
           'G4:1.5 A4:.5 Bb4:1 D5:1',
@@ -268,7 +270,7 @@ export const tundraMarch: Song = {
           'G5:2 D5:1 Bb4:1',
           'C5:1.5 D5:.5 C5:1 A4:1',
           'G4:1 Bb4:1 Eb5:1 G5:1',
-          'F#5:2 D#5:1 B4:1',
+          'F5:2 Eb5:1 A4:1',
         ],
         tb: [
           'G3:1.5 A3:.5 Bb3:1 D4:1',
@@ -278,7 +280,7 @@ export const tundraMarch: Song = {
           'G4:2 D4:1 Bb3:1',
           'C4:1.5 D4:.5 C4:1 A3:1',
           'G3:1 Bb3:1 Eb4:1 G4:1',
-          'F#4:2 D#4:1 B3:1',
+          'F4:2 Eb4:1 A3:1',
         ],
         vn1: [
           'v80 G5:1.5 A5:.5 Bb5:1 D6:1',
@@ -288,7 +290,7 @@ export const tundraMarch: Song = {
           'G6:2 D6:1 Bb5:1',
           'C6:1.5 D6:.5 C6:1 A5:1',
           'G5:1 Bb5:1 Eb6:1 G6:1',
-          'F#6:2 D#6:1 B5:1',
+          'F6:2 Eb6:1 A5:1',
         ],
         hn: [
           'v80 Bb3+D4:.5 r:1 Bb3+D4:.5 r:1 Bb3+D4:.5 r:.5',
@@ -298,7 +300,7 @@ export const tundraMarch: Song = {
           'Bb3+D4:.5 r:1 Bb3+D4:.5 r:1 Bb3+D4:.5 r:.5',
           'A3+C4:.5 r:1 A3+C4:.5 r:1 A3+C4:.5 r:.5',
           'Bb3+Eb4:.5 r:1 Bb3+Eb4:.5 r:1 Bb3+Eb4:.5 r:.5',
-          'A3+D#4:.5 r:1 A3+D#4:.5 r:1 A3+D#4:.5 r:.5',
+          'A3+Eb4:.5 r:1 A3+Eb4:.5 r:1 A3+Eb4:.5 r:.5',
         ],
         choir: [
           'v62 Bb3+D4+G4:4',
@@ -308,9 +310,9 @@ export const tundraMarch: Song = {
           'Bb3+D4+G4:4',
           'A3+C4+F4:4',
           'Bb3+Eb4+G4:4',
-          'A3+D#4+F#4:4',
+          'A3+Eb4+F4:4',
         ],
-        tp: ['', '', '', '', '', '', '', 'r:2 v88 B4:.5 v92 B4 v96 B4 v100 B4'],
+        tp: ['', '', '', '', '', '', '', 'r:2 v88 F5:.5 v92 F5 v96 F5 v100 F5'],
         va: [
           'v84 G3:.5 v60 G3 G3 v84 Bb3 v60 Bb3 Bb3 v84 C4 v60 Bb3',
           'v84 Eb3:.5 v60 Eb3 Eb3 v84 G3 v60 G3 G3 v84 Bb3 v60 G3',
@@ -319,7 +321,7 @@ export const tundraMarch: Song = {
           'v84 G3:.5 v60 G3 G3 v84 Bb3 v60 Bb3 Bb3 v84 C4 v60 Bb3',
           'v84 F3:.5 v60 F3 F3 v84 A3 v60 A3 A3 v84 C4 v60 A3',
           'v84 Eb3:.5 v60 Eb3 Eb3 v84 G3 v60 G3 G3 v84 Bb3 v60 G3',
-          'v84 B3:.5 v60 B3 B3 v84 D#4 v60 D#4 D#4 v84 F#4 v60 A4',
+          'v84 F3:.5 v60 F3 F3 v84 A3 v60 A3 A3 v84 C4 v60 Eb4',
         ],
         vc: [
           'v96 G2:.5 v68 G2 G2 v96 Bb2 v68 Bb2 Bb2 v96 C3 v68 Bb2',
@@ -329,7 +331,7 @@ export const tundraMarch: Song = {
           'v96 G2:.5 v68 G2 G2 v96 Bb2 v68 Bb2 Bb2 v96 C3 v68 Bb2',
           'v96 F2:.5 v68 F2 F2 v96 A2 v68 A2 A2 v96 C3 v68 A2',
           'v96 Eb2:.5 v68 Eb2 Eb2 v96 G2 v68 G2 G2 v96 Bb2 v68 G2',
-          'v96 B2:.5 v68 B2 B2 v96 D#3 v68 D#3 D#3 v96 F#3 v68 A3',
+          'v96 F2:.5 v68 F2 F2 v96 A2 v68 A2 A2 v96 C3 v68 Eb3',
         ],
         cb: [
           'G1:.5 r:1 G1:.5 r:1 G1:.5 r:.5',
@@ -339,7 +341,7 @@ export const tundraMarch: Song = {
           'G1:.5 r:1 G1:.5 r:1 G1:.5 r:.5',
           'F1:.5 r:1 F1:.5 r:1 F1:.5 r:.5',
           'Eb2:.5 r:1 Eb2:.5 r:1 Eb2:.5 r:.5',
-          'B1:.5 r:1 B1:.5 r:1 B1:.5 r:.5',
+          'F1:.5 r:1 F1:.5 r:1 F1:.5 r:.5',
         ],
         piano: [
           'G1+G2:.5 r:1 G1+G2:.5 r:1 G1+G2:.5 r:.5',
@@ -349,7 +351,7 @@ export const tundraMarch: Song = {
           'G1+G2:.5 r:1 G1+G2:.5 r:1 G1+G2:.5 r:.5',
           'F1+F2:.5 r:1 F1+F2:.5 r:1 F1+F2:.5 r:.5',
           'Eb2+Eb3:.5 r:1 Eb2+Eb3:.5 r:1 Eb2+Eb3:.5 r:.5',
-          'B1+B2:.5 r:1 B1+B2:.5 r:1 B1+B2:.5 r:.5',
+          'F1+F2:.5 r:1 F1+F2:.5 r:1 F1+F2:.5 r:.5',
         ],
         timp: [
           'G2:.5 r:1 G2:.5 r:1 D3:.5 r:.5',
@@ -359,11 +361,128 @@ export const tundraMarch: Song = {
           'G2:.5 r:1 G2:.5 r:1 D3:.5 r:.5',
           'C3:.5 r:3.5',
           'Eb2:.5 r:1 Eb2:.5 r:1 Bb2:.5 r:.5',
+          'F2:.5 r:1.5 v60 F2:.25 v66 F2 v72 F2 v78 F2 v84 F2 v90 F2 v96 F2 v104 F2',
+        ],
+      },
+    },
+    {
+      id: 'B2',
+      label: "B' 軍歌 (変ロ短調・全合奏)",
+      chords: ['Bbm', 'Gb', 'Ebm', 'F', 'Bbm', 'Ab', 'Gb (=F#)', 'B7'],
+      parts: {
+        tp: [
+          'v106 Bb4:1.5 C5:.5 Db5:1 F5:1',
+          'Gb5:2 F5:.5 Eb5:.5 Db5:1',
+          'Eb5:1.5 F5:.5 Gb5:1 Bb5:1',
+          'A5:3 F5:1',
+          'Bb5:2 F5:1 Db5:1',
+          'Eb5:1.5 F5:.5 Eb5:1 C5:1',
+          'Bb4:1 Db5:1 Gb5:1 Bb5:1',
+          'B5:2 v88 B4:.5 v92 B4 v96 B4 v100 B4',
+        ],
+        vn1: [
+          'v92 Bb5:1.5 C6:.5 Db6:1 F6:1',
+          'Gb6:2 F6:.5 Eb6:.5 Db6:1',
+          'Eb6:1.5 F6:.5 Gb6:1 Bb6:1',
+          'A6:3 F6:1',
+          'Bb6:2 F6:1 Db6:1',
+          'Eb6:1.5 F6:.5 Eb6:1 C6:1',
+          'Bb5:1 Db6:1 Gb6:1 Bb6:1',
+          'B6:2 F#6:1 D#6:1',
+        ],
+        hn: [
+          'v94 Bb3:1.5 C4:.5 Db4:1 F4:1',
+          'Gb4:2 F4:.5 Eb4:.5 Db4:1',
+          'Eb4:1.5 F4:.5 Gb4:1 Bb4:1',
+          'A4:3 F4:1',
+          'Bb4:2 F4:1 Db4:1',
+          'Eb4:1.5 F4:.5 Eb4:1 C4:1',
+          'Bb3:1 Db4:1 Gb4:1 Bb4:1',
+          'B4:2 F#4:1 D#4:1',
+        ],
+        voices: [
+          'v96 Bb3:1.5 C4:.5 Db4:1 F4:1',
+          'Gb4:2 F4:.5 Eb4:.5 Db4:1',
+          'Eb4:1.5 F4:.5 Gb4:1 Bb4:1',
+          'A4:3 F4:1',
+          'Bb4:2 F4:1 Db4:1',
+          'Eb4:1.5 F4:.5 Eb4:1 C4:1',
+          'Bb3:1 Db4:1 Gb4:1 Bb4:1',
+          'B4:2 F#4:1 D#4:1',
+        ],
+        tb: [
+          'v94 Db3+F3+Bb3:.5 r:1 Db3+F3+Bb3:.5 r:1 Db3+F3+Bb3:.5 r:.5',
+          'Db3+Gb3+Bb3:.5 r:1 Db3+Gb3+Bb3:.5 r:1 Db3+Gb3+Bb3:.5 r:.5',
+          'Eb3+Gb3+Bb3:.5 r:1 Eb3+Gb3+Bb3:.5 r:1 Eb3+Gb3+Bb3:.5 r:.5',
+          'C3+F3+A3:.5 r:1 C3+F3+A3:.5 r:1 C3+F3+A3:.5 r:.5',
+          'Db3+F3+Bb3:.5 r:1 Db3+F3+Bb3:.5 r:1 Db3+F3+Bb3:.5 r:.5',
+          'C3+Eb3+Ab3:.5 r:1 C3+Eb3+Ab3:.5 r:1 C3+Eb3+Ab3:.5 r:.5',
+          'Db3+Gb3+Bb3:.5 r:1 Db3+Gb3+Bb3:.5 r:1 Db3+Gb3+Bb3:.5 r:.5',
+          'D#3+F#3+A3:.5 r:1 D#3+F#3+A3:.5 r:1 D#3+F#3+A3:.5 r:.5',
+        ],
+        choir: [
+          'v76 Db4+F4+Bb4:4',
+          'Db4+Gb4+Bb4:4',
+          'Eb4+Gb4+Bb4:4',
+          'C4+F4+A4:4',
+          'Db4+F4+Bb4:4',
+          'C4+Eb4+Ab4:4',
+          'Db4+Gb4+Bb4:4',
+          'D#4+F#4+A4:4',
+        ],
+        va: [
+          'v88 Bb3:.5 v62 Bb3 Bb3 v88 Db4 v62 Db4 Db4 v88 Eb4 v62 Db4',
+          'v88 Gb3:.5 v62 Gb3 Gb3 v88 Bb3 v62 Bb3 Bb3 v88 Db4 v62 Bb3',
+          'v88 Eb3:.5 v62 Eb3 Eb3 v88 Gb3 v62 Gb3 Gb3 v88 Bb3 v62 Gb3',
+          'v88 F3:.5 v62 F3 F3 v88 A3 v62 A3 A3 v88 C4 v62 A3',
+          'v88 Bb3:.5 v62 Bb3 Bb3 v88 Db4 v62 Db4 Db4 v88 Eb4 v62 Db4',
+          'v88 Ab3:.5 v62 Ab3 Ab3 v88 C4 v62 C4 C4 v88 Eb4 v62 C4',
+          'v88 Gb3:.5 v62 Gb3 Gb3 v88 Bb3 v62 Bb3 Bb3 v88 Db4 v62 Bb3',
+          'v88 B3:.5 v62 B3 B3 v88 D#4 v62 D#4 D#4 v88 F#4 v62 A4',
+        ],
+        vc: [
+          'v100 Bb2:.5 v72 Bb2 Bb2 v100 Db3 v72 Db3 Db3 v100 Eb3 v72 Db3',
+          'v100 Gb2:.5 v72 Gb2 Gb2 v100 Bb2 v72 Bb2 Bb2 v100 Db3 v72 Bb2',
+          'v100 Eb2:.5 v72 Eb2 Eb2 v100 Gb2 v72 Gb2 Gb2 v100 Bb2 v72 Gb2',
+          'v100 F2:.5 v72 F2 F2 v100 A2 v72 A2 A2 v100 C3 v72 A2',
+          'v100 Bb2:.5 v72 Bb2 Bb2 v100 Db3 v72 Db3 Db3 v100 Eb3 v72 Db3',
+          'v100 Ab2:.5 v72 Ab2 Ab2 v100 C3 v72 C3 C3 v100 Eb3 v72 C3',
+          'v100 Gb2:.5 v72 Gb2 Gb2 v100 Bb2 v72 Bb2 Bb2 v100 Db3 v72 Bb2',
+          'v100 B2:.5 v72 B2 B2 v100 D#3 v72 D#3 D#3 v100 F#3 v72 A3',
+        ],
+        cb: [
+          'v104 Bb1:.5 r:1 Bb1:.5 r:1 Bb1:.5 r:.5',
+          'Gb1:.5 r:1 Gb1:.5 r:1 Gb1:.5 r:.5',
+          'Eb2:.5 r:1 Eb2:.5 r:1 Eb2:.5 r:.5',
+          'F1:.5 r:1 F1:.5 r:1 F1:.5 r:.5',
+          'Bb1:.5 r:1 Bb1:.5 r:1 Bb1:.5 r:.5',
+          'Ab1:.5 r:1 Ab1:.5 r:1 Ab1:.5 r:.5',
+          'Gb1:.5 r:1 Gb1:.5 r:1 Gb1:.5 r:.5',
+          'B1:.5 r:1 B1:.5 r:1 B1:.5 r:.5',
+        ],
+        piano: [
+          'v100 Bb1+Bb2:.5 r:1 Bb1+Bb2:.5 r:1 Bb1+Bb2:.5 r:.5',
+          'Gb1+Gb2:.5 r:1 Gb1+Gb2:.5 r:1 Gb1+Gb2:.5 r:.5',
+          'Eb2+Eb3:.5 r:1 Eb2+Eb3:.5 r:1 Eb2+Eb3:.5 r:.5',
+          'F1+F2:.5 r:1 F1+F2:.5 r:1 F1+F2:.5 r:.5',
+          'Bb1+Bb2:.5 r:1 Bb1+Bb2:.5 r:1 Bb1+Bb2:.5 r:.5',
+          'Ab1+Ab2:.5 r:1 Ab1+Ab2:.5 r:1 Ab1+Ab2:.5 r:.5',
+          'Gb1+Gb2:.5 r:1 Gb1+Gb2:.5 r:1 Gb1+Gb2:.5 r:.5',
+          'B1+B2:.5 r:1 B1+B2:.5 r:1 B1+B2:.5 r:.5',
+        ],
+        timp: [
+          'v104 Bb2:.5 r:1 Bb2:.5 r:1 F2:.5 r:.5',
+          'Bb2:.5 r:3.5',
+          'Eb2:.5 r:1 Eb2:.5 r:1 Bb2:.5 r:.5',
+          'F2:.5 r:1 F2:.5 r:1 C3:.5 r:.5',
+          'Bb2:.5 r:1 Bb2:.5 r:1 F2:.5 r:.5',
+          'Ab2:.5 r:3.5',
+          'Gb2:.5 r:1 Gb2:.5 r:1 Db3:.5 r:.5',
           'B2:.5 r:1.5 v60 B2:.25 v66 B2 v72 B2 v78 B2 v84 B2 v90 B2 v96 B2 v104 B2',
         ],
       },
     },
   ],
   intro: ['intro'],
-  loop: ['A', 'A2', 'B'],
+  loop: ['A', 'A2', 'B', 'B2'],
 }
