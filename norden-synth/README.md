@@ -67,6 +67,7 @@ src/songs/                  LLM が書いた曲
   tundra-march.ts             『凍土の鉄騎』
   golden-sails.ts             『黄金の帆』
   star-reader.ts              『砂海の星詠み』
+  white-sanctum.ts            『白亜の聖都』
 src/main.ts                 テストページ
 src/songs-page.ts           テストページの LLM 作成曲タブ
 src/bgm-page.ts             テストページの BGM 生成タブ
