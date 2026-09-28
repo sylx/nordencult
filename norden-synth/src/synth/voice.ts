@@ -24,6 +24,8 @@ const FILTER_FC_MAX = 13500
 export class Voice {
   readonly key: number
   readonly startTime: number
+  // 鳴らしたチャンネルの出力先。exclusiveClass で止める相手を同じチャンネルに限るのに使う
+  readonly target: VoiceTarget
   private readonly ctx: BaseAudioContext
   private readonly region: RegionData
   private readonly source: AudioBufferSourceNode
@@ -55,6 +57,7 @@ export class Voice {
     this.region = region
     this.key = key
     this.startTime = time
+    this.target = target
 
     const { data, buffer } = sample
     const source = new AudioBufferSourceNode(ctx, { buffer })

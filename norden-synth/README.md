@@ -184,9 +184,11 @@ violin.noteOff(60)
 - モジュレーション LFO (三角波) → フィルタカットオフ/ピッチ
 - ローパスフィルタ (initialFilterFc/Q)
 - initialAttenuation (FluidSynth と同様に 0.4 倍)、pan、reverbEffectsSend
+- exclusiveClass: 同じチャンネルで同じクラスの音が鳴ると、それまでの音を約 5ms で止める
+  (Orchestra Kit のミュート/オープントライアングル、クイーカ、ギロ、太鼓など)。止めるのはその時刻までに始まっている音だけ
 - 既定モジュレータ: ベロシティ → 音量 (凹カーブ)、ベロシティ → フィルタカットオフ (ゾーンのモジュレータによる打ち消しに対応)
 
-未対応: LFO による音量の揺れ (modLfoToVolume。Flute・Sitar などで 1dB 未満)、ビブラート LFO、サンプルアドレスのオフセット、chorus、exclusiveClass、
+未対応: LFO による音量の揺れ (modLfoToVolume。Flute・Sitar などで 1dB 未満)、ビブラート LFO、サンプルアドレスのオフセット、chorus、
 その他のモジュレータ、ピッチベンドなどの MIDI コントローラ。未対応のジェネレータが使われていると変換時に警告が出る。
 
 ## シーケンサ

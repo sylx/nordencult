@@ -1,6 +1,6 @@
 import { Instrument, loadInstrument } from './instrument.ts'
 import { createReverbImpulse, type ReverbOptions } from './reverb.ts'
-import type { InstrumentIndex, InstrumentIndexEntry } from './types.ts'
+import type { InstrumentIndex, InstrumentIndexEntry, RegionData } from './types.ts'
 import { Voice, type VoiceTarget } from './voice.ts'
 
 export interface SynthOptions {
@@ -129,8 +129,10 @@ export class Synth {
   ): Voice[] {
     // キーは小数 (微分音) でもよい。リージョンは最も近い半音で選び、音程は小数のまま使う
     velocity = Math.max(1, Math.min(127, Math.round(velocity)))
+    const regions = instrument.findRegions(Math.round(key), velocity)
+    this.killExclusive(regions, time, target)
     const started: Voice[] = []
-    for (const region of instrument.findRegions(Math.round(key), velocity)) {
+    for (const region of regions) {
       const voice = new Voice(this.ctx, region, instrument.samples[region.sample], key, velocity, time, target)
       voice.onended = (v) => this.voices.delete(v)
       this.voices.add(voice)
@@ -138,6 +140,17 @@ export class Synth {
     }
     this.stealVoices(time)
     return started
+  }
+
+  // exclusiveClass: 同じチャンネルで同じクラスの音を鳴らすと、それまで鳴っていた音をすぐ止める
+  // (ミュートトライアングルでオープントライアングルの余韻を切るなど)。
+  // 音はシーケンサから時刻順に予約される前提で、この音より後に始まる予約済みの音は止めない
+  private killExclusive(regions: RegionData[], time: number, target: VoiceTarget): void {
+    const classes = new Set(regions.map((r) => r.exclusiveClass).filter((c) => c !== 0))
+    if (classes.size === 0) return
+    for (const v of this.voices) {
+      if (v.target === target && classes.has(v.exclusiveClass) && v.startTime <= time) v.kill(time)
+    }
   }
 
   private stealVoices(time: number): void {
