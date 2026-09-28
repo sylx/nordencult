@@ -19,7 +19,7 @@ BGM 用途なので、低遅延より「時刻を指定して先読みで予約�
 ```sh
 npm install
 npm run dev                # テストページ (http://localhost:5173 。最初は BGM 生成、#instrument で音源チェック、#songs で LLM 作成曲)
-npm run build:instruments  # soundfonts/*.sf2 から public/instruments/ を作り直す (ffmpeg が必要)
+npm run build:instruments  # soundfonts/presets.json に並べた音色で public/instruments/ を作り直す (ffmpeg が必要)
 npm run typecheck
 npm test                   # テンポマップ・シーケンサ・BGM 生成・曲データのテスト (Node)
 npm run build
@@ -32,6 +32,7 @@ npm run build
 
 ```
 soundfonts/FluidR3_GM.sf2   変換元 (ブラウザには配信しない)
+soundfonts/presets.json     変換する音色 (プリセット名) の一覧
 tools/sf2-extract/          SF2 → 楽器データの変換ツール (Node, TypeScript をそのまま実行)
   sf2.ts                      SF2 パーサ
   flatten.ts                  プリセット/インストゥルメントの 2 階層を平坦なリージョンに変換
@@ -77,12 +78,15 @@ test/                       node --test で動かすテスト
 
 ## 音色
 
-`soundfonts/FluidR3_GM.sf2` は FluidR3_GM から管弦楽器・ティンパニ・クワイアの 10 音色を抜き出したもの (約 32MB)。
-変換後は合計約 4.2MB。
+`soundfonts/FluidR3_GM.sf2` は FluidR3_GM の完全版 (189 音色、約 148MB)。
+そのうち `soundfonts/presets.json` の `presets` に並べたプリセット名の音色だけを変換する (合計約 5.3MB)。
+SF2 にない名前があると変換ツールはエラーで止まる。`--presets` を省略すると全プリセットを変換する。
 
 | Program | 音色 | サイズ |
 |---:|---|---:|
 | 0 | Yamaha Grand Piano | 0.96 MB |
+| 21 | Accordian | 0.24 MB |
+| 24 | Nylon String Guitar | 0.23 MB |
 | 40 | Violin | 0.36 MB |
 | 41 | Viola | 0.47 MB |
 | 42 | Cello | 0.61 MB |
@@ -92,6 +96,9 @@ test/                       node --test で動かすテスト
 | 47 | Timpani | 0.16 MB |
 | 52 | Ahh Choir | 0.67 MB |
 | 53 | Ohh Voices | 0.18 MB |
+| 56 | Trumpet | 0.08 MB |
+| 57 | Trombone | 0.15 MB |
+| 60 | French Horns | 0.40 MB |
 
 FluidR3_GM は MIT License (Frank Wen, Toby Smithe)。
 

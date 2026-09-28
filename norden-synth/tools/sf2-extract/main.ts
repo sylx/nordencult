@@ -1,6 +1,9 @@
 // SF2 からゲーム用の楽器データを書き出す。
 //
-//   node tools/sf2-extract/main.ts <input.sf2> <outDir> [--quality 4] [--min-snr 20]
+//   node tools/sf2-extract/main.ts <input.sf2> <outDir> [--presets <presets.json>] [--quality 4] [--min-snr 20]
+//
+// --presets を渡すと、そのファイルの "presets" に並べたプリセット名だけを書き出す。
+// 省略時は SF2 の全プリセットを書き出す。
 //
 // 出力:
 //   <outDir>/index.json         楽器一覧
@@ -17,7 +20,7 @@ import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import type { AudioFile, InstrumentData, InstrumentIndex, SampleData } from '../../src/synth/types.ts'
 import { flattenPreset } from './flatten.ts'
-import { parseSf2, type Sf2 } from './sf2.ts'
+import { parseSf2, type Sf2, type Sf2Preset } from './sf2.ts'
 
 // 非可逆圧縮でループの継ぎ目や次のサンプルのアタックが干渉しないよう、
 // 各サンプルの後ろにループの続きをフェードアウトしながら付け足し、無音を挟む
@@ -28,13 +31,16 @@ const PAD_SILENCE = 1024
 const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
+    presets: { type: 'string' },
     quality: { type: 'string', default: '4' },
     'min-snr': { type: 'string', default: '20' },
   },
 })
 const [input, outDir] = positionals
 if (!input || !outDir) {
-  console.error('usage: node tools/sf2-extract/main.ts <input.sf2> <outDir> [--quality 4] [--min-snr 20]')
+  console.error(
+    'usage: node tools/sf2-extract/main.ts <input.sf2> <outDir> [--presets <presets.json>] [--quality 4] [--min-snr 20]',
+  )
   process.exit(1)
 }
 const baseQuality = Number(values.quality)
@@ -42,6 +48,7 @@ const minSnr = Number(values['min-snr'])
 const MAX_QUALITY = 8
 
 const sf = parseSf2(readFileSync(input))
+const presets = values.presets ? selectPresets(sf, values.presets) : sf.presets
 const warnings = new Set<string>()
 const warn = (msg: string) => warnings.add(msg)
 
@@ -59,7 +66,7 @@ const index: InstrumentIndex = { instruments: [] }
 let totalPcmBytes = 0
 const qualities: string[] = []
 
-for (const preset of [...sf.presets].sort((a, b) => a.bank - b.bank || a.program - b.program)) {
+for (const preset of [...presets].sort((a, b) => a.bank - b.bank || a.program - b.program)) {
   const id = slug(preset.name)
   const regions = flattenPreset(sf, preset, warn)
 
@@ -148,6 +155,18 @@ for (const w of warnings) console.warn(`warning: ${w}`)
 const outBytes = readdirSync(outDir).reduce((sum, f) => sum + statSync(join(outDir, f)).size, 0)
 console.log(`\nsource PCM (stereo interleaved, padded): ${(totalPcmBytes / 1e6).toFixed(2)} MB`)
 console.log(`output total: ${(outBytes / 1e6).toFixed(2)} MB`)
+
+// 設定ファイルに書かれたプリセット名を SF2 のプリセットに引き当てる。見つからない名前があれば中断する
+function selectPresets(sf: Sf2, path: string): Sf2Preset[] {
+  const config = JSON.parse(readFileSync(path, 'utf8')) as { presets: string[] }
+  const byName = new Map(sf.presets.map((p) => [p.name, p]))
+  const missing = config.presets.filter((name) => !byName.has(name))
+  if (missing.length > 0) {
+    console.error(`${path}: presets not found in ${input}: ${missing.map((n) => JSON.stringify(n)).join(', ')}`)
+    process.exit(1)
+  }
+  return [...new Set(config.presets)].map((name) => byName.get(name)!)
+}
 
 // サンプル (または L/R ペア) 1 つ分の 2ch インターリーブ PCM をパディング付きで作る
 function buildBlock(sf: Sf2, pair: number[]): Int16Array {

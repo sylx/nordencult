@@ -1,0 +1,19 @@
+{
+  "presets": [
+    "Yamaha Grand Piano",
+    "Accordian",
+    "Nylon String Guitar",
+    "Violin",
+    "Viola",
+    "Cello",
+    "Contrabass",
+    "Pizzicato Section",
+    "Harp",
+    "Timpani",
+    "Ahh Choir",
+    "Ohh Voices",
+    "Trumpet",
+    "Trombone",
+    "French Horns"
+  ]
+}
