@@ -69,6 +69,8 @@ src/songs/                  LLM が書いた曲
   golden-sails.ts             『黄金の帆』
   star-reader.ts              『砂海の星詠み』
   white-sanctum.ts            『白亜の聖都』
+  holding-breath.ts           『息を潜めて』 (索敵)
+  battle-cry.ts               『鬨の声』 (会敵)
 src/main.ts                 テストページ
 src/songs-page.ts           テストページの LLM 作成曲タブ
 src/bgm-page.ts             テストページの BGM 生成タブ
