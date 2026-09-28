@@ -25,6 +25,14 @@
       "bytes": 228667
     },
     {
+      "id": "acoustic-bass",
+      "name": "Acoustic Bass",
+      "bank": 0,
+      "program": 32,
+      "url": "acoustic-bass.json",
+      "bytes": 156042
+    },
+    {
       "id": "violin",
       "name": "Violin",
       "bank": 0,
@@ -119,6 +127,62 @@
       "program": 60,
       "url": "french-horns.json",
       "bytes": 397436
+    },
+    {
+      "id": "alto-sax",
+      "name": "Alto Sax",
+      "bank": 0,
+      "program": 65,
+      "url": "alto-sax.json",
+      "bytes": 297822
+    },
+    {
+      "id": "piccolo",
+      "name": "Piccolo",
+      "bank": 0,
+      "program": 72,
+      "url": "piccolo.json",
+      "bytes": 166300
+    },
+    {
+      "id": "flute",
+      "name": "Flute",
+      "bank": 0,
+      "program": 73,
+      "url": "flute.json",
+      "bytes": 191999
+    },
+    {
+      "id": "sitar",
+      "name": "Sitar",
+      "bank": 0,
+      "program": 104,
+      "url": "sitar.json",
+      "bytes": 139622
+    },
+    {
+      "id": "steel-drums",
+      "name": "Steel Drums",
+      "bank": 0,
+      "program": 114,
+      "url": "steel-drums.json",
+      "bytes": 34802
+    },
+    {
+      "id": "taiko-drum",
+      "name": "Taiko Drum",
+      "bank": 0,
+      "program": 116,
+      "url": "taiko-drum.json",
+      "bytes": 16963
+    },
+    {
+      "id": "orchestra-kit",
+      "name": "Orchestra Kit",
+      "bank": 128,
+      "program": 48,
+      "url": "orchestra-kit.json",
+      "bytes": 1792480
     }
   ]
 }

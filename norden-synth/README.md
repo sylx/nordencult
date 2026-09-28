@@ -92,26 +92,37 @@ sha256sum soundfonts/FluidR3_GM.sf2
 # 74594e8f4250680adf590507a306655a299935343583256f3b722c48a1bc1cb0 (148,398,306 バイト)
 ```
 
-そのうち `soundfonts/presets.json` の `presets` に並べたプリセット名の音色だけを変換する (合計約 5.3MB)。
+そのうち `soundfonts/presets.json` の `presets` に並べたプリセット名の音色だけを変換する (合計約 8.1MB)。
 SF2 にない名前があると変換ツールはエラーで止まる。`--presets` を省略すると全プリセットを変換する。
 
-| Program | 音色 | サイズ |
-|---:|---|---:|
-| 0 | Yamaha Grand Piano | 0.96 MB |
-| 21 | Accordian | 0.24 MB |
-| 24 | Nylon String Guitar | 0.23 MB |
-| 40 | Violin | 0.36 MB |
-| 41 | Viola | 0.47 MB |
-| 42 | Cello | 0.61 MB |
-| 43 | Contrabass | 0.20 MB |
-| 45 | Pizzicato Section | 0.36 MB |
-| 46 | Harp | 0.20 MB |
-| 47 | Timpani | 0.16 MB |
-| 52 | Ahh Choir | 0.67 MB |
-| 53 | Ohh Voices | 0.18 MB |
-| 56 | Trumpet | 0.08 MB |
-| 57 | Trombone | 0.15 MB |
-| 60 | French Horns | 0.40 MB |
+| Bank | Program | 音色 | サイズ |
+|---:|---:|---|---:|
+| 0 | 0 | Yamaha Grand Piano | 0.97 MB |
+| 0 | 21 | Accordian | 0.24 MB |
+| 0 | 24 | Nylon String Guitar | 0.23 MB |
+| 0 | 32 | Acoustic Bass | 0.16 MB |
+| 0 | 40 | Violin | 0.36 MB |
+| 0 | 41 | Viola | 0.48 MB |
+| 0 | 42 | Cello | 0.62 MB |
+| 0 | 43 | Contrabass | 0.20 MB |
+| 0 | 45 | Pizzicato Section | 0.37 MB |
+| 0 | 46 | Harp | 0.20 MB |
+| 0 | 47 | Timpani | 0.16 MB |
+| 0 | 52 | Ahh Choir | 0.68 MB |
+| 0 | 53 | Ohh Voices | 0.18 MB |
+| 0 | 56 | Trumpet | 0.08 MB |
+| 0 | 57 | Trombone | 0.15 MB |
+| 0 | 60 | French Horns | 0.40 MB |
+| 0 | 65 | Alto Sax | 0.30 MB |
+| 0 | 72 | Piccolo | 0.17 MB |
+| 0 | 73 | Flute | 0.19 MB |
+| 0 | 104 | Sitar | 0.14 MB |
+| 0 | 114 | Steel Drums | 0.03 MB |
+| 0 | 116 | Taiko Drum | 0.02 MB |
+| 128 | 48 | Orchestra Kit | 1.79 MB |
+
+Orchestra Kit (bank 128) はキー 27〜88 に 1 キー 1 音でバスドラ・スネア・シンバルなどが割り当てられたドラムキット。
+ハイハットやシンバルなどノイズ状の音は波形 SNR が上がりにくく、品質 q8 で書き出している。
 
 FluidR3_GM は MIT License (Frank Wen, Toby Smithe)。
 
@@ -129,7 +140,7 @@ FluidR3_GM は MIT License (Frank Wen, Toby Smithe)。
 - 左右に振り切った L/R ゾーンのペアは 1 つのステレオサンプルにまとめる
 - 非可逆圧縮でループの継ぎ目が崩れないよう、各サンプルの後ろにループの続きをフェードアウトしながら付け足してからエンコードする
 - 既定の品質は `--quality 4`。デコードし直した波形 SNR がファイル内のどれかのサンプルで `--min-snr` (20dB) を下回ると、そのファイルだけ品質を上げる
-- デコード後のフレーム数が元と一致すること (サンプルの位置がずれないこと) を毎回確認する
+- デコードし直して最後のサンプルの末尾まで取り出せることを毎回確認する (ffmpeg は音声が 1 ページに収まる短いファイルで全体の長さを数百フレーム間違えるが、ずれは末尾の無音パディングの中に収まる)
 
 ## シンセ API
 
@@ -170,11 +181,12 @@ violin.noteOff(60)
 - 音量エンベロープ (delay/attack/hold/decay/sustain/release、keynum によるスケーリング)。
   FluidSynth と同様に attack は振幅に対して線形、decay/release は dB に対して線形。最小時間は -12000 timecents (約 1ms)
 - モジュレーションエンベロープ → フィルタカットオフ/ピッチ
+- モジュレーション LFO (三角波) → フィルタカットオフ/ピッチ
 - ローパスフィルタ (initialFilterFc/Q)
 - initialAttenuation (FluidSynth と同様に 0.4 倍)、pan、reverbEffectsSend
 - 既定モジュレータ: ベロシティ → 音量 (凹カーブ)、ベロシティ → フィルタカットオフ (ゾーンのモジュレータによる打ち消しに対応)
 
-未対応: LFO (この音源では深さがすべて 0)、サンプルアドレスのオフセット、chorus、exclusiveClass、
+未対応: LFO による音量の揺れ (modLfoToVolume。Flute・Sitar などで 1dB 未満)、ビブラート LFO、サンプルアドレスのオフセット、chorus、exclusiveClass、
 その他のモジュレータ、ピッチベンドなどの MIDI コントローラ。未対応のジェネレータが使われていると変換時に警告が出る。
 
 ## シーケンサ

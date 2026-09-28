@@ -211,16 +211,19 @@ function encode(pcm: Int16Array, rate: number, path: string, quality: number) {
   if (result.status !== 0) throw new Error(`ffmpeg failed: ${result.stderr}`)
 }
 
-// デコードし直して長さが一致すること (= オフセットがずれないこと) を確かめ、
-// サンプルごとの波形 SNR の最小値を返す
+// デコードし直して最後のサンプルの末尾まで取り出せることを確かめ、サンプルごとの波形 SNR の最小値を返す。
+// 途中でずれていれば SNR が大きく落ちる。
+// ffmpeg 6.1 は音声が 1 ページに収まる短いストリームで全体の長さを数百フレーム間違える
+// (granulepos は正しく、libvorbisfile では元の長さになる)。ずれは末尾の無音パディングの中なので許す
 function worstSnr(path: string, original: Int16Array, samples: SampleData[], label: string): number {
   const result = spawnSync('ffmpeg', ['-loglevel', 'error', '-i', path, '-f', 's16le', '-ac', '2', 'pipe:1'], {
     maxBuffer: 1 << 30,
   })
   if (result.status !== 0) throw new Error(`ffmpeg decode failed: ${result.stderr}`)
   const decoded = new Int16Array(result.stdout.buffer, result.stdout.byteOffset, result.stdout.byteLength / 2)
-  if (decoded.length !== original.length) {
-    throw new Error(`${label}: decoded length ${decoded.length / 2} != ${original.length / 2} frames`)
+  const needed = Math.max(...samples.map((s) => s.offset + s.length))
+  if (decoded.length < needed * 2) {
+    throw new Error(`${label}: decoded length ${decoded.length / 2} < ${needed} frames`)
   }
   let worst = Infinity
   for (const s of samples) {

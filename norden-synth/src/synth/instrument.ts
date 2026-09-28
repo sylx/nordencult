@@ -46,7 +46,7 @@ export async function loadInstrument(url: string | URL): Promise<Instrument> {
   let bytes = Number(res.headers.get('content-length') ?? 0)
 
   const decoded = await Promise.all(
-    data.files.map(async (file) => {
+    data.files.map(async (file, fileIndex) => {
       const fileUrl = new URL(file.url, jsonUrl)
       const r = await fetch(fileUrl)
       if (!r.ok) throw new Error(`failed to fetch ${fileUrl}: ${r.status}`)
@@ -55,7 +55,9 @@ export async function loadInstrument(url: string | URL): Promise<Instrument> {
       // 元のサンプルレートのまま取り出すため、同じレートの OfflineAudioContext でデコードする。
       // (AudioContext でデコードすると出力レートにリサンプルされ、ループ点がずれる)
       const buffer = await new OfflineAudioContext(2, 1, file.sampleRate).decodeAudioData(encoded)
-      if (buffer.length !== file.frames) {
+      // デコーダによっては短いファイルの長さを間違えるが、ずれが末尾の無音パディングの中なら問題ない
+      const needed = Math.max(...data.samples.filter((s) => s.file === fileIndex).map((s) => s.offset + s.length))
+      if (buffer.length < needed) {
         console.warn(`${fileUrl}: decoded ${buffer.length} frames, expected ${file.frames}`)
       }
       return buffer

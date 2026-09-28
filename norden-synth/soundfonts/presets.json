@@ -3,6 +3,7 @@
     "Yamaha Grand Piano",
     "Accordian",
     "Nylon String Guitar",
+    "Acoustic Bass",
     "Violin",
     "Viola",
     "Cello",
@@ -14,6 +15,13 @@
     "Ohh Voices",
     "Trumpet",
     "Trombone",
-    "French Horns"
+    "French Horns",
+    "Alto Sax",
+    "Piccolo",
+    "Flute",
+    "Sitar",
+    "Steel Drums",
+    "Taiko Drum",
+    "Orchestra Kit"
   ]
 }
