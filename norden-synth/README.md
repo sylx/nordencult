@@ -64,6 +64,7 @@ src/songs/                  LLM が書いた曲
   fairy-ring.ts               『妖精の環』
   imperial-triumph.ts         『大帝国の凱旋』
   wandering-bird.ts           『気ままな渡り鳥』
+  tundra-march.ts             『凍土の鉄騎』
 src/main.ts                 テストページ
 src/songs-page.ts           テストページの LLM 作成曲タブ
 src/bgm-page.ts             テストページの BGM 生成タブ
