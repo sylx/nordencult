@@ -101,9 +101,12 @@ sha256sum soundfonts/FluidR3_GM.sf2
 ### Choir Choral Aahhs
 
 `soundfonts/choir choral aahhs 4959kb.sf2` は E-mu の音色を SF2 に変換した合唱の SoundFont (5 音色、約 5MB)。
-INFO チャンクの著作権表記は Public Domain。44.1kHz ステレオで、A2〜G5 の 18 音を録音している。
+Polyphone の SoundFont 一覧 (https://www.polyphone.io/en/soundfonts/vocals/224-choir-choral-aahhs) から入手できる。
+作者は不明で、配布ページと INFO チャンクの著作権表記はどちらも Public Domain。44.1kHz ステレオで、A2〜G5 の 18 音を録音している。
+配布時のファイル名は `choir choral aahhs (4,959kb).sf2` なので、名前を変えて置く。
 
 ```sh
+mv "choir choral aahhs (4,959kb).sf2" "soundfonts/choir choral aahhs 4959kb.sf2"
 sha256sum "soundfonts/choir choral aahhs 4959kb.sf2"
 # e3a0a6b43c54986a1d21fa9bac2b42f7901fb347ffdd4bebc2cafa671a5cc22a (5,077,708 バイト)
 ```
