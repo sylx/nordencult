@@ -31,8 +31,8 @@ npm run build
 ## ディレクトリ構成
 
 ```
-soundfonts/FluidR3_GM.sf2   変換元 (ブラウザには配信せず、リポジトリにも含めない)
-soundfonts/presets.json     変換する音色 (プリセット名) の一覧
+soundfonts/*.sf2            変換元 (ブラウザには配信せず、リポジトリにも含めない)
+soundfonts/presets.json     変換する SF2 と音色 (プリセット名) の一覧
 tools/sf2-extract/          SF2 → 楽器データの変換ツール (Node, TypeScript をそのまま実行)
   sf2.ts                      SF2 パーサ
   flatten.ts                  プリセット/インストゥルメントの 2 階層を平坦なリージョンに変換
@@ -80,6 +80,10 @@ test/                       node --test で動かすテスト
 
 ## 音色
 
+変換元は `soundfonts/` に置いた 2 つの SF2。
+
+### FluidR3_GM
+
 `soundfonts/FluidR3_GM.sf2` は FluidR3_GM の完全版 (189 音色、約 148MB)。
 GitHub の 1 ファイル 100MB の制限を超えるのでリポジトリには含めていない。
 変換し直すときは Debian/Ubuntu の `fluid-soundfont-gm` パッケージ (3.1) のものを置く。
@@ -94,8 +98,21 @@ sha256sum soundfonts/FluidR3_GM.sf2
 # 74594e8f4250680adf590507a306655a299935343583256f3b722c48a1bc1cb0 (148,398,306 バイト)
 ```
 
-そのうち `soundfonts/presets.json` の `presets` に並べたプリセット名の音色だけを変換する (合計約 8.1MB)。
-SF2 にない名前があると変換ツールはエラーで止まる。`--presets` を省略すると全プリセットを変換する。
+### Choir Choral Aahhs
+
+`soundfonts/choir choral aahhs 4959kb.sf2` は E-mu の音色を SF2 に変換した合唱の SoundFont (5 音色、約 5MB)。
+INFO チャンクの著作権表記は Public Domain。44.1kHz ステレオで、A2〜G5 の 18 音を録音している。
+
+```sh
+sha256sum "soundfonts/choir choral aahhs 4959kb.sf2"
+# e3a0a6b43c54986a1d21fa9bac2b42f7901fb347ffdd4bebc2cafa671a5cc22a (5,077,708 バイト)
+```
+
+### 変換する音色
+
+`soundfonts/presets.json` の `soundfonts` に SF2 ごとに並べたプリセット名の音色だけを変換する (合計約 8.5MB)。
+SF2 のパスは presets.json からの相対。SF2 にない名前や、名前から作る id が重なるとエラーで止まる。
+`--presets` の代わりに SF2 を直接渡すと、その全プリセットを変換する。
 
 | Bank | Program | 音色 | サイズ |
 |---:|---:|---|---:|
@@ -111,7 +128,6 @@ SF2 にない名前があると変換ツールはエラーで止まる。`--pres
 | 0 | 46 | Harp | 0.20 MB |
 | 0 | 47 | Timpani | 0.16 MB |
 | 0 | 52 | Ahh Choir | 0.68 MB |
-| 0 | 53 | Ohh Voices | 0.18 MB |
 | 0 | 56 | Trumpet | 0.08 MB |
 | 0 | 57 | Trombone | 0.15 MB |
 | 0 | 60 | French Horns | 0.40 MB |
@@ -122,9 +138,12 @@ SF2 にない名前があると変換ツールはエラーで止まる。`--pres
 | 0 | 114 | Steel Drums | 0.03 MB |
 | 0 | 116 | Taiko Drum | 0.02 MB |
 | 128 | 48 | Orchestra Kit | 1.79 MB |
+| 0 | 0 | Choral Aahhs (Choir Choral Aahhs) | 0.49 MB |
 
 Orchestra Kit (bank 128) はキー 27〜88 に 1 キー 1 音でバスドラ・スネア・シンバルなどが割り当てられたドラムキット。
 ハイハットやシンバルなどノイズ状の音は波形 SNR が上がりにくく、品質 q8 で書き出している。
+
+Choral Aahhs は旧 Ohh Voices (FluidR3_GM) の置き換え。アタックが約 0.4 秒と遅く、持続部は Ohh Voices より約 5dB 大きい。
 
 FluidR3_GM は MIT License (Frank Wen, Toby Smithe)。
 
@@ -133,13 +152,13 @@ FluidR3_GM は MIT License (Frank Wen, Toby Smithe)。
 音色ごとに次のファイルを出力する (型は `src/synth/types.ts`)。
 
 - `<id>.json` — サンプルの位置・ループ点と、リージョン (キー/ベロシティ範囲・音程・エンベロープ・フィルタなど) の一覧
-- `<id>.ogg` — その音色の全サンプルを連結した 2ch Ogg Vorbis。サンプルレートが混在する音色 (Ohh Voices) はレートごとに `<id>-<rate>.ogg` に分かれる
+- `<id>.ogg` — その音色の全サンプルを連結した 2ch Ogg Vorbis。サンプルレートが混在する音色 (Steel Drums など) はレートごとに `<id>-<rate>.ogg` に分かれる
 - `index.json` — 音色の一覧
 
 変換時の処理:
 
 - プリセットとインストゥルメントのジェネレータを合成し、平坦なリージョンにする。内容が同じで連続するベロシティ層はまとめる
-- 左右に振り切った L/R ゾーンのペアは 1 つのステレオサンプルにまとめる
+- 左右に振り切った L/R ゾーンのペアは 1 つのステレオサンプルにまとめる。片方の先頭にだけ数フレーム余分があり、ループ点と末尾も同じだけずれているペア (Choral Aahhs) は、先頭を切ってそろえる
 - 非可逆圧縮でループの継ぎ目が崩れないよう、各サンプルの後ろにループの続きをフェードアウトしながら付け足してからエンコードする
 - 既定の品質は `--quality 4`。デコードし直した波形 SNR がファイル内のどれかのサンプルで `--min-snr` (20dB) を下回ると、そのファイルだけ品質を上げる
 - デコードし直して最後のサンプルの末尾まで取り出せることを毎回確認する (ffmpeg は音声が 1 ページに収まる短いファイルで全体の長さを数百フレーム間違えるが、ずれは末尾の無音パディングの中に収まる)

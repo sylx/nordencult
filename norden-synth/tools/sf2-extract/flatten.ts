@@ -156,7 +156,12 @@ function velToFilterAmount(iz: Zone, ig: Zone | undefined, pz: Zone, pg: Zone | 
   return (inst ? inst.amount : VEL_TO_FILTER_AMOUNT) + (preset?.amount ?? 0)
 }
 
-// sample と pan 以外が同一で、左右に振り切った 2 つのリージョンを 1 つのステレオリージョンにまとめる
+// L/R の先頭がこのフレーム数までずれているペアは、長い方の先頭を切って揃える
+const MAX_STEREO_SKEW = 4
+
+// sample と pan 以外が同一で、左右に振り切った 2 つのリージョンを 1 つのステレオリージョンにまとめる。
+// 片方の先頭にだけ余分なフレームがあり、ループ点と末尾が同じだけずれているペアは、
+// 先頭を切ったサンプルヘッダを sf.samples に足してそちらを使う
 function mergeStereoPairs(sf: Sf2, regions: FlatRegion[]): FlatRegion[] {
   const signature = (r: FlatRegion) => JSON.stringify({ ...r, sample: undefined, pan: undefined })
   const out: FlatRegion[] = []
@@ -169,19 +174,28 @@ function mergeStereoPairs(sf: Sf2, regions: FlatRegion[]): FlatRegion[] {
     if (!right) continue
     const a = sf.samples[left.sample[0]]
     const b = sf.samples[right.sample[0]]
+    // b の先頭が a より何フレーム多いか
+    const skew = b.loopStart - b.start - (a.loopStart - a.start)
     const sameShape =
-      a.end - a.start === b.end - b.start &&
-      a.loopStart - a.start === b.loopStart - b.start &&
-      a.loopEnd - a.start === b.loopEnd - b.start &&
+      Math.abs(skew) <= MAX_STEREO_SKEW &&
+      b.end - b.loopEnd === a.end - a.loopEnd &&
+      b.loopEnd - b.loopStart === a.loopEnd - a.loopStart &&
       a.sampleRate === b.sampleRate &&
       a.pitchCorrection === b.pitchCorrection
     if (!sameShape) continue
     used.add(left).add(right)
-    out.push({ ...left, sample: [left.sample[0], right.sample[0]], pan: 0 })
+    out.push({ ...left, sample: [trimHead(sf, left.sample[0], -skew), trimHead(sf, right.sample[0], skew)], pan: 0 })
   }
 
   for (const r of regions) if (!used.has(r)) out.push(r)
   return out
+}
+
+// サンプルの先頭を frames フレーム切ったヘッダを足し、その番号を返す。frames <= 0 ならそのまま
+function trimHead(sf: Sf2, index: number, frames: number): number {
+  if (frames <= 0) return index
+  const s = sf.samples[index]
+  return sf.samples.push({ ...s, start: s.start + frames }) - 1
 }
 
 // velRange 以外が同一で、ベロシティ範囲が連続しているリージョンを結合する

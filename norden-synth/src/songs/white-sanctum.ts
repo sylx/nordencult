@@ -18,7 +18,7 @@ export const whiteSanctum: Song = {
   tempo: 80,
   timeSignature: [4, 4],
   parts: [
-    { id: 'voices', label: '合唱', instrument: 'ohh-voices', volume: 0.55, pan: 0, velocity: 72, gate: 1 },
+    { id: 'voices', label: '合唱', instrument: 'choral-aahhs', volume: 0.33, pan: 0, velocity: 72, gate: 1 },
     { id: 'choir', label: 'クワイア', instrument: 'ahh-choir', volume: 0.45, pan: 0, velocity: 60, gate: 1 },
     { id: 'tp', label: 'トランペット', instrument: 'trumpet', volume: 0.5, pan: 0.1, velocity: 88, gate: 0.97 },
     { id: 'hn', label: 'ホルン', instrument: 'french-horns', volume: 0.5, pan: -0.25, velocity: 72, gate: 1 },

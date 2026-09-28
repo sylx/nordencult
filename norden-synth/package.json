@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc && tsc -p tools && tsc -p test",
     "test": "node --test test/*.test.ts",
-    "build:instruments": "node tools/sf2-extract/main.ts soundfonts/FluidR3_GM.sf2 public/instruments --presets soundfonts/presets.json"
+    "build:instruments": "node tools/sf2-extract/main.ts public/instruments --presets soundfonts/presets.json"
   },
   "devDependencies": {
     "@types/node": "^24.13.6",

@@ -19,7 +19,7 @@ export const wanderingBird: Song = {
     { id: 'bass', label: 'ウッドベース', instrument: 'acoustic-bass', volume: 0.42, pan: 0.1, velocity: 84, gate: 0.8 },
     { id: 'piano', label: 'ピアノ', instrument: 'yamaha-grand-piano', volume: 0.45, pan: 0.1, velocity: 70, gate: 1 },
     { id: 'harp', label: 'ハープ', instrument: 'harp', volume: 0.5, pan: 0.35, velocity: 70, gate: 1.5 },
-    { id: 'voice', label: 'ボイス', instrument: 'ohh-voices', volume: 0.5, pan: 0, velocity: 76, gate: 1 },
+    { id: 'voice', label: 'ボイス', instrument: 'choral-aahhs', volume: 0.3, pan: 0, velocity: 76, gate: 1 },
     { id: 'vc', label: 'チェロ', instrument: 'cello', volume: 0.45, pan: 0.2, velocity: 62, gate: 1 },
     { id: 'fl', label: 'フルート (鳥)', instrument: 'flute', volume: 0.4, pan: -0.25, velocity: 74, gate: 0.9 },
     { id: 'perc', label: '打楽器', instrument: 'orchestra-kit', volume: 0.45, pan: 0.15, velocity: 60, gate: 1 },

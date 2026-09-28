@@ -31,7 +31,7 @@ export const starReader: Song = {
     { id: 'darbuka', label: 'ダルブッカ (コンガ)', instrument: 'orchestra-kit', volume: 0.5, pan: -0.2, velocity: 80, gate: 1 },
     { id: 'riq', label: 'リク (タンブリン)', instrument: 'orchestra-kit', volume: 0.35, pan: 0.25, velocity: 60, gate: 1 },
     { id: 'timp', label: 'ティンパニ (低いドゥム)', instrument: 'timpani', volume: 0.6, pan: 0, velocity: 92, gate: 1 },
-    { id: 'voices', label: '合唱', instrument: 'ohh-voices', volume: 0.5, pan: 0, velocity: 76, gate: 1 },
+    { id: 'voices', label: '合唱', instrument: 'choral-aahhs', volume: 0.3, pan: 0, velocity: 76, gate: 1 },
     { id: 'choir', label: 'クワイア', instrument: 'ahh-choir', volume: 0.35, pan: 0, velocity: 56, gate: 1 },
   ],
   sections: [

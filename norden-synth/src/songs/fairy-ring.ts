@@ -24,7 +24,7 @@ export const fairyRing: Song = {
     { id: 'bodhran', label: 'バウロン (コンガ)', instrument: 'orchestra-kit', volume: 0.55, pan: 0.05, velocity: 80, gate: 1 },
     { id: 'fl', label: 'フルート', instrument: 'flute', volume: 0.4, pan: 0.15, velocity: 84, gate: 0.85 },
     { id: 'whistle', label: 'ホイッスル (ピッコロ)', instrument: 'piccolo', volume: 0.3, pan: 0.2, velocity: 84, gate: 0.85 },
-    { id: 'voice', label: 'ボイス', instrument: 'ohh-voices', volume: 0.55, pan: 0, velocity: 82, gate: 1 },
+    { id: 'voice', label: 'ボイス', instrument: 'choral-aahhs', volume: 0.33, pan: 0, velocity: 82, gate: 1 },
   ],
   sections: [
     {

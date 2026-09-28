@@ -30,7 +30,7 @@ export const tundraMarch: Song = {
     { id: 'cb', label: 'コントラバス', instrument: 'contrabass', volume: 0.7, pan: 0.35, velocity: 96, gate: 0.8 },
     { id: 'piano', label: 'ピアノ', instrument: 'yamaha-grand-piano', volume: 0.45, pan: 0, velocity: 92, gate: 1 },
     { id: 'timp', label: 'ティンパニ', instrument: 'timpani', volume: 0.75, pan: 0, velocity: 96, gate: 1 },
-    { id: 'voices', label: '合唱', instrument: 'ohh-voices', volume: 0.55, pan: 0, velocity: 88, gate: 0.97 },
+    { id: 'voices', label: '合唱', instrument: 'choral-aahhs', volume: 0.33, pan: 0, velocity: 88, gate: 0.97 },
     { id: 'choir', label: 'クワイア', instrument: 'ahh-choir', volume: 0.4, pan: 0, velocity: 70, gate: 1 },
     { id: 'picc', label: 'ピッコロ', instrument: 'piccolo', volume: 0.28, pan: -0.1, velocity: 86, gate: 0.9 },
     { id: 'drums', label: 'スネア・バスドラム', instrument: 'orchestra-kit', volume: 0.5, pan: 0.05, velocity: 80, gate: 1 },

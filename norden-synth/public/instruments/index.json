@@ -97,14 +97,6 @@
       "bytes": 683705
     },
     {
-      "id": "ohh-voices",
-      "name": "Ohh Voices",
-      "bank": 0,
-      "program": 53,
-      "url": "ohh-voices.json",
-      "bytes": 182527
-    },
-    {
       "id": "trumpet",
       "name": "Trumpet",
       "bank": 0,
@@ -183,6 +175,14 @@
       "program": 48,
       "url": "orchestra-kit.json",
       "bytes": 1792480
+    },
+    {
+      "id": "choral-aahhs",
+      "name": "Choral Aahhs",
+      "bank": 0,
+      "program": 0,
+      "url": "choral-aahhs.json",
+      "bytes": 491268
     }
   ]
 }

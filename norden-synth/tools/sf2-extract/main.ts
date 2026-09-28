@@ -1,9 +1,10 @@
 // SF2 からゲーム用の楽器データを書き出す。
 //
-//   node tools/sf2-extract/main.ts <input.sf2> <outDir> [--presets <presets.json>] [--quality 4] [--min-snr 20]
+//   node tools/sf2-extract/main.ts <outDir> --presets <presets.json> [--quality 4] [--min-snr 20]
+//   node tools/sf2-extract/main.ts <outDir> <input.sf2>... [--quality 4] [--min-snr 20]
 //
-// --presets を渡すと、そのファイルの "presets" に並べたプリセット名だけを書き出す。
-// 省略時は SF2 の全プリセットを書き出す。
+// --presets を渡すと、そのファイルの "soundfonts" に並べた SF2 (パスは presets.json からの相対) ごとに、
+// "presets" に並べたプリセット名だけを書き出す。SF2 を直接渡すと、その全プリセットを書き出す。
 //
 // 出力:
 //   <outDir>/index.json         楽器一覧
@@ -16,7 +17,7 @@
 
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { parseArgs } from 'node:util'
 import type { AudioFile, InstrumentData, InstrumentIndex, SampleData } from '../../src/synth/types.ts'
 import { flattenPreset } from './flatten.ts'
@@ -36,10 +37,10 @@ const { values, positionals } = parseArgs({
     'min-snr': { type: 'string', default: '20' },
   },
 })
-const [input, outDir] = positionals
-if (!input || !outDir) {
+const [outDir, ...inputs] = positionals
+if (!outDir || (values.presets ? inputs.length > 0 : inputs.length === 0)) {
   console.error(
-    'usage: node tools/sf2-extract/main.ts <input.sf2> <outDir> [--presets <presets.json>] [--quality 4] [--min-snr 20]',
+    'usage: node tools/sf2-extract/main.ts <outDir> (--presets <presets.json> | <input.sf2>...) [--quality 4] [--min-snr 20]',
   )
   process.exit(1)
 }
@@ -47,8 +48,16 @@ const baseQuality = Number(values.quality)
 const minSnr = Number(values['min-snr'])
 const MAX_QUALITY = 8
 
-const sf = parseSf2(readFileSync(input))
-const presets = values.presets ? selectPresets(sf, values.presets) : sf.presets
+// 書き出す (SF2, プリセット) の組。SF2 ごとにバンク・プログラム順に並べる
+const presets: { sf: Sf2; preset: Sf2Preset }[] = []
+const sources = values.presets
+  ? readConfig(values.presets)
+  : inputs.map((path) => ({ path, names: undefined }))
+for (const { path, names } of sources) {
+  const sf = parseSf2(readFileSync(path))
+  const selected = names ? selectPresets(sf, path, names) : sf.presets
+  for (const preset of [...selected].sort((a, b) => a.bank - b.bank || a.program - b.program)) presets.push({ sf, preset })
+}
 const warnings = new Set<string>()
 const warn = (msg: string) => warnings.add(msg)
 
@@ -66,7 +75,14 @@ const index: InstrumentIndex = { instruments: [] }
 let totalPcmBytes = 0
 const qualities: string[] = []
 
-for (const preset of [...presets].sort((a, b) => a.bank - b.bank || a.program - b.program)) {
+const ids = presets.map(({ preset }) => slug(preset.name))
+const duplicated = ids.filter((id, i) => ids.indexOf(id) !== i)
+if (duplicated.length > 0) {
+  console.error(`duplicate instrument ids: ${[...new Set(duplicated)].join(', ')}`)
+  process.exit(1)
+}
+
+for (const { sf, preset } of presets) {
   const id = slug(preset.name)
   const regions = flattenPreset(sf, preset, warn)
 
@@ -156,16 +172,21 @@ const outBytes = readdirSync(outDir).reduce((sum, f) => sum + statSync(join(outD
 console.log(`\nsource PCM (stereo interleaved, padded): ${(totalPcmBytes / 1e6).toFixed(2)} MB`)
 console.log(`output total: ${(outBytes / 1e6).toFixed(2)} MB`)
 
-// 設定ファイルに書かれたプリセット名を SF2 のプリセットに引き当てる。見つからない名前があれば中断する
-function selectPresets(sf: Sf2, path: string): Sf2Preset[] {
-  const config = JSON.parse(readFileSync(path, 'utf8')) as { presets: string[] }
+// 設定ファイルから SF2 のパスとプリセット名の一覧を読む。SF2 のパスは設定ファイルからの相対
+function readConfig(path: string): { path: string; names: string[] }[] {
+  const config = JSON.parse(readFileSync(path, 'utf8')) as { soundfonts: { file: string; presets: string[] }[] }
+  return config.soundfonts.map((s) => ({ path: join(dirname(path), s.file), names: s.presets }))
+}
+
+// プリセット名を SF2 のプリセットに引き当てる。見つからない名前があれば中断する
+function selectPresets(sf: Sf2, path: string, names: string[]): Sf2Preset[] {
   const byName = new Map(sf.presets.map((p) => [p.name, p]))
-  const missing = config.presets.filter((name) => !byName.has(name))
+  const missing = names.filter((name) => !byName.has(name))
   if (missing.length > 0) {
-    console.error(`${path}: presets not found in ${input}: ${missing.map((n) => JSON.stringify(n)).join(', ')}`)
+    console.error(`presets not found in ${basename(path)}: ${missing.map((n) => JSON.stringify(n)).join(', ')}`)
     process.exit(1)
   }
-  return [...new Set(config.presets)].map((name) => byName.get(name)!)
+  return [...new Set(names)].map((name) => byName.get(name)!)
 }
 
 // サンプル (または L/R ペア) 1 つ分の 2ch インターリーブ PCM をパディング付きで作る
