@@ -31,7 +31,7 @@ npm run build
 ## ディレクトリ構成
 
 ```
-soundfonts/FluidR3_GM.sf2   変換元 (ブラウザには配信しない)
+soundfonts/FluidR3_GM.sf2   変換元 (ブラウザには配信せず、リポジトリにも含めない)
 soundfonts/presets.json     変換する音色 (プリセット名) の一覧
 tools/sf2-extract/          SF2 → 楽器データの変換ツール (Node, TypeScript をそのまま実行)
   sf2.ts                      SF2 パーサ
@@ -79,6 +79,19 @@ test/                       node --test で動かすテスト
 ## 音色
 
 `soundfonts/FluidR3_GM.sf2` は FluidR3_GM の完全版 (189 音色、約 148MB)。
+GitHub の 1 ファイル 100MB の制限を超えるのでリポジトリには含めていない。
+変換し直すときは Debian/Ubuntu の `fluid-soundfont-gm` パッケージ (3.1) のものを置く。
+
+```sh
+sudo apt install fluid-soundfont-gm
+cp /usr/share/sounds/sf2/FluidR3_GM.sf2 soundfonts/
+# インストールせずに取り出す場合
+apt-get download fluid-soundfont-gm && dpkg -x fluid-soundfont-gm_*.deb pkg && cp pkg/usr/share/sounds/sf2/FluidR3_GM.sf2 soundfonts/
+
+sha256sum soundfonts/FluidR3_GM.sf2
+# 74594e8f4250680adf590507a306655a299935343583256f3b722c48a1bc1cb0 (148,398,306 バイト)
+```
+
 そのうち `soundfonts/presets.json` の `presets` に並べたプリセット名の音色だけを変換する (合計約 5.3MB)。
 SF2 にない名前があると変換ツールはエラーで止まる。`--presets` を省略すると全プリセットを変換する。
 

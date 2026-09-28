@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# 変換元の SoundFont (大きすぎるのでコミットしない。入手方法は README)
+soundfonts/*.sf2
