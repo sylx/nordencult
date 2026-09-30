@@ -11,8 +11,8 @@
     "gen:samples": "tsx scripts/gen-samples.ts"
   },
   "dependencies": {
+    "@norden/map-runtime": "*",
     "lil-gui": "^0.21.0",
-    "simplex-noise": "^4.0.3",
     "three": "^0.186.1"
   },
   "devDependencies": {

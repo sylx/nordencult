@@ -89,7 +89,8 @@ label.row span {
   color: var(--text-dim);
 }
 
-label.row select {
+label.row select,
+label.row input {
   flex: 1;
   min-width: 0;
 }
@@ -221,6 +222,10 @@ button:hover {
 
 #status .err {
   color: #ff8a7a;
+}
+
+#status .ok {
+  color: #b8e08a;
 }
 
 #drop-hint {
