@@ -5,6 +5,7 @@
 //
 // --presets を渡すと、そのファイルの "soundfonts" に並べた SF2 (パスは presets.json からの相対) ごとに、
 // "presets" に並べたプリセット名だけを書き出す。SF2 を直接渡すと、その全プリセットを書き出す。
+// SF2 に "credit" があれば、その音色の index.json と <id>.json に credit として書く (帰属表示用)。
 //
 // 出力:
 //   <outDir>/index.json         楽器一覧
@@ -49,14 +50,16 @@ const minSnr = Number(values['min-snr'])
 const MAX_QUALITY = 8
 
 // 書き出す (SF2, プリセット) の組。SF2 ごとにバンク・プログラム順に並べる
-const presets: { sf: Sf2; preset: Sf2Preset }[] = []
+const presets: { sf: Sf2; preset: Sf2Preset; credit?: string }[] = []
 const sources = values.presets
   ? readConfig(values.presets)
-  : inputs.map((path) => ({ path, names: undefined }))
-for (const { path, names } of sources) {
+  : inputs.map((path) => ({ path, names: undefined, credit: undefined }))
+for (const { path, names, credit } of sources) {
   const sf = parseSf2(readFileSync(path))
   const selected = names ? selectPresets(sf, path, names) : sf.presets
-  for (const preset of [...selected].sort((a, b) => a.bank - b.bank || a.program - b.program)) presets.push({ sf, preset })
+  for (const preset of [...selected].sort((a, b) => a.bank - b.bank || a.program - b.program)) {
+    presets.push({ sf, preset, credit })
+  }
 }
 const warnings = new Set<string>()
 const warn = (msg: string) => warnings.add(msg)
@@ -82,7 +85,7 @@ if (duplicated.length > 0) {
   process.exit(1)
 }
 
-for (const { sf, preset } of presets) {
+for (const { sf, preset, credit } of presets) {
   const id = slug(preset.name)
   const regions = flattenPreset(sf, preset, warn)
 
@@ -149,6 +152,7 @@ for (const { sf, preset } of presets) {
     name: preset.name,
     bank: preset.bank,
     program: preset.program,
+    credit,
     files,
     samples,
     regions: regions.map((r) => ({ ...r, sample: sampleIndex.get(r.sample.join(':'))! })),
@@ -157,7 +161,15 @@ for (const { sf, preset } of presets) {
   writeFileSync(join(outDir, `${id}.json`), json)
   presetBytes += json.length
 
-  index.instruments.push({ id, name: preset.name, bank: preset.bank, program: preset.program, url: `${id}.json`, bytes: presetBytes })
+  index.instruments.push({
+    id,
+    name: preset.name,
+    bank: preset.bank,
+    program: preset.program,
+    url: `${id}.json`,
+    bytes: presetBytes,
+    credit,
+  })
   console.log(
     `${preset.name.padEnd(20)} regions=${String(regions.length).padStart(3)} samples=${String(samples.length).padStart(3)} files=${files.length} ${(presetBytes / 1e6).toFixed(2)} MB`,
   )
@@ -172,10 +184,12 @@ const outBytes = readdirSync(outDir).reduce((sum, f) => sum + statSync(join(outD
 console.log(`\nsource PCM (stereo interleaved, padded): ${(totalPcmBytes / 1e6).toFixed(2)} MB`)
 console.log(`output total: ${(outBytes / 1e6).toFixed(2)} MB`)
 
-// 設定ファイルから SF2 のパスとプリセット名の一覧を読む。SF2 のパスは設定ファイルからの相対
-function readConfig(path: string): { path: string; names: string[] }[] {
-  const config = JSON.parse(readFileSync(path, 'utf8')) as { soundfonts: { file: string; presets: string[] }[] }
-  return config.soundfonts.map((s) => ({ path: join(dirname(path), s.file), names: s.presets }))
+// 設定ファイルから SF2 のパスとプリセット名の一覧、クレジットを読む。SF2 のパスは設定ファイルからの相対
+function readConfig(path: string): { path: string; names: string[]; credit?: string }[] {
+  const config = JSON.parse(readFileSync(path, 'utf8')) as {
+    soundfonts: { file: string; presets: string[]; credit?: string }[]
+  }
+  return config.soundfonts.map((s) => ({ path: join(dirname(path), s.file), names: s.presets, credit: s.credit }))
 }
 
 // プリセット名を SF2 のプリセットに引き当てる。見つからない名前があれば中断する

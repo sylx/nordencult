@@ -12,12 +12,15 @@ export interface InstrumentIndexEntry {
   program: number
   url: string
   bytes: number
+  // 帰属表示が必要な音色のクレジット (soundfonts/presets.json の credit)
+  credit?: string
 }
 
 export interface InstrumentData {
   name: string
   bank: number
   program: number
+  credit?: string
   files: AudioFile[]
   samples: SampleData[]
   regions: RegionData[]

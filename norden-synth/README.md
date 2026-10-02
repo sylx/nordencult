@@ -80,7 +80,7 @@ test/                       node --test で動かすテスト
 
 ## 音色
 
-変換元は `soundfonts/` に置いた 2 つの SF2。
+変換元は `soundfonts/` に置いた 3 つの SF2。
 
 ### FluidR3_GM
 
@@ -111,10 +111,32 @@ sha256sum "soundfonts/choir choral aahhs 4959kb.sf2"
 # e3a0a6b43c54986a1d21fa9bac2b42f7901fb347ffdd4bebc2cafa671a5cc22a (5,077,708 バイト)
 ```
 
+### Papelmedia Final SF2 XXL - Irina Brochin
+
+`soundfonts/Papelmedia_Irina_Brochin.sf2` は Irina Brochin の歌声を収めた SoundFont (1 音色、約 5MB)。
+Polyphone の SoundFont 一覧 (https://www.polyphone.io/en/soundfonts/vocals/228-papelmedia-final-sf2-xxl-irina-brochin) から入手できる。
+作者は Simon Tristan Papel (Papelmedia)。44.1kHz モノラルで、A3〜A5 を短 3 度おきに 9 音録音している。
+1 音 5.5〜7 秒のワンショットでループはなく、それより長く伸ばすとサンプルの末尾で音が終わる。
+
+```sh
+sha256sum soundfonts/Papelmedia_Irina_Brochin.sf2
+# d3a2aedf2ece6302bced54b03b14ad401e6e323c1b38bcb2089d6c37aa7edc78 (5,068,024 バイト)
+```
+
+ライセンスは Polyphone の "give credit" (https://www.polyphone.io/en/licenses#give-credit)。
+商用利用・改変・再配布はできるが、作者名を示すクレジットが必要。
+ゲームなどに組み込むときは、次のクレジットを画面やドキュメントに載せる。
+
+> "Papelmedia Final SF2 XXL - Irina Brochin" by Simon Tristan Papel (Papelmedia), voice by Irina Brochin.
+> https://www.polyphone.io/en/soundfonts/vocals/228-papelmedia-final-sf2-xxl-irina-brochin
+
+同じ文面を presets.json の `credit` に書いてあり、変換すると `index.json` と `irina-brochin.json` の `credit` に入る。
+
 ### 変換する音色
 
-`soundfonts/presets.json` の `soundfonts` に SF2 ごとに並べたプリセット名の音色だけを変換する (合計約 8.5MB)。
+`soundfonts/presets.json` の `soundfonts` に SF2 ごとに並べたプリセット名の音色だけを変換する (合計約 9.1MB)。
 SF2 のパスは presets.json からの相対。SF2 にない名前や、名前から作る id が重なるとエラーで止まる。
+SF2 に `credit` を書くと、その SF2 から変換した音色の `index.json` のエントリと `<id>.json` に `credit` として出力する (帰属表示が必要な音色用)。
 `--presets` の代わりに SF2 を直接渡すと、その全プリセットを変換する。
 
 | Bank | Program | 音色 | サイズ |
@@ -142,11 +164,14 @@ SF2 のパスは presets.json からの相対。SF2 にない名前や、名前�
 | 0 | 116 | Taiko Drum | 0.02 MB |
 | 128 | 48 | Orchestra Kit | 1.79 MB |
 | 0 | 0 | Choral Aahhs (Choir Choral Aahhs) | 0.49 MB |
+| 0 | 0 | Irina Brochin (Papelmedia Final SF2 XXL) | 0.70 MB |
 
 Orchestra Kit (bank 128) はキー 27〜88 に 1 キー 1 音でバスドラ・スネア・シンバルなどが割り当てられたドラムキット。
 ハイハットやシンバルなどノイズ状の音は波形 SNR が上がりにくく、品質 q8 で書き出している。
 
 Choral Aahhs は旧 Ohh Voices (FluidR3_GM) の置き換え。アタックが約 0.4 秒と遅く、持続部は Ohh Voices より約 5dB 大きい。
+
+Irina Brochin はソロの歌声。最低音 A3 だけは末尾が約 -27dBFS で切れているので、6.4 秒を超えて伸ばすと最後にわずかにプツッと鳴ることがある。
 
 FluidR3_GM は MIT License (Frank Wen, Toby Smithe)。
 

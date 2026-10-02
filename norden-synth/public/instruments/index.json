@@ -183,6 +183,15 @@
       "program": 0,
       "url": "choral-aahhs.json",
       "bytes": 491268
+    },
+    {
+      "id": "irina-brochin",
+      "name": "Irina Brochin",
+      "bank": 0,
+      "program": 0,
+      "url": "irina-brochin.json",
+      "bytes": 697574,
+      "credit": "\"Papelmedia Final SF2 XXL - Irina Brochin\" by Simon Tristan Papel (Papelmedia), voice by Irina Brochin. https://www.polyphone.io/en/soundfonts/vocals/228-papelmedia-final-sf2-xxl-irina-brochin"
     }
   ]
 }
