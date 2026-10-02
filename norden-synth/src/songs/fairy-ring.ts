@@ -6,6 +6,7 @@ import type { Song } from './song.ts'
 // 伴奏は低音とバウロン (低いコンガでアクセント、高いコンガで軽い打音) が 3+3+2 で刻み、ピチカートが 8 分の裏で和音を刻む。
 // 主題の反復ではフルートがフィドルとユニゾンで重なり、最後の A' ではピッコロがティン・ホイッスルのように 1 オクターブ上を吹く。
 // B ではボイスが 3+3+2 のリズムで広い旋律を歌い、フィドルは下で 8 分の音型に回る。
+// A' では合唱が和音を伸ばし、ボイスはその最上声だけを重ねる (ソロの声で和音を歌うと騒がしいため)。
 export const fairyRing: Song = {
   id: 'fairy-ring',
   title: '妖精の環',
@@ -24,7 +25,8 @@ export const fairyRing: Song = {
     { id: 'bodhran', label: 'バウロン (コンガ)', instrument: 'orchestra-kit', volume: 0.55, pan: 0.05, velocity: 80, gate: 1 },
     { id: 'fl', label: 'フルート', instrument: 'flute', volume: 0.4, pan: 0.15, velocity: 84, gate: 0.85 },
     { id: 'whistle', label: 'ホイッスル (ピッコロ)', instrument: 'piccolo', volume: 0.3, pan: 0.2, velocity: 84, gate: 0.85 },
-    { id: 'voice', label: 'ボイス', instrument: 'choral-aahhs', volume: 0.33, pan: 0, velocity: 82, gate: 1 },
+    { id: 'voice', label: 'ボイス', instrument: 'irina-brochin', volume: 0.33, pan: 0, velocity: 82, gate: 1 },
+    { id: 'choir', label: '合唱', instrument: 'choral-aahhs', volume: 0.33, pan: 0, velocity: 82, gate: 1 },
   ],
   sections: [
     {
@@ -291,7 +293,7 @@ export const fairyRing: Song = {
           'F#6:.5 E6 C#6 E6 D#6:2',
         ],
         vn2: ['v80 C#5:2 A4:2', 'B4:2 G#4:2', 'A4:2 C#5:2', 'D#5:2 B4:2', 'C#5:2 A4:2', 'B4:4', 'C#5:2 D#5:2', 'C#5:2 A4:2'],
-        voice: [
+        choir: [
           'v70 C#4+F#4+A4:4',
           'B3+E4+G#4:4',
           'C#4+F#4+A4:4',
@@ -301,6 +303,7 @@ export const fairyRing: Song = {
           'A3+C#4+E4:2 B3+D#4+F#4:2',
           'C#4+F#4+A4:2 A3+D#4+F#4:2',
         ],
+        voice: ['v64 A4:4', 'G#4:4', 'A4:4', 'F#4:4', 'A4:4', 'G#4:4', 'E4:2 F#4:2', 'A4:2 F#4:2'],
         harp: [
           'F#3:.5 C#4 F#4 A4 C#5 A4 F#4 C#4',
           'E3:.5 B3 E4 G#4 B4 G#4 E4 B3',
