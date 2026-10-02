@@ -65,7 +65,8 @@ src/songs/                  LLM が書いた曲
   fairy-ring.ts               『妖精の環』
   imperial-triumph.ts         『大帝国の凱旋』
   wandering-bird.ts           『気ままな渡り鳥』
-  tundra-march.ts             『凍土の鉄騎』
+  northern-oath.ts            『北辺の誓い』 (北の軍事国家)
+  tundra-march.ts             『凍土の鉄騎』 (北の軍事国家との戦闘)
   golden-sails.ts             『黄金の帆』
   star-reader.ts              『砂海の星詠み』
   white-sanctum.ts            『白亜の聖都』
