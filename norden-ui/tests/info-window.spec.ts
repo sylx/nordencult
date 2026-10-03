@@ -1,0 +1,174 @@
+import { expect, test } from '@playwright/test'
+import type { Locator } from '@playwright/test'
+
+async function settledSize(window: Locator) {
+  await window.evaluate(async () => { await document.fonts.ready })
+  // Wait until the actual frame reaches its measured target, including the CSS transition.
+  await expect.poll(async () => window.evaluate(element => {
+    const bounds = element.getBoundingClientRect()
+    const style = (element as HTMLElement).style
+    return Math.abs(bounds.width - parseFloat(style.width)) + Math.abs(bounds.height - parseFloat(style.height))
+  })).toBeLessThan(1)
+  await expect(window).toHaveCSS('opacity', '1')
+  return (await window.boundingBox())!
+}
+
+test.beforeEach(async ({ page }) => { await page.goto('/') })
+
+test('title grows and shrinks the window width within its maximum', async ({ page }) => {
+  const window = page.locator('.norden-info-window')
+  await page.getByRole('tab', { name: '統計', exact: true }).click()
+  await page.getByLabel('ウィンドウのタイトル').fill('都市')
+  const short = await settledSize(window)
+  await page.getByLabel('ウィンドウのタイトル').fill('カルタ書院 フルーエン西岸の港湾都市')
+  await expect.poll(async () => (await window.boundingBox())!.width).toBeGreaterThan(short.width + 60)
+  const long = await settledSize(window)
+  expect(long.width).toBeLessThanOrEqual(720)
+  await page.getByLabel('ウィンドウのタイトル').fill('都市')
+  await expect.poll(async () => (await window.boundingBox())!.width).toBeLessThan(long.width - 60)
+})
+
+test('body text expands width and wraps without horizontal overflow at the limit', async ({ page }) => {
+  const window = page.locator('.norden-info-window')
+  await page.getByLabel('ウィンドウのタイトル').fill('都市')
+  await page.getByLabel('本文の長さ').selectOption('short')
+  const short = await settledSize(window)
+  await page.getByLabel('本文の長さ').selectOption('long')
+  await expect.poll(async () => (await window.boundingBox())!.width).toBeGreaterThan(short.width + 80)
+  const long = await settledSize(window)
+  expect(long.width).toBeLessThanOrEqual(720)
+  const viewport = page.locator('.norden-info-window-content')
+  expect(await viewport.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+})
+
+test('tabs adjust dimensions and play the panel entrance animation', async ({ page }) => {
+  const window = page.locator('.norden-info-window')
+  await page.getByLabel('ウィンドウのタイトル').fill('都市')
+  const city = await settledSize(window)
+  await page.getByRole('tab', { name: '統計', exact: true }).click()
+  await expect(page.getByRole('tabpanel', { name: '統計' })).toBeVisible()
+  const stats = await settledSize(window)
+  expect(stats.width).toBeLessThan(city.width)
+  expect(stats.height).toBeLessThan(city.height)
+  expect(await page.getByRole('tabpanel').evaluate(element => getComputedStyle(element).animationName)).toBe('norden-panel-enter')
+  expect(await window.evaluate(element => getComputedStyle(element).transitionProperty)).toContain('width')
+})
+
+test('dragging moves the window and releases capture', async ({ page }) => {
+  const window = page.locator('.norden-info-window')
+  const before = await settledSize(window)
+  const title = (await page.locator('.norden-info-window-title').boundingBox())!
+  await page.mouse.move(title.x + 70, title.y + 20)
+  await page.mouse.down()
+  await page.mouse.move(title.x + 150, title.y + 70, { steps: 8 })
+  await page.mouse.up()
+  const after = (await window.boundingBox())!
+  expect(after.x - before.x).toBeCloseTo(80, 0)
+  expect(after.y - before.y).toBeCloseTo(50, 0)
+  await expect(window).not.toHaveClass(/is-dragging/)
+})
+
+test('fixed dimensions stay constant when contents change and overflow can scroll', async ({ page }) => {
+  const window = page.locator('.norden-info-window')
+  await page.getByLabel('固定サイズ（420 × 520）').check()
+  const before = await settledSize(window)
+  expect(before.width).toBe(420)
+  expect(before.height).toBe(520)
+  await page.getByLabel('本文の長さ').selectOption('long')
+  await page.getByRole('tab', { name: '歴史', exact: true }).click()
+  const after = await settledSize(window)
+  expect(after.width).toBe(before.width)
+  expect(after.height).toBe(before.height)
+  expect(await page.locator('.norden-info-window-content').evaluate(element => getComputedStyle(element).overflowY)).toBe('auto')
+})
+
+test('manual resize supports keyboard and pointer input', async ({ page }) => {
+  const window = page.locator('.norden-info-window')
+  await page.getByLabel('手動リサイズを有効にする').check()
+  const before = await settledSize(window)
+  const handle = page.getByRole('button', { name: 'ウィンドウのサイズ変更' })
+  await handle.focus()
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('ArrowDown')
+  const keyboard = await settledSize(window)
+  expect(keyboard.width).toBeCloseTo(before.width + 10, 0)
+  expect(keyboard.height).toBeCloseTo(before.height + 10, 0)
+  const bounds = (await handle.boundingBox())!
+  await page.mouse.move(bounds.x + 10, bounds.y + 10)
+  await page.mouse.down()
+  await page.mouse.move(bounds.x + 40, bounds.y + 40, { steps: 5 })
+  await page.mouse.up()
+  const pointer = await settledSize(window)
+  expect(pointer.width).toBeCloseTo(keyboard.width + 30, 0)
+  expect(pointer.height).toBeCloseTo(keyboard.height + 30, 0)
+})
+
+test('handles empty tabs and restores an accessible selection', async ({ page }) => {
+  await page.getByRole('tab', { name: '歴史', exact: true }).click()
+  await page.getByLabel('タブ数').selectOption('0')
+  await expect(page.getByRole('tablist')).toHaveCount(0)
+  await expect(page.getByText('表示する情報がありません。')).toBeVisible()
+  await page.getByLabel('タブ数').selectOption('1')
+  await expect(page.getByRole('tab', { name: '都市情報' })).toHaveAttribute('aria-selected', 'true')
+})
+
+test('respects reduced motion and narrow viewport limits', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.setViewportSize({ width: 600, height: 900 })
+  await page.getByLabel('ウィンドウのタイトル').fill('とても長いタイトル'.repeat(12))
+  const window = page.locator('.norden-info-window')
+  const bounds = await settledSize(window)
+  expect(bounds.width).toBeLessThanOrEqual(568)
+  expect(await window.evaluate(element => getComputedStyle(element).transitionDuration)).toBe('0s')
+  expect(await page.getByRole('tabpanel').evaluate(element => getComputedStyle(element).animationName)).toBe('none')
+})
+
+for (const skin of ['thin', 'goddess']) {
+  test(`${skin} preserves alpha and uses nine-slice without a center fill`, async ({ page }) => {
+    await page.getByLabel('装飾スキン').selectOption(skin)
+    const window = page.locator('.norden-info-window')
+    await expect(window).toHaveAttribute('data-skin', skin)
+    await settledSize(window)
+    const frame = window.locator('.is-nine-slice')
+    expect(await frame.evaluate(element => getComputedStyle(element).borderImageSlice)).not.toContain('fill')
+    const alpha = await frame.evaluate(async element => {
+      const source = getComputedStyle(element).borderImageSource
+      const url = source.slice(5, -2)
+      const image = new Image()
+      image.src = url
+      await image.decode()
+      const canvas = document.createElement('canvas')
+      canvas.width = image.width
+      canvas.height = image.height
+      const context = canvas.getContext('2d')!
+      context.drawImage(image, 0, 0)
+      const pixels = context.getImageData(0, 0, image.width, image.height).data
+      let centerMax = 0
+      let transparent = 0
+      for (let y = 0; y < image.height; y++) {
+        for (let x = 0; x < image.width; x++) {
+          const opacity = pixels[(y * image.width + x) * 4 + 3]!
+          if (opacity === 0) transparent++
+          if (x > image.width * .4 && x < image.width * .6 && y > image.height * .4 && y < image.height * .6) centerMax = Math.max(centerMax, opacity)
+        }
+      }
+      return { centerMax, transparent: transparent / (image.width * image.height), corner: pixels[3] }
+    })
+    // Alpha=1 is sub-visual generation noise, never a painted opaque matte.
+    expect(alpha.centerMax).toBeLessThanOrEqual(1)
+    expect(alpha.transparent).toBeGreaterThan(.5)
+    expect(alpha.corner).toBe(0)
+    await page.getByLabel('羊皮紙を表示する').uncheck()
+    await expect(window.locator('.norden-info-window-paper')).toHaveCSS('background-image', 'none')
+    await page.getByLabel('透過確認の背景').selectOption('checker')
+    await expect(page.locator('.demo-stage')).toHaveClass(/backdrop-checker/)
+    const before = await settledSize(window)
+    await page.getByLabel('ウィンドウのタイトル').fill('とても長いタイトル'.repeat(6))
+    const after = await settledSize(window)
+    expect(after.width).toBeGreaterThanOrEqual(before.width)
+    // Corner destination size stays constant when the window changes size.
+    await expect(frame).toHaveCSS('border-top-width', skin === 'thin' ? '32px' : '112px')
+    await page.getByRole('tab', { name: '騎士', exact: true }).click()
+    await expect(page.getByRole('tabpanel')).toHaveAccessibleName('騎士')
+  })
+}

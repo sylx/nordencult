@@ -1,0 +1,122 @@
+.norden-info-window {
+  position: absolute;
+  box-sizing: border-box;
+  z-index: 100;
+  pointer-events: auto;
+  color: #342515;
+  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  font-size: 16px;
+  line-height: 1.6;
+  isolation: isolate;
+  filter: drop-shadow(0 12px 18px #0006);
+  transition: width 220ms ease, height 220ms ease;
+  animation: norden-window-enter 220ms ease both;
+}
+.norden-info-window *, .norden-info-window *::before, .norden-info-window *::after { box-sizing: border-box; }
+.norden-info-window-decoration {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.norden-info-window-paper {
+  position: absolute;
+  inset: var(--norden-paper-inset);
+  border-radius: var(--norden-paper-radius);
+  background: var(--norden-paper) repeat;
+}
+.norden-info-window-frame {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: var(--norden-edge-size) calc(var(--norden-corner-size) - var(--norden-edge-size)) minmax(0, 1fr) calc(var(--norden-corner-size) - var(--norden-edge-size)) var(--norden-edge-size);
+  grid-template-rows: var(--norden-corner-size) minmax(0, 1fr) var(--norden-corner-size);
+  pointer-events: none;
+}
+.norden-info-window-frame.is-nine-slice {
+  display: block;
+  border: var(--norden-frame-width) solid transparent;
+  border-image-source: var(--norden-frame);
+  border-image-slice: var(--norden-frame-slice);
+  border-image-repeat: var(--norden-frame-repeat);
+  /* No `fill`: the transparent center stays empty. Paper lives on a separate layer. */
+}
+.norden-info-window-corner {
+  grid-column: span 2;
+  width: var(--norden-corner-size);
+  height: var(--norden-corner-size);
+  background: var(--norden-corner) no-repeat left top / 100% 100%;
+}
+.norden-info-window-corner.is-top-right { transform: scaleX(-1); }
+.norden-info-window-corner.is-bottom-left { transform: scaleY(-1); }
+.norden-info-window-corner.is-bottom-right { transform: scale(-1); }
+.norden-info-window-top, .norden-info-window-bottom {
+  height: var(--norden-edge-size);
+  background: var(--norden-horizontal-edge) repeat-x center top;
+}
+.norden-info-window-bottom { transform: scaleY(-1); align-self: end; }
+.norden-info-window-left, .norden-info-window-right {
+  background: var(--norden-vertical-edge) repeat-y center;
+}
+.norden-info-window-right { transform: scaleX(-1); }
+.norden-info-window-center { grid-column: span 3; }
+.norden-info-window-title {
+  position: absolute;
+  top: var(--norden-title-offset);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  height: var(--norden-title-height);
+  user-select: none;
+}
+.norden-info-window-title.is-draggable { cursor: grab; touch-action: none; }
+.norden-info-window.is-dragging .norden-info-window-title { cursor: grabbing; }
+.norden-info-window.is-resizing { transition: none; }
+.norden-info-window-title-corner {
+  flex: 0 0 var(--norden-title-cap-width);
+  background: var(--norden-title-corner) no-repeat left top / 100% 100%;
+}
+.norden-info-window-title-corner:last-child { transform: scaleX(-1); }
+.norden-info-window-title-text, .norden-info-window-title-measure {
+  font-size: 24px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.norden-info-window-title-text {
+  min-width: 0;
+  display: block;
+  line-height: var(--norden-title-height);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #eee1ca;
+  background: var(--norden-title-bar) repeat-x center;
+}
+.norden-info-window-title-measure {
+  position: absolute;
+  width: max-content;
+  visibility: hidden;
+  pointer-events: none;
+}
+.norden-info-window-content { position: absolute; inset: var(--norden-padding-top) var(--norden-padding-right) var(--norden-padding-bottom) var(--norden-padding-left); overflow: auto; scrollbar-width: thin; scrollbar-color: #94703b #e6d5b2; }
+.norden-info-window-measure { width: max-content; max-width: var(--norden-content-max-width); display: flow-root; overflow-wrap: anywhere; }
+.norden-info-window-measure.is-fixed-width { width: 100%; max-width: 100%; }
+.norden-info-window-resize {
+  position: absolute;
+  right: 13px;
+  bottom: 13px;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-right: 3px double #80602d;
+  border-bottom: 3px double #80602d;
+  background: transparent;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+.norden-info-window button:focus-visible, .norden-info-window [tabindex]:focus-visible { outline: 2px solid #765b9a; outline-offset: 3px; }
+@keyframes norden-window-enter { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .norden-info-window { transition: none; animation: none; }
+}
