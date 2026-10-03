@@ -4,3 +4,6 @@
 [submodule "norden-strategy"]
 	path = norden-strategy
 	url = git@github.com:sylx/norden-strategy.git
+[submodule "norden-battle"]
+	path = norden-battle
+	url = git@github.com:sylx/norden-battle.git
