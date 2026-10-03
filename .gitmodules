@@ -7,3 +7,6 @@
 [submodule "norden-battle"]
 	path = norden-battle
 	url = git@github.com:sylx/norden-battle.git
+[submodule "norden-ui"]
+	path = norden-ui
+	url = git@github.com:sylx/norden-ui.git
