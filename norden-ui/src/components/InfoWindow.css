@@ -38,22 +38,32 @@
 .norden-info-window-title {
   position: absolute;
   top: var(--norden-title-offset);
-  left: 50%;
+  left: calc(50% + var(--norden-title-offset-x));
   transform: translateX(-50%);
-  display: flex;
   width: max-content;
   max-width: calc(100% - 24px);
   height: var(--norden-title-height);
+  padding: 0 calc(var(--norden-title-cap-width) + 16px);
+  isolation: isolate;
   user-select: none;
+}
+.norden-info-window-title::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border: 0 solid transparent;
+  border-left-width: var(--norden-title-cap-width);
+  border-right-width: var(--norden-title-cap-width);
+  border-image-source: var(--norden-title-bar);
+  border-image-slice: var(--norden-title-slice);
+  border-image-repeat: stretch;
+  /* Fill paints the PNG's center. No background layer: cutouts retain their alpha. */
 }
 .norden-info-window-title.is-draggable { cursor: grab; touch-action: none; }
 .norden-info-window.is-dragging .norden-info-window-title { cursor: grabbing; }
 .norden-info-window.is-resizing { transition: none; }
-.norden-info-window-title-corner {
-  flex: 0 0 var(--norden-title-cap-width);
-  background: var(--norden-title-corner) no-repeat left top / 100% 100%;
-}
-.norden-info-window-title-corner:last-child { transform: scaleX(-1); }
 .norden-info-window-title-text, .norden-info-window-title-measure {
   font-size: 24px;
   font-weight: 700;
@@ -66,7 +76,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   color: #eee1ca;
-  background: var(--norden-title-bar) repeat-x center;
 }
 .norden-info-window-title-measure {
   position: absolute;

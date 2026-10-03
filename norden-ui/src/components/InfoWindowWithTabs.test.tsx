@@ -37,6 +37,17 @@ describe('InfoWindowWithTabs', () => {
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('歴史')
   })
 
+  it('supports hidden title bars while switching tabs and preserving window names', async () => {
+    const { rerender } = render(<InfoWindowWithTabs tabs={tabs} showTitleBar={false} />)
+    const window = screen.getByRole('region', { name: '都市情報' })
+    expect(window.querySelector('.norden-info-window-title')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('tab', { name: '騎士' }))
+    expect(screen.getByRole('region', { name: '騎士' })).toBe(window)
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('騎士の内容')
+    rerender(<InfoWindowWithTabs tabs={tabs} title="フルーエン" showTitleBar={false} />)
+    expect(screen.getByRole('region', { name: 'フルーエン' })).toBe(window)
+  })
+
   it.each([[-3, '都市情報'], [1, '騎士'], [100, '歴史'], [NaN, '都市情報']])('clamps default index %s', (index, name) => {
     render(<InfoWindowWithTabs tabs={tabs} defaultActiveTab={index} />)
     expect(screen.getByRole('tab', { name })).toHaveAttribute('aria-selected', 'true')

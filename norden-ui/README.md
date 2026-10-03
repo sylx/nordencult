@@ -57,6 +57,8 @@ React / React DOMはpeer dependencyとしてゲームと共有し、ライブラ
 | InfoWindowのprops | 初期値 | 振る舞い |
 | --- | --- | --- |
 | `title`, `children` | 必須 | タイトルと任意のReactコンテンツ |
+| `showTitleBar` | `true` | `false` でタイトルバーを非表示。タイトルでのドラッグを無効にし、自動幅の計測から除外。ウィンドウのアクセシブルな名前は保持 |
+| `titleBarOffset` | スキン設定（`x: 0`, `y: -18`） | `{ x?, y? }` をpxで指定。`x` はウィンドウ中央、`y` は枠の上端を基準。省略した軸はスキン設定を継承 |
 | `width`, `height` | `'auto'` | 数値で固定、`'auto'` で内容に追従 |
 | `minWidth`, `maxWidth` | `320`, `720` | 自動幅の範囲。最大幅は画面幅−32pxにも制限 |
 | `minHeight` | `240` | 最低の高さ。枠の角領域2つ分の寸法も確保 |
@@ -99,8 +101,15 @@ import { InfoWindowWithTabs, windowSkins } from 'norden-ui'
 ```
 
 デモの「装飾スキン」で細いベゼル・中程度の装飾（medium）・女神像を切り替えられます。
-`windowSkins.classic` は `windowSkins.medium` の別名です。旧クラシック用の角・辺の画像と描画分岐は削除しました。
+旧クラシック用の角・辺の画像と描画分岐は削除しました。
 「透過確認の背景」で白・黒・市松模様を選択し、「羊皮紙を表示する」をオフにすると枠だけの透過を確認できます。
+タイトルバーは左右の装飾を含む一枚の透過PNGで描画します。デモの「タイトルバーを表示する」で表示を切り替えられます。
+
+```tsx
+<InfoWindowWithTabs tabs={tabs} showTitleBar={false} />
+```
+
+非表示時もスキンの内容余白とタブ配置は維持します。タイトルバーがない場合、タイトルでのドラッグはできません。
 独自画像の指定方法、画像編集時の注意点、生成PNGへのリンクは [装飾スキンの説明](docs/skins.md) を参照してください。
 
 ## 構成・移植元
@@ -116,7 +125,7 @@ tests/          実ブラウザでのテスト
 
 - 参考画像: `norden-strategy/docs/image/exec-0f8f41c4-e9b3-423a-af0d-ce7b8c4f8165.png`
 - 移植元: `nordencult-old/src/ui/components/InfoWindow{,WithTabs}.{tsx,css}`
-- 画像: 枠は `src/assets/ui/skins/` の生成PNG3点に統一。羊皮紙・タイトル・タブ画像5点とアイコン4点は `nordencult-old/src/assets/ui/` から移植。都市画像は `src/assets/map/place_city.webp` からデモ専用にコピー
+- 画像: 枠は `src/assets/ui/skins/` の生成PNG3点、タイトルは生成した `info_window_title_full.png` を使用。羊皮紙・タブ画像とアイコンは旧実装から移植。都市画像は `src/assets/map/place_city.webp` からデモ専用にコピー
 - ゲームの都市・人物データ、地図処理は含めず、Reactコンテンツとして呼び出し側から渡す
 - 開発構成: [Viteのライブラリモード](https://vite.dev/guide/build.html#library-mode)
 - タブの操作と関連付け: [WAI-ARIA Tabs Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/)

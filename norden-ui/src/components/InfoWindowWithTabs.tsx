@@ -28,7 +28,7 @@ function clamp(index: number, count: number) {
 }
 
 export default function InfoWindowWithTabs({
-  tabs, title, defaultActiveTab = 0, activeTab, onActiveTabChange,
+  tabs, title, showTitleBar = true, defaultActiveTab = 0, activeTab, onActiveTabChange,
   tabListLabel = '情報の種類', emptyContent = null, className = '', minHeight = 240, ...windowProps
 }: InfoWindowWithTabsProps) {
   const id = useId()
@@ -61,7 +61,7 @@ export default function InfoWindowWithTabs({
   }
 
   return (
-    <InfoWindow {...windowProps} title={title ?? selected?.name ?? ''}
+    <InfoWindow {...windowProps} title={title ?? selected?.name ?? ''} showTitleBar={showTitleBar}
       className={`norden-info-window-with-tabs ${className}`}
       minHeight={Math.max(minHeight, tabs.length ? tabTop + tabs.length * 80 + (tabs.length - 1) * 5 : minHeight)}
       chrome={tabs.length > 0 && (

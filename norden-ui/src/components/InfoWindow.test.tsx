@@ -12,6 +12,8 @@ describe('InfoWindow decoration skins', () => {
     expect(window.querySelectorAll('.norden-info-window-frame')).toHaveLength(1)
     expect(window.querySelector('.norden-info-window-frame')).toBeEmptyDOMElement()
     expect(window.style.getPropertyValue('--norden-frame')).toContain('medium-frame.png')
+    expect(window.style.getPropertyValue('--norden-title-bar')).toContain('info_window_title_full.png')
+    expect(window.querySelector('.norden-info-window-title-corner')).not.toBeInTheDocument()
   })
 
   it('replaces individual images while inheriting unspecified assets', () => {
@@ -36,9 +38,14 @@ describe('InfoWindow decoration skins', () => {
     expect(screen.getByRole('region').querySelector('.norden-info-window-frame')).toBe(frame)
   })
 
-  it('keeps classic as an alias of medium', () => {
-    expect(windowSkins.classic).toBe(windowSkins.medium)
-    render(<InfoWindow title="都市" skin={windowSkins.classic}>本文</InfoWindow>)
-    expect(screen.getByRole('region')).toHaveAttribute('data-skin', 'medium')
+  it('hides the title plaque and measurement while retaining an accessible name', () => {
+    const { rerender } = render(<InfoWindow title="都市" showTitleBar={false}>本文</InfoWindow>)
+    const window = screen.getByRole('region', { name: '都市' })
+    expect(window.querySelector('.norden-info-window-title')).not.toBeInTheDocument()
+    expect(window.querySelector('.norden-info-window-title-measure')).toBeEmptyDOMElement()
+    expect(window).not.toHaveAttribute('aria-labelledby')
+    rerender(<InfoWindow title="都市">本文</InfoWindow>)
+    expect(screen.getByRole('region', { name: '都市' })).toBe(window)
+    expect(window.querySelector('.norden-info-window-title-text')).toHaveTextContent('都市')
   })
 })

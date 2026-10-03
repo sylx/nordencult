@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { InfoWindowWithTabs, windowSkins } from '../src'
 import type { TabInfo } from '../src'
+import { resolveWindowSkin } from '../src/skins'
 import home from '../src/assets/ui/icons/icon_home.webp'
 import people from '../src/assets/ui/icons/icon_people.webp'
 import stats from '../src/assets/ui/icons/icon_stat.webp'
@@ -26,6 +27,9 @@ export default function App() {
   const [skin, setSkin] = useState<'thin' | 'medium' | 'goddess'>('medium')
   const [backdrop, setBackdrop] = useState('map')
   const [paperVisible, setPaperVisible] = useState(true)
+  const [showTitleBar, setShowTitleBar] = useState(true)
+  const [titleBarOffset, setTitleBarOffset] = useState<{ x?: number; y?: number }>({})
+  const skinLayout = resolveWindowSkin(windowSkins[skin]).layout
 
   const tabs: TabInfo[] = [
     {
@@ -65,19 +69,23 @@ export default function App() {
     <div className="demo-workspace">
       <section className={`demo-stage backdrop-${backdrop}`} aria-label="コンポーネントプレビュー">
         <div className="stage-caption"><span className="live-dot" /> LIVE PREVIEW</div>
-        <InfoWindowWithTabs key={instance} title={title} tabs={tabs.slice(0, count)}
+        <InfoWindowWithTabs key={instance} title={title} showTitleBar={showTitleBar}
+          titleBarOffset={titleBarOffset} tabs={tabs.slice(0, count)}
           x={72} y={56} activeTab={active} onActiveTabChange={setActive}
           width={fixed ? 420 : 'auto'} height={fixed ? 520 : 'auto'}
           resizable={resizable} onPositionChange={setPosition}
           skin={windowSkins[skin]} style={paperVisible ? undefined : { '--norden-paper': 'none' } as CSSProperties}
           emptyContent={<p>表示する情報がありません。</p>}
         />
-        <div className="stage-hint">タイトルをドラッグして移動 · タブは ↑ ↓ キーで切替</div>
+        <div className="stage-hint">{showTitleBar && 'タイトルをドラッグして移動 · '}タブは ↑ ↓ キーで切替</div>
       </section>
       <aside className="demo-controls" aria-label="表示設定">
         <span className="eyebrow">PLAYGROUND</span><h2>表示設定</h2><p>文字量やサイズを変えて、ゲーム内での振る舞いを確認できます。</p>
         <label htmlFor="window-skin">装飾スキン</label>
-        <select id="window-skin" value={skin} onChange={event => setSkin(event.target.value as typeof skin)}>
+        <select id="window-skin" value={skin} onChange={event => {
+          setSkin(event.target.value as typeof skin)
+          setTitleBarOffset({})
+        }}>
           <option value="thin">細いベゼル</option><option value="medium">中程度の装飾（medium）</option><option value="goddess">女神像の装飾</option>
         </select>
         <label htmlFor="preview-backdrop">透過確認の背景</label>
@@ -85,6 +93,14 @@ export default function App() {
           <option value="map">緑の背景</option><option value="light">白い背景</option><option value="dark">黒い背景</option><option value="checker">市松模様</option>
         </select>
         <label className="checkbox"><input type="checkbox" checked={paperVisible} onChange={event => setPaperVisible(event.target.checked)} />羊皮紙を表示する</label>
+        <label className="checkbox"><input type="checkbox" checked={showTitleBar} onChange={event => setShowTitleBar(event.target.checked)} />タイトルバーを表示する</label>
+        <label htmlFor="title-offset-x">タイトルバーの横オフセット（px）</label>
+        <input id="title-offset-x" type="number" step="1" value={titleBarOffset.x ?? skinLayout.titleOffsetX}
+          onChange={event => setTitleBarOffset(offset => ({ ...offset, x: event.target.value === '' ? undefined : event.target.valueAsNumber }))} />
+        <label htmlFor="title-offset-y">タイトルバーの縦オフセット（px）</label>
+        <input id="title-offset-y" type="number" step="1" value={titleBarOffset.y ?? skinLayout.titleOffset}
+          onChange={event => setTitleBarOffset(offset => ({ ...offset, y: event.target.value === '' ? undefined : event.target.valueAsNumber }))} />
+        <button className="reset-button" onClick={() => setTitleBarOffset({})}>スキンのタイトル位置に戻す</button>
         <label htmlFor="window-title">ウィンドウのタイトル</label>
         <textarea id="window-title" value={title} onChange={event => setTitle(event.target.value)} rows={3} />
         <label htmlFor="content-length">本文の長さ</label>

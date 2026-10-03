@@ -8,6 +8,10 @@ import './InfoWindow.css'
 
 export interface InfoWindowProps {
   title: string
+  /** Hide the title plaque and drag handle; retain the window's accessible name. */
+  showTitleBar?: boolean
+  /** Position in px: x from the window center, y from its top. Omitted axes inherit the skin. */
+  titleBarOffset?: { x?: number; y?: number }
   children: ReactNode
   className?: string
   style?: CSSProperties
@@ -41,7 +45,7 @@ interface PointerOperation {
 }
 
 export default function InfoWindow({
-  title, children, className = '', style, width = 'auto', height = 'auto',
+  title, showTitleBar = true, titleBarOffset, children, className = '', style, width = 'auto', height = 'auto',
   minWidth = 320, maxWidth = 720, minHeight = 240, x = 0, y = 0,
   draggable = true, resizable, resizeable = false, onPositionChange, onSizeChange, chrome, skin,
 }: InfoWindowProps) {
@@ -57,7 +61,7 @@ export default function InfoWindow({
   const layout = resolvedSkin.layout
   const horizontalPadding = layout.paddingLeft + layout.paddingRight
   const verticalPadding = layout.paddingTop + layout.paddingBottom
-  const titlePadding = layout.titleCapWidth * 2 + 32
+  const titlePadding = showTitleBar ? layout.titleCapWidth * 2 + 32 : 0
   const minimumSize = 2 * resolvedSkin.frame.width
   const { size, widthLimit } = useWindowSize({
     contentRef, titleRef, width, height, minWidth, maxWidth, minHeight, horizontalPadding,
@@ -113,6 +117,8 @@ export default function InfoWindow({
 
   const sizingStyle = {
     ...windowSkinStyle(resolvedSkin),
+    '--norden-title-offset-x': `${titleBarOffset?.x ?? layout.titleOffsetX}px`,
+    '--norden-title-offset': `${titleBarOffset?.y ?? layout.titleOffset}px`,
     '--norden-content-max-width': `${Math.max(1, widthLimit - horizontalPadding)}px`,
     ...style,
     ...actualSize,
@@ -120,7 +126,8 @@ export default function InfoWindow({
   } as CSSProperties
 
   return (
-    <section ref={frameRef} aria-labelledby={titleId} data-skin={resolvedSkin.name}
+    <section ref={frameRef} aria-labelledby={showTitleBar ? titleId : undefined}
+      aria-label={showTitleBar ? undefined : title} data-skin={resolvedSkin.name}
       className={`norden-info-window ${interaction === 'drag' ? 'is-dragging' : interaction === 'resize' ? 'is-resizing' : ''} ${className}`}
       style={sizingStyle}
     >
@@ -128,15 +135,13 @@ export default function InfoWindow({
         <div className="norden-info-window-paper" />
         <div className="norden-info-window-frame" />
       </div>
-      <div className={`norden-info-window-title ${draggable ? 'is-draggable' : ''}`}
+      {showTitleBar && <div className={`norden-info-window-title ${draggable ? 'is-draggable' : ''}`}
         onPointerDown={event => start(event, 'drag')} onPointerMove={move}
         onPointerUp={end} onPointerCancel={end} onLostPointerCapture={end}
       >
-        <span className="norden-info-window-title-corner" aria-hidden="true" />
         <span id={titleId} className="norden-info-window-title-text" title={title}>{title}</span>
-        <span className="norden-info-window-title-corner" aria-hidden="true" />
-      </div>
-      <span ref={titleRef} className="norden-info-window-title-measure" aria-hidden="true">{title}</span>
+      </div>}
+      <span ref={titleRef} className="norden-info-window-title-measure" aria-hidden="true">{showTitleBar ? title : ''}</span>
       <div className="norden-info-window-content">
         <div ref={contentRef} className={`norden-info-window-measure ${width !== 'auto' || manualSize ? 'is-fixed-width' : ''}`}>
           {children}

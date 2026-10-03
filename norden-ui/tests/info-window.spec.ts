@@ -15,6 +15,46 @@ async function settledSize(window: Locator) {
 
 test.beforeEach(async ({ page }) => { await page.goto('/') })
 
+test('demo inherits skin title positions until an axis is edited and can restore them', async ({ page }) => {
+  const skinOffsets = await page.evaluate(async () => {
+    // Read the runtime presets so this regression stays valid when artwork positions change.
+    const moduleUrl = '/src/skins.ts'
+    const { resolveWindowSkin, windowSkins } = await import(moduleUrl) as typeof import('../src/skins')
+    return Object.fromEntries((['medium', 'goddess'] as const).map(name => {
+      const { titleOffsetX: x, titleOffset: y } = resolveWindowSkin(windowSkins[name]).layout
+      return [name, { x, y }]
+    })) as Record<string, { x: number; y: number }>
+  })
+  const window = page.locator('.norden-info-window')
+  const title = window.locator('.norden-info-window-title')
+  const xInput = page.getByLabel('タイトルバーの横オフセット（px）')
+  const yInput = page.getByLabel('タイトルバーの縦オフセット（px）')
+  const expectPosition = async ({ x, y }: { x: number; y: number }) => {
+    await expect(xInput).toHaveValue(String(x))
+    await expect(yInput).toHaveValue(String(y))
+    await expect(title).toHaveCSS('top', `${y}px`)
+    await settledSize(window)
+    expect(await title.evaluate(element => {
+      const title = element.getBoundingClientRect()
+      const frame = element.parentElement!.getBoundingClientRect()
+      return title.x + title.width / 2 - frame.x - frame.width / 2
+    })).toBeCloseTo(x, 0)
+  }
+  await expectPosition(skinOffsets.medium!)
+  await xInput.fill('24')
+  await expectPosition({ ...skinOffsets.medium!, x: 24 })
+  await yInput.fill('0')
+  await expectPosition({ x: 24, y: 0 })
+  await page.getByRole('button', { name: 'スキンのタイトル位置に戻す' }).click()
+  await expectPosition(skinOffsets.medium!)
+  await yInput.fill('-40')
+  await page.getByLabel('装飾スキン').selectOption('goddess')
+  await expectPosition(skinOffsets.goddess!)
+  await yInput.fill('-40')
+  await yInput.fill('')
+  await expectPosition(skinOffsets.goddess!)
+})
+
 test('title grows and shrinks the window width within its maximum', async ({ page }) => {
   const window = page.locator('.norden-info-window')
   await page.getByRole('tab', { name: '統計', exact: true }).click()
@@ -26,6 +66,72 @@ test('title grows and shrinks the window width within its maximum', async ({ pag
   expect(long.width).toBeLessThanOrEqual(720)
   await page.getByLabel('ウィンドウのタイトル').fill('都市')
   await expect.poll(async () => (await window.boundingBox())!.width).toBeLessThan(long.width - 60)
+})
+
+test('hiding the title bar excludes its text from auto sizing and preserves tabs', async ({ page }) => {
+  const window = page.locator('.norden-info-window')
+  await page.getByRole('tab', { name: '統計', exact: true }).click()
+  await page.getByLabel('ウィンドウのタイトル').fill('とても長いタイトル'.repeat(8))
+  const visible = await settledSize(window)
+  await page.getByLabel('タイトルバーを表示する').uncheck()
+  await expect(window.locator('.norden-info-window-title')).toHaveCount(0)
+  await expect(window).toHaveAccessibleName('とても長いタイトル'.repeat(8))
+  const hidden = await settledSize(window)
+  expect(hidden.width).toBeLessThan(visible.width)
+  await page.getByLabel('ウィンドウのタイトル').fill('都市')
+  expect((await settledSize(window)).width).toBe(hidden.width)
+  await page.getByRole('tab', { name: '騎士', exact: true }).click()
+  await expect(page.getByRole('tabpanel', { name: '騎士' })).toBeVisible()
+  await page.getByLabel('タイトルバーを表示する').check()
+  await expect(window.locator('.norden-info-window-title-text')).toHaveText('都市')
+})
+
+test('a single title image preserves transparent cutouts and fixed cap widths', async ({ page }, testInfo) => {
+  const title = page.locator('.norden-info-window-title')
+  await settledSize(page.locator('.norden-info-window'))
+  const rendering = await title.evaluate(async element => {
+    const decoration = getComputedStyle(element, '::before')
+    const image = new Image()
+    image.src = decoration.borderImageSource.slice(5, -2)
+    await image.decode()
+    const canvas = document.createElement('canvas')
+    canvas.width = image.width
+    canvas.height = image.height
+    const context = canvas.getContext('2d')!
+    context.drawImage(image, 0, 0)
+    const pixels = context.getImageData(0, 0, image.width, image.height).data
+    const alphaAt = (x: number, y: number) => pixels[(y * image.width + x) * 4 + 3]!
+    return {
+      cornerAlpha: alphaAt(0, 0),
+      centerAlpha: alphaAt(Math.floor(image.width / 2), Math.floor(image.height / 2)),
+      translucentEdge: pixels.some((value, index) => index % 4 === 3 && value > 1 && value < 255),
+      slice: decoration.borderImageSlice,
+      capWidth: decoration.borderLeftWidth,
+      background: getComputedStyle(element).backgroundColor,
+      textBackground: getComputedStyle(element.querySelector('.norden-info-window-title-text')!).backgroundImage,
+    }
+  })
+  expect(rendering.cornerAlpha).toBe(0)
+  // The generated plaque has slight sub-visual alpha variation in its dark texture.
+  expect(rendering.centerAlpha).toBeGreaterThanOrEqual(250)
+  expect(rendering.translucentEdge).toBe(true)
+  expect(rendering.slice).toBe('0 8% fill')
+  expect(rendering.capWidth).toBe('34px')
+  expect(rendering.background).toBe('rgba(0, 0, 0, 0)')
+  expect(rendering.textBackground).toBe('none')
+  await page.getByLabel('ウィンドウのタイトル').fill('とても長いタイトル'.repeat(8))
+  await settledSize(page.locator('.norden-info-window'))
+  expect(await title.evaluate(element => getComputedStyle(element, '::before').borderLeftWidth)).toBe(rendering.capWidth)
+  expect(await title.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1)
+  await page.getByLabel('固定サイズ（420 × 520）').check()
+  await settledSize(page.locator('.norden-info-window'))
+  for (const backdrop of ['light', 'dark', 'checker']) {
+    await page.getByLabel('透過確認の背景').selectOption(backdrop)
+    await expect(title).toBeVisible()
+    const path = testInfo.outputPath(`title-${backdrop}.png`)
+    await title.screenshot({ path })
+    await testInfo.attach(`title-${backdrop}`, { path, contentType: 'image/png' })
+  }
 })
 
 test('body text expands width and wraps without horizontal overflow at the limit', async ({ page }) => {
