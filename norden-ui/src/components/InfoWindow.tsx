@@ -58,7 +58,7 @@ export default function InfoWindow({
   const horizontalPadding = layout.paddingLeft + layout.paddingRight
   const verticalPadding = layout.paddingTop + layout.paddingBottom
   const titlePadding = layout.titleCapWidth * 2 + 32
-  const minimumSize = 2 * (resolvedSkin.frame?.width ?? layout.cornerSize)
+  const minimumSize = 2 * resolvedSkin.frame.width
   const { size, widthLimit } = useWindowSize({
     contentRef, titleRef, width, height, minWidth, maxWidth, minHeight, horizontalPadding,
     verticalPadding, titlePadding, minimumSize,
@@ -126,13 +126,7 @@ export default function InfoWindow({
     >
       <div className="norden-info-window-decoration" aria-hidden="true">
         <div className="norden-info-window-paper" />
-        {resolvedSkin.frame ? <div className="norden-info-window-frame is-nine-slice" /> : <div className="norden-info-window-frame">
-        <div className="norden-info-window-corner is-top-left" /><div className="norden-info-window-top" />
-        <div className="norden-info-window-corner is-top-right" /><div className="norden-info-window-left" />
-        <div className="norden-info-window-center" /><div className="norden-info-window-right" />
-        <div className="norden-info-window-corner is-bottom-left" /><div className="norden-info-window-bottom" />
-        <div className="norden-info-window-corner is-bottom-right" />
-        </div>}
+        <div className="norden-info-window-frame" />
       </div>
       <div className={`norden-info-window-title ${draggable ? 'is-draggable' : ''}`}
         onPointerDown={event => start(event, 'drag')} onPointerMove={move}

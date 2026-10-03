@@ -123,13 +123,13 @@ test('respects reduced motion and narrow viewport limits', async ({ page }) => {
   expect(await page.getByRole('tabpanel').evaluate(element => getComputedStyle(element).animationName)).toBe('none')
 })
 
-for (const skin of ['thin', 'goddess']) {
+for (const [skin, cornerWidth] of [['thin', '32px'], ['medium', '64px'], ['goddess', '112px']] as const) {
   test(`${skin} preserves alpha and uses nine-slice without a center fill`, async ({ page }) => {
     await page.getByLabel('装飾スキン').selectOption(skin)
     const window = page.locator('.norden-info-window')
     await expect(window).toHaveAttribute('data-skin', skin)
     await settledSize(window)
-    const frame = window.locator('.is-nine-slice')
+    const frame = window.locator('.norden-info-window-frame')
     expect(await frame.evaluate(element => getComputedStyle(element).borderImageSlice)).not.toContain('fill')
     const alpha = await frame.evaluate(async element => {
       const source = getComputedStyle(element).borderImageSource
@@ -167,7 +167,7 @@ for (const skin of ['thin', 'goddess']) {
     const after = await settledSize(window)
     expect(after.width).toBeGreaterThanOrEqual(before.width)
     // Corner destination size stays constant when the window changes size.
-    await expect(frame).toHaveCSS('border-top-width', skin === 'thin' ? '32px' : '112px')
+    await expect(frame).toHaveCSS('border-top-width', cornerWidth)
     await page.getByRole('tab', { name: '騎士', exact: true }).click()
     await expect(page.getByRole('tabpanel')).toHaveAccessibleName('騎士')
   })

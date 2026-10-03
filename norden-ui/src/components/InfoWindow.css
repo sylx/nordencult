@@ -28,38 +28,13 @@
 .norden-info-window-frame {
   position: absolute;
   inset: 0;
-  display: grid;
-  grid-template-columns: var(--norden-edge-size) calc(var(--norden-corner-size) - var(--norden-edge-size)) minmax(0, 1fr) calc(var(--norden-corner-size) - var(--norden-edge-size)) var(--norden-edge-size);
-  grid-template-rows: var(--norden-corner-size) minmax(0, 1fr) var(--norden-corner-size);
   pointer-events: none;
-}
-.norden-info-window-frame.is-nine-slice {
-  display: block;
   border: var(--norden-frame-width) solid transparent;
   border-image-source: var(--norden-frame);
   border-image-slice: var(--norden-frame-slice);
   border-image-repeat: var(--norden-frame-repeat);
   /* No `fill`: the transparent center stays empty. Paper lives on a separate layer. */
 }
-.norden-info-window-corner {
-  grid-column: span 2;
-  width: var(--norden-corner-size);
-  height: var(--norden-corner-size);
-  background: var(--norden-corner) no-repeat left top / 100% 100%;
-}
-.norden-info-window-corner.is-top-right { transform: scaleX(-1); }
-.norden-info-window-corner.is-bottom-left { transform: scaleY(-1); }
-.norden-info-window-corner.is-bottom-right { transform: scale(-1); }
-.norden-info-window-top, .norden-info-window-bottom {
-  height: var(--norden-edge-size);
-  background: var(--norden-horizontal-edge) repeat-x center top;
-}
-.norden-info-window-bottom { transform: scaleY(-1); align-self: end; }
-.norden-info-window-left, .norden-info-window-right {
-  background: var(--norden-vertical-edge) repeat-y center;
-}
-.norden-info-window-right { transform: scaleX(-1); }
-.norden-info-window-center { grid-column: span 3; }
 .norden-info-window-title {
   position: absolute;
   top: var(--norden-title-offset);

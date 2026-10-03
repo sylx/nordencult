@@ -59,13 +59,13 @@ React / React DOMはpeer dependencyとしてゲームと共有し、ライブラ
 | `title`, `children` | 必須 | タイトルと任意のReactコンテンツ |
 | `width`, `height` | `'auto'` | 数値で固定、`'auto'` で内容に追従 |
 | `minWidth`, `maxWidth` | `320`, `720` | 自動幅の範囲。最大幅は画面幅−32pxにも制限 |
-| `minHeight` | `240` | 最低の高さ。装飾を維持する最小寸法は188px |
+| `minHeight` | `240` | 最低の高さ。枠の角領域2つ分の寸法も確保 |
 | `x`, `y` | `0`, `0` | 初期座標。props変更時に移動先を更新 |
 | `draggable` | `true` | タイトルでのポインタードラッグ |
 | `resizable` | `false` | 右下のハンドルでサイズ変更。矢印キーにも対応 |
 | `onPositionChange`, `onSizeChange` | — | ユーザー操作時の座標・サイズ通知 |
 | `className`, `style` | — | 外観の調整（寸法・座標は専用propsを使用） |
-| `skin` | `windowSkins.classic` | 画像とレイアウトを差し替え。`thin` / `goddess` も同梱 |
+| `skin` | `windowSkins.medium` | 全体PNGの9分割で描画。`thin` / `goddess` も同梱 |
 
 旧APIの `resizeable` は `resizable` の別名として使用可能です。
 
@@ -94,10 +94,12 @@ React / React DOMはpeer dependencyとしてゲームと共有し、ライブラ
 import { InfoWindowWithTabs, windowSkins } from 'norden-ui'
 
 <InfoWindowWithTabs tabs={tabs} skin={windowSkins.thin} />
+<InfoWindowWithTabs tabs={tabs} skin={windowSkins.medium} />
 <InfoWindowWithTabs tabs={tabs} skin={windowSkins.goddess} />
 ```
 
-デモの「装飾スキン」で既存・細いベゼル・女神像を切り替えられます。
+デモの「装飾スキン」で細いベゼル・中程度の装飾（medium）・女神像を切り替えられます。
+`windowSkins.classic` は `windowSkins.medium` の別名です。旧クラシック用の角・辺の画像と描画分岐は削除しました。
 「透過確認の背景」で白・黒・市松模様を選択し、「羊皮紙を表示する」をオフにすると枠だけの透過を確認できます。
 独自画像の指定方法、画像編集時の注意点、生成PNGへのリンクは [装飾スキンの説明](docs/skins.md) を参照してください。
 
@@ -114,7 +116,7 @@ tests/          実ブラウザでのテスト
 
 - 参考画像: `norden-strategy/docs/image/exec-0f8f41c4-e9b3-423a-af0d-ce7b8c4f8165.png`
 - 移植元: `nordencult-old/src/ui/components/InfoWindow{,WithTabs}.{tsx,css}`
-- 画像: `nordencult-old/src/assets/ui/` から装飾8点とアイコン4点をコピー。都市画像は `src/assets/map/place_city.webp` からデモ専用にコピー
+- 画像: 枠は `src/assets/ui/skins/` の生成PNG3点に統一。羊皮紙・タイトル・タブ画像5点とアイコン4点は `nordencult-old/src/assets/ui/` から移植。都市画像は `src/assets/map/place_city.webp` からデモ専用にコピー
 - ゲームの都市・人物データ、地図処理は含めず、Reactコンテンツとして呼び出し側から渡す
 - 開発構成: [Viteのライブラリモード](https://vite.dev/guide/build.html#library-mode)
 - タブの操作と関連付け: [WAI-ARIA Tabs Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/)

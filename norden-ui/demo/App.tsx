@@ -23,7 +23,7 @@ export default function App() {
   const [active, setActive] = useState(0)
   const [instance, setInstance] = useState(0)
   const [position, setPosition] = useState({ x: 72, y: 56 })
-  const [skin, setSkin] = useState<keyof typeof windowSkins>('classic')
+  const [skin, setSkin] = useState<'thin' | 'medium' | 'goddess'>('medium')
   const [backdrop, setBackdrop] = useState('map')
   const [paperVisible, setPaperVisible] = useState(true)
 
@@ -77,8 +77,8 @@ export default function App() {
       <aside className="demo-controls" aria-label="表示設定">
         <span className="eyebrow">PLAYGROUND</span><h2>表示設定</h2><p>文字量やサイズを変えて、ゲーム内での振る舞いを確認できます。</p>
         <label htmlFor="window-skin">装飾スキン</label>
-        <select id="window-skin" value={skin} onChange={event => setSkin(event.target.value as keyof typeof windowSkins)}>
-          <option value="classic">クラシック（既存）</option><option value="thin">細いベゼル</option><option value="goddess">女神像の装飾</option>
+        <select id="window-skin" value={skin} onChange={event => setSkin(event.target.value as typeof skin)}>
+          <option value="thin">細いベゼル</option><option value="medium">中程度の装飾（medium）</option><option value="goddess">女神像の装飾</option>
         </select>
         <label htmlFor="preview-backdrop">透過確認の背景</label>
         <select id="preview-backdrop" value={backdrop} onChange={event => setBackdrop(event.target.value)}>

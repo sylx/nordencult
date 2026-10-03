@@ -4,13 +4,17 @@
 
 | スキン | 枠の描画 | 特徴 |
 | --- | --- | --- |
-| `windowSkins.classic` | 従来の角・辺の画像 | 既存の見た目を維持 |
 | `windowSkins.thin` | 全体PNGの9分割 | 細い金属ベゼルと控えめな角飾り |
+| `windowSkins.medium` | 全体PNGの9分割 | 金と暗いブロンズの枠、四隅の唐草装飾。標準スキン |
 | `windowSkins.goddess` | 全体PNGの9分割 | 上部両角の女神像、金の唐草、青い宝石 |
+
+すべて同じ `border-image` による9分割描画です。旧クラシック用の角・辺の画像、9個の背景要素、専用CSSは削除しました。
+`windowSkins.classic` は互換用の `medium` の別名で、`data-skin` も `medium` になります。
 
 ## 生成した画像と透過
 
 - [細いベゼル PNG](../src/assets/ui/skins/thin-frame.png)
+- [中程度の装飾 PNG](../src/assets/ui/skins/medium-frame.png)
 - [女神像の枠 PNG](../src/assets/ui/skins/goddess-frame-v2.png)
 - [生成プロンプト・修正指示](image-generation.json)
 
@@ -51,11 +55,11 @@ const mySkin: InfoWindowSkin = {
 `frame.image` が全体画像、`frame.slice` が元画像を分ける境界、`frame.width` が画面上の角領域の寸法です。
 四隅は一定の大きさで描画し、上下・左右の辺だけを伸縮します。
 
-| 設定 | 細いベゼル | 女神像 |
-| --- | --- | --- |
-| `frame.slice` | `'12.5%'` | `'36%'` |
-| `frame.width` | `32` px | `112` px |
-| `frame.repeat` | `'stretch'` | `'stretch'` |
+| 設定 | 細いベゼル | medium | 女神像 |
+| --- | --- | --- | --- |
+| `frame.slice` | `'12.5%'` | `'25%'` | `'36%'` |
+| `frame.width` | `32` px | `64` px | `112` px |
+| `frame.repeat` | `'stretch'` | `'stretch'` | `'stretch'` |
 
 女神像の36%は、生成された実画像の像・台座が角領域に完全に収まるよう調整した値です。
 パーセントで指定しているので、同じ配置のまま画像解像度を変えても切り出し位置は保たれます。
@@ -80,24 +84,22 @@ const skin: InfoWindowSkin = {
 `paperInset` は羊皮紙の余白で、全辺同じ数値または上下左右を指定できます。
 `paperRadius` は羊皮紙の角の丸みです。装飾の外側や切り抜き部分へのはみ出しを見ながら調整してください。
 
-## 旧形式の画像を1点ずつ差し替える
+## 羊皮紙・タイトル・タブ画像を差し替える
 
-`images` の未指定項目はクラシックから継承します。`frame` を指定しなければ従来の角・辺の画像で描画します。
+枠は `frame.image` 1枚で指定します。`frame` の省略時はmediumの枠を使います。
+`images` の未指定項目は共通画像から継承します。
 
 ```tsx
 const skin: InfoWindowSkin = {
   name: 'custom-parts',
   images: {
-    corner: '/ui/corner.png',
-    horizontalEdge: '/ui/horizontal.png',
-    verticalEdge: '/ui/vertical.png',
     titleCorner: '/ui/title-cap.png',
     titleBar: '/ui/title-bar.png',
     tabActive: '/ui/tab-active.png',
     tabInactive: '/ui/tab-inactive.png',
     paper: '/ui/paper.webp',
   },
-  layout: { cornerSize: 64, edgeSize: 8, titleCapWidth: 28, titleHeight: 48 },
+  layout: { titleCapWidth: 28, titleHeight: 48 },
 }
 ```
 
