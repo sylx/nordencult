@@ -1,0 +1,89 @@
+.city-info {
+  display: grid;
+  gap: 12px;
+  width: 340px;
+  color: #2a1a0a;
+}
+
+.city-info__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgb(0 0 0 / 0.15);
+}
+
+.city-info__emblem { width: 44px; height: 44px; object-fit: contain; }
+.city-info__name { margin: 0; font-size: 22px; font-weight: 700; line-height: 1.3; }
+.city-info__sub { font-size: 13px; color: #8a7050; }
+
+.city-info__body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.city-info__facts { display: grid; gap: 6px; margin: 0; font-size: 15px; }
+.city-info__facts div { display: flex; gap: 12px; }
+.city-info__facts dt, .city-info__stat dt { width: 36px; flex-shrink: 0; font-size: 12px; font-weight: 600; color: #8a7050; }
+.city-info__facts dt { padding-top: 2px; }
+.city-info__facts dd { margin: 0; }
+.city-info__art { width: 150px; height: auto; }
+
+.city-info__stats {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 10px;
+  background: rgb(255 255 255 / 0.5);
+}
+
+.city-info__stat { display: flex; align-items: center; gap: 8px; }
+.city-info__stat dd { display: flex; flex: 1; align-items: center; gap: 8px; margin: 0; }
+
+.city-info__bar {
+  flex: 1;
+  height: 8px;
+  overflow: hidden;
+  background: rgb(0 0 0 / 0.08);
+  border-radius: 4px;
+}
+
+.city-info__bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #b08840, #d4a84a);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.city-info__value { min-width: 30px; font-size: 12px; color: #666; text-align: right; }
+
+.city-info__tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.city-info__tags li { padding: 2px 8px; font-size: 11px; color: #666; background: rgb(0 0 0 / 0.06); border-radius: 10px; }
+
+.city-roads { display: grid; gap: 4px; width: 300px; margin: 0; padding: 0; list-style: none; }
+
+.city-roads button {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  color: #2a1a0a;
+  background: rgb(255 255 255 / 0.35);
+  border: 1px solid rgb(0 0 0 / 0.1);
+  border-radius: 4px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.city-roads button:hover { background: rgb(255 255 255 / 0.65); }
+.city-roads button:focus-visible { outline: 2px solid #b08840; outline-offset: 2px; }
+.city-roads img, .city-roads__blank { width: 28px; height: 28px; object-fit: contain; }
+.city-roads__name { font-size: 15px; font-weight: 600; }
+.city-roads__faction { font-size: 12px; color: #8a7050; }
+.city-roads__empty { margin: 0; color: #8a7050; }

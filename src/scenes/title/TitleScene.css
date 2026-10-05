@@ -1,0 +1,31 @@
+.title-scene {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 48px;
+  height: 100%;
+  background: radial-gradient(ellipse at 50% 40%, #2a3f62, #0b1830 70%);
+  color: #e8dcc0;
+}
+
+.title-scene__name {
+  margin: 0;
+  font: 600 clamp(40px, 9vw, 88px) / 1 'Cormorant Garamond', Georgia, serif;
+  letter-spacing: 0.12em;
+  text-shadow: 0 4px 24px #0008;
+}
+
+.title-scene__menu button {
+  min-width: 200px;
+  padding: 12px 24px;
+  color: inherit;
+  background: rgb(20 30 25 / 0.7);
+  border: 1px solid #a8956a;
+  border-radius: 4px;
+  font: 18px/1 inherit;
+  letter-spacing: 0.3em;
+  cursor: pointer;
+}
+
+.title-scene__menu button:hover { background: rgb(60 70 50 / 0.8); }
+.title-scene__menu button:focus-visible { outline: 2px solid #e4cf89; outline-offset: 3px; }

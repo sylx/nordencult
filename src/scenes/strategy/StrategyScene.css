@@ -1,0 +1,16 @@
+.strategy-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* norden-ui windows are placed in px from this layer; the map stays clickable around them */
+.strategy-scene__ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.strategy-scene__ui > * {
+  pointer-events: auto;
+}
