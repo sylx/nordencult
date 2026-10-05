@@ -17,6 +17,8 @@ npm run dev
 
 `npm run build` で型チェックとビルド、`npm run lint` でルートの `src/` を検査します。
 
+main への push で GitHub Pages に公開します（`.github/workflows/deploy.yml`）。CIでは `norden-strategy` と `norden-ui` のサブモジュールだけを取得してビルドします。
+
 ## サブモジュールの参照
 
 `norden-strategy` と `norden-ui` はビルドせず、ソースを直接読み込みます（`vite.config.ts` のエイリアスと `tsconfig.app.json` の `paths`）。サブモジュールの変更はそのまま開発サーバーに反映されます。
