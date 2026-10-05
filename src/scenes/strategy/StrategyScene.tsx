@@ -27,17 +27,12 @@ export default function StrategyScene() {
     map.setRoadHighlights(roads)
   }, [map, selected])
 
-  const focusCity = (id: string) => {
-    setSelected(id)
-    map?.focusPlace(id)
-  }
-
   return (
     <div className="strategy-scene">
       <MapView selectedPlace={selected} onSelectPlace={setSelected} onMapChange={setMap} showControls={false} />
       <div className="strategy-scene__ui">
         {city && <CityWindow city={city} neighbours={map?.network.neighbours(city.id) ?? []}
-          onSelectCity={focusCity} x={48} y={56} />}
+          onSelectCity={setSelected} x={48} y={56} />}
       </div>
     </div>
   )
