@@ -54,3 +54,11 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | `src/scenes/SceneManager.tsx` | 現在のシーンの表示・切り替え |
 | `src/scenes/sceneContext.ts` | `useScene()` |
 | `src/scenes/strategy/CityWindow.tsx` | norden-ui の情報ウィンドウによる都市情報・街道タブ |
+
+## マイルストーン
+
+作業の目標とTODOは `docs/milestones/` にまとめます。
+
+| ファイル | 内容 |
+| --- | --- |
+| [m001.md](docs/milestones/m001.md) | プレイヤーの侵攻（ターン・侵攻予約・行軍・戦闘シーン・結果の反映） |
