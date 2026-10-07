@@ -1,0 +1,11 @@
+.character-image {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.character-image__inner {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+}

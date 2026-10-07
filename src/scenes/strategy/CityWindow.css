@@ -87,3 +87,5 @@
 .city-roads__name { font-size: 15px; font-weight: 600; }
 .city-roads__faction { font-size: 12px; color: #8a7050; }
 .city-roads__empty { margin: 0; color: #8a7050; }
+
+.city-knights { width: 320px; max-height: 420px; overflow-y: auto; }

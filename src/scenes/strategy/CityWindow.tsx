@@ -1,7 +1,10 @@
 import { InfoWindowWithTabs, type InfoWindowWithTabsProps, type TabInfo } from 'norden-ui'
 import { CITY_MAP, FACTION_MAP, PLACE_ART, PLACES, emblemUrl, type City, type PlaceType } from 'norden-strategy'
 import iconHome from '../../assets/icons/icon_home.webp'
+import iconPeople from '../../assets/icons/icon_people.webp'
 import iconRoads from '../../assets/icons/icon_stat.webp'
+import { KnightList } from '../../components/KnightList'
+import { charactersIn, orderOf, ownerOf, type GameState } from '../../game'
 import './CityWindow.css'
 
 const CITY_TYPE_LABELS: Readonly<Record<string, string>> = {
@@ -27,27 +30,45 @@ const PLACE_TYPES = new Map(PLACES.map((p) => [p.id, p.type]))
 
 interface Props extends Omit<InfoWindowWithTabsProps, 'tabs' | 'title'> {
   city: City
+  game: GameState
   /** Cities linked by a road */
   neighbours: readonly string[]
   onSelectCity: (id: string) => void
 }
 
 /** Information window for the city selected on the map */
-export function CityWindow({ city, neighbours, onSelectCity, ...windowProps }: Props) {
-  const faction = city.belongTo ? FACTION_MAP[city.belongTo] : undefined
+export function CityWindow({ city, game, neighbours, onSelectCity, ...windowProps }: Props) {
+  const owner = ownerOf(game, city.id)
+  const faction = owner ? FACTION_MAP[owner] : undefined
   const tabs: TabInfo[] = [
-    { id: 'city', name: '都市情報', icon: iconHome, content: <CityInfo city={city} /> },
+    { id: 'city', name: '都市情報', icon: iconHome, content: <CityInfo city={city} owner={owner} /> },
+    { id: 'knights', name: '騎士', icon: iconPeople, content: <Knights cityId={city.id} game={game} /> },
     {
       id: 'roads', name: '街道', icon: iconRoads,
-      content: <Neighbours ids={neighbours} onSelect={onSelectCity} />,
+      content: <Neighbours ids={neighbours} game={game} onSelect={onSelectCity} />,
     },
   ]
   return <InfoWindowWithTabs {...windowProps} title={`${faction?.name ?? ''} ${city.name}`.trim()} tabs={tabs} />
 }
 
-function CityInfo({ city }: { city: City }) {
-  const faction = city.belongTo ? FACTION_MAP[city.belongTo] : undefined
-  const emblem = emblemUrl(city.belongTo)
+function Knights({ cityId, game }: { cityId: string; game: GameState }) {
+  const notes = (id: string) => {
+    const order = orderOf(game, id)
+    return [
+      ...(game.characters[id].isLord ? ['領主'] : []),
+      ...(order ? [`${CITY_MAP[order.to]?.name ?? order.to}へ侵攻予約中`] : []),
+    ]
+  }
+  return (
+    <div className="city-knights">
+      <KnightList ids={charactersIn(game, cityId)} notes={notes} empty="この都市に所属する騎士はいません。" />
+    </div>
+  )
+}
+
+function CityInfo({ city, owner }: { city: City; owner: string | undefined }) {
+  const faction = owner ? FACTION_MAP[owner] : undefined
+  const emblem = emblemUrl(owner)
   const type = PLACE_TYPES.get(city.id) ?? 'town'
   return (
     <div className="city-info">
@@ -92,14 +113,15 @@ function Stat({ label, value, max }: { label: string; value: number; max: number
   )
 }
 
-function Neighbours({ ids, onSelect }: { ids: readonly string[]; onSelect: (id: string) => void }) {
+function Neighbours({ ids, game, onSelect }: { ids: readonly string[]; game: GameState; onSelect: (id: string) => void }) {
   if (ids.length === 0) return <p className="city-roads__empty">街道でつながる都市はありません。</p>
   return (
     <ul className="city-roads">
       {ids.map((id) => {
         const city = CITY_MAP[id]
-        const faction = city?.belongTo ? FACTION_MAP[city.belongTo] : undefined
-        const emblem = emblemUrl(city?.belongTo)
+        const owner = ownerOf(game, id)
+        const faction = owner ? FACTION_MAP[owner] : undefined
+        const emblem = emblemUrl(owner)
         return (
           <li key={id}>
             <button type="button" onClick={() => onSelect(id)}>

@@ -1,0 +1,34 @@
+.invasion { display: grid; gap: 8px; width: 400px; color: #2a1a0a; }
+
+.invasion__route {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.invasion__route .faction-label__name { display: none; }
+.invasion__arrow { color: #a04020; }
+.invasion__defenders { margin: 0; font-size: 13px; color: #8a7050; text-align: center; }
+.invasion__heading { margin: 4px 0 0; font-size: 13px; color: #8a7050; }
+.invasion__knights { max-height: 340px; overflow-y: auto; }
+.invasion__actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+
+.invasion__button {
+  padding: 6px 18px;
+  color: #2a1a0a;
+  background: rgb(255 255 255 / 0.5);
+  border: 1px solid #8a6a38;
+  border-radius: 4px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.invasion__button:hover:not(:disabled) { background: rgb(255 255 255 / 0.8); }
+.invasion__button--primary { background: linear-gradient(#ffe7a0, #e0a840); }
+.invasion__button--primary:hover:not(:disabled) { background: linear-gradient(#fff0c0, #ecb850); }
+.invasion__button:disabled { opacity: 0.5; cursor: default; }

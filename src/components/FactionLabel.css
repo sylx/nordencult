@@ -1,0 +1,13 @@
+.faction-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  white-space: nowrap;
+}
+
+.faction-label img,
+.faction-label__blank {
+  width: 1.6em;
+  height: 1.6em;
+  object-fit: contain;
+}

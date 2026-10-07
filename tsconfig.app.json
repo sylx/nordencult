@@ -16,6 +16,7 @@
     "noEmit": true,
     "paths": {
       "norden-strategy": ["./norden-strategy/src/index.ts"],
+      "norden-strategy/data": ["./norden-strategy/src/data.ts"],
       "norden-ui": ["./norden-ui/src/index.ts"]
     },
     "jsx": "react-jsx",

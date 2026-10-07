@@ -1,10 +1,14 @@
 /**
  * Every scene and the parameters it is entered with. Adding a scene: add its
- * entry here and its component in registry.ts, e.g. `battle: { cityId: string }`.
+ * entry here and its component in registry.ts, e.g. `battle: { battleId: string }`.
  */
 export interface SceneParams {
   title: undefined
   strategy: undefined
+  /** The battle under way (GameState.march.current) */
+  battle: { battleId: string }
+  /** The battle just fought (GameState.lastBattle) */
+  battleResult: { battleId: string }
 }
 
 export type SceneId = keyof SceneParams

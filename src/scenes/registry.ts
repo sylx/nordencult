@@ -5,6 +5,8 @@ import type { SceneId, SceneProps } from './types'
 export const SCENES: { [K in SceneId]: LazyExoticComponent<ComponentType<SceneProps<K>>> } = {
   title: lazy(() => import('./title/TitleScene')),
   strategy: lazy(() => import('./strategy/StrategyScene')),
+  battle: lazy(() => import('./battle/BattleScene')),
+  battleResult: lazy(() => import('./battleResult/BattleResultScene')),
 }
 
 export const isSceneId = (value: string | null): value is SceneId =>
