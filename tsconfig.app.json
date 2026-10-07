@@ -17,7 +17,9 @@
     "paths": {
       "norden-strategy": ["./norden-strategy/src/index.ts"],
       "norden-strategy/data": ["./norden-strategy/src/data.ts"],
-      "norden-ui": ["./norden-ui/src/index.ts"]
+      "norden-ui": ["./norden-ui/src/index.ts"],
+      "@norden/map-runtime/render/structures": ["./norden-battle/map-runtime/src/render/structures/index.ts"],
+      "@norden/map-runtime/*": ["./norden-battle/map-runtime/src/*.ts"]
     },
     "jsx": "react-jsx",
 

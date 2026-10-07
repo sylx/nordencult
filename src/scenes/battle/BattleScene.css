@@ -66,6 +66,8 @@
 .battle-header__city small { font-size: 13px; color: #d4b06a; }
 
 .battle-scene__field { position: absolute; inset: 0; display: grid; place-items: center; }
+.battle-field { position: absolute; inset: 0; }
+.battle-field canvas { display: block; }
 .battle-scene__placeholder { color: rgb(242 230 200 / 0.4); font-size: 20px; letter-spacing: 0.2em; }
 
 .battle-debug {
@@ -82,6 +84,7 @@
 }
 
 .battle-debug h2 { margin: 0; font-size: 12px; color: #d4b06a; }
+.battle-debug__map { max-width: 260px; margin: 0; font-size: 11px; color: #c8b490; }
 
 .battle-button {
   padding: 8px 18px;

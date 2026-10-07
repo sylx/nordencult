@@ -20,11 +20,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Only the sub-projects the app is built from. .gitmodules uses SSH URLs; fetch them over HTTPS
+      # Only the sub-projects the app is built from. .gitmodules uses SSH URLs; fetch them over HTTPS.
+      # norden-battle's Git LFS files (unit images, 3D sources) are not used yet and stay as pointers
       - name: Check out sub-projects
+        env:
+          GIT_LFS_SKIP_SMUDGE: 1
         run: |
           git config --global url."https://github.com/".insteadOf "git@github.com:"
-          git submodule update --init --depth 1 norden-strategy norden-ui
+          git submodule update --init --depth 1 norden-strategy norden-ui norden-battle
 
       - uses: actions/setup-node@v7
         with:

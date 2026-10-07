@@ -6,7 +6,7 @@
 | --- | --- |
 | `norden-strategy` | three.js の戦略マップ |
 | `norden-ui` | 情報ウィンドウなどの React UI ライブラリ |
-| `norden-battle` | 戦闘（未統合） |
+| `norden-battle` | 戦闘。いまは `map-runtime`（HEX マップの描画）と `assets/maps/`（戦闘マップ）だけを使う |
 | `nordencult-old` | 分割前の旧実装（参照用） |
 
 ```sh
@@ -17,14 +17,17 @@ npm run dev
 
 `npm run build` で型チェックとビルド、`npm run lint` でルートの `src/` を検査します。
 
-main への push で GitHub Pages に公開します（`.github/workflows/deploy.yml`）。CIでは `norden-strategy` と `norden-ui` のサブモジュールだけを取得してビルドします。
+main への push で GitHub Pages に公開します（`.github/workflows/deploy.yml`）。CIでは `norden-strategy`・`norden-ui`・`norden-battle` のサブモジュールだけを取得してビルドします（`norden-battle` の Git LFS のファイルは取得しません）。
 
 ## サブモジュールの参照
 
-`norden-strategy` と `norden-ui` はビルドせず、ソースを直接読み込みます（`vite.config.ts` のエイリアスと `tsconfig.app.json` の `paths`）。サブモジュールの変更はそのまま開発サーバーに反映されます。
+`norden-strategy`・`norden-ui`・`norden-battle/map-runtime` はビルドせず、ソースを直接読み込みます（`vite.config.ts` のエイリアスと `tsconfig.app.json` の `paths`）。サブモジュールの変更はそのまま開発サーバーに反映されます。
 
 - `import { MapView, CITY_MAP } from 'norden-strategy'` → `norden-strategy/src/index.ts`
 - `import { CITY_LIST, ROAD_LINKS } from 'norden-strategy/data'` → `norden-strategy/src/data.ts`（データだけ。three.js を読み込まないので `src/game/` はこちらを使う）
+- `import { MapView } from '@norden/map-runtime/render/mapView'` → `norden-battle/map-runtime/src/render/mapView.ts`（パッケージの `exports` と同じ対応。依存の `simplex-noise` はルートに入れてある）
+
+戦闘マップ（`norden-battle/assets/maps/`）は、map-runtime の Vite プラグイン（`mapsPlugin`、読み取り専用）でページの `maps/` として配信し、ビルドでは `dist/maps/` にコピーします。
 - `import { InfoWindowWithTabs } from 'norden-ui'` → `norden-ui/src/index.ts`
 
 公開APIは各 `src/index.ts` にまとめ、ルートから内部のファイルは直接参照しません。
@@ -39,7 +42,7 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | --- | --- |
 | `title` | タイトル画面（仮） |
 | `strategy` | 戦略マップ＋HUD（ターン・手番・侵攻予約）＋都市情報ウィンドウ。都市をクリックで選択、空き地のクリックで解除。行軍フェーズでは軍団が進み、到着すると `battle` へ |
-| `battle` | 戦闘（`{ battleId }`）。攻守の勢力と騎士、デバッグ用の勝敗ボタン（戦闘マップは未実装） |
+| `battle` | 戦闘（`{ battleId }`）。戦闘マップ（map-runtime で描画）、攻守の勢力と騎士、デバッグ用の勝敗ボタンと使ったマップの表示 |
 | `battleResult` | 戦闘結果（`{ battleId }`）。勝敗・拠点の所属の変化・騎士の移動。「戦略マップへ」で行軍フェーズの続きへ |
 
 起動時は `strategy` を表示します。`?scene=title` で開始シーンを指定できます（パラメーターの無いシーンだけ）。`?faction=leonis` のようにプレイヤーの勢力を指定できます（既定はカルタ書院 `carta`）。
@@ -59,6 +62,8 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | `src/scenes/strategy/CityWindow.tsx` | norden-ui の情報ウィンドウによる都市情報・騎士・街道タブ |
 | `src/scenes/strategy/Hud.tsx` | ターンのバー（「ターン終了」）・予約一覧・案内の帯 |
 | `src/scenes/strategy/InvasionWindow.tsx` | 侵攻する騎士の選択 |
+| `src/scenes/battle/battleMap.ts` | 戦闘マップの選択。攻撃元と目標の街道マップ `road-<小さい ID>-<大きい ID>.json` から目標の範囲（`battleAreas[目標]`）を切り出す。無ければ `fluen.json` 全体（コンソールに警告） |
+| `src/scenes/battle/BattleField.tsx` | map-runtime の `MapView` で戦闘マップを描く（アンマウントで破棄） |
 
 ## ゲームの状態
 

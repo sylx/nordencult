@@ -1,14 +1,17 @@
+import { useEffect, useState } from 'react'
 import { CITY_MAP } from 'norden-strategy'
 import { FactionLabel } from '../../components/FactionLabel'
 import { KnightList } from '../../components/KnightList'
 import { resolveBattle, useGame, type Battle, type BattleWinner } from '../../game'
 import { useScene } from '../sceneContext'
 import type { SceneProps } from '../types'
+import { BattleField } from './BattleField'
+import { loadBattleMap, type BattleMap } from './battleMap'
 import './BattleScene.css'
 
-/** A battle: the attacking and defending sides, and (for now) debug buttons deciding who wins */
+/** A battle: the battlefield, the attacking and defending sides, and (for now) debug buttons deciding who wins */
 export default function BattleScene({ params }: SceneProps<'battle'>) {
-  const { state: game, update } = useGame()
+  const { state: game } = useGame()
   const { goTo } = useScene()
   const battle = game.march?.current
   if (!battle || battle.id !== params.battleId) {
@@ -20,6 +23,24 @@ export default function BattleScene({ params }: SceneProps<'battle'>) {
     )
   }
 
+  return <Battlefield battle={battle} />
+}
+
+function Battlefield({ battle }: { battle: Battle }) {
+  const { update } = useGame()
+  const { goTo } = useScene()
+  const [map, setMap] = useState<BattleMap | null>(null)
+  const [error, setError] = useState('')
+  const { from } = battle.attacker
+  const to = battle.cityId
+
+  useEffect(() => {
+    let cancelled = false
+    loadBattleMap(from, to).then((m) => { if (!cancelled) setMap(m) },
+      (e: unknown) => { if (!cancelled) setError(e instanceof Error ? e.message : String(e)) })
+    return () => { cancelled = true }
+  }, [from, to])
+
   const decide = (winner: BattleWinner) => {
     update((s) => resolveBattle(s, battle.id, winner))
     goTo('battleResult', { battleId: battle.id })
@@ -27,14 +48,22 @@ export default function BattleScene({ params }: SceneProps<'battle'>) {
 
   return (
     <div className="battle-scene">
-      <BattleHeader battle={battle} />
       <div className="battle-scene__field">
-        <p className="battle-scene__placeholder">戦闘マップ（未実装）</p>
+        {map ? <BattleField data={map.data} />
+          : <p className="battle-scene__placeholder">{error ? `戦闘マップを読めません: ${error}` : '戦闘マップを読み込み中…'}</p>}
       </div>
+      <BattleHeader battle={battle} />
       <aside className="battle-debug" aria-label="デバッグ">
         <h2>デバッグ: 勝敗を決める</h2>
         <button type="button" className="battle-button" onClick={() => decide('attacker')}>攻撃側の勝利</button>
         <button type="button" className="battle-button" onClick={() => decide('defender')}>防衛側の勝利</button>
+        {map && (
+          <p className="battle-debug__map">
+            マップ: {map.file}
+            {map.area ? `（${to} の範囲 (${map.area.col}, ${map.area.row})）` : '（全体・フォールバック）'}
+            {map.fallback && <><br />{map.fallback}</>}
+          </p>
+        )}
       </aside>
     </div>
   )
