@@ -5,7 +5,7 @@
 | サブモジュール | 内容 |
 | --- | --- |
 | `norden-strategy` | three.js の戦略マップ |
-| `norden-ui` | 情報ウィンドウなどの React UI ライブラリ |
+| `norden-ui` | React UI ライブラリ（基本部品・画面・画面スタック。カタログで各画面を作り込む） |
 | `norden-battle` | 戦闘。いまは `map-runtime`（HEX マップの描画）と `assets/maps/`（戦闘マップ）だけを使う |
 | `nordencult-old` | 分割前の旧実装（参照用） |
 
