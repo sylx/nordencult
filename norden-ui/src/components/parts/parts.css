@@ -1,0 +1,195 @@
+/* Small parts used inside windows (parchment) and on the HUD (dark panels) */
+
+.norden-button {
+  padding: 6px 18px;
+  color: #2a1a0a;
+  background: rgb(255 255 255 / 0.5);
+  border: 1px solid #8a6a38;
+  border-radius: 4px;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.norden-button:hover:not(:disabled) { background: rgb(255 255 255 / 0.8); }
+.norden-button.is-primary { background: linear-gradient(#ffe7a0, #e0a840); border-color: #6a4a20; }
+.norden-button.is-primary:hover:not(:disabled) { background: linear-gradient(#fff0c0, #ecb850); }
+.norden-button.is-quiet { color: #f2e6c8; background: rgb(255 255 255 / 0.08); }
+.norden-button.is-quiet:hover:not(:disabled) { background: rgb(255 255 255 / 0.18); }
+.norden-button.is-small { padding: 2px 10px; font-size: 13px; }
+.norden-button:disabled { opacity: 0.5; cursor: default; }
+.norden-button:focus-visible { outline: 2px solid #765b9a; outline-offset: 2px; }
+.norden-button.is-quiet:focus-visible { outline-color: #ffe08a; }
+
+.norden-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 12px 8px 18px;
+  color: #fff4d0;
+  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  font-size: 17px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: auto;
+  background: rgb(80 40 10 / 0.9);
+  border: 1px solid #d4b06a;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 0.5);
+  animation: norden-banner-in 200ms ease-out;
+}
+.norden-banner-actions { display: inline-flex; gap: 6px; }
+@keyframes norden-banner-in { from { opacity: 0; translate: 0 -6px; } }
+
+.norden-city-navigator {
+  display: inline-flex;
+  align-items: stretch;
+  pointer-events: auto;
+  color: #f3ead7;
+  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  background: #211b14 url('../../assets/ui/hud/dark-texture.png') repeat;
+  border: 3px double #b59151;
+  border-radius: 6px;
+  box-shadow: 0 3px 8px #0008;
+}
+.norden-city-navigator-step {
+  width: 40px;
+  padding: 0;
+  color: #dcbb76;
+  background: transparent;
+  border: 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+.norden-city-navigator-step:hover:not(:disabled) { background: #a37b3e40; }
+.norden-city-navigator-step:disabled { opacity: 0.35; cursor: default; }
+.norden-city-navigator-step:focus-visible { outline: 2px solid #f4d987; outline-offset: -3px; }
+.norden-city-navigator-name {
+  display: grid;
+  justify-items: center;
+  min-width: 9em;
+  padding: 4px 10px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-shadow: 0 2px 2px #000;
+  border-inline: 1px solid #715737;
+}
+.norden-city-navigator-position { font-size: 11px; font-weight: 400; color: #c8b490; }
+
+.norden-choice-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.norden-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 72px;
+  justify-content: center;
+  padding: 6px 12px;
+  color: #3a2810;
+  background: rgb(255 255 255 / 0.35);
+  border: 1px solid #a8885a;
+  border-radius: 4px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.norden-choice:hover:not(:disabled) { background: rgb(255 255 255 / 0.65); }
+.norden-choice[aria-checked='true'] { color: #fff4d8; background: linear-gradient(#7a4a2a, #52301a); border-color: #3a2010; }
+.norden-choice:disabled { opacity: 0.45; cursor: default; }
+.norden-choice:focus-visible { outline: 2px solid #765b9a; outline-offset: 2px; }
+.norden-choice-icon { display: inline-flex; width: 22px; height: 22px; }
+.norden-choice-icon > :is(img, svg) { width: 100%; height: 100%; object-fit: contain; }
+
+.norden-quantity {
+  display: grid;
+  grid-template-columns: 30px minmax(80px, 1fr) 30px auto auto;
+  grid-template-areas: 'label label label label label' 'minus range plus value max';
+  align-items: center;
+  column-gap: 6px;
+  row-gap: 2px;
+  color: #3a2810;
+}
+.norden-quantity-label { grid-area: label; font-size: 13px; color: #755b36; }
+.norden-quantity-step {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: #3a2810;
+  background: rgb(255 255 255 / 0.45);
+  border: 1px solid #a8885a;
+  border-radius: 50%;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.norden-quantity-step:hover:not(:disabled) { background: rgb(255 255 255 / 0.8); }
+.norden-quantity-step:disabled { opacity: 0.4; cursor: default; }
+.norden-quantity-range { grid-area: range; width: 100%; accent-color: #9b722c; }
+.norden-quantity-value { grid-area: value; display: inline-flex; align-items: baseline; gap: 2px; }
+.norden-quantity-value input {
+  width: 5em;
+  padding: 2px 4px;
+  color: inherit;
+  background: rgb(255 255 255 / 0.55);
+  border: 1px solid #a8885a;
+  border-radius: 3px;
+  font: inherit;
+  font-weight: 700;
+  text-align: right;
+}
+.norden-quantity-unit { font-size: 12px; color: #755b36; }
+.norden-quantity-max { grid-area: max; font-size: 12px; color: #8a7050; white-space: nowrap; }
+.norden-quantity :focus-visible { outline: 2px solid #765b9a; outline-offset: 2px; }
+
+.norden-knight-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  color: #2a1a0a;
+  border-bottom: 1px solid rgb(0 0 0 / 0.08);
+}
+.norden-knight-card.is-selectable {
+  border: 1px solid rgb(0 0 0 / 0.12);
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.3);
+  cursor: pointer;
+}
+.norden-knight-card.is-selectable:hover { background: rgb(255 255 255 / 0.6); }
+.norden-knight-card.is-selected { background: rgb(255 236 180 / 0.75); border-color: #b08840; }
+.norden-knight-card.is-current { box-shadow: inset 0 0 0 2px #8a5a20; }
+.norden-knight-card input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: #8a6020; }
+.norden-knight-face {
+  display: grid;
+  flex: none;
+  width: 56px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.18);
+}
+.norden-knight-face > * { width: 100%; height: 100%; }
+.norden-knight-card.is-compact .norden-knight-face { width: 42px; }
+.norden-knight-initial {
+  display: grid;
+  place-content: center;
+  color: #f4e6c4;
+  background: linear-gradient(135deg, #7a5530, #3e2814);
+  font-size: 22px;
+  font-weight: 700;
+}
+.norden-knight-info { display: grid; gap: 1px; min-width: 0; }
+.norden-knight-name { font-size: 15px; font-weight: 700; line-height: 1.35; }
+.norden-knight-subtitle { font-size: 12px; color: #8a7050; }
+.norden-knight-stats { display: flex; gap: 8px; font-size: 12px; color: #6a5030; white-space: nowrap; }
+.norden-knight-stats b { color: #2a1a0a; }
+.norden-knight-aside { margin-left: auto; font-size: 12px; color: #6a5030; text-align: right; }
+
+@media (prefers-reduced-motion: reduce) {
+  .norden-banner { animation: none; }
+}
+
+.norden-faction-mark { display: inline-flex; align-items: center; gap: 0.35em; white-space: nowrap; }
+.norden-faction-mark img, .norden-faction-mark-blank { width: 1.6em; height: 1.6em; object-fit: contain; }
+.norden-faction-mark-blank { display: inline-block; border-radius: 50%; background: rgb(0 0 0 / 0.1); }

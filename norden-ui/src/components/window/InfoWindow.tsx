@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent, ReactNode } from 'react'
-import { useWindowSize } from '../hooks/useWindowSize'
-import type { WindowSize } from '../hooks/useWindowSize'
-import { resolveWindowSkin, windowSkinStyle } from '../skins'
-import type { InfoWindowSkin } from '../skins'
+import { useWindowSize } from '../../hooks/useWindowSize'
+import type { WindowSize } from '../../hooks/useWindowSize'
+import { resolveWindowSkin, windowSkinStyle } from '../../skins'
+import type { InfoWindowSkin } from '../../skins'
 import './InfoWindow.css'
 
 export interface InfoWindowProps {

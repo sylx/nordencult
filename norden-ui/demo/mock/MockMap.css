@@ -1,0 +1,38 @@
+.mock-map {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 18% 60%, #2c4a5e 0 22%, transparent 23%),
+    radial-gradient(ellipse at 70% 40%, #4a5e3a66, transparent 60%),
+    repeating-linear-gradient(25deg, transparent 0 40px, #a3b69a06 41px 42px),
+    #2f4430;
+}
+.mock-map-roads { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mock-map-road { stroke: #d8c49a66; stroke-width: 3; stroke-dasharray: 6 5; }
+.mock-map-route { stroke-width: 5; stroke-linecap: round; opacity: 0.9; }
+.mock-map-city {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  translate: -50% -50%;
+  color: #fff4d8;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  font: 700 14px 'Noto Serif JP', 'Yu Mincho', serif;
+  text-shadow: 0 1px 3px #000, 0 0 2px #000;
+  cursor: pointer;
+  transition: opacity 160ms ease, scale 160ms ease;
+}
+.mock-map-city img, .mock-map-neutral { width: 34px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 3px #000a); }
+.mock-map-neutral { display: block; border-radius: 50%; width: 26px; height: 26px; background: #888; border: 2px solid #d8b25a; }
+.mock-map-city:hover:not(:disabled) { background: #0004; }
+.mock-map-city.is-selected { outline: 2px solid #ffe08a; background: #0005; }
+.mock-map-city:disabled { opacity: 0.4; cursor: default; }
+.mock-map.is-picking .mock-map-city.is-candidate { scale: 1.12; outline: 2px solid #ff6a3d; background: #ff6a3d33; animation: mock-map-pulse 1.2s ease-in-out infinite; }
+.mock-map-city:focus-visible { outline: 2px solid #ffe08a; outline-offset: 2px; }
+@keyframes mock-map-pulse { 50% { box-shadow: 0 0 0 6px #ff6a3d44; } }
+@media (prefers-reduced-motion: reduce) { .mock-map-city { transition: none; animation: none !important; } }

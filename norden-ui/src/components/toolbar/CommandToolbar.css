@@ -1,0 +1,115 @@
+.norden-command-toolbar {
+  position: relative;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 100%;
+  min-width: 100px;
+  padding: 9px 12px 10px;
+  pointer-events: auto;
+  isolation: isolate;
+  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  filter: drop-shadow(0 3px 4px #0009);
+}
+.norden-command-toolbar.is-movable { padding-inline: 30px; }
+.norden-command-toolbar *, .norden-command-toolbar *::before, .norden-command-toolbar *::after { box-sizing: border-box; }
+
+.norden-command-toolbar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: solid transparent;
+  border-width: 9px 37px 10px;
+  border-image: url('../../assets/ui/hud/command-frame.png') 9 37 10 / 9px 37px 10px / 0 stretch;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.norden-command-toolbar-items {
+  display: flex;
+  min-height: 57px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #96723c #211910;
+  background: #211b14 url('../../assets/ui/hud/dark-texture.png') repeat;
+}
+
+.norden-command-toolbar-drag-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.norden-command-toolbar-drag-handle--left { left: 0; }
+.norden-command-toolbar-drag-handle--right { right: 0; }
+.norden-command-toolbar.is-dragging .norden-command-toolbar-drag-handle { cursor: grabbing; }
+.norden-command-toolbar-drag-handle:focus-visible { outline: 2px solid #f4d987; outline-offset: -4px; }
+
+.norden-command-toolbar-button, .norden-command-toolbar-subbutton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid #927345;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 2px #100c08, inset 0 0 0 3px #715737;
+  background: transparent;
+  color: #f3ead7;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-shadow: 0 2px 2px #000;
+  cursor: pointer;
+}
+.norden-command-toolbar-button { flex: 1 0 auto; min-width: 120px; min-height: 57px; padding: 5px 18px; }
+.norden-command-toolbar-button[aria-pressed='true'], .norden-command-toolbar-button[aria-expanded='true'],
+.norden-command-toolbar-subbutton[aria-pressed='true'] {
+  background: linear-gradient(#51233ac9, #321426eb);
+  border-color: #eac677;
+}
+.norden-command-toolbar-button.is-accent { background: linear-gradient(#6b4a1fd9, #3d280ef0); border-color: #e3bd68; }
+.norden-command-toolbar-button:hover:not(:disabled), .norden-command-toolbar-subbutton:hover:not(:disabled) { background-color: #a37b3e40; }
+.norden-command-toolbar-button:disabled, .norden-command-toolbar-subbutton:disabled { opacity: 0.45; cursor: default; }
+.norden-command-toolbar-button:focus-visible, .norden-command-toolbar-subbutton:focus-visible { outline: 2px solid #f4d987; outline-offset: -5px; }
+.norden-command-toolbar-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
+.norden-command-toolbar-icon > :is(img, svg) { width: 100%; height: 100%; object-fit: contain; }
+.norden-command-toolbar-caret { font-size: 12px; color: #d7b56e; transition: rotate 160ms ease; }
+.norden-command-toolbar-button[aria-expanded='true'] .norden-command-toolbar-caret { rotate: 180deg; }
+
+.norden-command-toolbar-flyout {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  z-index: 3;
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  translate: -50% 0;
+  border: 3px double #b59151;
+  border-radius: 6px;
+  background: #211b14 url('../../assets/ui/hud/dark-texture.png') repeat;
+  box-shadow: 0 6px 20px #0009;
+  animation: norden-flyout-enter 140ms ease both;
+}
+.norden-command-toolbar-flyout::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  translate: -50% 0;
+  border: 8px solid transparent;
+  border-top-color: #b59151;
+}
+.norden-command-toolbar-subbutton { min-width: 96px; min-height: 46px; padding: 4px 16px; font-size: 17px; }
+@keyframes norden-flyout-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .norden-command-toolbar-flyout { animation: none; }
+  .norden-command-toolbar-caret { transition: none; }
+}

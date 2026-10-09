@@ -13,7 +13,7 @@ async function settledSize(window: Locator) {
   return (await window.boundingBox())!
 }
 
-test.beforeEach(async ({ page }) => { await page.goto('/') })
+test.beforeEach(async ({ page }) => { await page.goto('/#info-window') })
 
 test('demo inherits skin title positions until an axis is edited and can restore them', async ({ page }) => {
   const skinOffsets = await page.evaluate(async () => {

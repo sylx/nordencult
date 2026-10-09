@@ -1,0 +1,29 @@
+/* Regions of a screen layer. The layer covers the host and lets pointer events through */
+.norden-screen { position: absolute; inset: 0; pointer-events: none; }
+.norden-screen-top-left, .norden-screen-top-center, .norden-screen-top-right,
+.norden-screen-bottom-center, .norden-screen-bottom-right { position: absolute; z-index: 150; pointer-events: none; }
+.norden-screen-top-left > *, .norden-screen-top-center > *, .norden-screen-top-right > *,
+.norden-screen-bottom-center > *, .norden-screen-bottom-right > * { pointer-events: auto; }
+.norden-screen-top-left { top: 16px; left: 24px; }
+.norden-screen-top-center { top: 12px; left: 50%; translate: -50% 0; }
+.norden-screen-top-right { top: 16px; right: 24px; }
+.norden-screen-bottom-center { bottom: 16px; left: 50%; translate: -50% 0; max-width: calc(100% - 32px); }
+.norden-screen-bottom-right { right: 24px; bottom: 16px; }
+.norden-screen-banner { top: 84px; }
+
+/* A dark HUD panel, e.g. the totals of the invasion screen */
+.norden-hud-panel {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px 10px 18px;
+  color: #f2e6c8;
+  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  background: #211b14 url('../assets/ui/hud/dark-texture.png') repeat;
+  border: 3px double #b59151;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px #000a;
+}
+
+/* City command screen: the turn bar gives way to the city switcher on narrow hosts (the full text stays in its title) */
+.norden-city-command .norden-screen-top-right { left: 320px; display: flex; justify-content: flex-end; }

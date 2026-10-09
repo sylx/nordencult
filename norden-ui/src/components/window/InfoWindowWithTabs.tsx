@@ -3,7 +3,7 @@ import type { KeyboardEvent, ReactNode } from 'react'
 import InfoWindow from './InfoWindow'
 import type { InfoWindowProps } from './InfoWindow'
 import './InfoWindowWithTabs.css'
-import { resolveWindowSkin } from '../skins'
+import { resolveWindowSkin } from '../../skins'
 
 export interface TabInfo {
   /** Stable ID is recommended when tabs may be reordered. */

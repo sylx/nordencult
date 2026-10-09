@@ -1,0 +1,25 @@
+.norden-invasion-knights { display: grid; gap: 8px; width: 380px; color: #2a1a0a; }
+.norden-invasion-route { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0; font-size: 17px; font-weight: 700; }
+.norden-invasion-route .norden-faction-mark { vertical-align: middle; }
+.norden-invasion-arrow { color: #a04020; }
+.norden-invasion-defenders { margin: 0; font-size: 13px; color: #8a7050; text-align: center; }
+.norden-invasion-heading { margin: 4px 0 0; font-size: 13px; color: #8a7050; }
+.norden-invasion-list { display: grid; gap: 4px; max-height: 380px; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.norden-invasion-empty { margin: 0; padding: 16px 0; color: #8a7050; text-align: center; }
+
+.norden-invasion-army { display: grid; gap: 10px; width: 440px; max-height: 480px; overflow-y: auto; color: #2a1a0a; }
+.norden-invasion-unit {
+  display: grid;
+  gap: 8px;
+  padding: 8px 10px 10px;
+  background: rgb(255 255 255 / 0.4);
+  border: 1px solid rgb(0 0 0 / 0.12);
+  border-radius: 5px;
+}
+.norden-invasion-unit .norden-knight-card { padding: 0; border: 0; }
+
+.norden-invasion-summary { white-space: nowrap; }
+.norden-invasion-total { display: inline-flex; align-items: baseline; gap: 6px; font-size: 15px; }
+.norden-invasion-total b { font-size: 22px; color: #ffe08a; }
+.norden-invasion-remaining { margin-left: 8px; font-size: 12px; color: #c8b490; }
+.norden-invasion-problem { min-width: 14em; font-size: 12px; color: #f0b090; }

@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import InfoWindow from './InfoWindow'
-import { windowSkins } from '../skins'
-import type { InfoWindowSkin } from '../skins'
+import { windowSkins } from '../../skins'
+import type { InfoWindowSkin } from '../../skins'
 
 describe('InfoWindow decoration skins', () => {
   it('uses the medium full-frame PNG by default', () => {
