@@ -73,7 +73,7 @@ export default function CityCommandScreen({
       </div>
       <CityInfoWindow city={city} onSelectNeighbour={onSelectNeighbour} x={windowPosition.x} y={windowPosition.y} skin={skin} />
       <div className="norden-screen-bottom-center">
-        <CommandToolbar commands={commands} aria-label="都市コマンド" movable={false} />
+        <CommandToolbar commands={commands} aria-label="都市コマンド" movable={true} />
       </div>
       {children}
     </div>
