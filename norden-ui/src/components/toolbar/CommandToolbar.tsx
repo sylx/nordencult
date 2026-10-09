@@ -168,7 +168,11 @@ export default function CommandToolbar({
             >
               {command.icon && <span className="norden-command-toolbar-icon" aria-hidden="true">{command.icon}</span>}
               <span>{command.label}</span>
-              {hasChildren && <span className="norden-command-toolbar-caret" aria-hidden="true">▴</span>}
+              {hasChildren && (
+                <svg className="norden-command-toolbar-caret" viewBox="0 0 14 8" aria-hidden="true" focusable="false">
+                  <polygon points="0,8 7,0 14,8" />
+                </svg>
+              )}
             </button>
           )
         })}
