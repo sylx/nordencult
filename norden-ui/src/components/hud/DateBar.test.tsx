@@ -11,14 +11,22 @@ describe('DateBar', () => {
     const bar = screen.getByRole('group', { name: 'ターン情報' })
     const phase = within(bar).getByText(labels.phaseLabel)
     const faction = within(bar).getByText(labels.factionName)
-    const date = within(bar).getByText(labels.dateLabel)
+    const date = within(bar).getByTitle(labels.dateLabel)
     const settings = within(bar).getByRole('button', { name: '設定' })
     expect(phase.compareDocumentPosition(faction) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(faction.compareDocumentPosition(date) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(date.compareDocumentPosition(settings) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(within(bar).getByText('のターン')).toBeInTheDocument()
+    expect(date).toHaveTextContent(labels.dateLabel)
     expect(screen.queryByRole('region', { name: '設定' })).not.toBeInTheDocument()
   })
+
+  it.each(['王歴312年4月', '王歴３１２年４月', '王暦312年 春', '日付未定'])(
+    'preserves the complete date label when formatting %s', dateLabel => {
+      render(<DateBar {...labels} dateLabel={dateLabel} />)
+      expect(screen.getByTitle(dateLabel).textContent).toBe(dateLabel)
+    },
+  )
 
   it('supports the resolving phase and keeps the settings position without contents', () => {
     render(<DateBar {...labels} factionName={null} />)

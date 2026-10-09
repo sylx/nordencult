@@ -3,11 +3,14 @@
   --date-phase-size: 14px;
   --date-faction-size: 24px;
   --date-suffix-size: 13px;
-  --date-calendar-size: 16px;
-  --date-bar-height: 64px;
-  --date-ornament-size: 112px;
-  --date-content-inset: 120px;
-  --date-section-gap: 18px;
+  --date-calendar-size: 26px;
+  --date-calendar-label-size: 11px;
+  --date-bar-height: 40px;
+  --date-ornament-size: 40px;
+  --date-ornament-drop: 20px;
+  --date-content-inset: 40px;
+  --date-section-gap: 8px;
+  --date-separator-height: 28px;
 
   position: relative;
   box-sizing: border-box;
@@ -18,6 +21,7 @@
   padding: 0;
   color: #f2ead8;
   font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  line-height: 1;
   text-shadow: 0 2px 3px #000;
   pointer-events: auto;
   isolation: isolate;
@@ -26,24 +30,12 @@
 .norden-date-bar::before {
   content: '';
   position: absolute;
-  inset: 0 0 0 calc(var(--date-ornament-size) / 2);
+  inset: 0 0 calc(-1 * var(--date-ornament-drop));
   z-index: -1;
-  /* Only the bottom rail is fixed; the navy field stretches to the screen edge. */
+  /* One continuous image keeps the curved left contour joined to the bottom rail. */
   border: solid transparent;
-  border-width: 0 0 3px;
-  border-image: url('../../assets/ui/hud/date-center.png') 0 0 5% fill / 0 0 3px / 0 stretch;
-  pointer-events: none;
-}
-
-.norden-date-bar::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: -1;
-  width: var(--date-ornament-size);
-  height: var(--date-ornament-size);
-  background: url('../../assets/ui/hud/date-left.png') center / contain no-repeat;
+  border-width: 0 0 var(--date-ornament-drop) var(--date-ornament-size);
+  border-image: url('../../assets/ui/hud/date-frame.png') 0 0 30% 20% fill / 0 0 var(--date-ornament-drop) var(--date-ornament-size) / 0 stretch;
   pointer-events: none;
 }
 
@@ -78,7 +70,6 @@
   align-items: baseline;
   gap: 5px;
   flex: 1 1 auto;
-  border-left: 1px solid #b59a5b66;
 }
 
 .norden-date-bar-faction {
@@ -105,35 +96,59 @@
 }
 
 .norden-date-bar-date {
-  flex: 0 1 auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  border-left: 1px solid #b59a5b66;
-  font-size: var(--date-calendar-size);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  flex: none;
   font-weight: 500;
-  font-variant-numeric: tabular-nums;
 }
+.norden-date-bar-date-number {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: var(--date-calendar-size);
+  font-variant-numeric: tabular-nums;
+  color: #fff0bc;
+}
+.norden-date-bar-date-label {
+  font-size: var(--date-calendar-label-size);
+  color: #d0c9b5;
+}
+
+.norden-date-bar-separator {
+  display: inline-flex;
+  align-self: flex-end;
+  align-items: flex-end;
+  justify-content: center;
+  flex: none;
+  width: 14px;
+  height: var(--date-separator-height);
+  /* The curved stem grows out of the frame's rail, just below the content box. */
+  translate: 0 1px;
+  color: #d2b36d;
+  pointer-events: none;
+}
+.norden-date-bar-separator svg { width: 100%; height: 100%; overflow: visible; }
+.norden-date-bar-separator-edge { stroke: #59411f; stroke-width: 3.2; }
+.norden-date-bar-separator-rail { stroke: currentColor; stroke-width: 1.5; }
 
 .norden-date-bar-settings {
   display: grid;
   place-items: center;
   flex: none;
   align-self: stretch;
-  width: 52px;
-  padding: 12px;
+  width: 36px;
+  padding: 6px;
   border: 0;
-  border-left: 1px solid #b59a5b66;
   border-radius: 0;
-  background: #090e1680;
+  background: transparent;
   color: #e6cc8a;
   cursor: pointer;
 }
 .norden-date-bar-settings:hover:not(:disabled),
-.norden-date-bar-settings[aria-expanded='true'] { background: #c5a45f26; color: #fff0bc; }
+.norden-date-bar-settings[aria-expanded='true'] { color: #fff0bc; }
 .norden-date-bar-settings:disabled { color: #998d71; cursor: default; }
 .norden-date-bar-settings:focus-visible,
 .norden-date-bar-menu:focus-visible { outline: 2px solid #f4d987; outline-offset: -4px; }
-.norden-date-bar-settings svg { width: 26px; height: 26px; }
+.norden-date-bar-settings svg { width: 22px; height: 22px; }
 
 .norden-date-bar-menu {
   position: absolute;
@@ -157,12 +172,15 @@
     --date-phase-size: 12px;
     --date-faction-size: 18px;
     --date-suffix-size: 11px;
-    --date-calendar-size: 13px;
-    --date-ornament-size: 80px;
-    --date-content-inset: 84px;
-    --date-section-gap: 10px;
+    --date-calendar-size: 22px;
+    --date-calendar-label-size: 10px;
+    --date-ornament-size: 32px;
+    --date-content-inset: 34px;
+    --date-section-gap: 6px;
+    --date-separator-height: 24px;
   }
-  .norden-date-bar-settings { width: 44px; padding: 9px; }
+  .norden-date-bar-settings { width: 32px; padding: 4px; }
+  .norden-date-bar-settings svg { width: 20px; height: 20px; }
 }
 
 /* Embedded game screens can be narrower than the browser viewport. */
@@ -171,10 +189,13 @@
     --date-phase-size: 12px;
     --date-faction-size: 18px;
     --date-suffix-size: 11px;
-    --date-calendar-size: 13px;
-    --date-ornament-size: 80px;
-    --date-content-inset: 84px;
-    --date-section-gap: 10px;
+    --date-calendar-size: 22px;
+    --date-calendar-label-size: 10px;
+    --date-ornament-size: 32px;
+    --date-content-inset: 34px;
+    --date-section-gap: 6px;
+    --date-separator-height: 24px;
   }
-  .norden-date-bar-settings { width: 44px; padding: 9px; }
+  .norden-date-bar-settings { width: 32px; padding: 4px; }
+  .norden-date-bar-settings svg { width: 20px; height: 20px; }
 }

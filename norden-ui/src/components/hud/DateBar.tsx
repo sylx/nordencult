@@ -14,6 +14,23 @@ export interface DateBarProps {
   style?: CSSProperties
 }
 
+function DateBarSeparator() {
+  return <span className="norden-date-bar-separator" aria-hidden="true">
+    <svg viewBox="0 0 18 40" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <path className="norden-date-bar-separator-edge" d="M0 39h3c5 0 5-4 5-10V18c0-6 2-10 5-13-1 6-3 10-3 15v10c0 6 1 9 5 9h3" />
+      <path className="norden-date-bar-separator-rail" d="M0 39h3c5 0 5-4 5-10V18c0-6 2-10 5-13-1 6-3 10-3 15v10c0 6 1 9 5 9h3" />
+    </svg>
+  </span>
+}
+
+function DateBarCalendar({ label }: { label: string }) {
+  return label.split(/([0-9０-９]+)/u).filter(Boolean).map((part, index) => (
+    <span key={index} className={/^[0-9０-９]+$/u.test(part) ? 'norden-date-bar-date-number' : 'norden-date-bar-date-label'}>
+      {part}
+    </span>
+  ))
+}
+
 export default function DateBar({
   phaseLabel, factionName, dateLabel, children, width, settingsLabel = '設定', className = '', style,
 }: DateBarProps) {
@@ -66,13 +83,18 @@ export default function DateBar({
     >
       <div className="norden-date-bar-content">
         <span className="norden-date-bar-phase" title={phaseLabel}>{phaseLabel}</span>
+        <DateBarSeparator />
         <span className="norden-date-bar-turn" title={turnLabel}>
           {factionName ? <>
             <span className="norden-date-bar-faction">{factionName}</span>
             <span className="norden-date-bar-turn-suffix">のターン</span>
           </> : <span className="norden-date-bar-turn-status">{turnLabel}</span>}
         </span>
-        {dateLabel && <span className="norden-date-bar-date" title={dateLabel}>{dateLabel}</span>}
+        {dateLabel && <>
+          <DateBarSeparator />
+          <span className="norden-date-bar-date" title={dateLabel}><DateBarCalendar label={dateLabel} /></span>
+        </>}
+        <DateBarSeparator />
         <button
           ref={buttonRef}
           className="norden-date-bar-settings"

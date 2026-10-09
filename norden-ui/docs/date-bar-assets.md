@@ -1,13 +1,13 @@
 # DateBar の装飾と調整
 
-2026-10-09、組み込み imagegen ツールで装飾2点を新規生成しました。旧実装の画像は参照せず、円形の天文儀・曲線的な葉飾りと濃紺の帯を組み合わせています。
+2026-10-09、組み込み imagegen ツールでDateBarのフレームを再生成しました。球・天文儀の円盤をなくし、控えめな葉飾りから濃紺の帯・下の金線までつながる一枚の画像にしました。設定メニュー用の帯素材は前回の生成画像を使用しています。
 
 | 保存先（norden-ui からの相対パス） | サイズ | 処理 |
 | --- | --- | --- |
-| `src/assets/ui/hud/date-left.png` | 256 × 256 | 1254 × 1254 の透明PNGをLanczos縮小。アルファを保持 |
+| `src/assets/ui/hud/date-frame.png` | 600 × 198 | 2172 × 724 の透明PNGの上端8pxを切り詰めてLanczos縮小。アルファを保持 |
 | `src/assets/ui/hud/date-center.png` | 384 × 128 | 2172 × 724 の不透明PNGをLanczos縮小 |
 
-画像の縮小には FFmpeg を使用しています。帯の下端はCSSで3pxに固定し、濃紺部分だけを伸ばします。右側には左装飾の反転コピーを配置しません。
+画像の縮小には FFmpeg を使用しています。フレームは `border-image-slice: 0 0 30% 20% fill` で描画し、左の40pxと下の20pxを固定して濃紺部分を伸ばします。左端を別画像で重ねないため、輪郭のない背景がはみ出しません。球のある旧 `date-left.png` は削除しました。
 
 ## 手で変更する箇所
 
@@ -18,14 +18,20 @@
 | `--date-phase-size` | 14px | フェーズの文字サイズ |
 | `--date-faction-size` | 24px | 勢力名の文字サイズ |
 | `--date-suffix-size` | 13px | 「のターン」の文字サイズ |
-| `--date-calendar-size` | 16px | 年月の文字サイズ |
-| `--date-bar-height` | 64px | 情報帯の高さ |
-| `--date-ornament-size` | 112px | 左装飾の幅・高さ |
-| `--date-content-inset` | 120px | 左装飾と文字領域の間隔 |
-| `--date-section-gap` | 18px | 各項目の左右の間隔 |
+| `--date-calendar-size` | 26px | 年月の数字の文字サイズ |
+| `--date-calendar-label-size` | 11px | 王歴・年・月などの文字サイズ |
+| `--date-bar-height` | 40px | 情報帯の高さ |
+| `--date-ornament-size` | 40px | 左装飾の固定幅 |
+| `--date-ornament-drop` | 20px | 下端の装飾領域の高さ・帯からの張り出し |
+| `--date-content-inset` | 40px | 文字領域の左端 |
+| `--date-section-gap` | 8px | 各項目の左右の間隔 |
+| `--date-separator-height` | 28px | 下の金線から立ち上がる曲線の高さ |
 
-各項目の色・太さは `.norden-date-bar-phase`、`.norden-date-bar-faction`、`.norden-date-bar-turn-suffix`、`.norden-date-bar-date` で変更します。
+各項目の色・太さは `.norden-date-bar-phase`、`.norden-date-bar-faction`、`.norden-date-bar-turn-suffix`、`.norden-date-bar-date-number`、`.norden-date-bar-date-label` で変更します。
+年月は `DateBarCalendar` で数字とそれ以外の文字に分けて描画します。数字はGeorgia、単位は日本語の明朝体を使い、ベースラインを揃えます。半角・全角の数字に対応し、渡された日付文字列は保持します。
 設定ボタンの幅・アイコンサイズは `.norden-date-bar-settings` とその `svg` のルールで変更します。
+設定ボタンは常に背景なしで、ホバー・開いている状態ではアイコンの色だけを変えます。
+セパレーターは `DateBar.tsx` の `DateBarSeparator` で、下の金線から上へ跳ね上がる曲線を描画します。`.norden-date-bar-separator` を下端に揃え、`translate: 0 1px` で線をフレームにつなげています。色・縁取りは `.norden-date-bar-separator-rail` と `.norden-date-bar-separator-edge` で変更します。装飾は `aria-hidden` にして、読み上げの順番に含めません。
 700px以下の画面・埋め込み先では末尾の `@media` / `@container` が小さい文字・装飾サイズに切り替えます。狭い幅も調整するときはこちらも変更してください。
 
 `src/components/hud/DateBar.tsx` の `.norden-date-bar-content` 内で表示順を変更します。入力は `phaseLabel`、`factionName`、`dateLabel` に分離しました。
@@ -42,10 +48,10 @@
 </DateBar>
 ```
 
-## 左装飾の最終プロンプト
+## 一体型フレームの最終プロンプト
 
 ```text
-Use case: stylized-concept. Asset type: one production transparent PNG left-hand ornament for a medieval fantasy strategy game's DATE/TURN information bar, shown at 112px square at the screen's top right. Primary request: a large elegant circular antique brass astrolabe/calendar medallion framed by sweeping curved acanthus leaves and a restrained laurel flourish, with a small pendant leaf tapering downward. Circular midnight-blue enamel center with delicate brass concentric orbital arcs and tiny unlettered time ticks. Only abstract astronomical geometry, no numbers, no lettering, no faces, no animals. The ornament's strongest mass is in the upper two thirds; lower leaves taper softly. Polished hand-painted high-end strategy-game UI material, refined worn gold, ivory highlights, deep muted blue. Single centered compact ornament filling 94 percent of a square canvas. Actual transparent background outside the clean ornamental silhouette, including every gap between curved leaves. This is a standalone left cap to overlap a plain midnight-blue rectangular HUD ribbon. Avoid angular diamond toolbar caps, rectangular frames, mirrored endcaps, scenery, purple, detached glows or cast shadows, stray pixels, text, watermarks. Keep silhouette legible at 112px and leave no extraneous background material.
+Use case: precise-object-edit. Asset type: one production transparent PNG horizontal DATE/TURN HUD ribbon for a medieval strategy game, to attach flush to the top-right screen corner. Inputs: Image 1 is the previous oversized astrolabe ornament to simplify; Image 2 is the dark navy ribbon texture and bottom gold rail to preserve. Primary request: replace the astrolabe completely with a restrained curved acanthus leaf cap that is integrated seamlessly into a long dark navy rectangular ribbon. REMOVE ALL circular discs, spherical shapes, orbital arcs, globes, astrolabe rings and medallions. ONE continuous unified shape, NOT separate floating ornament and rectangle. Wide canvas exactly 3:1. Ribbon top and right edges touch the canvas edges with zero padding; top edge runs straight across, right edge is square and flush. The ribbon's navy field occupies the top 84 percent of canvas height and continues uniformly to the right edge; bottom 16 percent is transparent except a few fine left-end leaves trailing down. Leftmost 18 percent contains a modest, slender antique brass S-shaped carved acanthus flourish that forms the ACTUAL left boundary of the navy ribbon: curl inward at the upper-left and descend in a smooth tapered leaf curve into the bottom rail. All navy filling on the left has a clean visible brass contour, no unbordered navy rectangle protruding to the left or above a leaf. Gold outline at left must flow smoothly into the SINGLE very thin straight bottom gold rail extending across the entire remaining ribbon to the right edge. Left cap never contains a large circular focal point or a chunky gold cluster. Keep most of the canvas an empty uninterrupted nearly-black midnight-blue, subtly grained surface for text. Flat frontal refined hand-painted game-UI material, muted worn brass instead of bright yellow. Avoid detached ornaments, heavy bevels, angular diamond endcaps, toolbar frame, top gold border, right end ornament, vertical separators, lettering, numbers, icons, scenery, outer glow, cast shadow, watermark. Actual transparency outside the continuous ribbon silhouette and in negative spaces among the fine leaves. No outside margin or extra backdrop. This single asset will be nine-sliced so the slim decorated left cap and lower gold rail stay fixed, while the navy text field stretches horizontally.
 ```
 
 生成オプション: `transparent_background: true`。
