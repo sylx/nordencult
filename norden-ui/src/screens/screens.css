@@ -25,5 +25,10 @@
   box-shadow: 0 4px 14px #000a;
 }
 
-/* City command screen: the turn bar gives way to the city switcher on narrow hosts (the full text stays in its title) */
-.norden-city-command .norden-screen-top-right { left: 320px; display: flex; justify-content: flex-end; }
+/* DateBar is flush with the host's top-right edge. Move the city switcher below it on narrow hosts. */
+.norden-city-command { container: norden-date-host / inline-size; }
+.norden-city-command .norden-screen-top-right { top: 0; right: 0; left: 0; display: flex; justify-content: flex-end; }
+@container norden-date-host (max-width: 1000px) {
+  .norden-city-command .norden-screen-top-left { top: 112px; }
+  .norden-city-command > .norden-info-window { margin-top: 96px; }
+}

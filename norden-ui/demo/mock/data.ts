@@ -98,4 +98,4 @@ export function cityView(id: string, knights: readonly KnightView[] = knightsIn(
   }
 }
 
-export const TURN: TurnView = { turn: 1, phaseLabel: '戦略フェーズ', dateLabel: '王暦312年 春', activeFaction: FACTIONS[PLAYER] }
+export const TURN: TurnView = { turn: 1, phaseLabel: '戦略フェーズ', dateLabel: '王歴312年4月', activeFaction: FACTIONS[PLAYER] }

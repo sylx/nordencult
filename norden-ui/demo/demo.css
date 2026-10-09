@@ -13,7 +13,7 @@ body { margin: 0; }
 .demo-controls h2 { font-size: 20px; font-weight: 500; margin: 12px 0; }
 .demo-controls p { font-size: 12px; line-height: 1.9; color: #a4ab9e; margin-bottom: 28px; }
 .demo-controls > label { display: block; margin: 20px 0 8px; font-size: 12px; color: #d2cbb8; }
-.demo-controls textarea, .demo-controls select, .demo-controls input[type='number'] { width: 100%; box-sizing: border-box; border: 1px solid #494b3d; background: #121712; color: #ece2cc; font: inherit; font-size: 13px; padding: 10px 12px; border-radius: 3px; }
+.demo-controls textarea, .demo-controls select, .demo-controls input[type='number'], .demo-controls input[type='text'] { width: 100%; box-sizing: border-box; border: 1px solid #494b3d; background: #121712; color: #ece2cc; font: inherit; font-size: 13px; padding: 10px 12px; border-radius: 3px; }
 .demo-controls textarea { resize: vertical; line-height: 1.6; }
 .demo-controls .checkbox { display: flex; align-items: center; gap: 6px; }
 .demo-controls input { accent-color: #b39969; }
@@ -78,7 +78,7 @@ body { margin: 0; }
 
 .demo-stage.is-screen { height: 760px; min-height: 0; overflow: hidden; }
 .demo-center-bottom { position: absolute; left: 50%; bottom: 120px; translate: -50% 0; max-width: calc(100% - 32px); }
-.demo-center-top { position: absolute; left: 50%; top: 80px; translate: -50% 0; max-width: calc(100% - 32px); }
+.demo-date-top-right { position: absolute; top: 0; right: 0; width: 100%; display: flex; justify-content: flex-end; container: norden-date-host / inline-size; }
 .demo-menu { display: grid; gap: 8px; }
 .demo-parts { display: grid; gap: 8px; width: 460px; color: #2a1a0a; }
 .demo-parts h3 { margin: 10px 0 0; font-size: 13px; color: #755b36; }

@@ -69,7 +69,8 @@ export default function CityCommandScreen({
         <CityNavigator name={city.name} onPrev={onPrevCity} onNext={onNextCity} position={cityPosition} />
       </div>
       <div className="norden-screen-top-right">
-        <DateBar text={turnText(turn)}>{turnMenu}</DateBar>
+        <DateBar phaseLabel={turn.phaseLabel} factionName={turn.activeFaction ? turn.activeFaction.name : turn.activeFaction}
+          dateLabel={turn.dateLabel}>{turnMenu}</DateBar>
       </div>
       <CityInfoWindow city={city} onSelectNeighbour={onSelectNeighbour} x={windowPosition.x} y={windowPosition.y} skin={skin} />
       <div className="norden-screen-bottom-center">

@@ -109,7 +109,7 @@ Escで `pop()` します。サブコマンドの展開などEscを自分で使�
 | 部品 | 主なprops | 振る舞い |
 | --- | --- | --- |
 | `CommandToolbar` | `commands: { id, label, icon?, onClick?, disabled?, title?, active?, tone?, children? }[]`, `movable` | 子を持つコマンドは押すと上にサブコマンドの列を開く（再クリック・Esc・外側クリックで閉じる）。`tone: 'accent'` で強調。`movable` で左右の端をドラッグ・矢印キーで移動 |
-| `DateBar` | `text`, `icon?`, `children?` | 年月・ターンの帯。`children` を渡すと歯車の設定メニューを出す |
+| `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `children?` | フェーズ・勢力のターン・年月・設定の順に表示。`children` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
 | `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `size` | 羊皮紙の上（normal / primary）と暗いHUDの上（quiet）のボタン |
 | `Banner` | `children`, `actions` | HUDの案内の帯（`role="status"`） |
 | `CityNavigator` | `name`, `onPrev`, `onNext`, `position` | ◀ 都市名 ▶。ハンドラが無い方向は無効 |
@@ -117,6 +117,8 @@ Escで `pop()` します。サブコマンドの展開などEscを自分で使�
 | `QuantityInput` | `label`, `value`, `onChange`, `min`, `max`, `step`, `unit` | スライダー・± ボタン・数値入力。範囲外は丸める |
 | `KnightCard` | `knight: { name, portrait?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | 騎士の顔・名前・能力。`selection` でチェックボックスになる |
 | `FactionMark` | `faction?`, `emblemOnly` | 紋章と勢力名。省略すると中立 |
+
+DateBarは`phaseLabel`・`factionName`・`dateLabel`を個別に渡します。文字サイズ・左装飾・右上配置の調整箇所と生成プロンプトは [DateBarの装飾と調整](docs/date-bar-assets.md) を参照してください。
 
 旧実装（`nordencult-old/src/ui/components/`）から `CommandToolbar` と `DateBar` を移植しました。HUDのフレーム・背景画像は `src/assets/ui/hud/`、アイコンは `src/assets/ui/icons/` です。ResourceBar・PlayerEmblem・MinimapWindow は未移植です。
 

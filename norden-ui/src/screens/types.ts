@@ -59,7 +59,7 @@ export interface TurnView {
   turn: number
   /** e.g. 戦略フェーズ */
   phaseLabel: string
-  /** e.g. 王暦312年 春 */
+  /** e.g. 王歴312年4月 */
   dateLabel?: string
   /** Whose turn it is; null while every faction's orders are resolved */
   activeFaction?: FactionView | null

@@ -21,7 +21,10 @@ describe('CityCommandScreen', () => {
   it('shows the city window, turn and city switcher', async () => {
     const { onPrevCity, onNextCity } = setup({ cityPosition: { index: 0, count: 2 } })
     expect(screen.getByRole('region', { name: 'カルタ書院 フルーエン' })).toBeInTheDocument()
-    expect(screen.getByText('第3ターン 戦略フェーズ カルタ書院の手番')).toBeInTheDocument()
+    const turn = screen.getByRole('group', { name: 'ターン情報' })
+    expect(within(turn).getByText('戦略フェーズ')).toBeInTheDocument()
+    expect(within(turn).getByText('カルタ書院')).toBeInTheDocument()
+    expect(within(turn).getByText('のターン')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: '前の都市' }))
     await userEvent.click(screen.getByRole('button', { name: '次の都市' }))
     expect(onPrevCity).toHaveBeenCalledOnce()
