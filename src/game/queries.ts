@@ -1,4 +1,6 @@
-import type { CharacterId, CityId, FactionId, GameState, InvasionOrder } from './types'
+import { UNIT_TYPE_MAP } from '../data/unitTypes'
+import { maxSoldiers, soldierPool } from './army'
+import type { ArmyUnit, CharacterId, CityId, FactionId, GameState, InvasionOrder } from './types'
 import { CITY_IDS, FACTION_IDS, areNeighbours, neighbours } from './world'
 
 /** The faction of a city; undefined when neutral */
@@ -41,6 +43,26 @@ export function invasionTargets(state: GameState, from: CityId): CityId[] {
   return neighbours(from).filter((id) => ownerOf(state, id) !== faction)
 }
 
+/** Soldiers of a city not yet sent on an invasion this turn */
+export function soldiersLeft(state: GameState, cityId: CityId): number {
+  const sent = state.orders.filter((o) => o.from === cityId).flatMap((o) => o.units ?? [])
+  return soldierPool(cityId) - sent.reduce((sum, u) => sum + u.soldiers, 0)
+}
+
+/** Why the units of an order are not allowed, or null */
+function unitsProblem(state: GameState, from: CityId, knights: readonly CharacterId[], units: readonly ArmyUnit[]) {
+  if (units.length !== knights.length || units.some((u, i) => u.knightId !== knights[i])) {
+    return '部隊の騎士が予約の騎士と一致しません'
+  }
+  for (const u of units) {
+    if (!UNIT_TYPE_MAP[u.unitType]) return `${u.unitType} は兵科ではありません`
+    if (!Number.isInteger(u.soldiers) || u.soldiers <= 0) return '兵数が0の騎士がいます'
+    if (u.soldiers > maxSoldiers(u.knightId)) return `${u.knightId} の兵数が率兵の上限を超えています`
+  }
+  if (units.reduce((sum, u) => sum + u.soldiers, 0) > soldiersLeft(state, from)) return '出撃できる兵が足りません'
+  return null
+}
+
 /** Why an invasion cannot be ordered now, or null when it can */
 export function orderProblem(state: GameState, draft: Omit<InvasionOrder, 'id'>): string | null {
   const { factionId, from, to, knights } = draft
@@ -58,13 +80,21 @@ export function orderProblem(state: GameState, draft: Omit<InvasionOrder, 'id'>)
     if (orderOf(state, id)) return `${id} はすでに別の侵攻に加わっています`
   }
   if (state.orders.some((o) => o.factionId === factionId && o.to === to)) return 'この目標にはすでに侵攻を予約しています'
-  return null
+  return draft.units ? unitsProblem(state, from, knights, draft.units) : null
 }
 
-/** Whether the city can start an invasion: the active faction's, with free knights and a target */
-export function canInvadeFrom(state: GameState, cityId: CityId): boolean {
-  const faction = ownerOf(state, cityId)
-  return state.phase === 'strategy' && faction !== undefined && faction === state.activeFaction
-    && availableKnights(state, cityId).length > 0
-    && invasionTargets(state, cityId).some((to) => !state.orders.some((o) => o.factionId === faction && o.to === to))
+/** Targets still open from a city: its invasion targets not already ordered by the city's faction */
+export function openInvasionTargets(state: GameState, from: CityId): CityId[] {
+  const faction = ownerOf(state, from)
+  return invasionTargets(state, from).filter((to) => !state.orders.some((o) => o.factionId === faction && o.to === to))
+}
+
+/** Why the active faction cannot start an invasion from the city, or null when it can */
+export function invadeFromProblem(state: GameState, cityId: CityId): string | null {
+  if (state.phase !== 'strategy' || !state.activeFaction) return '手番ではありません'
+  if (ownerOf(state, cityId) !== state.activeFaction) return '自勢力の都市ではありません'
+  if (availableKnights(state, cityId).length === 0) return '出撃できる騎士がいません'
+  if (openInvasionTargets(state, cityId).length === 0) return '侵攻できる隣接都市がありません'
+  if (soldiersLeft(state, cityId) <= 0) return '出撃できる兵がいません'
+  return null
 }

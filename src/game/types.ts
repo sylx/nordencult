@@ -4,6 +4,8 @@ export type FactionId = string
 export type CityId = string
 /** '001'.. */
 export type CharacterId = string
+/** An id of UNIT_TYPES */
+export type UnitTypeId = string
 
 export type Phase = 'strategy' | 'march'
 
@@ -42,6 +44,15 @@ export interface InvasionOrder {
   from: CityId
   to: CityId
   knights: readonly CharacterId[]
+  /** Each knight's unit, in the order of `knights`. Omitted: no soldiers chosen (battles do not use them yet) */
+  units?: readonly ArmyUnit[]
+}
+
+/** The unit type a knight leads into an invasion and its soldiers */
+export interface ArmyUnit {
+  knightId: CharacterId
+  unitType: UnitTypeId
+  soldiers: number
 }
 
 export interface MarchState {
@@ -55,7 +66,7 @@ export interface Battle {
   id: string
   orderId: string
   cityId: CityId
-  attacker: { factionId: FactionId; from: CityId; knights: readonly CharacterId[] }
+  attacker: { factionId: FactionId; from: CityId; knights: readonly CharacterId[]; units?: readonly ArmyUnit[] }
   /** The city's faction (null for a neutral city) and the knights in it */
   defender: { factionId: FactionId | null; knights: readonly CharacterId[] }
 }

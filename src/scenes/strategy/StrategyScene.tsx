@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  CITY_MAP, FACTION_MAP, MapView, type CityHighlight, type RoadHighlight, type StrategyMap,
-} from 'norden-strategy'
+  Banner, CITY_COMMAND_GROUPS, CityCommandScreen, FactionMark, InvasionScreen, MapPickScreen, ScreenHost,
+  useScreenStack, type CityCommandId, type CommandState,
+} from 'norden-ui'
+import { FACTION_MAP, MapView, type CityHighlight, type RoadHighlight, type StrategyMap } from 'norden-strategy'
 import { factionColor } from '../../data/factionColors'
 import {
-  addOrder, availableKnights, canInvadeFrom, cancelOrder, endFactionTurn, invasionTargets, isPlayerTurn, ownerOf,
-  startNextBattle, useGame, type GameState,
+  addOrder, cancelOrder, charactersIn, citiesOf, endFactionTurn, invadeFromProblem, isPlayerTurn, openInvasionTargets,
+  orderProblem, soldiersLeft, startNextBattle, useGame,
 } from '../../game'
 import { useScene } from '../sceneContext'
-import { CityWindow } from './CityWindow'
-import { Banner, OrderList, TurnBar } from './Hud'
-import { InvasionWindow } from './InvasionWindow'
+import { OrderList } from './OrderList'
+import { UNIT_TYPE_VIEWS, cityName, cityView, factionView, knightView, turnView } from './views'
 import './StrategyScene.css'
 
 /** How long each CPU faction's turn is shown (they do nothing yet) */
@@ -23,84 +24,89 @@ const MARCH_SPEED = 30
 
 const TARGET_COLOR = '#ff6a3d'
 
-/** browse: looking around; target: choosing where to invade from `from`; knights: choosing who goes */
-type Mode =
-  | { kind: 'browse' }
-  | { kind: 'target'; from: string }
-  | { kind: 'knights'; from: string; to: string }
-
-const BROWSE: Mode = { kind: 'browse' }
-
-const cityName = (id: string) => CITY_MAP[id]?.name ?? id
-
-/** Targets still open from a city: other factions' neighbours not already ordered */
-function openTargets(game: GameState, from: string): string[] {
-  return invasionTargets(game, from)
-    .filter((to) => !game.orders.some((o) => o.factionId === game.playerFaction && o.to === to))
+/** The screens over the map and their params (norden-ui's screen stack) */
+type StrategyScreens = {
+  /** A city's information and the commands (any city; the commands work in the player's own) */
+  cityCommand: { cityId: string }
+  /** Choosing where to invade from `from` on the map */
+  pickTarget: { from: string }
+  /** Choosing the knights, unit types and soldiers */
+  invasion: { from: string; to: string }
 }
 
-/** The strategy map with the game UI (norden-ui) on top */
+/** Commands not made yet (M001 has only the invasion) */
+const NOT_YET: CommandState = { disabled: true, reason: 'まだ使えません' }
+const COMMAND_IDS = CITY_COMMAND_GROUPS.flatMap((g) => g.commands?.map((c) => c.id) ?? [g.id as CityCommandId])
+
+/** The strategy map with the game UI (norden-ui's screens) on top */
 export default function StrategyScene() {
   const { state: game, update } = useGame()
   const { goTo } = useScene()
   const [map, setMap] = useState<StrategyMap | null>(null)
-  const [selected, setSelected] = useState('')
-  const [modeState, setMode] = useState<Mode>(BROWSE)
   // Coming back from a battle, the camera starts over its city
   const [returnCity] = useState(() => game.lastBattle?.battle.cityId)
+  const nav = useScreenStack<StrategyScreens>(
+    { screen: 'cityCommand', params: { cityId: returnCity ?? citiesOf(game, game.playerFaction)[0] ?? 'P012' } })
+  const { top, popTo } = nav
   const playerTurn = isPlayerTurn(game)
-  // Ordering belongs to the player's turn
-  const mode = playerTurn ? modeState : BROWSE
-  const targets = useMemo(() => (mode.kind === 'target' ? openTargets(game, mode.from) : []), [game, mode])
+  const targets = useMemo(() => (top.screen === 'pickTarget' ? openInvasionTargets(game, top.params.from) : []), [game, top])
   const battle = game.march?.current ?? null
-  const city = selected ? CITY_MAP[selected] : undefined
+  const playerCities = citiesOf(game, game.playerFaction)
+
+  // Ordering belongs to the player's turn
+  useEffect(() => {
+    if (!playerTurn) popTo('cityCommand')
+  }, [playerTurn, popTo])
 
   const selectPlace = (id: string) => {
-    if (mode.kind === 'target') {
-      if (targets.includes(id)) setMode({ kind: 'knights', from: mode.from, to: id })
-      return
+    if (!id) return
+    if (top.screen === 'pickTarget') {
+      if (targets.includes(id)) nav.push('invasion', { from: top.params.from, to: id })
+    } else if (top.screen === 'cityCommand') {
+      nav.replace('cityCommand', { cityId: id })
     }
-    if (mode.kind === 'browse') setSelected(id)
   }
 
-  // Esc steps back out of choosing a target or the knights
-  useEffect(() => {
-    if (mode.kind === 'browse') return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      setMode(mode.kind === 'knights' ? { kind: 'target', from: mode.from } : BROWSE)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [mode])
+  const showCity = (id: string) => {
+    if (top.screen === 'cityCommand') nav.replace('cityCommand', { cityId: id })
+  }
+
+  const stepCity = (cityId: string, delta: number) => {
+    const index = playerCities.indexOf(cityId)
+    const next = index < 0 ? 0 : (index + delta + playerCities.length) % playerCities.length
+    nav.replace('cityCommand', { cityId: playerCities[next] })
+  }
+
+  const selected = top.screen === 'cityCommand' ? top.params.cityId : top.params.from
 
   useEffect(() => {
     if (!map) return
     const cities: CityHighlight[] = []
     const roads: RoadHighlight[] = []
-    if (mode.kind === 'target') {
-      cities.push({ id: mode.from }, ...targets.map((id) => ({ id, color: TARGET_COLOR })))
-      roads.push(...targets.map((to) => ({ from: mode.from, to, color: TARGET_COLOR, flow: false })))
-    } else if (mode.kind === 'knights') {
-      cities.push({ id: mode.from }, { id: mode.to, color: TARGET_COLOR })
-      roads.push({ from: mode.from, to: mode.to, color: TARGET_COLOR })
+    if (top.screen === 'pickTarget') {
+      const { from } = top.params
+      cities.push({ id: from }, ...targets.map((id) => ({ id, color: TARGET_COLOR })))
+      roads.push(...targets.map((to) => ({ from, to, color: TARGET_COLOR, flow: false })))
+    } else if (top.screen === 'invasion') {
+      cities.push({ id: top.params.from }, { id: top.params.to, color: TARGET_COLOR })
+      roads.push({ from: top.params.from, to: top.params.to, color: TARGET_COLOR })
     } else if (battle) {
       cities.push({ id: battle.cityId, color: TARGET_COLOR })
-    } else if (selected) {
-      cities.push({ id: selected })
+    } else {
+      cities.push({ id: top.params.cityId })
     }
     // Ordered invasions stay on the map until they are resolved
     const pending = game.march
       ? game.orders.filter((o) => game.march?.queue.includes(o.id) || battle?.orderId === o.id)
       : game.orders.filter((o) => o.factionId === game.playerFaction)
     for (const o of pending) {
-      if (mode.kind === 'knights' && o.from === mode.from && o.to === mode.to) continue
+      if (top.screen === 'invasion' && o.from === top.params.from && o.to === top.params.to) continue
       roads.push({ from: o.from, to: o.to, color: factionColor(o.factionId) })
     }
     map.setCityHighlights(cities)
     const missing = map.setRoadHighlights(roads)
     if (missing.length > 0) console.warn('街道が見つかりません', missing)
-  }, [map, mode, targets, battle, selected, game.orders, game.march, game.playerFaction])
+  }, [map, top, targets, battle, game.orders, game.march, game.playerFaction])
 
   useEffect(() => {
     if (map && returnCity) map.focusPlace(returnCity, true)
@@ -148,59 +154,62 @@ export default function StrategyScene() {
   }, [map, battle, goTo])
 
   const endTurn = () => {
-    setMode(BROWSE)
+    popTo('cityCommand')
     update((s) => (isPlayerTurn(s) ? endFactionTurn(s) : s))
   }
 
-  const order = (from: string, to: string, knights: string[]) => {
-    update((s) => addOrder(s, { factionId: s.playerFaction, from, to, knights }))
-    setMode(BROWSE)
-    setSelected(from)
+  const commandState = (cityId: string): Partial<Record<CityCommandId, CommandState>> => {
+    const state: Partial<Record<CityCommandId, CommandState>> = Object.fromEntries(COMMAND_IDS.map((id) => [id, NOT_YET]))
+    const problem = playerTurn ? invadeFromProblem(game, cityId) : '手番ではありません'
+    state.invade = problem ? { disabled: true, reason: problem } : {}
+    return state
   }
 
-  const ownCity = city && ownerOf(game, city.id) === game.playerFaction
+  const notice = battle
+    ? `${FACTION_MAP[battle.attacker.factionId]?.name}軍が${cityName(battle.attacker.from)}から${cityName(battle.cityId)}へ進軍`
+    : game.phase === 'strategy' && !playerTurn && game.activeFaction
+      ? `${FACTION_MAP[game.activeFaction]?.name}の手番`
+      : null
 
   return (
     <div className="strategy-scene">
       <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false}
         cityOwners={game.cityOwners} />
-      <div className="strategy-scene__ui">
-        {city && <CityWindow city={city} game={game} neighbours={map?.network.neighbours(city.id) ?? []}
-          onSelectCity={(id) => mode.kind === 'browse' && setSelected(id)} x={48} y={72} />}
-        <TurnBar game={game} onEndTurn={endTurn} />
-        <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))}
-          onSelectCity={(id) => mode.kind === 'browse' && setSelected(id)} />
-        {mode.kind === 'target' && (
-          <Banner>
-            {cityName(mode.from)}からの侵攻先を選んでください
-            <button type="button" className="hud-button hud-button--small" onClick={() => setMode(BROWSE)}>やめる</button>
-          </Banner>
-        )}
-        {mode.kind === 'browse' && game.phase === 'strategy' && !playerTurn && game.activeFaction && (
-          <Banner>{FACTION_MAP[game.activeFaction]?.name}の手番</Banner>
-        )}
-        {mode.kind === 'browse' && battle && (
-          <Banner>
-            {FACTION_MAP[battle.attacker.factionId]?.name}軍が{cityName(battle.attacker.from)}から{cityName(battle.cityId)}へ進軍
-          </Banner>
-        )}
-        {mode.kind === 'knights' && (
-          <InvasionWindow key={`${mode.from}-${mode.to}`} game={game} from={mode.from} to={mode.to} x={460} y={120}
-            onOrder={(knights) => order(mode.from, mode.to, knights)} onBack={() => setMode({ kind: 'target', from: mode.from })} />
-        )}
-        {mode.kind === 'browse' && city && ownCity && playerTurn && (
-          <div className="hud-command">
-            <span className="hud-command__city">{city.name}</span>
-            <button type="button" className="hud-button" disabled={!canInvadeFrom(game, city.id)}
-              onClick={() => setMode({ kind: 'target', from: city.id })}>侵攻</button>
-            {!canInvadeFrom(game, city.id) && (
-              <span className="hud-command__note">
-                {availableKnights(game, city.id).length === 0 ? '出撃できる騎士がいません' : '侵攻できる隣接都市がありません'}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+      <ScreenHost nav={nav} screens={{
+        cityCommand: ({ cityId }) => {
+          const index = playerCities.indexOf(cityId)
+          return (
+            <CityCommandScreen city={cityView(game, cityId)} turn={turnView(game)}
+              cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
+              onPrevCity={playerCities.length > 0 ? () => stepCity(cityId, -1) : undefined}
+              onNextCity={playerCities.length > 0 ? () => stepCity(cityId, 1) : undefined}
+              commandState={commandState(cityId)}
+              onCommand={(id) => id === 'invade' && nav.push('pickTarget', { from: cityId })}
+              onEndTurn={endTurn} endTurnDisabled={!playerTurn}
+              onSelectNeighbour={showCity}
+              turnMenu={<p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(game.playerFaction)} /></p>}>
+              <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))} onSelectCity={showCity} />
+              {notice && <div className="norden-screen-top-center norden-screen-banner"><Banner>{notice}</Banner></div>}
+            </CityCommandScreen>
+          )
+        },
+        pickTarget: ({ from }) => (
+          <MapPickScreen message={`${cityName(from)}からの侵攻先を選んでください`} onCancel={nav.pop} />
+        ),
+        invasion: ({ from, to }) => (
+          <InvasionScreen from={cityView(game, from)} to={cityView(game, to)} defenders={charactersIn(game, to).length}
+            knights={charactersIn(game, from).map((id) => knightView(game, id))} unitTypes={UNIT_TYPE_VIEWS}
+            soldierPool={soldiersLeft(game, from)}
+            validate={(draft) => orderProblem(game,
+              { factionId: game.playerFaction, from, to, knights: draft.map((u) => u.knightId), units: draft })}
+            onCancel={nav.pop}
+            onConfirm={(draft) => {
+              update((s) => addOrder(s,
+                { factionId: s.playerFaction, from, to, knights: draft.map((u) => u.knightId), units: draft }))
+              popTo('cityCommand')
+            }} />
+        ),
+      }} />
     </div>
   )
 }

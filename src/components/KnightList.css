@@ -41,6 +41,3 @@ label.knight-list__row:hover { background: rgb(255 255 255 / 0.6); }
 .knight-list__type { font-size: 12px; color: #8a7050; }
 .knight-list__aside { margin-left: auto; font-size: 12px; color: #6a5030; text-align: right; }
 .knight-list__empty { margin: 0; padding: 16px 0; color: #8a7050; text-align: center; }
-
-.knight-stats { display: flex; gap: 8px; white-space: nowrap; }
-.knight-stats b { font-weight: 700; color: #2a1a0a; }

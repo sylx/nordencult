@@ -11,7 +11,10 @@ export class GameRuleError extends Error {}
 export function addOrder(state: GameState, draft: Omit<InvasionOrder, 'id'>): GameState {
   const problem = orderProblem(state, draft)
   if (problem) throw new GameRuleError(problem)
-  const order: InvasionOrder = { ...draft, knights: [...draft.knights], id: `order-${state.serial}` }
+  const order: InvasionOrder = {
+    ...draft, knights: [...draft.knights], ...(draft.units && { units: draft.units.map((u) => ({ ...u })) }),
+    id: `order-${state.serial}`,
+  }
   return { ...state, orders: [...state.orders, order], serial: state.serial + 1 }
 }
 
@@ -70,12 +73,13 @@ function createBattle(state: GameState, order: InvasionOrder): Battle | null {
     return c?.cityId === from && c.factionId === factionId
   })
   if (knights.length === 0) return null
+  const units = order.units?.filter((u) => knights.includes(u.knightId))
   const defender = ownerOf(state, to) ?? null
   return {
     id: `battle-${state.serial}`,
     orderId: order.id,
     cityId: to,
-    attacker: { factionId, from, knights },
+    attacker: { factionId, from, knights, ...(units && { units }) },
     defender: {
       factionId: defender,
       knights: Object.keys(state.characters).sort()

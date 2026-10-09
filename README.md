@@ -28,7 +28,7 @@ main への push で GitHub Pages に公開します（`.github/workflows/deploy
 - `import { MapView } from '@norden/map-runtime/render/mapView'` → `norden-battle/map-runtime/src/render/mapView.ts`（パッケージの `exports` と同じ対応。依存の `simplex-noise` はルートに入れてある）
 
 戦闘マップ（`norden-battle/assets/maps/`）は、map-runtime の Vite プラグイン（`mapsPlugin`、読み取り専用）でページの `maps/` として配信し、ビルドでは `dist/maps/` にコピーします。
-- `import { InfoWindowWithTabs } from 'norden-ui'` → `norden-ui/src/index.ts`
+- `import { CityCommandScreen, ScreenHost } from 'norden-ui'` → `norden-ui/src/index.ts`
 
 公開APIは各 `src/index.ts` にまとめ、ルートから内部のファイルは直接参照しません。
 React・React DOM・three はルートの `node_modules` に一本化します（Vite の `resolve.dedupe`）。サブモジュールの依存とバージョンを揃えてください。
@@ -41,7 +41,7 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | シーン | 内容 |
 | --- | --- |
 | `title` | タイトル画面（仮） |
-| `strategy` | 戦略マップ＋HUD（ターン・手番・侵攻予約）＋都市情報ウィンドウ。都市をクリックで選択、空き地のクリックで解除。行軍フェーズでは軍団が進み、到着すると `battle` へ |
+| `strategy` | 戦略マップ＋norden-ui の画面スタック（都市コマンド → 侵攻先の選択 → 侵攻画面。Escで1段戻る）。都市をクリックでその都市の都市コマンド画面へ。行軍フェーズでは軍団が進み、到着すると `battle` へ |
 | `battle` | 戦闘（`{ battleId }`）。戦闘マップ（map-runtime で描画）、攻守の勢力と騎士、デバッグ用の勝敗ボタンと使ったマップの表示 |
 | `battleResult` | 戦闘結果（`{ battleId }`）。勝敗・拠点の所属の変化・騎士の移動。「戦略マップへ」で行軍フェーズの続きへ |
 
@@ -59,9 +59,9 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | `src/scenes/registry.ts` | シーン名とコンポーネントの対応（遅延読み込み） |
 | `src/scenes/SceneManager.tsx` | 現在のシーンの表示・切り替え |
 | `src/scenes/sceneContext.ts` | `useScene()` |
-| `src/scenes/strategy/CityWindow.tsx` | norden-ui の情報ウィンドウによる都市情報・騎士・街道タブ |
-| `src/scenes/strategy/Hud.tsx` | ターンのバー（「ターン終了」）・予約一覧・案内の帯 |
-| `src/scenes/strategy/InvasionWindow.tsx` | 侵攻する騎士の選択 |
+| `src/scenes/strategy/StrategyScene.tsx` | 地図と画面スタック（`cityCommand` / `pickTarget` / `invasion`）。地図の強調は表示中の画面（`nav.top`）から決める |
+| `src/scenes/strategy/views.ts` | ゲームの状態 → norden-ui のview型（`CityView`・`KnightView`・`TurnView`） |
+| `src/scenes/strategy/OrderList.tsx` | 侵攻予約・行軍の一覧（都市コマンド画面に重ねるHUD） |
 | `src/scenes/battle/battleMap.ts` | 戦闘マップの選択。攻撃元と目標の街道マップ `road-<小さい ID>-<大きい ID>.json` から目標の範囲（`battleAreas[目標]`）を切り出す。無ければ `fluen.json` 全体（コンソールに警告） |
 | `src/scenes/battle/BattleField.tsx` | map-runtime の `MapView` で戦闘マップを描く（アンマウントで破棄） |
 
@@ -73,12 +73,15 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | --- | --- |
 | `src/game/types.ts` | `GameState` などの型 |
 | `src/game/setup.ts` | 初期状態（都市・キャラクターの初期配置）、`?faction=` の読み取り |
-| `src/game/queries.ts` | 状態の問い合わせ（手番の順・都市の騎士・侵攻先・予約の条件） |
+| `src/game/queries.ts` | 状態の問い合わせ（手番の順・都市の騎士・侵攻先・予約の条件・残りの兵） |
+| `src/game/army.ts` | 兵の仮の規則（都市の兵・騎士の率兵・既定の兵科） |
 | `src/game/actions.ts` | 予約の追加・取消、手番の終了、戦闘の開始、`resolveBattle`（戦後処理） |
 | `src/game/store.ts`, `gameContext.ts` | `App` に置くストアと `useGame()`（シーンを切り替えても状態が残る） |
 | `src/game/world.ts` | 都市・勢力・街道のつながり（`ROAD_LINKS` から） |
 
 シーンからは `const { state, update } = useGame()` で読み、`update((s) => addOrder(s, draft))` のように変えます。規則に反する操作は `GameRuleError` を投げます。
+
+侵攻予約は騎士ごとの兵科と兵数（`InvasionOrder.units`）を持ちます。戦闘の規則が入るまでの仮の値で、都市が1ターンに出せる兵は軍事×5（`soldierPool`）、騎士が率いる兵は統率×5（`maxSoldiers`）、兵科の既定は種別から決めます（`src/data/unitTypes.ts`）。戦闘ではまだ使わず、戦闘シーンに表示するだけです。
 
 キャラクターのマスターデータは `src/data/characterData.json`（旧実装から移植）、初期配置は `src/data/characterStart.json`、顔・全身の画像は `src/components/CharacterImage.tsx`（`src/assets/character.webp` のスプライト）です。
 

@@ -2,6 +2,7 @@
 export * from './types'
 export * from './actions'
 export * from './queries'
+export { defaultUnitType, maxSoldiers, soldierPool } from './army'
 export { DEFAULT_PLAYER_FACTION, createInitialState, readPlayerFaction } from './setup'
 export { createGameStore, type GameStore } from './store'
 export { GameContext, useGame } from './gameContext'

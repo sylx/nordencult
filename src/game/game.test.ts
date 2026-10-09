@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   addOrder, availableKnights, cancelOrder, charactersIn, createInitialState, endFactionTurn, GameRuleError,
-  invasionTargets, orderProblem, readPlayerFaction, resolveBattle, startNextBattle, turnOrder, type GameState,
+  invadeFromProblem, invasionTargets, maxSoldiers, orderProblem, readPlayerFaction, resolveBattle, soldierPool,
+  soldiersLeft, startNextBattle, turnOrder, type GameState,
 } from '.'
 
 // The demo of M001: カルタ書院 invades アンバリア (P004, レオニス帝国) from フルーエン (P012)
@@ -110,6 +111,43 @@ describe('turns', () => {
     let state = endStrategyPhase(invadeAmbaria())
     state = { ...state, cityOwners: { ...state.cityOwners, [AMBARIA]: 'carta' } }
     expect(startNextBattle(state)).toMatchObject({ turn: 2, phase: 'strategy' })
+  })
+})
+
+describe('units', () => {
+  const units = [{ knightId: '015', unitType: 'cavalry', soldiers: 300 }, { knightId: '016', unitType: 'archer', soldiers: 200 }]
+  const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, knights: ['015', '016'], units }
+
+  it('takes the soldiers of an order from its city', () => {
+    const state = createInitialState('carta')
+    expect(soldierPool(FLUEN)).toBe(1100) // 軍事 220 × 5
+    expect(soldiersLeft(addOrder(state, draft), FLUEN)).toBe(600)
+  })
+
+  it('checks the units of an order', () => {
+    const state = createInitialState('carta')
+    expect(orderProblem(state, draft)).toBeNull()
+    expect(orderProblem(state, { ...draft, units: units.slice(0, 1) })).not.toBeNull()
+    expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], soldiers: 0 }] })).not.toBeNull()
+    expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], unitType: 'dragon' }] })).not.toBeNull()
+    expect(orderProblem(state, { ...draft, units: [{ ...units[0], soldiers: maxSoldiers('015') + 5 }, units[1]] }))
+      .not.toBeNull()
+    expect(orderProblem({ ...state, orders: [{ ...draft, id: 'x', to: 'P026', knights: ['027'], units: [
+      { knightId: '027', unitType: 'infantry', soldiers: 1000 },
+    ] }] }, draft)).toBe('出撃できる兵が足りません')
+  })
+
+  it('says why a city cannot start an invasion', () => {
+    const state = createInitialState('carta')
+    expect(invadeFromProblem(state, FLUEN)).toBeNull()
+    expect(invadeFromProblem(state, AMBARIA)).toBe('自勢力の都市ではありません')
+    expect(invadeFromProblem(addOrder(state, draft), FLUEN)).toBe('侵攻できる隣接都市がありません')
+    expect(invadeFromProblem(endFactionTurn(state), FLUEN)).toBe('自勢力の都市ではありません')
+  })
+
+  it('takes the units into the battle', () => {
+    const marching = startNextBattle(endStrategyPhase(addOrder(createInitialState('carta'), draft)))
+    expect(marching.march?.current?.attacker.units).toEqual(units)
   })
 })
 

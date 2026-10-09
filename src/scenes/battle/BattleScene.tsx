@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { CITY_MAP } from 'norden-strategy'
 import { FactionLabel } from '../../components/FactionLabel'
 import { KnightList } from '../../components/KnightList'
+import { UNIT_TYPE_MAP } from '../../data/unitTypes'
 import { resolveBattle, useGame, type Battle, type BattleWinner } from '../../game'
 import { useScene } from '../sceneContext'
 import type { SceneProps } from '../types'
@@ -71,12 +72,16 @@ function Battlefield({ battle }: { battle: Battle }) {
 
 function BattleHeader({ battle }: { battle: Battle }) {
   const { attacker, defender } = battle
+  const unitOf = (id: string) => {
+    const unit = attacker.units?.find((u) => u.knightId === id)
+    return unit && `${UNIT_TYPE_MAP[unit.unitType]?.name ?? unit.unitType} ${unit.soldiers.toLocaleString()}`
+  }
   return (
     <header className="battle-header">
       <section className="battle-side battle-side--attacker">
         <h2><span className="battle-side__role">攻撃</span><FactionLabel factionId={attacker.factionId} /></h2>
         <p className="battle-side__from">{CITY_MAP[attacker.from]?.name}から出撃</p>
-        <KnightList ids={attacker.knights} compact />
+        <KnightList ids={attacker.knights} compact aside={unitOf} />
       </section>
       <div className="battle-header__city">
         <span>{CITY_MAP[battle.cityId]?.name}</span>

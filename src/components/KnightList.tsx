@@ -48,16 +48,3 @@ export function KnightList({ ids, notes, aside, selection, empty = '騎士はい
     </ul>
   )
 }
-
-/** 統率・武力・知力 of a character, for choosing who to send */
-export function KnightStats({ id }: { id: string }) {
-  const c = CHARACTER_MAP[id]
-  if (!c) return null
-  return (
-    <span className="knight-stats">
-      <span>統率 <b>{c.leadership}</b></span>
-      <span>武力 <b>{c.strength}</b></span>
-      <span>知力 <b>{c.intelligence}</b></span>
-    </span>
-  )
-}
