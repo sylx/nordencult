@@ -110,7 +110,7 @@ Escで `pop()` します。サブコマンドの展開などEscを自分で使�
 | --- | --- | --- |
 | `CommandToolbar` | `commands: { id, label, icon?, onClick?, disabled?, title?, active?, tone?, children? }[]`, `movable` | 子を持つコマンドは押すと上にサブコマンドの列を開く（再クリック・Esc・外側クリックで閉じる）。`tone: 'accent'` で強調。`movable` で左右の端をドラッグ・矢印キーで移動 |
 | `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `children?` | フェーズ・勢力のターン・年月・設定の順に表示。`children` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
-| `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `metal: 'gold' \| 'silver'`, `size`, `style` | 象牙の立体的なボタンに金／銀の四隅装飾。生成画像を9分割で伸縮し、`style` で幅・高さを指定可能 |
+| `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `metal: 'gold' \| 'silver' \| 'none'`, `size`, `style` | 象牙の立体的なボタンに金／銀の四隅装飾、または装飾なし。生成画像を9分割で伸縮し、`style` で幅・高さを指定可能 |
 | `Banner` | `children`, `actions` | HUDの案内の帯（`role="status"`） |
 | `CityNavigator` | `name`, `onPrev`, `onNext`, `position` | ◀ 都市名 ▶。ハンドラが無い方向は無効 |
 | `ChoiceGroup` | `label`, `options`, `value`, `onChange` | 単一選択のボタン列。radiogroupとして矢印キーで移動し、無効な選択肢を飛ばす |

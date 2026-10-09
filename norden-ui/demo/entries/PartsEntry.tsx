@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { ButtonProps } from '../../src'
 import { Banner, Button, Card, ChoiceGroup, CityNavigator, FactionMark, InfoWindow, KnightCard, QuantityInput } from '../../src'
 import { repositoryCharacters, RepositoryPortrait } from '../repositoryCharacters'
 import { FACTIONS, KNIGHTS, UNIT_TYPES } from '../mock/data'
@@ -19,8 +20,8 @@ export default function PartsEntry() {
   const [name, setName] = useState(character?.name ?? KNIGHTS[1]!.name)
   const [stats, setStats] = useState({ leadership: character?.leadership ?? 84, strength: character?.strength ?? 86, intelligence: character?.intelligence ?? 52 })
   const [buttonWidth, setButtonWidth] = useState(160)
-  const [buttonHeight, setButtonHeight] = useState(44)
-  const [buttonMetal, setButtonMetal] = useState<'gold' | 'silver'>('gold')
+  const [buttonHeight, setButtonHeight] = useState(56)
+  const [buttonMetal, setButtonMetal] = useState<NonNullable<ButtonProps['metal']>>('gold')
   useEffect(() => () => { if (uploadedRef.current) URL.revokeObjectURL(uploadedRef.current) }, [])
   const preview = {
     name, subtitle: '騎士 / プレビュー',
@@ -38,6 +39,7 @@ export default function PartsEntry() {
           <div className="demo-row">
             <Button metal="silver" onClick={() => add('銀装飾のボタン')}>象牙・銀</Button>
             <Button metal="gold" onClick={() => add('金装飾のボタン')}>象牙・金</Button>
+            <Button metal="none" onClick={() => add('装飾なしのボタン')}>装飾なし</Button>
             <Button variant="primary" onClick={() => add('主なボタン')}>予約</Button>
             <Button disabled>無効</Button>
             <Button size="small">小さい</Button>
@@ -71,14 +73,15 @@ export default function PartsEntry() {
       <p>ChoiceGroup は矢印キーで選択を移動できます。QuantityInput はスライダー・± ボタン・数値入力が連動し、範囲外の値は丸めます。</p>
       <h3>ボタンの寸法</h3>
       <label htmlFor="button-metal">四隅の装飾</label>
-      <select id="button-metal" value={buttonMetal} onChange={event => setButtonMetal(event.target.value as 'gold' | 'silver')}>
+      <select id="button-metal" value={buttonMetal} onChange={event => setButtonMetal(event.target.value as NonNullable<ButtonProps['metal']>)}>
         <option value="gold">金</option>
         <option value="silver">銀</option>
+        <option value="none">なし</option>
       </select>
       <label htmlFor="button-width">幅（px）</label>
       <input id="button-width" type="number" min={80} max={360} value={buttonWidth} onChange={event => setButtonWidth(Math.min(360, Math.max(80, Number(event.target.value))))} />
       <label htmlFor="button-height">高さ（px）</label>
-      <input id="button-height" type="number" min={40} max={100} value={buttonHeight} onChange={event => setButtonHeight(Math.min(100, Math.max(40, Number(event.target.value))))} />
+      <input id="button-height" type="number" min={56} max={100} value={buttonHeight} onChange={event => setButtonHeight(Math.min(100, Math.max(56, Number(event.target.value))))} />
       <h3>騎士のプレビュー</h3>
       <label htmlFor="portrait-mode">画像の表示</label>
       <select id="portrait-mode" value={portraitMode} onChange={event => setPortraitMode(event.target.value)}>

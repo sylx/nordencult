@@ -4,19 +4,20 @@ CityNavigatorとBannerはInfoWindowの最も細いベゼル（`windowSkins.thin`
 
 ## ボタンとスライダー
 
-ボタン本体は、滑らかな象牙の表面、丸みのある面取り、光沢と下辺の陰影を持つ立体的な素材です。四隅には小さな金／銀の象嵌装飾を配置しています。`src/assets/ui/buttons/ivory-button-gold.png` と `ivory-button-silver.png` は組み込み image_gen ツールで作成した透過PNGです。CSSのborder-imageで9分割し、角と面取りの大きさを保って象牙の中央を伸縮します。hover・押下・無効・キーボードフォーカスに対応し、暗いHUD上でも象牙の明るさを保ちます。ChoiceGroup、都市の矢印、QuantityInputの±にも同じ素材を使います。
+ボタン本体は、滑らかな象牙の表面、丸みのある面取り、光沢と下辺の陰影を持つ立体的な素材です。四隅に金／銀の象嵌装飾があるバリエーションと、装飾なしのバリエーションがあります。`src/assets/ui/buttons/ivory-button-gold.png`、`ivory-button-silver.png`、`ivory-button-plain.png` は組み込み image_gen ツールで作成した透過PNGです。CSSのborder-imageで9分割し、角と面取りの大きさを保って象牙の中央を伸縮します。hover・押下・無効・キーボードフォーカスに対応し、暗いHUD上でも象牙の明るさを保ちます。ChoiceGroupと都市の矢印には金／銀、QuantityInputの±には装飾なしの素材を使います。
 
 ```tsx
 <Button style={{ width: 240, height: 60 }}>出撃する</Button>
 <Button metal="gold">金の装飾</Button>
 <Button metal="silver">銀の装飾</Button>
+<Button metal="none">装飾なし</Button>
 <Button variant="primary">予約</Button>
 <Button variant="quiet" size="small">やめる</Button>
 ```
 
-内容と装飾が収まる寸法を指定してください（通常は高さ40px以上、小さいボタンは32px以上）。幅は内容に応じて自動で決まるほか、`style` の数値・割合などで指定できます。
+内容と装飾が収まる寸法を指定してください（通常は高さ56px以上、小さいボタンは36px以上）。角の表示領域は通常24px、小さいボタン16pxです。角の装飾と文字が重ならない余白を取り、文字は17px（小さいボタン14px）の太めのゴシック体、象牙上では濃い色で描画します。幅は内容に応じて自動で決まるほか、`style` の数値・割合などで指定できます。
 
-`metal` を省略すると、primaryは金、それ以外は銀になります。明示指定はvariantより優先します。カタログの「四隅の装飾」で任意サイズのボタンを切り替えられます。
+`metal` を省略すると、primaryは金、それ以外は銀になります。`metal="none"` は象牙の質感・光沢・面取りを保った装飾なしのボタンです。明示指定はvariantより優先します。カタログの「四隅の装飾」で金・銀・なしを切り替えられます。
 
 ChoiceGroupは暗い共通の台座に選択肢を配置します。選択中は明るい金装飾の象牙、未選択は銀装飾の素材を暗くして面取りの光を反転させたくぼみとして描画します。丸い選択マーカーとhoverの明るさでも状態を伝えます。キーボードフォーカス、無効状態は選択状態と別に表示します。
 
@@ -65,6 +66,20 @@ KnightCardはこのCardを使用します。標準の顔画像は76px、compact�
 ボタンの幅・高さも同じカタログで変更できます。
 
 ## ボタンの生成プロンプト
+
+### 装飾なしの象牙ボタン
+
+組み込み `image_gen.imagegen` で金版を参照し、`transparent_background: true` で装飾を除去。
+保存先: `src/assets/ui/buttons/ivory-button-plain.png`。
+
+```text
+Use case: precise-object-edit
+Edit target: the attached square ivory button surface.
+Primary request: create its plain, undecorated ivory variant by completely removing the four gold filigree corner inlays. Replace those areas with seamlessly matching polished creamy ivory. There should be no gold, silver, metal ornaments, carved patterns, symbols or decorative corner pieces anywhere.
+Preserve the entire solid ivory body, satin polish, subtle ivory grain, smooth raised bevel, rounded square silhouette, upper-edge light, lower-edge shadow, lighting direction, original dimensions and front-facing orthographic perspective. Keep a flat quiet opaque ivory center for a later text label. The sides and corner geometry must still suit nine-slice resizing into a button.
+Background: transparent outside the smooth rounded ivory silhouette. Remove detached specks and colored/white halos outside the button; only the single ivory object should be opaque. No external cast shadow.
+Constraints: change only the decorative inlays to plain ivory and clean the outer alpha. No text, letters, new objects, parchment, picture frame or continuous metal edging.
+```
 
 生成方法: 組み込み `image_gen.imagegen`、全て `transparent_background: true`。金版を新規生成したあと透過輪郭を仕上げ、同じ金版を参照して装飾の金属のみを変更した銀版を作成しています。保存先は `src/assets/ui/buttons/ivory-button-gold.png` と `ivory-button-silver.png` です。
 

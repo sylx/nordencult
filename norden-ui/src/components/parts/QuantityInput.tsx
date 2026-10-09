@@ -30,12 +30,12 @@ export default function QuantityInput({
   return (
     <div className={`norden-quantity ${className}`} role="group" aria-labelledby={id}>
       <span id={id} className="norden-quantity-label">{label}</span>
-      <Button size="small" className="norden-quantity-step" aria-label={`${label}を減らす`}
+      <Button size="small" metal="none" className="norden-quantity-step" aria-label={`${label}を減らす`}
         disabled={disabled || value <= min} onClick={() => set(value - step)}>−</Button>
       <input type="range" className="norden-quantity-range" aria-label={label} min={min} max={top} step={step}
         style={{ '--norden-range-progress': `${progress}%` } as CSSProperties}
         value={value} disabled={disabled || top === min} onChange={event => set(event.target.valueAsNumber)} />
-      <Button size="small" className="norden-quantity-step" aria-label={`${label}を増やす`}
+      <Button size="small" metal="none" className="norden-quantity-step" aria-label={`${label}を増やす`}
         disabled={disabled || value >= top} onClick={() => set(value + step)}>＋</Button>
       <span className="norden-quantity-value">
         <input type="number" aria-label={`${label}（数値）`} min={min} max={top} step={step} value={value} disabled={disabled}

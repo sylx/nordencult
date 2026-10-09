@@ -2,6 +2,30 @@ import { expect, test } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => { await page.goto('/#parts') })
 
+test('plain ivory backgrounds load as images on buttons and quantity controls', async ({ page }) => {
+  await page.getByLabel('四隅の装飾').selectOption('none')
+  const buttons = [
+    page.getByRole('button', { name: '装飾なし', exact: true }),
+    page.getByRole('button', { name: '出撃する' }),
+    page.getByRole('button', { name: '兵数を減らす' }),
+    page.getByRole('button', { name: '兵数を増やす' }),
+  ]
+  for (const button of buttons) {
+    await expect(button).toBeVisible()
+    const imageWidth = await button.evaluate(async element => {
+      const source = getComputedStyle(element, '::before').borderImageSource
+      const url = source.match(/^url\(["']?(.*?)["']?\)$/)?.[1]
+      if (!url) return 0
+      const image = new Image()
+      image.src = url
+      try { await image.decode() } catch { return 0 }
+      return image.naturalWidth
+    })
+    // Vite can return HTML with status 200 for a missing asset; decoding detects that too.
+    expect(imageWidth).toBeGreaterThan(0)
+  }
+})
+
 test('resizes the ornamental button and keeps quantity controls synchronized', async ({ page }) => {
   await page.getByLabel('幅（px）').fill('250')
   await page.getByLabel('高さ（px）').fill('64')
