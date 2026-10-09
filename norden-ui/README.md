@@ -118,7 +118,7 @@ Escで `pop()` します。サブコマンドの展開などEscを自分で使�
 | `KnightCard` | `knight: { name, portrait?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | 騎士の顔・名前・能力。`selection` でチェックボックスになる |
 | `FactionMark` | `faction?`, `emblemOnly` | 紋章と勢力名。省略すると中立 |
 
-旧実装（`nordencult-old/src/ui/components/`）から `CommandToolbar` と `DateBar` を移植しました。HUDの画像は `src/assets/ui/hud/` です。ResourceBar・PlayerEmblem・MinimapWindow は未移植です。
+旧実装（`nordencult-old/src/ui/components/`）から `CommandToolbar` と `DateBar` を移植しました。HUDのフレーム・背景画像は `src/assets/ui/hud/`、アイコンは `src/assets/ui/icons/` です。ResourceBar・PlayerEmblem・MinimapWindow は未移植です。
 
 ### ウィンドウ
 

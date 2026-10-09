@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button, DateBar } from '../../src'
-import iconSun from '../../src/assets/ui/hud/icon-sun.png'
+import iconSun from '../../src/assets/ui/icons/icon-sun.png'
 import { Log, useLog, Workbench } from '../Workbench'
 
 export default function DateBarEntry() {

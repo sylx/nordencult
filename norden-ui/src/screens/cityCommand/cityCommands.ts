@@ -1,7 +1,7 @@
-import iconDomestic from '../../assets/ui/hud/icon-territory.png'
-import iconMilitary from '../../assets/ui/hud/icon-military.png'
-import iconResearch from '../../assets/ui/hud/icon-knowledge.png'
-import iconMerchant from '../../assets/ui/hud/icon-gold.png'
+import iconDomestic from '../../assets/ui/icons/icon-territory.png'
+import iconMilitary from '../../assets/ui/icons/icon-military.png'
+import iconResearch from '../../assets/ui/icons/icon-knowledge.png'
+import iconMerchant from '../../assets/ui/icons/icon-gold.png'
 
 export type CityCommandId =
   | 'build' | 'assign'
