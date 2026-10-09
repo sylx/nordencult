@@ -110,13 +110,13 @@ Escで `pop()` します。サブコマンドの展開などEscを自分で使�
 | --- | --- | --- |
 | `CommandToolbar` | `commands: { id, label, icon?, onClick?, disabled?, title?, active?, tone?, children? }[]`, `movable` | 子を持つコマンドは押すと上にサブコマンドの列を開く（再クリック・Esc・外側クリックで閉じる）。`tone: 'accent'` で強調。`movable` で左右の端をドラッグ・矢印キーで移動 |
 | `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `children?` | フェーズ・勢力のターン・年月・設定の順に表示。`children` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
-| `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `size`, `style` | 生成した装飾画像を9分割で伸縮。`style` で幅・高さを指定可能 |
+| `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `metal: 'gold' \| 'silver'`, `size`, `style` | 象牙の立体的なボタンに金／銀の四隅装飾。生成画像を9分割で伸縮し、`style` で幅・高さを指定可能 |
 | `Banner` | `children`, `actions` | HUDの案内の帯（`role="status"`） |
 | `CityNavigator` | `name`, `onPrev`, `onNext`, `position` | ◀ 都市名 ▶。ハンドラが無い方向は無効 |
 | `ChoiceGroup` | `label`, `options`, `value`, `onChange` | 単一選択のボタン列。radiogroupとして矢印キーで移動し、無効な選択肢を飛ばす |
 | `QuantityInput` | `label`, `value`, `onChange`, `min`, `max`, `step`, `unit` | スライダー・± ボタン・数値入力。範囲外は丸める |
 | `Card` | `as`, `children`, `className`, `style` | 羊皮紙とインクで描いた汎用装飾枠。`as` は div / article / section / label |
-| `KnightCard` | `knight: { name, portrait?, portraitSrc?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | `Card` に顔・名前・大きな能力値を配置。数値は段階別の色、統率・武力・知力には既定アイコン。`selection` でチェックボックスになる |
+| `KnightCard` | `knight: { name, portrait?, portraitSrc?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | `Card` に顔・名前・能力名と大きな能力値を配置。数値は段階別の色。`selection` でチェックボックスになる |
 | `FactionMark` | `faction?`, `emblemOnly` | 紋章と勢力名。省略すると中立 |
 
 DateBarは`phaseLabel`・`factionName`・`dateLabel`を個別に渡します。文字サイズ・左装飾・右上配置の調整箇所と生成プロンプトは [DateBarの装飾と調整](docs/date-bar-assets.md) を参照してください。

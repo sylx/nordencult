@@ -1,8 +1,5 @@
 import type { ReactNode } from 'react'
 import Card from './Card'
-import leadershipIcon from '../../assets/ui/icons/icon-territory.png'
-import strengthIcon from '../../assets/ui/icons/icon-military.png'
-import intelligenceIcon from '../../assets/ui/icons/icon-knowledge.png'
 import './parts.css'
 
 export interface KnightCardData {
@@ -14,10 +11,8 @@ export interface KnightCardData {
   /** Type and notes, e.g. 騎士 / 領主 */
   subtitle?: string
   /** A few stats, e.g. 統率 82 */
-  stats?: readonly { label: string; value: ReactNode; icon?: ReactNode; max?: number }[]
+  stats?: readonly { label: string; value: ReactNode; max?: number }[]
 }
-
-const statIcons: Record<string, string> = { '統率': leadershipIcon, '武力': strengthIcon, '知力': intelligenceIcon }
 
 function statTier(value: ReactNode, max = 100) {
   if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isFinite(max) || max <= 0) return 'neutral'
@@ -50,12 +45,7 @@ export default function KnightCard({ knight, selection, current = false, aside, 
       {knight.stats && knight.stats.length > 0 && (
         <span className="norden-knight-stats">
           {knight.stats.map(stat => <span key={stat.label} className={`norden-knight-stat is-${statTier(stat.value, stat.max)}`}>
-            <span className="norden-knight-stat-label">
-              {(stat.icon || statIcons[stat.label]) && <span className="norden-knight-stat-icon" aria-hidden="true">
-                {stat.icon ?? <img src={statIcons[stat.label]} alt="" />}
-              </span>}
-              {stat.label}
-            </span>
+            <span className="norden-knight-stat-label">{stat.label}</span>
             <b>{stat.value}</b>
           </span>)}
         </span>

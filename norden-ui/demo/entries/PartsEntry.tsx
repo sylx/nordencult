@@ -20,6 +20,7 @@ export default function PartsEntry() {
   const [stats, setStats] = useState({ leadership: character?.leadership ?? 84, strength: character?.strength ?? 86, intelligence: character?.intelligence ?? 52 })
   const [buttonWidth, setButtonWidth] = useState(160)
   const [buttonHeight, setButtonHeight] = useState(44)
+  const [buttonMetal, setButtonMetal] = useState<'gold' | 'silver'>('gold')
   useEffect(() => () => { if (uploadedRef.current) URL.revokeObjectURL(uploadedRef.current) }, [])
   const preview = {
     name, subtitle: '騎士 / プレビュー',
@@ -35,11 +36,12 @@ export default function PartsEntry() {
         <div className="demo-parts">
           <h3>Button</h3>
           <div className="demo-row">
-            <Button onClick={() => add('通常のボタン')}>通常</Button>
+            <Button metal="silver" onClick={() => add('銀装飾のボタン')}>象牙・銀</Button>
+            <Button metal="gold" onClick={() => add('金装飾のボタン')}>象牙・金</Button>
             <Button variant="primary" onClick={() => add('主なボタン')}>予約</Button>
             <Button disabled>無効</Button>
             <Button size="small">小さい</Button>
-            <Button style={{ width: buttonWidth, height: buttonHeight }} onClick={() => add('任意サイズのボタン')}>出撃する</Button>
+            <Button metal={buttonMetal} style={{ width: buttonWidth, height: buttonHeight }} onClick={() => add('任意サイズのボタン')}>出撃する</Button>
           </div>
           <h3>ChoiceGroup（兵科）</h3>
           <ChoiceGroup label="兵科" value={unit} onChange={value => { setUnit(value); add(`兵科: ${value}`) }}
@@ -68,6 +70,11 @@ export default function PartsEntry() {
       <h2>UIパーツ</h2>
       <p>ChoiceGroup は矢印キーで選択を移動できます。QuantityInput はスライダー・± ボタン・数値入力が連動し、範囲外の値は丸めます。</p>
       <h3>ボタンの寸法</h3>
+      <label htmlFor="button-metal">四隅の装飾</label>
+      <select id="button-metal" value={buttonMetal} onChange={event => setButtonMetal(event.target.value as 'gold' | 'silver')}>
+        <option value="gold">金</option>
+        <option value="silver">銀</option>
+      </select>
       <label htmlFor="button-width">幅（px）</label>
       <input id="button-width" type="number" min={80} max={360} value={buttonWidth} onChange={event => setButtonWidth(Math.min(360, Math.max(80, Number(event.target.value))))} />
       <label htmlFor="button-height">高さ（px）</label>
