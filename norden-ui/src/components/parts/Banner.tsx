@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import ThinFrame from './ThinFrame'
 import './parts.css'
 
 export interface BannerProps {
@@ -13,6 +14,7 @@ export interface BannerProps {
 export default function Banner({ children, actions, className = '', style }: BannerProps) {
   return (
     <div className={`norden-banner ${className}`} role="status" style={style}>
+      <ThinFrame />
       <span className="norden-banner-message">{children}</span>
       {actions && <span className="norden-banner-actions">{actions}</span>}
     </div>

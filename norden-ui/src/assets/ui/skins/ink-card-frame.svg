@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" viewBox="0 0 240 160" fill="none">
+  <g stroke="#765632" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M25 5C75 4 160 6 215 5M235 25C234 60 236 102 235 135M215 155C165 156 78 154 25 155M5 135C6 100 4 60 5 25" stroke-width="1.4"/>
+    <path d="M26 9H214M231 26V134M214 151H26M9 134V26" opacity=".4" stroke-width=".65"/>
+    <path id="corner" d="M5 25V5H25M9 22V9H22M5 18C14 18 18 14 18 5M10 18C11 12 12 11 18 10M14 22C22 23 25 18 22 15C19 13 17 17 20 18M22 14C23 6 18 3 15 6C13 9 17 11 18 8" stroke-width="1.1"/>
+    <use href="#corner" transform="translate(240 0) scale(-1 1)"/>
+    <use href="#corner" transform="translate(0 160) scale(1 -1)"/>
+    <use href="#corner" transform="translate(240 160) scale(-1 -1)"/>
+  </g>
+</svg>

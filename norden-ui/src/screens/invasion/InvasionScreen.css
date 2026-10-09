@@ -16,7 +16,7 @@
   border: 1px solid rgb(0 0 0 / 0.12);
   border-radius: 5px;
 }
-.norden-invasion-unit .norden-knight-card { padding: 0; border: 0; }
+.norden-invasion-unit .norden-knight-card { width: 100%; }
 
 .norden-invasion-summary { white-space: nowrap; }
 .norden-invasion-total { display: inline-flex; align-items: baseline; gap: 6px; font-size: 15px; }

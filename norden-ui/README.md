@@ -100,7 +100,7 @@ Escで `pop()` します。サブコマンドの展開などEscを自分で使�
 兵数の合計は `soldierPool` を超えません。0人、兵数0の部隊、`validate` が返した理由があると「予約」を押せません。`onConfirm` には選んだ順の `{ knightId, unitType, soldiers }[]` を渡します。
 `unavailableReason` を持つ騎士は一覧に出ますが選べません。
 
-騎士の顔は `KnightView.portrait`（ReactNode）で渡します。省略すると頭文字を表示します。紋章は `FactionView.emblem`（画像URL）です。
+騎士の顔は `KnightView.portrait`（ReactNode）または `portraitSrc`（画像URL）で渡します。両方指定した場合は `portraitSrc` を優先します。省略すると頭文字を表示します。紋章は `FactionView.emblem`（画像URL）です。
 
 画面の追加方法は [画面の追加](docs/screens.md) を参照してください。
 
@@ -110,15 +110,18 @@ Escで `pop()` します。サブコマンドの展開などEscを自分で使�
 | --- | --- | --- |
 | `CommandToolbar` | `commands: { id, label, icon?, onClick?, disabled?, title?, active?, tone?, children? }[]`, `movable` | 子を持つコマンドは押すと上にサブコマンドの列を開く（再クリック・Esc・外側クリックで閉じる）。`tone: 'accent'` で強調。`movable` で左右の端をドラッグ・矢印キーで移動 |
 | `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `children?` | フェーズ・勢力のターン・年月・設定の順に表示。`children` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
-| `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `size` | 羊皮紙の上（normal / primary）と暗いHUDの上（quiet）のボタン |
+| `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `size`, `style` | 生成した装飾画像を9分割で伸縮。`style` で幅・高さを指定可能 |
 | `Banner` | `children`, `actions` | HUDの案内の帯（`role="status"`） |
 | `CityNavigator` | `name`, `onPrev`, `onNext`, `position` | ◀ 都市名 ▶。ハンドラが無い方向は無効 |
 | `ChoiceGroup` | `label`, `options`, `value`, `onChange` | 単一選択のボタン列。radiogroupとして矢印キーで移動し、無効な選択肢を飛ばす |
 | `QuantityInput` | `label`, `value`, `onChange`, `min`, `max`, `step`, `unit` | スライダー・± ボタン・数値入力。範囲外は丸める |
-| `KnightCard` | `knight: { name, portrait?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | 騎士の顔・名前・能力。`selection` でチェックボックスになる |
+| `Card` | `as`, `children`, `className`, `style` | 羊皮紙とインクで描いた汎用装飾枠。`as` は div / article / section / label |
+| `KnightCard` | `knight: { name, portrait?, portraitSrc?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | `Card` に顔・名前・大きな能力値を配置。数値は段階別の色、統率・武力・知力には既定アイコン。`selection` でチェックボックスになる |
 | `FactionMark` | `faction?`, `emblemOnly` | 紋章と勢力名。省略すると中立 |
 
 DateBarは`phaseLabel`・`factionName`・`dateLabel`を個別に渡します。文字サイズ・左装飾・右上配置の調整箇所と生成プロンプトは [DateBarの装飾と調整](docs/date-bar-assets.md) を参照してください。
+
+CityNavigatorとBannerは `windowSkins.thin` と同じ画像で枠を描画します。ボタンの伸縮、Cardの利用例、騎士画像のプレビュー、生成プロンプトは [UIパーツの装飾と画像](docs/parts-assets.md) を参照してください。カタログ `#parts` ではルートの人物素材を直接参照でき、画像URL・ローカル画像ファイル、名前・能力値を変更できます。
 
 旧実装（`nordencult-old/src/ui/components/`）から `CommandToolbar` と `DateBar` を移植しました。HUDのフレーム・背景画像は `src/assets/ui/hud/`、アイコンは `src/assets/ui/icons/` です。ResourceBar・PlayerEmblem・MinimapWindow は未移植です。
 

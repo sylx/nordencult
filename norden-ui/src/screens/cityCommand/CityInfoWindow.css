@@ -19,7 +19,7 @@
 .norden-city-info-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .norden-city-info-tags li { padding: 2px 8px; font-size: 11px; color: #666; background: rgb(0 0 0 / 0.06); border-radius: 10px; }
 
-.norden-city-knights { display: grid; gap: 4px; width: 320px; }
+.norden-city-knights { display: grid; gap: 8px; width: 380px; }
 .norden-city-empty { margin: 0; padding: 12px 0; color: #8a7050; }
 
 .norden-city-roads { display: grid; gap: 4px; width: 300px; margin: 0; padding: 0; list-style: none; }

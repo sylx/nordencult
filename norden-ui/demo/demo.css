@@ -83,7 +83,9 @@ body { margin: 0; }
 .demo-parts { display: grid; gap: 8px; width: 460px; color: #2a1a0a; }
 .demo-parts h3 { margin: 10px 0 0; font-size: 13px; color: #755b36; }
 .demo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.demo-dark-parts { position: absolute; top: 60px; left: 600px; display: grid; justify-items: start; gap: 24px; }
+.demo-dark-parts { position: absolute; top: 24px; left: 32px; right: 32px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.demo-card-description { margin: 6px 0 0; font-size: 13px; }
+.demo-stat-control { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; }
 .demo-log { margin-top: 26px; padding-top: 12px; border-top: 1px solid #393d31; }
 .demo-log h3 { margin: 0 0 8px; font-size: 12px; font-weight: 500; color: #d2cbb8; }
 .demo-log p { margin: 0; }

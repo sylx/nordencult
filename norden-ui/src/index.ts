@@ -13,6 +13,8 @@ export { default as DateBar } from './components/hud/DateBar'
 export type { DateBarProps } from './components/hud/DateBar'
 
 // Basic components: parts
+export { default as Card } from './components/parts/Card'
+export type { CardProps } from './components/parts/Card'
 export { default as Button } from './components/parts/Button'
 export type { ButtonProps } from './components/parts/Button'
 export { default as Banner } from './components/parts/Banner'
