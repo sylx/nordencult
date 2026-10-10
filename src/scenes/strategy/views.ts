@@ -70,6 +70,8 @@ export function cityView(game: GameState, id: string): CityView {
   const faction = factionView(ownerOf(game, id))
   if (!city) return { id, name: id, faction }
   const type = PLACE_TYPES.get(id) ?? 'town'
+  const knights = charactersIn(game, id)
+  const lord = CHARACTER_MAP[knights.find((knight) => game.characters[knight]?.isLord) ?? '']
   return {
     id,
     name: city.name,
@@ -79,13 +81,18 @@ export function cityView(game: GameState, id: string): CityView {
     population: city.population,
     art: PLACE_ART[type].url,
     special: city.special,
+    // height: auto keeps the 2:3 figure; the window crops it from the top
+    lord: lord && {
+      name: lord.name,
+      image: createElement(CharacterImage, { character: lord, style: { height: 'auto' } }),
+    },
     stats: [
       { label: '農業', value: city.agriculture, max: 720 },
       { label: '商業', value: city.market, max: 720 },
       { label: '軍事', value: city.military, max: 640 },
     ],
     tags: city.tags,
-    knights: charactersIn(game, id).map((knight) => knightView(game, knight)),
+    knights: knights.map((knight) => knightView(game, knight)),
     neighbours: neighbours(id).map((other) => ({ id: other, name: cityName(other), faction: factionView(ownerOf(game, other)) })),
   }
 }
