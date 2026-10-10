@@ -118,10 +118,11 @@ Escで `pop()` します。サブコマンドの展開などEscを自分で使�
 | `Card` | `as`, `children`, `className`, `style` | 羊皮紙とインクで描いた汎用装飾枠。`as` は div / article / section / label |
 | `KnightCard` | `knight: { name, portrait?, portraitSrc?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | `Card` に顔・名前・能力名と大きな能力値を配置。数値は段階別の色。`selection` でチェックボックスになる |
 | `FactionMark` | `faction?`, `emblemOnly` | 紋章と勢力名。省略すると中立 |
+| `ThinFrame` | なし | `windowSkins.thin` の細いベゼルと暗い地。最も近い位置指定の祖先いっぱいに、中身の後ろへ敷く（祖先に `isolation: isolate`）。HUDのパネルに使う |
 
 DateBarは`phaseLabel`・`factionName`・`dateLabel`を個別に渡します。文字サイズ・左装飾・右上配置の調整箇所と生成プロンプトは [DateBarの装飾と調整](docs/date-bar-assets.md) を参照してください。
 
-CityNavigatorとBannerは `windowSkins.thin` と同じ画像で枠を描画します。ボタンの伸縮、Cardの利用例、騎士画像のプレビュー、生成プロンプトは [UIパーツの装飾と画像](docs/parts-assets.md) を参照してください。カタログ `#parts` ではルートの人物素材を直接参照でき、画像URL・ローカル画像ファイル、名前・能力値を変更できます。
+CityNavigatorとBannerは `ThinFrame`（`windowSkins.thin` と同じ画像）で枠を描画します。ボタンの伸縮、Cardの利用例、騎士画像のプレビュー、生成プロンプトは [UIパーツの装飾と画像](docs/parts-assets.md) を参照してください。カタログ `#parts` ではルートの人物素材を直接参照でき、画像URL・ローカル画像ファイル、名前・能力値を変更できます。
 
 旧実装（`nordencult-old/src/ui/components/`）から `CommandToolbar` と `DateBar` を移植しました。HUDのフレーム・背景画像は `src/assets/ui/hud/`、アイコンは `src/assets/ui/icons/` です。ResourceBar・PlayerEmblem・MinimapWindow は未移植です。
 
