@@ -5,9 +5,11 @@
 .norden-screen-top-left > *, .norden-screen-top-center > *, .norden-screen-top-right > *,
 .norden-screen-bottom-center > *, .norden-screen-bottom-right > * { pointer-events: auto; }
 .norden-screen-top-left { top: 16px; left: 24px; }
-.norden-screen-top-center { top: 12px; left: 50%; translate: -50% 0; }
+/* Center with flex, not translate: -50%. A half-pixel offset breaks the 9-slice border-image of the buttons into dark seams */
+.norden-screen-top-center, .norden-screen-bottom-center { left: 16px; right: 16px; display: flex; justify-content: center; }
+.norden-screen-top-center { top: 12px; }
 .norden-screen-top-right { top: 16px; right: 24px; }
-.norden-screen-bottom-center { bottom: 16px; left: 50%; translate: -50% 0; max-width: calc(100% - 32px); }
+.norden-screen-bottom-center { bottom: 16px; }
 .norden-screen-bottom-right { right: 24px; bottom: 16px; }
 .norden-screen-banner { top: 84px; }
 
