@@ -5,14 +5,22 @@
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["vite/client", "node"],
+    "jsx": "react-jsx",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    /* norden-ui はリポジトリの隣のソース。react の型はこちらのものにそろえる（battle-runtime/tsconfig.json と同じ） */
+    "paths": {
+      "norden-ui": ["../../norden-ui/src/index.ts"],
+      "react": ["../node_modules/@types/react/index.d.ts"],
+      "react/*": ["../node_modules/@types/react/*"]
+    }
   },
   "include": ["src"]
 }

@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client", "node"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    /*
+     * norden-ui はリポジトリの隣（nordencult では同じ親の下のサブモジュール）にあるソースをそのまま使う。
+     * react の型は norden-ui 側の node_modules ではなく、こちらのものにそろえる（norden-ui は npm install しなくてよい）
+     */
+    "paths": {
+      "norden-ui": ["../../norden-ui/src/index.ts"],
+      "react": ["../node_modules/@types/react/index.d.ts"],
+      "react/*": ["../node_modules/@types/react/*"]
+    }
+  },
+  "include": ["src"]
+}
