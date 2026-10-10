@@ -1,5 +1,25 @@
 # CommandToolbar の生成画像
 
+## 子コマンド用フレーム
+
+2026-10-10、組み込みの `imagegen` ツールで、親の `command-frame.png` を画風の参照にして
+`src/assets/ui/hud/command-child-frame.png` を新規生成しました。
+`transparent_background: true` を指定し、中央と外側のアルファ透過を保持しています。
+
+生成画像（1774 × 887）の余白を `(x: 20, y: 94, width: 1734, height: 698)` で切り詰め、
+FFmpeg の Lanczos フィルターで 432 × 174 に縮小しました。
+小さな角飾りを残すため `border-image-slice: 20% 8%` で描画します。
+子グループの外枠は 12px、各ボタンは 8px の描画幅とし、通常時のボタンの枠は不透明度 0.7 に抑えています。
+ホバー・キーボードフォーカス・選択中は枠を明るくします。
+
+最終プロンプト:
+
+```text
+Use case: stylized-concept. Asset type: a single production transparent PNG nine-slice border for child command buttons and their floating group in a medieval strategy game UI. Input image 1 is a STYLE REFERENCE ONLY: the parent toolbar's antique brass frame. Generate one NEW quieter companion frame, not a copy of the large diamond endcaps. A wide rectangular outline about 2:1, symmetric left/right and top/bottom, with small clipped bevelled corners and tiny engraved angular details confined to the four corners. Very restrained aged warm bronze/brass material, subdued gold highlights, two fine parallel rails. The middle 70% of every edge must be straight, uniform and completely ornament-free for nine-slice stretching. The frame band should take only about 5% of the height; corner details fit within the outer 10% of each dimension. Front view, flat game interface asset with softly painted metallic relief. Center AND exterior genuinely fully transparent, only the slim metal frame visible. Center opening is empty. Whole frame fills canvas with tiny even transparent margins, no cropping. No text, lettering, icons, button fill, black background, drop shadow, glow, gemstones, vines, large side ornaments or other objects. Match the parent material and geometric taste while making this child frame clearly more understated and readable when rendered as a 96x46px button.
+```
+
+## 親ツールバーとアイコン
+
 2026-10-09、組み込みの imagegen ツールで各画像を個別に再生成しました。
 すべて `transparent_background: true` で生成し、PNG のアルファを保持しています。
 

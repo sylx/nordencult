@@ -56,9 +56,6 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  border: 1px solid #927345;
-  border-radius: 7px;
-  box-shadow: inset 0 0 0 2px #100c08, inset 0 0 0 3px #715737;
   background: transparent;
   color: #f3ead7;
   font-family: inherit;
@@ -69,7 +66,15 @@
   text-shadow: 0 2px 2px #000;
   cursor: pointer;
 }
-.norden-command-toolbar-button { flex: 1 0 auto; min-width: 120px; min-height: 57px; padding: 5px 18px; }
+.norden-command-toolbar-button {
+  flex: 1 0 auto;
+  min-width: 120px;
+  min-height: 57px;
+  padding: 5px 18px;
+  border: 1px solid #927345;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 2px #100c08, inset 0 0 0 3px #715737;
+}
 .norden-command-toolbar-button[aria-pressed='true'], .norden-command-toolbar-button[aria-expanded='true'],
 .norden-command-toolbar-subbutton[aria-pressed='true'] {
   background: linear-gradient(#51233ac9, #321426eb);
@@ -90,13 +95,30 @@
   z-index: 3;
   display: flex;
   gap: 6px;
-  padding: 8px;
+  padding: 12px;
   translate: -50% 0;
-  border: 3px double #b59151;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #211b14 url('../../assets/ui/hud/dark-texture.png') repeat;
   box-shadow: 0 6px 20px #0009;
   animation: norden-flyout-enter 140ms ease both;
+}
+.norden-command-toolbar-flyout::before,
+.norden-command-toolbar-subbutton::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* A dedicated brass frame; stretch only the straight rails, preserving the small corners. */
+  border: solid transparent;
+  border-image-source: url('../../assets/ui/hud/command-child-frame.png');
+  border-image-slice: 20% 8%;
+  border-image-repeat: stretch;
+  pointer-events: none;
+}
+.norden-command-toolbar-flyout::before {
+  z-index: 1;
+  border-width: 12px;
+  border-image-width: 12px;
+  opacity: 0.9;
 }
 .norden-command-toolbar-flyout::after {
   content: '';
@@ -105,11 +127,32 @@
   left: 50%;
   translate: -50% 0;
   border: 8px solid transparent;
-  border-top-color: #b59151;
+  border-top-color: #a7864c;
 }
-.norden-command-toolbar-subbutton { min-width: 96px; min-height: 46px; padding: 4px 16px; font-size: 17px; }
+.norden-command-toolbar-subbutton {
+  position: relative;
+  min-width: 96px;
+  min-height: 46px;
+  padding: 7px 16px;
+  border: 0;
+  border-radius: 5px;
+  font-size: 17px;
+}
+.norden-command-toolbar-subbutton::before {
+  border-width: 8px;
+  border-image-width: 8px;
+  opacity: 0.7;
+  transition: opacity 140ms ease, filter 140ms ease;
+}
+.norden-command-toolbar-subbutton:hover:not(:disabled)::before,
+.norden-command-toolbar-subbutton:focus-visible::before,
+.norden-command-toolbar-subbutton[aria-pressed='true']::before {
+  opacity: 1;
+  filter: brightness(1.1);
+}
 @keyframes norden-flyout-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .norden-command-toolbar-flyout { animation: none; }
   .norden-command-toolbar-caret { transition: none; }
+  .norden-command-toolbar-subbutton::before { transition: none; }
 }
