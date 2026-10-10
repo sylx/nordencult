@@ -55,6 +55,27 @@ test('demo inherits skin title positions until an axis is edited and can restore
   await expectPosition(skinOffsets.goddess!)
 })
 
+test('many knights keep the window within its maximum height and scroll inside it', async ({ page }) => {
+  const window = page.locator('.norden-info-window')
+  const viewport = window.locator('.norden-info-window-content')
+  await page.getByRole('tab', { name: '騎士', exact: true }).click()
+  const few = await settledSize(window)
+  await page.getByLabel('騎士の人数（騎士タブ）').selectOption('20')
+  await expect(page.locator('.norden-knight-card')).toHaveCount(20)
+  for (const skin of ['thin', 'medium', 'goddess']) {
+    await page.getByLabel('装飾スキン').selectOption(skin)
+    const many = await settledSize(window)
+    // Like the width, the height is capped by the screen: 16px clear above and below.
+    const limit = await page.evaluate(() => document.documentElement.clientHeight - 32)
+    expect(many.height, skin).toBeGreaterThan(few.height)
+    expect(many.height, skin).toBeLessThanOrEqual(limit)
+    expect(await viewport.evaluate(element => element.scrollHeight - element.clientHeight), skin).toBeGreaterThan(0)
+  }
+  await page.getByLabel('騎士の人数（騎士タブ）').selectOption('1')
+  await expect(page.locator('.norden-knight-card')).toHaveCount(1)
+  expect((await settledSize(window)).height).toBeLessThan(few.height + 1)
+})
+
 test('title grows and shrinks the window width within its maximum', async ({ page }) => {
   const window = page.locator('.norden-info-window')
   await page.getByRole('tab', { name: '統計', exact: true }).click()
@@ -207,6 +228,10 @@ test('manual resize supports keyboard and pointer input', async ({ page }) => {
   const pointer = await settledSize(window)
   expect(pointer.width).toBeCloseTo(keyboard.width + 30, 0)
   expect(pointer.height).toBeCloseTo(keyboard.height + 30, 0)
+  const readout = page.locator('.demo-readout div').filter({ hasText: 'サイズ' }).locator('dd')
+  await expect(readout).toHaveText(`${Math.round(pointer.width)} × ${Math.round(pointer.height)} px`)
+  await page.getByRole('button', { name: '位置・手動サイズをリセット' }).click()
+  await expect(readout).toHaveText('自動')
 })
 
 test('handles empty tabs and restores an accessible selection', async ({ page }) => {

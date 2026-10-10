@@ -11,6 +11,7 @@ interface Options {
   minWidth: number
   maxWidth: number
   minHeight: number
+  maxHeight: number
   horizontalPadding: number
   verticalPadding: number
   titlePadding: number
@@ -18,12 +19,13 @@ interface Options {
 }
 
 /** Measure intrinsic content, independently of the animated outer frame. */
-export function useWindowSize({ contentRef, titleRef, width, height, minWidth, maxWidth, minHeight, horizontalPadding, verticalPadding, titlePadding, minimumSize }: Options) {
+export function useWindowSize({ contentRef, titleRef, width, height, minWidth, maxWidth, minHeight, maxHeight, horizontalPadding, verticalPadding, titlePadding, minimumSize }: Options) {
   const [size, setSize] = useState<WindowSize>({
     width: width === 'auto' ? minWidth : width,
     height: height === 'auto' ? minHeight : height,
   })
   const [widthLimit, setWidthLimit] = useState(maxWidth)
+  const [heightLimit, setHeightLimit] = useState(maxHeight)
 
   useLayoutEffect(() => {
     const content = contentRef.current
@@ -35,12 +37,17 @@ export function useWindowSize({ contentRef, titleRef, width, height, minWidth, m
       if (disposed) return
       const limit = Math.max(minimumSize, Math.min(maxWidth, document.documentElement.clientWidth - 32 || maxWidth))
       setWidthLimit(limit)
+      const heightLimit = Math.max(minimumSize, Math.min(maxHeight, document.documentElement.clientHeight - 32 || maxHeight))
+      setHeightLimit(heightLimit)
       // Text and decorations are measured separately so title length contributes to auto width.
       const next = {
         width: Math.max(minimumSize, Math.min(limit, width === 'auto'
           ? Math.max(minWidth, content.getBoundingClientRect().width + horizontalPadding, title.getBoundingClientRect().width + titlePadding)
           : width)),
-        height: Math.max(minimumSize, minHeight, height === 'auto' ? content.getBoundingClientRect().height + verticalPadding : height),
+        // Taller content scrolls inside the window; minHeight still wins so the tab rail fits.
+        height: Math.max(minimumSize, minHeight, Math.min(heightLimit, height === 'auto'
+          ? content.getBoundingClientRect().height + verticalPadding
+          : height)),
       }
       setSize(previous => previous.width === next.width && previous.height === next.height ? previous : next)
     }
@@ -56,7 +63,7 @@ export function useWindowSize({ contentRef, titleRef, width, height, minWidth, m
       observer.disconnect()
       window.removeEventListener('resize', measure)
     }
-  }, [contentRef, titleRef, width, height, minWidth, maxWidth, minHeight, horizontalPadding, verticalPadding, titlePadding, minimumSize])
+  }, [contentRef, titleRef, width, height, minWidth, maxWidth, minHeight, maxHeight, horizontalPadding, verticalPadding, titlePadding, minimumSize])
 
-  return { size, widthLimit }
+  return { size, widthLimit, heightLimit }
 }

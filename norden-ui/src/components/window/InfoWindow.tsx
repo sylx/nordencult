@@ -21,6 +21,8 @@ export interface InfoWindowProps {
   minWidth?: number
   maxWidth?: number
   minHeight?: number
+  /** Also capped by the screen height; taller content scrolls inside the window */
+  maxHeight?: number
   x?: number
   y?: number
   draggable?: boolean
@@ -46,7 +48,7 @@ interface PointerOperation {
 
 export default function InfoWindow({
   title, showTitleBar = true, titleBarOffset, children, className = '', style, width = 'auto', height = 'auto',
-  minWidth = 320, maxWidth = 720, minHeight = 240, x = 0, y = 0,
+  minWidth = 320, maxWidth = 720, minHeight = 240, maxHeight = Number.POSITIVE_INFINITY, x = 0, y = 0,
   draggable = true, resizable, resizeable = false, onPositionChange, onSizeChange, chrome, skin,
 }: InfoWindowProps) {
   const titleId = useId()
@@ -63,15 +65,18 @@ export default function InfoWindow({
   const verticalPadding = layout.paddingTop + layout.paddingBottom
   const titlePadding = showTitleBar ? layout.titleCapWidth * 2 + 32 : 0
   const minimumSize = 2 * resolvedSkin.frame.width
-  const { size, widthLimit } = useWindowSize({
-    contentRef, titleRef, width, height, minWidth, maxWidth, minHeight, horizontalPadding,
+  const { size, widthLimit, heightLimit } = useWindowSize({
+    contentRef, titleRef, width, height, minWidth, maxWidth, minHeight, maxHeight, horizontalPadding,
     verticalPadding, titlePadding, minimumSize,
   })
-  const actualSize = manualSize ? { ...manualSize, width: Math.min(manualSize.width, widthLimit) } : size
+  const actualSize = manualSize ? {
+    width: Math.min(manualSize.width, widthLimit),
+    height: Math.max(minHeight, Math.min(manualSize.height, heightLimit)),
+  } : size
   const canResize = resizable ?? resizeable
 
   useEffect(() => { setPosition({ x, y }) }, [x, y])
-  useEffect(() => { setManualSize(null) }, [width, height, minWidth, maxWidth, minHeight, horizontalPadding, verticalPadding, titlePadding, minimumSize, resolvedSkin.name])
+  useEffect(() => { setManualSize(null) }, [width, height, minWidth, maxWidth, minHeight, maxHeight, horizontalPadding, verticalPadding, titlePadding, minimumSize, resolvedSkin.name])
 
   const start = (event: PointerEvent<HTMLElement>, kind: 'drag' | 'resize') => {
     if (event.button !== 0 || !event.isPrimary || (kind === 'drag' && !draggable)) return
@@ -88,7 +93,7 @@ export default function InfoWindow({
   const resize = (next: WindowSize) => {
     const clamped = {
       width: Math.min(widthLimit, Math.max(Math.min(widthLimit, Math.max(minimumSize, minWidth)), next.width)),
-      height: Math.max(minimumSize, minHeight, next.height),
+      height: Math.max(minimumSize, minHeight, Math.min(heightLimit, next.height)),
     }
     setManualSize(clamped)
     onSizeChange?.(clamped)

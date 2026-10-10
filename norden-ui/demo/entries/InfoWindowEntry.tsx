@@ -6,7 +6,7 @@ import { resolveWindowSkin } from '../../src/skins'
 import stats from '../../src/assets/ui/icons/icon_stat.webp'
 import history from '../../src/assets/ui/icons/icon_history.webp'
 import { createCityInfoTabs } from '../../src/screens/cityCommand/CityInfoWindow'
-import { cityView } from '../mock/data'
+import { KNIGHTS, cityView } from '../mock/data'
 
 const descriptions = {
   short: '港湾都市。',
@@ -14,15 +14,22 @@ const descriptions = {
   long: '西岸の河口に築かれた、王国の交易を支える港湾都市。北方の山々から届く木材と、南の平原で収穫された穀物が集まる。',
 }
 
+const knightCounts = [0, 1, 4, 8, 12, 20]
+/** Repeats the mock cast so the 騎士 tab can grow past the window's height */
+const knightsFor = (count: number) => Array.from({ length: count }, (_, index) => ({ ...KNIGHTS[index % KNIGHTS.length]!, id: `knight-${index}` }))
+
 export default function InfoWindowEntry() {
   const [title, setTitle] = useState('カルタ書院 フルーエン')
   const [length, setLength] = useState<keyof typeof descriptions>('medium')
   const [count, setCount] = useState(4)
+  const [knightCount, setKnightCount] = useState(4)
   const [fixed, setFixed] = useState(false)
   const [resizable, setResizable] = useState(false)
   const [active, setActive] = useState(0)
   const [instance, setInstance] = useState(0)
   const [position, setPosition] = useState({ x: 72, y: 56 })
+  /** null until resized by hand; InfoWindow drops the manual size on skin or fixed-size changes */
+  const [manualSize, setManualSize] = useState<{ width: number; height: number } | null>(null)
   const [skin, setSkin] = useState<'thin' | 'medium' | 'goddess'>('medium')
   const [backdrop, setBackdrop] = useState('map')
   const [paperVisible, setPaperVisible] = useState(true)
@@ -30,7 +37,7 @@ export default function InfoWindowEntry() {
   const [titleBarOffset, setTitleBarOffset] = useState<{ x?: number; y?: number }>({})
   const skinLayout = resolveWindowSkin(windowSkins[skin]).layout
 
-  const cityTabs = createCityInfoTabs(cityView('P012'))
+  const cityTabs = createCityInfoTabs(cityView('P012', knightsFor(knightCount)))
   const tabs: TabInfo[] = [
     cityTabs[0],
     cityTabs[1],
@@ -51,7 +58,7 @@ export default function InfoWindowEntry() {
         titleBarOffset={titleBarOffset} tabs={tabs.slice(0, count)}
         x={72} y={56} activeTab={active} onActiveTabChange={setActive}
         width={fixed ? 420 : 'auto'} height={fixed ? 520 : 'auto'}
-        resizable={resizable} onPositionChange={setPosition}
+        resizable={resizable} onPositionChange={setPosition} onSizeChange={setManualSize}
         skin={windowSkins[skin]} style={paperVisible ? undefined : { '--norden-paper': 'none' } as CSSProperties}
         emptyContent={<p>表示する情報がありません。</p>}
       />
@@ -63,6 +70,7 @@ export default function InfoWindowEntry() {
       <select id="window-skin" value={skin} onChange={event => {
         setSkin(event.target.value as typeof skin)
         setTitleBarOffset({})
+        setManualSize(null)
       }}>
         <option value="thin">細いベゼル</option><option value="medium">中程度の装飾（medium）</option><option value="goddess">女神像の装飾</option>
       </select>
@@ -88,10 +96,15 @@ export default function InfoWindowEntry() {
       }}><option value="short">短い文章</option><option value="medium">標準の文章</option><option value="long">長い文章</option></select>
       <label htmlFor="tab-count">タブ数</label>
       <select id="tab-count" value={count} onChange={event => setCount(Number(event.target.value))}>{[0, 1, 2, 3, 4].map(value => <option key={value} value={value}>{value}個</option>)}</select>
-      <label className="checkbox"><input type="checkbox" checked={fixed} onChange={event => setFixed(event.target.checked)} />固定サイズ（420 × 520）</label>
+      <label htmlFor="knight-count">騎士の人数（騎士タブ）</label>
+      <select id="knight-count" value={knightCount} onChange={event => {
+        setKnightCount(Number(event.target.value))
+        if (count >= 2) setActive(1)
+      }}>{knightCounts.map(value => <option key={value} value={value}>{value}人</option>)}</select>
+      <label className="checkbox"><input type="checkbox" checked={fixed} onChange={event => { setFixed(event.target.checked); setManualSize(null) }} />固定サイズ（420 × 520）</label>
       <label className="checkbox"><input type="checkbox" checked={resizable} onChange={event => setResizable(event.target.checked)} />手動リサイズを有効にする</label>
-      <button className="reset-button" onClick={() => { setInstance(value => value + 1); setPosition({ x: 72, y: 56 }) }}>位置・手動サイズをリセット</button>
-      <dl className="demo-readout"><div><dt>位置</dt><dd>{Math.round(position.x)}, {Math.round(position.y)}</dd></div><div><dt>選択中</dt><dd>{count ? tabs[Math.min(active, count - 1)]?.name : 'なし'}</dd></div><div><dt>幅の上限</dt><dd>720 px</dd></div></dl>
+      <button className="reset-button" onClick={() => { setInstance(value => value + 1); setPosition({ x: 72, y: 56 }); setManualSize(null) }}>位置・手動サイズをリセット</button>
+      <dl className="demo-readout"><div><dt>位置</dt><dd>{Math.round(position.x)}, {Math.round(position.y)}</dd></div><div><dt>サイズ</dt><dd>{manualSize ? `${Math.round(manualSize.width)} × ${Math.round(manualSize.height)} px` : '自動'}</dd></div><div><dt>選択中</dt><dd>{count ? tabs[Math.min(active, count - 1)]?.name : 'なし'}</dd></div><div><dt>幅の上限</dt><dd>720 px</dd></div></dl>
     </aside>
   </div>
 }
