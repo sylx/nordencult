@@ -64,7 +64,7 @@ export const windowSkins = {
     name: 'medium',
     frame: { image: mediumFrame, slice: '25%', width: 64 },
     layout: {
-      titleOffset: -16
+      titleOffset: -10
     }
   },
   thin: {
