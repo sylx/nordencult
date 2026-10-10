@@ -26,7 +26,7 @@ export default function CityCommandEntry() {
         cityPosition={{ index, count: playerCities.length }} onPrevCity={() => step(-1)} onNextCity={() => step(1)}
         commandState={{
           invade: noKnights ? { disabled: true, reason: '出撃できる騎士がいません' } : undefined,
-          research: { disabled: true, reason: '研究所がありません' },
+          quest: { disabled: true, reason: '研究所がありません' },
         }}
         onCommand={id => add(`コマンド: ${id}`)} onEndTurn={() => add('ターン終了')} endTurnDisabled={endTurnDisabled}
         onSelectNeighbour={id => add(`街道の都市: ${id}`)} />
