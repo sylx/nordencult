@@ -92,13 +92,12 @@
 
 /*
  * ThinFrameWithTitle: the thin bezel with a title plaque centred on its top edge.
- * The plaque is a provisional CSS drawing (dark bar, gold rules, diamond end caps).
- * When its image is ready, replace .norden-thin-titled-title::before with a horizontal
- * nine-slice (border-image, caps --norden-thin-title-cap wide) and drop the diamonds.
+ * Slice the plaque horizontally: fixed brass caps and a stretchable dark centre.
  */
 .norden-thin-titled {
   --norden-thin-title-height: 24px;
-  --norden-thin-title-cap: 8px;
+  /* Each cap is 10% of the 1024 × 128 source; preserve its aspect ratio. */
+  --norden-thin-title-cap: calc(var(--norden-thin-title-height) * .8);
   position: relative;
   isolation: isolate;
   box-sizing: border-box;
@@ -109,6 +108,7 @@
 }
 .norden-thin-titled-title {
   position: absolute;
+  box-sizing: border-box;
   top: 3px;
   left: 50%;
   z-index: 1;
@@ -131,26 +131,14 @@
 .norden-thin-titled-title::before {
   content: '';
   position: absolute;
-  inset: 0 var(--norden-thin-title-cap);
+  inset: 0;
   z-index: -1;
-  border-block: 1px solid #e2b75a;
-  background: linear-gradient(#5a3e26, #2e2014);
-  box-shadow: 0 0 0 2px #1c140ef2, 0 2px 6px #0009;
+  pointer-events: none;
+  border: 0 solid transparent;
+  border-inline-width: var(--norden-thin-title-cap);
+  border-image: url('../../assets/ui/skins/thin-title.png') 0 10% fill / 0 var(--norden-thin-title-cap) / 0 stretch;
 }
 .norden-thin-titled-title-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.norden-thin-titled-title-text::before, .norden-thin-titled-title-text::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  margin-top: -5px;
-  background: #e2b75a;
-  border: 1px solid #2e2014;
-  rotate: 45deg;
-}
-.norden-thin-titled-title-text::before { left: calc(var(--norden-thin-title-cap) - 5px); }
-.norden-thin-titled-title-text::after { right: calc(var(--norden-thin-title-cap) - 5px); }
 
 .norden-city-navigator {
   position: relative;

@@ -13,9 +13,17 @@ CityNavigatorとBannerはInfoWindowの最も細いベゼル（`windowSkins.thin`
 </ThinFrameWithTitle>
 ```
 
-札はいまCSSの仮組（暗い茶の帯・上下の金の細線・両端の金の菱形）です。画像ができたら `parts.css` の
-`.norden-thin-titled-title::before` を横方向の9分割（`border-image`、両端の幅 `--norden-thin-title-cap`）に置き換え、
-菱形（`.norden-thin-titled-title-text::before` / `::after`）を消します。高さは `--norden-thin-title-height`（既定24px）。
+札は `src/assets/ui/skins/thin-title.png`（1024×128pxの透過PNG）を使います。細い真鍮の上下の縁、
+左右の葉模様の端飾り、文字を載せる暗い茶の無地の帯を一枚にまとめています。
+`parts.css` の `.norden-thin-titled-title::before` で横方向に9分割し（`border-image: … 0 10% fill`）、
+左右各10%の端飾りを固定して中央だけを横に伸ばします。CSSの仮の帯と菱形は削除しました。
+高さは `--norden-thin-title-height`（既定24px）、端飾りの幅は `--norden-thin-title-cap`
+（既定は高さの0.8倍、24px時に19.2px）です。長い題名は札の内側で省略表示します。
+
+組み込み `image_gen.imagegen` を `transparent_background: true` で使用して生成しました。
+元画像2172×724pxから上下の透明な余白だけを切り出し（`2172x256+0+234`）、
+ImageMagickのLanczosで1024×128pxに縮小しています。アルファを保持し、文字・外側の影は描き込んでいません。
+生成プロンプトは `docs/image-generation.json` の `thin-title` に記録しています。
 
 画像の仕様（生成の依頼に使う）:
 

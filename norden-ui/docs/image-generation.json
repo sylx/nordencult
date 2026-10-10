@@ -1,6 +1,12 @@
 {
-  "mode": "Built-in image_gen tool; transparent_background=true. Frame alpha preserved without cropping, recoloring or background removal. Title canvas margins cropped only, retaining alpha.",
+  "mode": "Built-in image_gen tool; transparent_background=true. Frame alpha preserved without cropping, recoloring or background removal. Title canvas margins cropped, then resized where noted, retaining alpha.",
   "variants": [
+    {
+      "name": "thin-title",
+      "file": "src/assets/ui/skins/thin-title.png",
+      "prompt": "Use case: stylized-concept\nAsset type: production transparent PNG title plaque for ThinFrameWithTitle, a medieval fantasy strategy game HUD.\nPrimary request: one very long narrow horizontal plaque with thin muted antique brass rims and a solid dark brown center. Small restrained symmetrical pointed brass end caps with delicate engraved leaf curls, matching a thin aged-brass window bezel. No title text; the game adds pale cream #fff4d0 text later.\nComposition: front-facing orthographic, no perspective. Plaque silhouette approximately 8:1, ideally 1024x128. Artwork tightly fills the width and height with only minimal transparent safety margin. Entire left decoration confined to leftmost 8 percent of plaque width, entire right decoration confined to rightmost 8 percent. Between x=8 percent and x=92 percent, a perfectly straight uniformly colored matte dark brown band, no horizontal variation or patterns, with thin parallel uniform brass upper and lower rails. This middle region will stretch horizontally with CSS border-image. All curved shapes and changes of thickness must stay within the end caps. Small elegant end ornaments readable when the image is displayed only 24 pixels tall; restrained visual weight.\nMaterials and palette: muted warm brass, aged bronze crevices, dark chocolate brown opaque center. Subtle metal highlights only on thin rims and end caps, quiet center.\nTransparency: real clean alpha=0 outside the plaque silhouette and inside end-cap cutouts. Preserve clean antialiased edges. Center opaque. No cast shadow outside the silhouette, no glow, no backdrop, no painted checkerboard, no white matte.\nAvoid: text, letters, glyphs, symbols, gems, center crests, hanging ornaments, bulky frame, parchment, UI mockup, multiple objects, scene, watermark.",
+      "note": "Built-in image_gen with transparent_background=true. Generated RGBA canvas 2172x724; cropped transparent canvas margins to 2172x256+0+234 and resized to 1024x128 with ImageMagick Lanczos, preserving alpha. Horizontal nine-slice: 0 10% fill; caps: 0.8 × title height (19.2px at 24px)."
+    },
     {
       "name": "medium",
       "file": "src/assets/ui/skins/medium-frame.png",
