@@ -30,6 +30,8 @@ export type { KnightCardData, KnightCardProps } from './components/parts/KnightC
 export { default as FactionMark } from './components/parts/FactionMark'
 export type { FactionMarkProps } from './components/parts/FactionMark'
 export { default as ThinFrame } from './components/parts/ThinFrame'
+export { default as ThinFrameWithTitle } from './components/parts/ThinFrameWithTitle'
+export type { ThinFrameWithTitleProps } from './components/parts/ThinFrameWithTitle'
 export { default as StatBar } from './components/parts/StatBar'
 export type { StatBarProps } from './components/parts/StatBar'
 

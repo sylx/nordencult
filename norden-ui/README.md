@@ -118,6 +118,7 @@ Escで `pop()` します。サブコマンドの展開などEscを自分で使�
 | `Card` | `as`, `children`, `className`, `style` | 羊皮紙とインクで描いた汎用装飾枠。`as` は div / article / section / label |
 | `KnightCard` | `knight: { name, portrait?, portraitSrc?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | `Card` に顔・名前・能力名と大きな能力値を配置。数値は段階別の色。`selection` でチェックボックスになる |
 | `FactionMark` | `faction?`, `emblemOnly` | 紋章と勢力名。省略すると中立 |
+| `ThinFrameWithTitle` | `title`, `as`, `ref`, ほかの属性 | `ThinFrame` の上辺に題名の札を載せたHUDのパネル。題名がパネルの名前になる。札はCSSの仮組（[画像の仕様](docs/parts-assets.md#細いベゼルの題名の札)） |
 | `ThinFrame` | なし | `windowSkins.thin` の細いベゼルと暗い地。最も近い位置指定の祖先いっぱいに、中身の後ろへ敷く（祖先に `isolation: isolate`）。HUDのパネルに使う |
 
 DateBarは`phaseLabel`・`factionName`・`dateLabel`を個別に渡します。文字サイズ・左装飾・右上配置の調整箇所と生成プロンプトは [DateBarの装飾と調整](docs/date-bar-assets.md) を参照してください。

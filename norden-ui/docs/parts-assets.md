@@ -2,6 +2,28 @@
 
 CityNavigatorとBannerはInfoWindowの最も細いベゼル（`windowSkins.thin`）を共用します。HUDに合わせて角領域を22pxで描き、背景を内側に配置して外周の透過を保ちます。
 
+## 細いベゼルの題名の札
+
+`ThinFrameWithTitle` は `ThinFrame` の上辺の中央に題名の札を載せたHUDのパネルです（戦闘画面の地形・戦闘記録など）。
+札は札の高さの半分だけ枠の外へはみ出し、パネルの上の余白は残りの半分の分だけ広くとります。
+
+```tsx
+<ThinFrameWithTitle title="戦闘記録" style={{ width: 320 }}>
+  <ol>…</ol>
+</ThinFrameWithTitle>
+```
+
+札はいまCSSの仮組（暗い茶の帯・上下の金の細線・両端の金の菱形）です。画像ができたら `parts.css` の
+`.norden-thin-titled-title::before` を横方向の9分割（`border-image`、両端の幅 `--norden-thin-title-cap`）に置き換え、
+菱形（`.norden-thin-titled-title-text::before` / `::after`）を消します。高さは `--norden-thin-title-height`（既定24px）。
+
+画像の仕様（生成の依頼に使う）:
+
+- 横長の透過PNG。縦横比はおよそ 8:1（例 1024×128）。画面では高さ24px前後に縮小して使う
+- 左右の端飾り（キャップ）は全幅の各10%以内に収め、中央は文字を載せる無地の帯。中央は横に伸ばすので、模様を入れず均一にする
+- 細いベゼル（`src/assets/ui/skins/thin-frame.png`）と同じ、くすんだ真鍮の細い縁と暗い地。文字は明るい色（#fff4d0）で載せる
+- 札の外側は完全に透過。文字・影・余白の背景は描き込まない
+
 ## ボタンとスライダー
 
 ボタン本体は、滑らかな象牙の表面、丸みのある面取り、光沢と下辺の陰影を持つ立体的な素材です。四隅に金／銀の象嵌装飾があるバリエーションと、装飾なしのバリエーションがあります。`src/assets/ui/buttons/ivory-button-gold.webp`、`ivory-button-silver.webp`、`ivory-button-plain.webp` は組み込み image_gen ツールで作成した透過PNGを、ImageMagickで256×256pxに縮小してロスレスWebPに変換した素材です。CSSのborder-imageで9分割し、角と面取りの大きさを保って象牙の中央を伸縮します。hover・押下・無効・キーボードフォーカスに対応し、暗いHUD上でも象牙の明るさを保ちます。ChoiceGroupには金／銀、都市の矢印とQuantityInputの±には装飾なしの素材を使います。

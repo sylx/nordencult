@@ -65,6 +65,8 @@ body { margin: 0; }
 .demo-parts h3 { margin: 10px 0 0; font-size: 13px; color: #755b36; }
 .demo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .demo-dark-parts { position: absolute; top: 24px; left: 32px; right: 32px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.demo-thin-titled { font-size: 13px; line-height: 1.6; }
+.demo-thin-titled small { margin-left: 8px; color: #c8b490; }
 .demo-card-description { margin: 6px 0 0; font-size: 13px; }
 .demo-stat-control { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; }
 .demo-log { margin-top: 26px; padding-top: 12px; border-top: 1px solid #393d31; }

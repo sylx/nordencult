@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import ChoiceGroup from './ChoiceGroup'
 import CityNavigator from './CityNavigator'
 import QuantityInput from './QuantityInput'
+import ThinFrameWithTitle from './ThinFrameWithTitle'
 
 function Choice() {
   const [value, setValue] = useState('a')
@@ -50,5 +51,16 @@ describe('CityNavigator', () => {
     expect(screen.getByRole('button', { name: '前の都市' })).toBeDisabled()
     await userEvent.click(screen.getByRole('button', { name: '次の都市' }))
     expect(onNext).toHaveBeenCalledOnce()
+  })
+})
+
+describe('ThinFrameWithTitle', () => {
+  it('names the panel by its title and passes attributes to the panel', () => {
+    render(<ThinFrameWithTitle title="戦闘記録" className="log" data-testid="panel"><p>本文</p></ThinFrameWithTitle>)
+    const panel = screen.getByRole('region', { name: '戦闘記録' })
+    expect(panel).toBe(screen.getByTestId('panel'))
+    expect(panel).toHaveClass('norden-thin-titled', 'log')
+    expect(screen.getByRole('heading', { name: '戦闘記録' })).toBeInTheDocument()
+    expect(screen.getByText('本文')).toBeInTheDocument()
   })
 })
