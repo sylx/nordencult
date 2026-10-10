@@ -2,9 +2,9 @@
 
 /* The image is sliced into nine regions; corners retain their size at any width/height. */
 .norden-button, .norden-quantity-range {
-  --norden-ivory-gold: url('../../assets/ui/buttons/ivory-button-gold.png');
-  --norden-ivory-silver: url('../../assets/ui/buttons/ivory-button-silver.png');
-  --norden-ivory-plain: url('../../assets/ui/buttons/ivory-button-plain.png');
+  --norden-ivory-gold: url('../../assets/ui/buttons/ivory-button-gold.webp');
+  --norden-ivory-silver: url('../../assets/ui/buttons/ivory-button-silver.webp');
+  --norden-ivory-plain: url('../../assets/ui/buttons/ivory-button-plain.webp');
 }
 .norden-button {
   --norden-button-image: var(--norden-ivory-silver);
@@ -209,7 +209,7 @@
   height: 28px;
   margin-top: -11px;
   border: 0;
-  background: var(--norden-ivory-gold) center / 100% 100% no-repeat;
+  background: var(--norden-ivory-plain) center / 100% 100% no-repeat;
   filter: drop-shadow(0 2px 2px #24180c70);
   cursor: grab;
 }

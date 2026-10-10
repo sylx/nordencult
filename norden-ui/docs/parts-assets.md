@@ -4,7 +4,7 @@ CityNavigatorとBannerはInfoWindowの最も細いベゼル（`windowSkins.thin`
 
 ## ボタンとスライダー
 
-ボタン本体は、滑らかな象牙の表面、丸みのある面取り、光沢と下辺の陰影を持つ立体的な素材です。四隅に金／銀の象嵌装飾があるバリエーションと、装飾なしのバリエーションがあります。`src/assets/ui/buttons/ivory-button-gold.png`、`ivory-button-silver.png`、`ivory-button-plain.png` は組み込み image_gen ツールで作成した透過PNGです。CSSのborder-imageで9分割し、角と面取りの大きさを保って象牙の中央を伸縮します。hover・押下・無効・キーボードフォーカスに対応し、暗いHUD上でも象牙の明るさを保ちます。ChoiceGroupと都市の矢印には金／銀、QuantityInputの±には装飾なしの素材を使います。
+ボタン本体は、滑らかな象牙の表面、丸みのある面取り、光沢と下辺の陰影を持つ立体的な素材です。四隅に金／銀の象嵌装飾があるバリエーションと、装飾なしのバリエーションがあります。`src/assets/ui/buttons/ivory-button-gold.webp`、`ivory-button-silver.webp`、`ivory-button-plain.webp` は組み込み image_gen ツールで作成した透過PNGを、ImageMagickで256×256pxに縮小してロスレスWebPに変換した素材です。CSSのborder-imageで9分割し、角と面取りの大きさを保って象牙の中央を伸縮します。hover・押下・無効・キーボードフォーカスに対応し、暗いHUD上でも象牙の明るさを保ちます。ChoiceGroupには金／銀、都市の矢印とQuantityInputの±には装飾なしの素材を使います。
 
 ```tsx
 <Button style={{ width: 240, height: 60 }}>出撃する</Button>
@@ -65,12 +65,27 @@ KnightCardはこのCardを使用します。標準の顔画像は76px、compact�
 
 ボタンの幅・高さも同じカタログで変更できます。
 
+## ボタン画像の縮小とWebP変換
+
+`src/assets/ui/buttons/` の4枚（象牙3種と `ornate-button.webp`）は、元の1254×1254pxから256×256pxに縮小しています。26%の角領域は約67pxとなり、通常24px・小さいボタン16pxの角を高密度画面でも描画できます。CSSのスライス比率はそのまま使います。
+
+元PNGからの変換コマンド（ImageMagickのWebP出力対応が必要）:
+
+```sh
+for source in src/assets/ui/buttons/*.png; do
+  convert "$source" -filter Lanczos -resize 256x256 -strip \
+    -define webp:lossless=true -define webp:method=6 "${source%.png}.webp"
+done
+```
+
+Lanczosで縮小時の輪郭をなめらかにし、WebPはロスレスで保存して透過と縮小後の画質を保ちます。
+
 ## ボタンの生成プロンプト
 
 ### 装飾なしの象牙ボタン
 
 組み込み `image_gen.imagegen` で金版を参照し、`transparent_background: true` で装飾を除去。
-保存先: `src/assets/ui/buttons/ivory-button-plain.png`。
+保存先: `src/assets/ui/buttons/ivory-button-plain.webp`。
 
 ```text
 Use case: precise-object-edit
@@ -81,7 +96,7 @@ Background: transparent outside the smooth rounded ivory silhouette. Remove deta
 Constraints: change only the decorative inlays to plain ivory and clean the outer alpha. No text, letters, new objects, parchment, picture frame or continuous metal edging.
 ```
 
-生成方法: 組み込み `image_gen.imagegen`、全て `transparent_background: true`。金版を新規生成したあと透過輪郭を仕上げ、同じ金版を参照して装飾の金属のみを変更した銀版を作成しています。保存先は `src/assets/ui/buttons/ivory-button-gold.png` と `ivory-button-silver.png` です。
+生成方法: 組み込み `image_gen.imagegen`、全て `transparent_background: true`。金版を新規生成したあと透過輪郭を仕上げ、同じ金版を参照して装飾の金属のみを変更した銀版を作成しています。保存先は `src/assets/ui/buttons/ivory-button-gold.webp` と `ivory-button-silver.webp` です。
 
 ### 金・象牙の素材生成
 
