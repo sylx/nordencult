@@ -26,11 +26,13 @@ export function useWindowSize({ contentRef, titleRef, width, height, minWidth, m
   })
   const [widthLimit, setWidthLimit] = useState(maxWidth)
   const [heightLimit, setHeightLimit] = useState(maxHeight)
+  const [scrollbarWidth, setScrollbarWidth] = useState(0)
 
   useLayoutEffect(() => {
     const content = contentRef.current
     const title = titleRef.current
-    if (!content || !title) return
+    const viewport = content?.parentElement
+    if (!content || !title || !viewport) return
     let disposed = false
 
     const measure = () => {
@@ -39,10 +41,13 @@ export function useWindowSize({ contentRef, titleRef, width, height, minWidth, m
       setWidthLimit(limit)
       const heightLimit = Math.max(minimumSize, Math.min(maxHeight, document.documentElement.clientHeight - 32 || maxHeight))
       setHeightLimit(heightLimit)
+      // A vertical scrollbar narrows the viewport: widen the window by it, or narrow the content at the width limit.
+      const scrollbar = viewport.offsetWidth - viewport.clientWidth
+      setScrollbarWidth(scrollbar)
       // Text and decorations are measured separately so title length contributes to auto width.
       const next = {
         width: Math.max(minimumSize, Math.min(limit, width === 'auto'
-          ? Math.max(minWidth, content.getBoundingClientRect().width + horizontalPadding, title.getBoundingClientRect().width + titlePadding)
+          ? Math.max(minWidth, content.getBoundingClientRect().width + horizontalPadding + scrollbar, title.getBoundingClientRect().width + titlePadding)
           : width)),
         // Taller content scrolls inside the window; minHeight still wins so the tab rail fits.
         height: Math.max(minimumSize, minHeight, Math.min(heightLimit, height === 'auto'
@@ -55,6 +60,8 @@ export function useWindowSize({ contentRef, titleRef, width, height, minWidth, m
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(content)
+    // The viewport's content box shrinks when its scrollbar appears.
+    observer.observe(viewport)
     observer.observe(title)
     window.addEventListener('resize', measure)
     document.fonts?.ready.then(measure)
@@ -65,5 +72,5 @@ export function useWindowSize({ contentRef, titleRef, width, height, minWidth, m
     }
   }, [contentRef, titleRef, width, height, minWidth, maxWidth, minHeight, maxHeight, horizontalPadding, verticalPadding, titlePadding, minimumSize])
 
-  return { size, widthLimit, heightLimit }
+  return { size, widthLimit, heightLimit, scrollbarWidth }
 }

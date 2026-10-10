@@ -19,7 +19,7 @@ export interface CityInfoWindowProps extends Omit<InfoWindowWithTabsProps, 'tabs
 }
 
 /** A city's information, knights and roads in a tabbed window; past its maximum size the panels scroll */
-export default function CityInfoWindow({ city, onSelectNeighbour, maxWidth = 524, maxHeight = 633, ...windowProps }: CityInfoWindowProps) {
+export default function CityInfoWindow({ city, onSelectNeighbour, maxWidth = 544, maxHeight = 633, ...windowProps }: CityInfoWindowProps) {
   return <InfoWindowWithTabs {...windowProps} maxWidth={maxWidth} maxHeight={maxHeight} title={`${city.faction?.name ?? ''} ${city.name}`.trim()}
     tabs={createCityInfoTabs(city, onSelectNeighbour)} />
 }

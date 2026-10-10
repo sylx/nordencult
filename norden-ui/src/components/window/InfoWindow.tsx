@@ -65,7 +65,7 @@ export default function InfoWindow({
   const verticalPadding = layout.paddingTop + layout.paddingBottom
   const titlePadding = showTitleBar ? layout.titleCapWidth * 2 + 32 : 0
   const minimumSize = 2 * resolvedSkin.frame.width
-  const { size, widthLimit, heightLimit } = useWindowSize({
+  const { size, widthLimit, heightLimit, scrollbarWidth } = useWindowSize({
     contentRef, titleRef, width, height, minWidth, maxWidth, minHeight, maxHeight, horizontalPadding,
     verticalPadding, titlePadding, minimumSize,
   })
@@ -124,7 +124,7 @@ export default function InfoWindow({
     ...windowSkinStyle(resolvedSkin),
     '--norden-title-offset-x': `${titleBarOffset?.x ?? layout.titleOffsetX}px`,
     '--norden-title-offset': `${titleBarOffset?.y ?? layout.titleOffset}px`,
-    '--norden-content-max-width': `${Math.max(1, widthLimit - horizontalPadding)}px`,
+    '--norden-content-max-width': `${Math.max(1, widthLimit - horizontalPadding - scrollbarWidth)}px`,
     ...style,
     ...actualSize,
     left: position.x, top: position.y,
