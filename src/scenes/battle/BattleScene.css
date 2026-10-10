@@ -66,14 +66,15 @@
 .battle-header__city small { font-size: 13px; color: #d4b06a; }
 
 .battle-scene__field { position: absolute; inset: 0; display: grid; place-items: center; }
-.battle-field { position: absolute; inset: 0; }
-.battle-field canvas { display: block; }
+.battle-scene__field .battle-scene__screen { position: absolute; inset: 0; }
 .battle-scene__placeholder { color: rgb(242 230 200 / 0.4); font-size: 20px; letter-spacing: 0.2em; }
 
 .battle-debug {
   position: absolute;
-  right: 16px;
-  bottom: 16px;
+  /* Left middle: the bottom corners belong to the battle screen's windows */
+  left: 16px;
+  top: 50%;
+  translate: 0 -50%;
   z-index: 1;
   display: grid;
   gap: 8px;

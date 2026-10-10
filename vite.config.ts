@@ -18,7 +18,8 @@ export default defineConfig({
       { find: /^norden-strategy$/, replacement: local('./norden-strategy/src/index.ts') },
       { find: /^norden-strategy\/data$/, replacement: local('./norden-strategy/src/data.ts') },
       { find: /^norden-ui$/, replacement: local('./norden-ui/src/index.ts') },
-      // The workspace package's exports (norden-battle/map-runtime/package.json)
+      // The workspace packages' exports (norden-battle/battle-runtime/package.json, norden-battle/map-runtime/package.json)
+      { find: /^@norden\/battle-runtime$/, replacement: local('./norden-battle/battle-runtime/src/index.ts') },
       { find: /^@norden\/map-runtime\/render\/structures$/, replacement: local('./norden-battle/map-runtime/src/render/structures/index.ts') },
       { find: /^@norden\/map-runtime\/(.+)$/, replacement: `${local('./norden-battle/map-runtime/src')}/$1.ts` },
     ],

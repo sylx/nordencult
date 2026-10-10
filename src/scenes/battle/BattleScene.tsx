@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { BattleScreen } from '@norden/battle-runtime'
 import { CITY_MAP } from 'norden-strategy'
 import { FactionLabel } from '../../components/FactionLabel'
 import { KnightList } from '../../components/KnightList'
@@ -6,11 +7,14 @@ import { UNIT_TYPE_MAP } from '../../data/unitTypes'
 import { resolveBattle, useGame, type Battle, type BattleWinner } from '../../game'
 import { useScene } from '../sceneContext'
 import type { SceneProps } from '../types'
-import { BattleField } from './BattleField'
 import { loadBattleMap, type BattleMap } from './battleMap'
 import './BattleScene.css'
 
-/** A battle: the battlefield, the attacking and defending sides, and (for now) debug buttons deciding who wins */
+/**
+ * A battle: the battlefield (norden-battle's battle screen: map, units, action menu,
+ * terrain and battle log windows), the attacking and defending sides, and (for now)
+ * debug buttons deciding who wins
+ */
 export default function BattleScene({ params }: SceneProps<'battle'>) {
   const { state: game } = useGame()
   const { goTo } = useScene()
@@ -50,7 +54,7 @@ function Battlefield({ battle }: { battle: Battle }) {
   return (
     <div className="battle-scene">
       <div className="battle-scene__field">
-        {map ? <BattleField data={map.data} />
+        {map ? <BattleScreen map={map.data} className="battle-scene__screen" />
           : <p className="battle-scene__placeholder">{error ? `戦闘マップを読めません: ${error}` : '戦闘マップを読み込み中…'}</p>}
       </div>
       <BattleHeader battle={battle} />
