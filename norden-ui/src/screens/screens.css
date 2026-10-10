@@ -27,8 +27,10 @@
 
 /* DateBar is flush with the host's top-right edge. Move the city switcher below it on narrow hosts. */
 .norden-city-command { container: norden-date-host / inline-size; }
+.norden-city-command > .norden-info-window { max-width: calc(100% - var(--norden-city-window-x, 56px) - 16px); max-height: calc(100% - var(--norden-city-window-y, 96px) - 112px); }
+.norden-city-command .norden-info-window-measure { max-width: min(var(--norden-content-max-width), calc(100cqw - var(--norden-city-window-x, 56px) - 16px - var(--norden-padding-left) - var(--norden-padding-right))); }
 .norden-city-command .norden-screen-top-right { top: 0; right: 0; left: 0; display: flex; justify-content: flex-end; }
 @container norden-date-host (max-width: 1000px) {
   .norden-city-command .norden-screen-top-left { top: 112px; }
-  .norden-city-command > .norden-info-window { margin-top: 96px; }
+  .norden-city-command > .norden-info-window { margin-top: 96px; max-height: calc(100% - var(--norden-city-window-y, 96px) - 208px); }
 }

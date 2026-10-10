@@ -3,11 +3,10 @@ import type { CSSProperties } from 'react'
 import { InfoWindowWithTabs, windowSkins } from '../../src'
 import type { TabInfo } from '../../src'
 import { resolveWindowSkin } from '../../src/skins'
-import home from '../../src/assets/ui/icons/icon_home.webp'
-import people from '../../src/assets/ui/icons/icon_people.webp'
 import stats from '../../src/assets/ui/icons/icon_stat.webp'
 import history from '../../src/assets/ui/icons/icon_history.webp'
-import city from '../assets/place_city.webp'
+import { createCityInfoTabs } from '../../src/screens/cityCommand/CityInfoWindow'
+import { cityView } from '../mock/data'
 
 const descriptions = {
   short: '港湾都市。',
@@ -31,32 +30,13 @@ export default function InfoWindowEntry() {
   const [titleBarOffset, setTitleBarOffset] = useState<{ x?: number; y?: number }>({})
   const skinLayout = resolveWindowSkin(windowSkins[skin]).layout
 
+  const cityTabs = createCityInfoTabs(cityView('P012'))
   const tabs: TabInfo[] = [
-    {
-      id: 'city', name: '都市情報', icon: home,
-      content: <div className="city-panel">
-        <div className="city-heading"><span className="city-mark">✦</span><div><h2>フルーエン</h2><span>西岸地方・港湾都市</span></div></div>
-        <div className="city-overview"><dl className="facts">
-          <div><dt>領主</dt><dd>マルクス・カルタ</dd></div>
-          <div><dt>人口</dt><dd>11,000</dd></div>
-          <div><dt>規模</dt><dd>大きな街</dd></div>
-        </dl><img className="city-illustration" src={city} alt="フルーエンの街並み" /></div>
-        <p className="city-description">{descriptions[length]}</p>
-        <h3>都市の状況</h3>
-        <div className="city-metrics"><div>治安<strong>82</strong></div><div>民忠<strong>76</strong></div><div>収支<strong className="positive">+440</strong></div></div>
-        <h3>産業</h3>
-        <div className="industry"><span>農業</span><progress value={220} max={640} /><span>220</span></div>
-        <div className="industry"><span>商業</span><progress value={440} max={640} /><span>440</span></div>
-        <div className="industry"><span>軍事</span><progress value={220} max={640} /><span>220</span></div>
-      </div>,
-    },
-    {
-      id: 'knights', name: '騎士', icon: people,
-      content: <div className="knights-panel"><h2>駐留する騎士</h2><p>都市を守る二人の騎士。</p><table><thead><tr><th>名前</th><th>兵科</th><th>兵力</th></tr></thead><tbody><tr><td>エルネスト</td><td>重装歩兵</td><td>240</td></tr><tr><td>リディア</td><td>弓兵</td><td>180</td></tr></tbody></table></div>,
-    },
+    cityTabs[0],
+    cityTabs[1],
     {
       id: 'stats', name: '統計', icon: stats,
-      content: <div className="statistics-panel"><h2>都市の統計</h2><p>今期の収入と支出</p><dl className="facts"><div><dt>交易収入</dt><dd>+620</dd></div><div><dt>駐留費用</dt><dd>−180</dd></div><div><dt>収支</dt><dd>+440</dd></div></dl></div>,
+      content: <div className="statistics-panel"><h2>都市の統計</h2><p>今期の収入と支出</p><dl className="facts"><div><dt>交易収入</dt><dd>+620</dd></div><div><dt>駐留費用</dt><dd>−180</dd></div><div><dt>収支</dt><dd>+440</dd></div></dl><p className="city-description">{descriptions[length]}</p></div>,
     },
     {
       id: 'history', name: '歴史', icon: history,
@@ -65,7 +45,7 @@ export default function InfoWindowEntry() {
   ]
 
   return <div className="demo-workspace">
-    <section className={`demo-stage backdrop-${backdrop}`} aria-label="コンポーネントプレビュー">
+    <section className={`demo-stage window-preview backdrop-${backdrop}`} aria-label="コンポーネントプレビュー">
       <div className="stage-caption"><span className="live-dot" /> LIVE PREVIEW</div>
       <InfoWindowWithTabs key={instance} title={title} showTitleBar={showTitleBar}
         titleBarOffset={titleBarOffset} tabs={tabs.slice(0, count)}
@@ -101,8 +81,11 @@ export default function InfoWindowEntry() {
       <button className="reset-button" onClick={() => setTitleBarOffset({})}>スキンのタイトル位置に戻す</button>
       <label htmlFor="window-title">ウィンドウのタイトル</label>
       <textarea id="window-title" value={title} onChange={event => setTitle(event.target.value)} rows={3} />
-      <label htmlFor="content-length">本文の長さ</label>
-      <select id="content-length" value={length} onChange={event => setLength(event.target.value as keyof typeof descriptions)}><option value="short">短い文章</option><option value="medium">標準の文章</option><option value="long">長い文章</option></select>
+      <label htmlFor="content-length">本文の長さ（統計タブ）</label>
+      <select id="content-length" value={length} onChange={event => {
+        setLength(event.target.value as keyof typeof descriptions)
+        if (count >= 3) setActive(2)
+      }}><option value="short">短い文章</option><option value="medium">標準の文章</option><option value="long">長い文章</option></select>
       <label htmlFor="tab-count">タブ数</label>
       <select id="tab-count" value={count} onChange={event => setCount(Number(event.target.value))}>{[0, 1, 2, 3, 4].map(value => <option key={value} value={value}>{value}個</option>)}</select>
       <label className="checkbox"><input type="checkbox" checked={fixed} onChange={event => setFixed(event.target.checked)} />固定サイズ（420 × 520）</label>

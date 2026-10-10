@@ -1,4 +1,6 @@
 import type { CityView, FactionView, KnightView, TurnView, UnitTypeView } from '../../src'
+import { createElement } from 'react'
+import { repositoryCharacters, RepositoryCharacterArt, RepositoryPortrait } from '../repositoryCharacters'
 import cityArt from '../assets/place_city.webp'
 
 /** Demo-only data. The game passes its own state converted into the same view types */
@@ -19,11 +21,19 @@ export const PLAYER = 'carta'
 
 export interface MockKnight extends KnightView { cityId: string }
 
+// Keep the scenario's names while using actual game character artwork for its cast.
+const characterIds: Record<string, string> = { k1: '029', k2: '016', k3: '011', k4: '001', k5: '019', k6: '015', k7: '017', k8: '024', k9: '003' }
+const characterFor = (id: string) => repositoryCharacters.find(character => character.id === characterIds[id])
+
 const knight = (id: string, name: string, cityId: string, subtitle: string, leadership: number, strength: number, intelligence: number,
-  defaultUnitType?: string): MockKnight => ({
-  id, name, cityId, subtitle, defaultUnitType, maxSoldiers: leadership * 5,
-  stats: [{ label: '統率', value: leadership }, { label: '武力', value: strength }, { label: '知力', value: intelligence }],
-})
+  defaultUnitType?: string): MockKnight => {
+  const character = characterFor(id)
+  return {
+    id, name, cityId, subtitle, defaultUnitType, maxSoldiers: leadership * 5,
+    portrait: character ? createElement(RepositoryPortrait, { character }) : undefined,
+    stats: [{ label: '統率', value: leadership }, { label: '武力', value: strength }, { label: '知力', value: intelligence }],
+  }
+}
 
 export const KNIGHTS: MockKnight[] = [
   knight('k1', 'マルクス・カルタ', 'P012', '政治家 / 領主', 62, 40, 88),
@@ -45,8 +55,8 @@ export interface MockCity extends Omit<CityView, 'knights' | 'neighbours' | 'fac
   soldiers: number
 }
 
-const stats = (agriculture: number, market: number, military: number) => [
-  { label: '農業', value: agriculture, max: 720 }, { label: '商業', value: market, max: 720 }, { label: '軍事', value: military, max: 640 },
+const stats = (agriculture: number, market: number, production: number) => [
+  { label: '農業', value: agriculture, max: 720 }, { label: '商業', value: market, max: 720 }, { label: '生産', value: production, max: 640 },
 ]
 
 export const CITIES: MockCity[] = [
@@ -90,8 +100,11 @@ export const invasionTargets = (from: string) => neighboursOf(from).filter(id =>
 /** The view type the screens draw */
 export function cityView(id: string, knights: readonly KnightView[] = knightsIn(id)): CityView {
   const { owner, at: _at, soldiers: _soldiers, ...city } = CITY_MAP[id]!
+  const lord = knightsIn(id)[0]
+  const character = lord ? characterFor(lord.id) : undefined
   return {
     ...city,
+    lord: lord ? { name: lord.name, image: character ? createElement(RepositoryCharacterArt, { character }) : undefined } : undefined,
     faction: owner ? FACTIONS[owner] : undefined,
     knights,
     neighbours: neighboursOf(id).map(other => ({ id: other, name: CITY_MAP[other]!.name, faction: CITY_MAP[other]!.owner ? FACTIONS[CITY_MAP[other]!.owner!] : undefined })),

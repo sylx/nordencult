@@ -6,7 +6,7 @@ import iconMerchant from '../../assets/ui/icons/icon-gold.png'
 export type CityCommandId =
   | 'build' | 'assign'
   | 'move' | 'invade' | 'recruit' | 'transport'
-  | 'research'
+  | 'quest' | 'tree'
   | 'buy' | 'sell'
 
 export interface CityCommandGroup {
@@ -24,6 +24,6 @@ export const CITY_COMMAND_GROUPS: readonly CityCommandGroup[] = [
     id: 'military', label: '軍事', icon: iconMilitary,
     commands: [{ id: 'move', label: '移動' }, { id: 'invade', label: '侵攻' }, { id: 'recruit', label: '募兵' }, { id: 'transport', label: '輸送' }],
   },
-  { id: 'research', label: '研究', icon: iconResearch },
+  { id: 'research', label: '研究', icon: iconResearch,commands: [{ id: 'quest', label: '探索' }, { id: 'tree', label: 'ツリー' }] },
   { id: 'merchant', label: '商人', icon: iconMerchant, commands: [{ id: 'buy', label: '購入' }, { id: 'sell', label: '売却' }] },
 ]

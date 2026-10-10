@@ -84,7 +84,7 @@
   pointer-events: none;
 }
 .norden-info-window-content { position: absolute; inset: var(--norden-padding-top) var(--norden-padding-right) var(--norden-padding-bottom) var(--norden-padding-left); overflow: auto; scrollbar-width: thin; scrollbar-color: #94703b #e6d5b2; }
-.norden-info-window-measure { width: max-content; max-width: var(--norden-content-max-width); display: flow-root; overflow-wrap: anywhere; }
+.norden-info-window-measure { width: max-content; max-width: var(--norden-content-max-width); padding-bottom: 16px; display: flow-root; overflow-wrap: anywhere; }
 .norden-info-window-measure.is-fixed-width { width: 100%; max-width: 100%; }
 .norden-info-window-resize {
   position: absolute;

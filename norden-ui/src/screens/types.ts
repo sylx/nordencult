@@ -13,6 +13,8 @@ export interface FactionView {
 
 export interface CityStatView {
   label: string
+  /** Visual treatment; known Japanese labels also resolve automatically. */
+  kind?: 'agriculture' | 'commerce' | 'production'
   value: number
   /** Full length of the bar */
   max: number
@@ -30,8 +32,10 @@ export interface CityView {
   population?: number
   /** Illustration URL */
   art?: string
+  /** Lord's name and full character illustration (URL or host-rendered sprite). */
+  lord?: { name: string; image?: ReactNode; imageSrc?: string }
   special?: string
-  /** e.g. 農業・商業・軍事 */
+  /** e.g. 農業・商業・生産 */
   stats?: readonly CityStatView[]
   tags?: readonly string[]
   knights?: readonly KnightView[]

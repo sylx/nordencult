@@ -21,6 +21,8 @@ export interface InfoWindowWithTabsProps extends Omit<InfoWindowProps, 'children
   onActiveTabChange?: (index: number) => void
   tabListLabel?: string
   emptyContent?: ReactNode
+  /** Keep accessible names and tooltips when only icons are visible. */
+  iconOnlyTabs?: boolean
 }
 
 function clamp(index: number, count: number) {
@@ -29,7 +31,7 @@ function clamp(index: number, count: number) {
 
 export default function InfoWindowWithTabs({
   tabs, title, showTitleBar = true, defaultActiveTab = 0, activeTab, onActiveTabChange,
-  tabListLabel = '情報の種類', emptyContent = null, className = '', minHeight = 240, ...windowProps
+  tabListLabel = '情報の種類', emptyContent = null, iconOnlyTabs = true, className = '', minHeight = 240, ...windowProps
 }: InfoWindowWithTabsProps) {
   const id = useId()
   const [selection, setSelection] = useState(() => ({ index: clamp(defaultActiveTab, tabs.length), id: tabs[clamp(defaultActiveTab, tabs.length)]?.id }))
@@ -68,13 +70,13 @@ export default function InfoWindowWithTabs({
         <div className="norden-tab-list" role="tablist" aria-label={tabListLabel} aria-orientation="vertical">
           {tabs.map((tab, tabIndex) => (
             <button key={tab.id ?? tabIndex} ref={element => { buttons.current[tabIndex] = element }}
-              type="button" className={`norden-tab ${tabIndex === index ? 'is-active' : ''}`}
+              type="button" className={`norden-tab ${tabIndex === index ? 'is-active' : ''} ${iconOnlyTabs ? 'is-icon-only' : ''}`}
               id={tabId(tabIndex)} role="tab" aria-label={tab.name} title={tab.name}
               aria-selected={tabIndex === index} aria-controls={panelId} tabIndex={tabIndex === index ? 0 : -1}
               onClick={() => select(tabIndex)} onKeyDown={event => handleKeyDown(event, tabIndex)}
             >
               <img src={tab.icon} alt="" aria-hidden="true" className="norden-tab-icon" />
-              <span className="norden-tab-name">{tab.name}</span>
+              {!iconOnlyTabs && <span className="norden-tab-name">{tab.name}</span>}
             </button>
           ))}
         </div>

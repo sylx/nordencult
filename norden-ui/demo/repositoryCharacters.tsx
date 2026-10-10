@@ -1,3 +1,5 @@
+import { useId } from 'react'
+
 /** Optional access to the parent game's assets; the standalone catalog still works without them. */
 export interface RepositoryCharacter {
   id: string
@@ -21,5 +23,17 @@ export function RepositoryPortrait({ character }: { character: RepositoryCharact
   return <svg viewBox={`${sprite.x + faceRect.x} ${sprite.y + faceRect.y} ${faceRect.width} ${faceRect.height}`}
     preserveAspectRatio="xMidYMid slice" aria-hidden="true">
     <image href={sheet} width="2560" height="4608" />
+  </svg>
+}
+
+export function RepositoryCharacterArt({ character }: { character: RepositoryCharacter }) {
+  const clipId = useId()
+  const { sprite } = character.imageInfo
+  return <svg viewBox={`${sprite.x} ${sprite.y} 512 768`}
+    preserveAspectRatio="xMidYMin slice" aria-hidden="true">
+    <defs><clipPath id={clipId}>
+      <rect x={sprite.x} y={sprite.y} width="512" height="768" />
+    </clipPath></defs>
+    <image href={sheet} width="2560" height="4608" clipPath={`url(#${clipId})`} />
   </svg>
 }

@@ -1,0 +1,3 @@
+.norden-stat-bar { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; }
+.norden-stat-bar-graphic { display: block; flex: 1; width: 0; min-width: 0; height: 30px; filter: drop-shadow(0 2px 1px #38251030); }
+.norden-stat-bar-value { min-width: 3ch; color: #513b24; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }

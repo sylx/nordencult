@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import CommandToolbar from '../../components/toolbar/CommandToolbar'
 import type { ToolbarCommand } from '../../components/toolbar/CommandToolbar'
 import DateBar from '../../components/hud/DateBar'
@@ -48,7 +48,7 @@ export function turnText(turn: TurnView) {
 /** City command screen: ◀ ▶ between cities and the city window (left), turn bar (top right) and the action toolbar (bottom) */
 export default function CityCommandScreen({
   city, turn, onPrevCity, onNextCity, cityPosition, commandState = {}, onCommand, onEndTurn, endTurnDisabled = false,
-  onSelectNeighbour, turnMenu, windowPosition = { x: 24, y: 96 }, skin, children,
+  onSelectNeighbour, turnMenu, windowPosition = { x: 56, y: 96 }, skin, children,
 }: CityCommandScreenProps) {
   const command = (id: CityCommandId, label: string): ToolbarCommand => ({
     id, label, disabled: commandState[id]?.disabled, title: commandState[id]?.reason, onClick: () => onCommand(id),
@@ -72,7 +72,8 @@ export default function CityCommandScreen({
         <DateBar phaseLabel={turn.phaseLabel} factionName={turn.activeFaction ? turn.activeFaction.name : turn.activeFaction}
           dateLabel={turn.dateLabel}>{turnMenu}</DateBar>
       </div>
-      <CityInfoWindow city={city} onSelectNeighbour={onSelectNeighbour} x={windowPosition.x} y={windowPosition.y} skin={skin} />
+      <CityInfoWindow city={city} onSelectNeighbour={onSelectNeighbour} x={windowPosition.x} y={windowPosition.y} skin={skin}
+        style={{ '--norden-city-window-x': `${windowPosition.x}px`, '--norden-city-window-y': `${windowPosition.y}px` } as CSSProperties} />
       <div className="norden-screen-bottom-center">
         <CommandToolbar commands={commands} aria-label="都市コマンド" movable={true} />
       </div>

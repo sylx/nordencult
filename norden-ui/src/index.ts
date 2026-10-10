@@ -29,6 +29,8 @@ export { default as KnightCard } from './components/parts/KnightCard'
 export type { KnightCardData, KnightCardProps } from './components/parts/KnightCard'
 export { default as FactionMark } from './components/parts/FactionMark'
 export type { FactionMarkProps } from './components/parts/FactionMark'
+export { default as StatBar } from './components/parts/StatBar'
+export type { StatBarProps } from './components/parts/StatBar'
 
 // Screen stack
 export { useScreenStack } from './navigation/useScreenStack'
