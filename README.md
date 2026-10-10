@@ -32,7 +32,7 @@ main への push で GitHub Pages に公開します（`.github/workflows/deploy
 - `import { CityCommandScreen, ScreenHost } from 'norden-ui'` → `norden-ui/src/index.ts`
 
 公開APIは各 `src/index.ts` にまとめ、ルートから内部のファイルは直接参照しません。
-React・React DOM・three はルートの `node_modules` に一本化します（Vite の `resolve.dedupe`）。サブモジュールの依存とバージョンを揃えてください。
+React・React DOM・three はルートの `node_modules` に一本化します（Vite の `resolve.dedupe`。React の型も `tsconfig.app.json` の `paths` でルートのものにそろえます）。サブモジュールの依存とバージョンを揃えてください。
 各サブモジュールは従来どおり単体で `npm run dev` できます。地図の描画設定の調整は `norden-strategy` 単体の画面で行います（ルートとはポートが違うため、ブラウザに保存した設定は共有されません）。
 
 ## シーン
