@@ -9,6 +9,14 @@ export const ownerOf = (state: GameState, cityId: CityId): FactionId | undefined
 export const isPlayerTurn = (state: GameState) =>
   state.phase === 'strategy' && state.activeFaction === state.playerFaction
 
+/** The game starts in 灰歴312年1月 and a turn is a month */
+const START_YEAR = 312
+
+export function dateOf(turn: number): { year: number, month: number } {
+  const months = turn - 1
+  return { year: START_YEAR + Math.floor(months / 12), month: months % 12 + 1 }
+}
+
 /**
  * Factions in the order they play the strategy phase (and their invasions
  * are resolved): the player first, then the others as in FACTION_LIST.

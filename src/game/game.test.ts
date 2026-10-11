@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addOrder, availableKnights, cancelOrder, charactersIn, createInitialState, endFactionTurn, GameRuleError,
+  addOrder, availableKnights, cancelOrder, charactersIn, createInitialState, dateOf, endFactionTurn, GameRuleError,
   invadeFromProblem, invasionTargets, maxSoldiers, orderProblem, readPlayerFaction, resolveBattle, soldierPool,
   soldiersLeft, startNextBattle, turnOrder, type GameState,
 } from '.'
@@ -82,6 +82,12 @@ describe('orders', () => {
 })
 
 describe('turns', () => {
+  it('counts a turn as a month from 灰歴312年1月', () => {
+    expect(dateOf(1)).toEqual({ year: 312, month: 1 })
+    expect(dateOf(12)).toEqual({ year: 312, month: 12 })
+    expect(dateOf(13)).toEqual({ year: 313, month: 1 })
+  })
+
   it('passes every CPU faction, then marches', () => {
     let state = endFactionTurn(createInitialState('carta'))
     expect(state.activeFaction).toBe('valhardt')
