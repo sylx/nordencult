@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  Banner, CITY_COMMAND_GROUPS, CityCommandScreen, FactionMark, InvasionScreen, MapPickScreen, ScreenHost,
-  useScreenStack, type CityCommandId, type CommandState,
+  Banner, CITY_COMMAND_GROUPS, CUTIN_TEMPLATES, CityCommandScreen, CutInLayer, FactionMark, InvasionScreen, MapPickScreen,
+  ScreenHost, useCutIn, useScreenStack, type CityCommandId, type CommandState,
 } from 'norden-ui'
 import { FACTION_MAP, MapView, type CityHighlight, type RoadHighlight, type StrategyMap } from 'norden-strategy'
 import { factionColor } from '../../data/factionColors'
@@ -11,7 +11,7 @@ import {
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
-import { UNIT_TYPE_VIEWS, cityName, cityView, factionView, knightView, turnView } from './views'
+import { UNIT_TYPE_VIEWS, cityName, cityView, dateLabel, factionView, knightView, phaseLabel, turnView } from './views'
 import './StrategyScene.css'
 
 /** How long each CPU faction's turn is shown (they do nothing yet) */
@@ -23,6 +23,9 @@ const ARRIVAL_PAUSE_MS = 600
 const MARCH_SPEED = 30
 
 const TARGET_COLOR = '#ff6a3d'
+
+/** The cut-in at the start of each phase: the phase, and the date below it */
+const PHASE_CUTIN = CUTIN_TEMPLATES['strategy-turn']
 
 /** The screens over the map and their params (norden-ui's screen stack) */
 type StrategyScreens = {
@@ -52,6 +55,25 @@ export default function StrategyScene() {
   const targets = useMemo(() => (top.screen === 'pickTarget' ? openInvasionTargets(game, top.params.from) : []), [game, top])
   const battle = game.march?.current ?? null
   const playerCities = citiesOf(game, game.playerFaction)
+  const cutIn = useCutIn()
+
+  // Each phase starts with a cut-in; the march waits for it. A march resumed after a battle was announced before
+  const phaseKey = `${game.turn}:${game.phase}`
+  const [announced, setAnnounced] = useState(() => (game.phase === 'march' ? phaseKey : null))
+  const announcing = PHASE_CUTIN !== undefined && announced !== phaseKey
+  const { queue: cutInQueue } = cutIn
+
+  useEffect(() => {
+    if (!announcing || !PHASE_CUTIN) return
+    let cancelled = false
+    cutInQueue.play(PHASE_CUTIN, { text: phaseLabel(game.phase), subText: dateLabel(game.turn) })
+      .catch((error: unknown) => console.warn('カットインを再生できません', error))
+      .then(() => { if (!cancelled) setAnnounced(phaseKey) })
+    return () => {
+      cancelled = true
+      cutInQueue.clear()
+    }
+  }, [announcing, phaseKey, game.phase, game.turn, cutInQueue])
 
   // Ordering belongs to the player's turn
   useEffect(() => {
@@ -122,11 +144,11 @@ export default function StrategyScene() {
 
   // March phase: take the next order (or start the next turn when none is left)
   useEffect(() => {
-    if (game.phase !== 'march' || battle) return
+    if (game.phase !== 'march' || battle || announcing) return
     const timer = setTimeout(() => update((s) => (s.phase === 'march' && !s.march?.current ? startNextBattle(s) : s)),
       MARCH_PAUSE_MS)
     return () => clearTimeout(timer)
-  }, [game.phase, battle, update])
+  }, [game.phase, battle, announcing, update])
 
   // The army of the order marches to its target, then the battle is fought
   useEffect(() => {
@@ -210,6 +232,7 @@ export default function StrategyScene() {
             }} />
         ),
       }} />
+      <CutInLayer cutIn={cutIn} />
     </div>
   )
 }

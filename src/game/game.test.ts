@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   addOrder, availableKnights, cancelOrder, charactersIn, createInitialState, dateOf, endFactionTurn, GameRuleError,
   invadeFromProblem, invasionTargets, maxSoldiers, orderProblem, readPlayerFaction, resolveBattle, soldierPool,
-  soldiersLeft, startNextBattle, turnOrder, type GameState,
+  seasonOf, soldiersLeft, startNextBattle, turnOrder, type GameState,
 } from '.'
 
 // The demo of M001: カルタ書院 invades アンバリア (P004, レオニス帝国) from フルーエン (P012)
@@ -86,6 +86,11 @@ describe('turns', () => {
     expect(dateOf(1)).toEqual({ year: 312, month: 1 })
     expect(dateOf(12)).toEqual({ year: 312, month: 12 })
     expect(dateOf(13)).toEqual({ year: 313, month: 1 })
+  })
+
+  it('names the season of a month', () => {
+    const seasons = Array.from({ length: 12 }, (_, i) => seasonOf(i + 1))
+    expect(seasons).toEqual(['冬', '冬', '春', '春', '春', '夏', '夏', '夏', '秋', '秋', '秋', '冬'])
   })
 
   it('passes every CPU faction, then marches', () => {

@@ -5,7 +5,7 @@ import { CharacterImage } from '../../components/CharacterImage'
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
-  charactersIn, dateOf, defaultUnitType, maxSoldiers, neighbours, orderOf, ownerOf, type GameState,
+  charactersIn, dateOf, defaultUnitType, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, type GameState,
 } from '../../game'
 
 /** The game state turned into the view types norden-ui's screens draw */
@@ -97,12 +97,19 @@ export function cityView(game: GameState, id: string): CityView {
   }
 }
 
+/** e.g. 灰歴312年1月 冬 */
+export function dateLabel(turn: number) {
+  const { year, month } = dateOf(turn)
+  return `灰歴${year}年${month}月 ${seasonOf(month)}`
+}
+
+export const phaseLabel = (phase: GameState['phase']) => PHASE_LABELS[phase]
+
 export function turnView(game: GameState): TurnView {
-  const { year, month } = dateOf(game.turn)
   return {
     turn: game.turn,
-    phaseLabel: PHASE_LABELS[game.phase],
-    dateLabel: `灰歴${year}年${month}月`,
+    phaseLabel: phaseLabel(game.phase),
+    dateLabel: dateLabel(game.turn),
     activeFaction: game.activeFaction ? factionView(game.activeFaction) : null,
   }
 }

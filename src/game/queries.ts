@@ -17,6 +17,16 @@ export function dateOf(turn: number): { year: number, month: number } {
   return { year: START_YEAR + Math.floor(months / 12), month: months % 12 + 1 }
 }
 
+export type Season = '春' | '夏' | '秋' | '冬'
+
+/** 3〜5月は春、6〜8月は夏、9〜11月は秋、12〜2月は冬 */
+export function seasonOf(month: number): Season {
+  if (month >= 3 && month <= 5) return '春'
+  if (month >= 6 && month <= 8) return '夏'
+  if (month >= 9 && month <= 11) return '秋'
+  return '冬'
+}
+
 /**
  * Factions in the order they play the strategy phase (and their invasions
  * are resolved): the player first, then the others as in FACTION_LIST.
