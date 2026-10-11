@@ -2,7 +2,7 @@
   "version": 1,
   "name": "戦闘開始",
   "text": "戦闘開始",
-  "subText": "BATTLE START",
+  "subText": "アンバリア近郊 384年2月",
   "subPosition": "below",
   "writing": "h",
   "align": "center",
@@ -33,7 +33,7 @@
   },
   "fillOpacity": 1,
   "stroke": {
-    "on": false,
+    "on": true,
     "width": 5,
     "color": "#1b1b1f"
   },
@@ -46,7 +46,7 @@
     "on": true,
     "color": "#000000",
     "opacity": 0.35,
-    "blur": 10,
+    "blur": 20,
     "x": 0,
     "y": 3
   },
@@ -79,14 +79,14 @@
     "tapeBlink": 0.5
   },
   "bg": {
-    "type": "none",
+    "type": "solid",
     "color": "#000000",
     "opacity": 0.45,
     "sync": true
   },
-  "inFx": "drop",
+  "inFx": "shrinkIn",
   "inDur": 0.55,
-  "inStagger": 0.1,
+  "inStagger": 0.12,
   "inOrder": "forward",
   "inEase": "auto",
   "inPower": 1.1,
@@ -103,7 +103,7 @@
   "outEase": "auto",
   "outPower": 1,
   "outDir": "left",
-  "subFx": "fade",
+  "subFx": "typewriter",
   "subDelay": -0.1,
   "startDelay": 0.1,
   "endDelay": 0.3
