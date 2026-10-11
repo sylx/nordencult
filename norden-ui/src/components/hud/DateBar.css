@@ -108,6 +108,11 @@
   font-variant-numeric: tabular-nums;
   color: #fff0bc;
 }
+.norden-date-bar-date-season {
+  margin-left: 0.25em;
+  font-size: var(--date-calendar-size);
+  color: #fff0bc;
+}
 .norden-date-bar-date-label {
   font-size: var(--date-calendar-label-size);
   color: #d0c9b5;

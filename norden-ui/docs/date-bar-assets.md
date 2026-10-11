@@ -27,8 +27,8 @@
 | `--date-section-gap` | 8px | 各項目の左右の間隔 |
 | `--date-separator-height` | 28px | 下の金線から立ち上がる曲線の高さ |
 
-各項目の色・太さは `.norden-date-bar-phase`、`.norden-date-bar-faction`、`.norden-date-bar-turn-suffix`、`.norden-date-bar-date-number`、`.norden-date-bar-date-label` で変更します。
-年月は `DateBarCalendar` で数字とそれ以外の文字に分けて描画します。数字はGeorgia、単位は日本語の明朝体を使い、ベースラインを揃えます。半角・全角の数字に対応し、渡された日付文字列は保持します。
+各項目の色・太さは `.norden-date-bar-phase`、`.norden-date-bar-faction`、`.norden-date-bar-turn-suffix`、`.norden-date-bar-date-number`、`.norden-date-bar-date-season`、`.norden-date-bar-date-label` で変更します。
+年月は `DateBarCalendar` で数字とそれ以外の文字に分けて描画します。数字はGeorgia、単位は日本語の明朝体を使い、ベースラインを揃えます。空白の後に1文字で書いた季節（`灰歴312年1月 冬`）は数字と同じ大きさにします（`.norden-date-bar-date-season`）。半角・全角の数字に対応し、渡された日付文字列は保持します。
 設定ボタンの幅・アイコンサイズは `.norden-date-bar-settings` とその `svg` のルールで変更します。
 設定ボタンは常に背景なしで、ホバー・開いている状態ではアイコンの色だけを変えます。
 セパレーターは `DateBar.tsx` の `DateBarSeparator` で、下の金線から上へ跳ね上がる曲線を描画します。`.norden-date-bar-separator` を下端に揃え、`translate: 0 1px` で線をフレームにつなげています。色・縁取りは `.norden-date-bar-separator-rail` と `.norden-date-bar-separator-edge` で変更します。装飾は `aria-hidden` にして、読み上げの順番に含めません。

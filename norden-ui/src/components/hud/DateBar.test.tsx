@@ -28,6 +28,19 @@ describe('DateBar', () => {
     },
   )
 
+  it('draws a season after a space as large as the numbers', () => {
+    render(<DateBar {...labels} dateLabel="灰歴312年1月 冬" />)
+    const date = screen.getByTitle('灰歴312年1月 冬')
+    expect(within(date).getByText('冬')).toHaveClass('norden-date-bar-date-season')
+    expect(within(date).getByText('1')).toHaveClass('norden-date-bar-date-number')
+    expect(date.textContent).toBe('灰歴312年1月 冬')
+  })
+
+  it.each(['冬至', '灰歴312年 冬至'])('keeps a season letter inside a word small in %s', dateLabel => {
+    render(<DateBar {...labels} dateLabel={dateLabel} />)
+    expect(screen.getByTitle(dateLabel).querySelector('.norden-date-bar-date-season')).toBeNull()
+  })
+
   it('supports the resolving phase and keeps the settings position without contents', () => {
     render(<DateBar {...labels} factionName={null} />)
     expect(screen.getByText('全勢力の行動を解決中')).toBeInTheDocument()

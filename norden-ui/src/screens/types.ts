@@ -63,7 +63,7 @@ export interface TurnView {
   turn: number
   /** e.g. 戦略フェーズ */
   phaseLabel: string
-  /** e.g. 灰歴312年1月 */
+  /** e.g. 灰歴312年1月 冬 (a season after a space is drawn as large as the numbers) */
   dateLabel?: string
   /** Whose turn it is; null while every faction's orders are resolved */
   activeFaction?: FactionView | null

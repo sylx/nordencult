@@ -23,9 +23,18 @@ function DateBarSeparator() {
   </span>
 }
 
+/** A season written as its own word after a space (e.g. 灰歴312年1月 冬) */
+const SEASON = /^[春夏秋冬]$/u
+
+function dateBarPartClass(part: string) {
+  if (/^[0-9０-９]+$/u.test(part)) return 'norden-date-bar-date-number'
+  return SEASON.test(part) ? 'norden-date-bar-date-season' : 'norden-date-bar-date-label'
+}
+
+/** Numbers and the season large, the units small */
 function DateBarCalendar({ label }: { label: string }) {
-  return label.split(/([0-9０-９]+)/u).filter(Boolean).map((part, index) => (
-    <span key={index} className={/^[0-9０-９]+$/u.test(part) ? 'norden-date-bar-date-number' : 'norden-date-bar-date-label'}>
+  return label.split(/([0-9０-９]+|(?<=\s)[春夏秋冬](?=\s|$))/u).filter(Boolean).map((part, index) => (
+    <span key={index} className={dateBarPartClass(part)}>
       {part}
     </span>
   ))

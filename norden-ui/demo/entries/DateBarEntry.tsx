@@ -6,7 +6,7 @@ export default function DateBarEntry() {
   const [log, add] = useLog()
   const [phaseLabel, setPhaseLabel] = useState('戦略フェーズ')
   const [factionName, setFactionName] = useState('カルタ書院')
-  const [dateLabel, setDateLabel] = useState('灰歴312年1月')
+  const [dateLabel, setDateLabel] = useState('灰歴312年1月 冬')
   const [resolving, setResolving] = useState(false)
   const [withMenu, setWithMenu] = useState(true)
   const [backdrop, setBackdrop] = useState('dark')
