@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import DateBar from './DateBar'
 
-const labels = { phaseLabel: '戦略フェーズ', factionName: 'カルタ書院', dateLabel: '王歴312年4月' }
+const labels = { phaseLabel: '戦略フェーズ', factionName: 'カルタ書院', dateLabel: '灰歴312年1月' }
 
 describe('DateBar', () => {
   it('shows phase, faction turn, date and settings in reading order', () => {
@@ -21,7 +21,7 @@ describe('DateBar', () => {
     expect(screen.queryByRole('region', { name: '設定' })).not.toBeInTheDocument()
   })
 
-  it.each(['王歴312年4月', '王歴３１２年４月', '王暦312年 春', '日付未定'])(
+  it.each(['灰歴312年1月', '灰歴３１２年１月', '灰歴312年 春', '日付未定'])(
     'preserves the complete date label when formatting %s', dateLabel => {
       render(<DateBar {...labels} dateLabel={dateLabel} />)
       expect(screen.getByTitle(dateLabel).textContent).toBe(dateLabel)

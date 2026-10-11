@@ -47,7 +47,7 @@ export default function InfoWindowEntry() {
     },
     {
       id: 'history', name: '歴史', icon: history,
-      content: <div className="history-panel"><h2>フルーエンの記録</h2><ol><li><span>王暦312年 春</span><p>西の港に交易船が到着。都市の市場が賑わいを見せる。</p></li><li><span>王暦311年 冬</span><p>市場の拡張工事が始まる。完成まであと2ターン。</p></li><li><span>王暦311年 秋</span><p>カルタ書院との交易協定が結ばれる。</p></li></ol></div>,
+      content: <div className="history-panel"><h2>フルーエンの記録</h2><ol><li><span>灰歴312年 春</span><p>西の港に交易船が到着。都市の市場が賑わいを見せる。</p></li><li><span>灰歴311年 冬</span><p>市場の拡張工事が始まる。完成まであと2ターン。</p></li><li><span>灰歴311年 秋</span><p>カルタ書院との交易協定が結ばれる。</p></li></ol></div>,
     },
   ]
 
