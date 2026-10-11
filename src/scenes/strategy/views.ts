@@ -1,8 +1,9 @@
 import { createElement } from 'react'
 import type { CityView, FactionView, KnightView, TurnView, UnitTypeView } from 'norden-ui'
-import { CITY_MAP, FACTION_MAP, PLACE_ART, PLACES, emblemUrl, type PlaceType } from 'norden-strategy'
+import { FACTION_MAP, PLACE_ART, PLACES, emblemUrl, type PlaceType } from 'norden-strategy'
 import { CharacterImage } from '../../components/CharacterImage'
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
+import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
   charactersIn, dateOf, defaultUnitType, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, type GameState,
@@ -89,7 +90,7 @@ export function cityView(game: GameState, id: string): CityView {
     stats: [
       { label: '農業', value: city.agriculture, max: 720 },
       { label: '商業', value: city.market, max: 720 },
-      { label: '軍事', value: city.military, max: 640 },
+      { label: '生産', value: city.production, max: 640 },
     ],
     tags: city.tags,
     knights: knights.map((knight) => knightView(game, knight)),

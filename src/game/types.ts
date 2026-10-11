@@ -15,7 +15,7 @@ export interface GameState {
   /** The faction whose turn it is in the strategy phase (null in the march phase) */
   activeFaction: FactionId | null
   playerFaction: FactionId
-  /** Current faction of each city (starts from CITY_LIST's belongTo); a city not listed is neutral */
+  /** Current faction of each city (starts from the city data's belongTo); a city not listed is neutral */
   cityOwners: Readonly<Record<CityId, FactionId>>
   characters: Readonly<Record<CharacterId, CharacterState>>
   /** Invasions ordered this turn, in the order they were made */

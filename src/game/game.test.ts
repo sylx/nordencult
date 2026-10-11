@@ -131,7 +131,7 @@ describe('units', () => {
 
   it('takes the soldiers of an order from its city', () => {
     const state = createInitialState('carta')
-    expect(soldierPool(FLUEN)).toBe(1100) // 軍事 220 × 5
+    expect(soldierPool(FLUEN)).toBe(1100) // 生産 220 × 5
     expect(soldiersLeft(addOrder(state, draft), FLUEN)).toBe(600)
   })
 

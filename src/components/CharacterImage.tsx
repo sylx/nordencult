@@ -1,13 +1,11 @@
 import type { CSSProperties } from 'react'
 import type { Character } from '../data/character'
 import spriteSheet from '../assets/character.webp'
+import characterSprite from '../data/characterSprite.json'
 import './CharacterImage.css'
 
-/** One character on the sprite sheet, and the whole sheet */
-const SPRITE_W = 512
-const SPRITE_H = 768
-const SHEET_W = 2560
-const SHEET_H = 4608
+/** One character on the sprite sheet, and the whole sheet (written with the sheet by norden-data's character editor) */
+const { cellWidth: SPRITE_W, cellHeight: SPRITE_H, width: SHEET_W, height: SHEET_H } = characterSprite
 
 interface Props {
   character: Character

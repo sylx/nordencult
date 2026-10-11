@@ -1,6 +1,6 @@
-import { CITY_MAP } from 'norden-strategy'
 import { FactionLabel } from '../../components/FactionLabel'
 import { KnightList } from '../../components/KnightList'
+import { CITY_MAP } from '../../data/city'
 import { useGame, type CharacterMove, type MoveKind } from '../../game'
 import { useScene } from '../sceneContext'
 import type { SceneProps } from '../types'

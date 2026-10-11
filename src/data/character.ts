@@ -12,7 +12,7 @@ export const CHARACTER_TYPE_LABELS: Readonly<Record<CharacterType, string>> = {
   hunter: '狩人',
 }
 
-/** Where a character is drawn on the sprite sheet (src/assets/character.webp, 512×768 each) */
+/** Where a character is drawn on the sprite sheet (src/assets/character.webp; sizes in characterSprite.json) */
 export interface CharacterImageInfo {
   sprite: { x: number; y: number }
   /** The face, relative to the sprite */
@@ -25,8 +25,8 @@ interface Relation {
 }
 
 /**
- * Master data of a character (moved from nordencult-old). Where they serve
- * is game state (src/game/); CHARACTER_START is where they begin.
+ * Master data of a character, written by norden-data's character editor. Where
+ * they serve is game state (src/game/); CHARACTER_START is where they begin.
  */
 export interface Character {
   /** '001'..'999' */

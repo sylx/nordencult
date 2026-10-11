@@ -10,3 +10,6 @@
 [submodule "norden-ui"]
 	path = norden-ui
 	url = git@github.com:sylx/norden-ui.git
+[submodule "norden-data"]
+	path = norden-data
+	url = git@github.com:sylx/norden-data.git

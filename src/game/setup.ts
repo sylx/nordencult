@@ -1,5 +1,5 @@
-import { CITY_LIST } from 'norden-strategy/data'
 import { CHARACTER_START } from '../data/character'
+import { CITY_LIST } from '../data/city'
 import { turnOrder } from './queries'
 import type { CharacterState, FactionId, GameState } from './types'
 import { isFactionId } from './world'
