@@ -7,6 +7,7 @@ import CityCommandEntry from './entries/CityCommandEntry'
 import MapPickEntry from './entries/MapPickEntry'
 import InvasionEntry from './entries/InvasionEntry'
 import StrategyFlowEntry from './entries/StrategyFlowEntry'
+import CutInEditorEntry from './entries/CutInEditorEntry'
 
 export interface CatalogEntry {
   id: string
@@ -40,6 +41,13 @@ export const CATALOG: CatalogGroup[] = [
         description: '地図上で都市などを選ぶステップ。案内の帯と「やめる」だけを出し、候補の強調と選択は呼び出し側の地図が行う' },
       { id: 'invasion', label: '侵攻', name: 'InvasionScreen', Component: InvasionEntry,
         description: '出撃する騎士の選択と、騎士ごとの兵科・兵数。兵数の合計は出発都市の兵数まで' },
+    ],
+  },
+  {
+    label: '演出',
+    entries: [
+      { id: 'cutin-editor', label: 'カットインエディタ', name: 'useCutIn + CutInLayer', Component: CutInEditorEntry,
+        description: '「戦闘開始」などのカットインと文字演出のテンプレートを作る。作ったJSONは useCutIn().play(json, { text }) で再生し、CutInLayer が画面に重ねて描く' },
     ],
   },
   {

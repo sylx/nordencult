@@ -27,6 +27,7 @@ http://localhost:5173 でカタログを開きます。左の一覧から項目�
 | 画面フロー | 戦略画面（`#strategy-flow`、既定）: 都市コマンド → 軍事 → 侵攻 → 地図で侵攻先を選ぶ → 侵攻画面 → 予約。Escで1段ずつ戻る |
 | 画面 | 都市コマンド（`#city-command`）、地図で選ぶ（`#map-pick`）、侵攻（`#invasion`） |
 | 基本部品 | ウィンドウ（`#info-window`、従来の調整画面）、ツールバー（`#command-toolbar`）、ターン情報（`#date-bar`）、UIパーツ（`#parts`） |
+| 演出 | カットインエディタ（`#cutin-editor`）: テンプレートを作り、JSONで書き出す |
 
 画面の項目は仮の地図（`demo/mock/MockMap.tsx`）の上に重ねます。都市・騎士・兵科は `demo/mock/data.ts` の仮データです。
 
@@ -84,6 +85,37 @@ function StrategyUi() {
 pushのたびに `key` が変わり、同じ画面でも新しくマウントされます（侵攻画面を開き直すと選択が初期化される）。
 Escで `pop()` します。サブコマンドの展開などEscを自分で使う部品は `event.preventDefault()` し、`ScreenHost` はその場合に戻りません。`escapeToPop={false}` で無効にできます。
 地図の強調など画面の外の処理は、ホストが `nav.top` を見て行います。
+
+### カットイン
+
+「戦闘開始」などの画面中央のカットインと文字演出です。カタログのカットインエディタ（`#cutin-editor`）でテンプレートを作り、JSONで書き出します。
+ゲームは `useCutIn()` の `play` にJSONを渡して再生し、`CutInLayer` が配置先いっぱいのcanvasに描きます。
+
+```tsx
+import { CutInLayer, useCutIn } from 'norden-ui'
+import battleStart from './cutins/battle-start.json'
+import round from './cutins/round.json'
+
+function BattleUi() {
+  const cutIn = useCutIn()
+  const start = async () => {
+    await cutIn.play(battleStart)                    // 終わると解決する
+    await cutIn.play(round, { text: `ROUND ${n}` })  // 文字だけ差し替える
+  }
+  return <div style={{ position: 'relative' }}>{/* 画面 */}<CutInLayer cutIn={cutIn} /></div>
+}
+```
+
+| `useCutIn()` | 振る舞い |
+| --- | --- |
+| `play(template, { text?, subText? })` | 再生して、終わると解決する。再生中に呼ぶと順番待ちになる。足りない項目は初期値で補う |
+| `skip()` | 退場へ飛ばす。退場中なら終える |
+| `clear()` | 再生中と順番待ちを終える（Promiseは解決する） |
+| `playing`, `current` | 再生中か、再生中のテンプレート |
+
+`CutInLayer` はクリックを受けません（下の画面を操作できます）。画面のどこかを押すとスキップします（`skipOnClick={false}` で無効）。
+テンプレートには書体の名前（CSSのfont-family）だけを書きます。書体はゲーム側のCSSで読み込んでください。再生前に `document.fonts.load` で最大3秒待ちます。
+テンプレートの項目、エディタの使い方、画面サイズへの合わせ方は [カットイン](docs/cutin.md) を参照してください。
 
 ### 画面
 
@@ -198,12 +230,13 @@ src/components/toolbar/  CommandToolbar
 src/components/hud/      DateBar
 src/components/parts/    小さな部品（Button, Banner, CityNavigator, ChoiceGroup, QuantityInput, KnightCard, FactionMark）
 src/navigation/          画面スタック（useScreenStack, ScreenHost）
+src/cutin/               カットイン（template.ts にJSONの型と初期値、engine/ に描画、useCutIn, CutInLayer）
 src/screens/             画面（types.ts にview型、cityCommand/ mapPick/ invasion/）
 src/hooks/               内容のサイズ計測
 src/assets/ui/           装飾画像・HUD画像・タブアイコン
 src/skins.ts             ウィンドウの装飾スキン
 src/index.ts             公開API
-demo/                    カタログ（catalog.tsx に項目、entries/ に各項目、mock/ に仮データと仮の地図）
+demo/                    カタログ（catalog.tsx に項目、entries/ に各項目、mock/ に仮データと仮の地図、cutin/ にカットインエディタの部品と見本テンプレート）
 tests/                   実ブラウザでのテスト
 ```
 

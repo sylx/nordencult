@@ -53,3 +53,19 @@ export { default as MapPickScreen } from './screens/mapPick/MapPickScreen'
 export type { MapPickScreenProps } from './screens/mapPick/MapPickScreen'
 export { default as InvasionScreen } from './screens/invasion/InvasionScreen'
 export type { InvasionAssignment, InvasionDraft, InvasionScreenProps } from './screens/invasion/InvasionScreen'
+
+// Cut-ins: templates made with the catalog's editor, played over the screen
+export { default as CutInLayer } from './cutin/CutInLayer'
+export type { CutInLayerProps } from './cutin/CutInLayer'
+export { useCutIn, CutInQueue } from './cutin/useCutIn'
+export type { ActiveCutIn, CutInController, CutInPlayOptions } from './cutin/useCutIn'
+export { CUTIN_BASE_HEIGHT, CUTIN_BASE_WIDTH, CUTIN_DEFAULTS, CUTIN_TEMPLATE_VERSION, normalizeCutInTemplate } from './cutin/template'
+export type {
+  CutInAnchor, CutInBackground, CutInBgType, CutInDeco, CutInDecoType, CutInDir, CutInEase, CutInFill, CutInGlow, CutInHoldFx,
+  CutInInFx, CutInOrder, CutInOutFx, CutInShadow, CutInStroke, CutInSubFx, CutInTemplate, CutInTemplateInput, CutInTemplateJson,
+} from './cutin/template'
+export { CutInRenderer, cutInViewport } from './cutin/engine/renderer'
+export type { PreparedCutIn } from './cutin/engine/renderer'
+export type { CutInTimeline } from './cutin/engine/timeline'
+export { IN_EFFECTS as CUTIN_IN_EFFECTS, OUT_EFFECTS as CUTIN_OUT_EFFECTS } from './cutin/engine/effects'
+export { loadCutInFonts } from './cutin/fonts'
