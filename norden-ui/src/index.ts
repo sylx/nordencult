@@ -64,6 +64,7 @@ export type {
   CutInAnchor, CutInBackground, CutInBgType, CutInDeco, CutInDecoType, CutInDir, CutInEase, CutInFill, CutInGlow, CutInHoldFx,
   CutInInFx, CutInOrder, CutInOutFx, CutInShadow, CutInStroke, CutInSubFx, CutInTemplate, CutInTemplateInput, CutInTemplateJson,
 } from './cutin/template'
+export { CUTIN_TEMPLATES } from './cutin/templates'
 export { CutInRenderer, cutInViewport } from './cutin/engine/renderer'
 export type { PreparedCutIn } from './cutin/engine/renderer'
 export type { CutInTimeline } from './cutin/engine/timeline'

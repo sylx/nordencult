@@ -5,10 +5,22 @@
 
 ```text
 カットインエディタ（demo/、#cutin-editor）
-  └─ JSONを書き出す（コピー／ダウンロード）
-       └─ ゲームに置く（例: src/cutins/battle-start.json）
-            └─ useCutIn().play(json, { text }) → CutInLayer が canvas に描く（src/cutin/）
+  └─ JSONをダウンロード
+       └─ src/cutin/templates/battle-start.json に置く
+            ├─ ライブラリ: CUTIN_TEMPLATES['battle-start']
+            │    └─ useCutIn().play(template, { text }) → CutInLayer が canvas に描く
+            └─ エディタ: テンプレタブの「保存済み」から開いて直す
 ```
+
+## テンプレートの置き場所
+
+作ったテンプレートは `src/cutin/templates/` にJSONで置きます。
+
+- ファイル名（`.json` の前）が `CUTIN_TEMPLATES` のキーになります。英小文字とハイフンで付けてください（例: `battle-start.json` → `CUTIN_TEMPLATES['battle-start']`）。
+- フォルダのJSONはすべてライブラリに含まれます（`import.meta.glob`）。置くだけで使え、開発サーバーも追加・変更を拾います。
+- 読めないJSONは警告を出して飛ばし、ほかのテンプレートは使えます。
+- エディタのテンプレタブの「保存済み」に並び、押すと開きます。直したらJSONタブで同じファイル名でダウンロードし、ファイルを置き換えます。
+- `battle-start.json` は見本の「戦闘開始」から作った例です。不要なら消してかまいません。
 
 描画はCanvas 2D に requestAnimationFrame で毎フレーム描きます。
 文字ごとに「光彩」「影＋外側の縁取り」「縁取り＋塗り」の3層の画像を最初に作り、フェード中に下の層が透けないよう文字の形でくり抜いています。
@@ -20,12 +32,12 @@
 
 | タブ | 内容 |
 | --- | --- |
-| テンプレ | 出発点にする見本（戦闘・シーン・時間・その他）。選ぶと編集中の内容が置き換わります |
+| テンプレ | 「保存済み」（`src/cutin/templates/` のJSON）と、出発点にする見本（戦闘・シーン・時間・その他）。選ぶと編集中の内容が置き換わります |
 | 文字 | 名前、メイン・サブの文字、書字方向、フォント（font-family）、文字サイズ、配置 |
 | 見た目 | 塗り（単色・グラデーション）、縁取り、外側の縁取り、影、光彩、グリッチの色 |
 | 装飾 | 帯・虎柄テープ・ボックス・タイトル枠・ライン類、画面全体の背景 |
 | 動き | 登場・表示中・退場の効果と時間、サブテキストの登場、前後の空白 |
-| JSON | コピー、ダウンロード、ファイルを開く、貼り付けて反映 |
+| JSON | ファイル名、コピー、ダウンロード、ファイルを開く、貼り付けて反映 |
 
 - プレビューの下のバーは登場（緑）・表示中（金）・退場（赤）の区間です。バーを押すとその時刻を表示します。
 - 「ゲームと同じ再生」は `useCutIn` と `CutInLayer` で再生します。画面を押すとスキップし、終わるとログに出ます。
@@ -38,12 +50,11 @@
 ## ゲームでの再生
 
 ```tsx
-import { CutInLayer, useCutIn } from 'norden-ui'
-import battleStart from './cutins/battle-start.json'
+import { CUTIN_TEMPLATES, CutInLayer, useCutIn } from 'norden-ui'
 
 const cutIn = useCutIn()
-await cutIn.play(battleStart)
-await cutIn.play(round, { text: `ROUND ${n}`, subText: '' })
+await cutIn.play(CUTIN_TEMPLATES['battle-start']!)
+await cutIn.play(CUTIN_TEMPLATES['round']!, { text: `ROUND ${n}`, subText: '' })
 
 <div style={{ position: 'relative' }}>
   {/* 画面 */}
@@ -53,6 +64,7 @@ await cutIn.play(round, { text: `ROUND ${n}`, subText: '' })
 
 - `play` は再生が終わると解決します。再生中に呼ぶと、前のカットインが終わるまで待ちます。
 - `text` / `subText` を渡すと、テンプレートの見本の文字を差し替えます（`subText: ''` でサブを消す）。数字だけが違う演出は1つのテンプレートで済みます。
+- ゲーム側に置いたJSON（`import x from './x.json'`）も `play` にそのまま渡せます。
 - JSONの足りない項目は初期値（`CUTIN_DEFAULTS`）で補います。知らない項目、型の違う値、効果名などの一覧にない値は初期値に戻します（`normalizeCutInTemplate`）。
 - 画面のどこかを押すと退場へ飛ばし、退場中ならすぐ終えます。`cutIn.skip()` でも同じです。クリックは下の画面にも届きます（レイヤーはクリックを受けません）。`skipOnClick={false}` で無効にできます。
 - `cutIn.clear()` は再生中と順番待ちをすべて終えます。`useCutIn` を使うコンポーネントが外れたときも同じです（待っている `play` は解決します）。

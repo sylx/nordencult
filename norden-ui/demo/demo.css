@@ -136,3 +136,6 @@ body { margin: 0; }
 .cutin-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .demo-controls .cutin-json { font: 11px/1.5 ui-monospace, monospace; white-space: pre; }
 .cutin-error { color: #ff9a8a; }
+.cutin-note { font-size: 11px; line-height: 1.7; color: #a4ab9e; overflow-wrap: anywhere; }
+.demo-controls p.cutin-note { margin: 6px 0; }
+.cutin-file { display: block; font-size: 10px; color: #a4ab9e; }

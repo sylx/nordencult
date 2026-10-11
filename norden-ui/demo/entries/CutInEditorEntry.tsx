@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { CUTIN_DEFAULTS, CUTIN_IN_EFFECTS, CUTIN_OUT_EFFECTS, normalizeCutInTemplate } from '../../src'
+import { CUTIN_DEFAULTS, CUTIN_IN_EFFECTS, CUTIN_OUT_EFFECTS, CUTIN_TEMPLATES, normalizeCutInTemplate } from '../../src'
 import type { CutInDir, CutInTemplate } from '../../src'
 import { Log, useLog, Workbench } from '../Workbench'
 import CutInPreview, { ASPECTS, BACKDROPS } from '../cutin/CutInPreview'
@@ -17,8 +17,12 @@ const TABS = [['preset', 'テンプレ'], ['text', '文字'], ['style', '見た�
 type Tab = (typeof TABS)[number][0]
 type Nested = 'fill' | 'stroke' | 'stroke2' | 'shadow' | 'glow' | 'deco' | 'bg'
 
-// The template being edited survives a reload (this browser only)
+// Where the library keeps the templates (see src/cutin/templates.ts)
+const TEMPLATE_DIR = 'norden-ui/src/cutin/templates/'
+
+// The template being edited and its file name survive a reload (this browser only)
 const STORAGE_KEY = 'norden-ui:cutin-editor'
+const FILE_KEY = 'norden-ui:cutin-editor:file'
 function loadSaved(): CutInTemplate {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
@@ -26,13 +30,18 @@ function loadSaved(): CutInTemplate {
   } catch { /* fall through to the first preset */ }
   return normalizeCutInTemplate(ALL_PRESETS[0]!.template)
 }
+function loadFileKey() {
+  try { return localStorage.getItem(FILE_KEY) ?? 'battle' } catch { return 'battle' }
+}
 
-const fileName = (template: CutInTemplate) => `${(template.name || 'cutin').replace(/[\\/:*?"<>|\s]+/g, '_')}.json`
+/** File names are the keys of CUTIN_TEMPLATES: battleEnd → battle-end */
+const toFileKey = (name: string) => name.replace(/\.json$/i, '').replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase().replace(/[\\/:*?"<>|\s]+/g, '-')
 const toJson = (template: CutInTemplate) => `${JSON.stringify(template, null, 2)}\n`
 const dirOptions = (dirs: readonly CutInDir[] | undefined): Options<CutInDir> => (dirs ?? []).map(dir => [dir, DIRS[dir]] as const)
 
 export default function CutInEditorEntry() {
   const [template, setTemplate] = useState(loadSaved)
+  const [fileKey, setFileKey] = useState(loadFileKey)
   const [tab, setTab] = useState<Tab>('preset')
   const [aspect, setAspect] = useState<Aspect>('16 / 9')
   const [backdrop, setBackdrop] = useState<Backdrop>('map')
@@ -42,18 +51,26 @@ export default function CutInEditorEntry() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(template)) } catch { /* storage unavailable */ }
     loadGoogleFonts(template.fontFamily, template.subFontFamily)
   }, [template])
+  useEffect(() => {
+    try { localStorage.setItem(FILE_KEY, fileKey) } catch { /* storage unavailable */ }
+  }, [fileKey])
 
   const update = (patch: Partial<CutInTemplate>) => setTemplate(current => ({ ...current, ...patch }))
   const updateIn = <K extends Nested>(key: K, patch: Partial<CutInTemplate[K]>) =>
     setTemplate(current => ({ ...current, [key]: { ...current[key], ...patch } }))
 
   const fieldsByTab: Record<Tab, () => ReactNode> = {
-    preset: () => <PresetTab onPick={next => { setTemplate(next); add(`テンプレート「${next.name}」を読み込みました`) }} current={template} />,
+    preset: () => <PresetTab fileKey={fileKey} onPick={(next, key, from) => {
+      setTemplate(next)
+      setFileKey(key)
+      add(`${from}「${next.name || key}」を読み込みました`)
+    }} />,
     text: () => <TextTab template={template} update={update} />,
     style: () => <StyleTab template={template} update={update} updateIn={updateIn} />,
     deco: () => <DecoTab template={template} update={update} updateIn={updateIn} />,
     motion: () => <MotionTab template={template} update={update} />,
-    json: () => <JsonTab template={template} onLoad={next => { setTemplate(next); add('JSONを読み込みました') }} onLog={add} />,
+    json: () => <JsonTab template={template} fileKey={fileKey} onFileKey={setFileKey}
+      onLoad={next => { setTemplate(next); add('JSONを読み込みました') }} onLog={add} />,
   }
 
   return <Workbench
@@ -83,20 +100,33 @@ interface NestedTabProps extends TabProps {
   updateIn: <K extends Nested>(key: K, patch: Partial<CutInTemplate[K]>) => void
 }
 
-function PresetTab({ current, onPick }: { current: CutInTemplate; onPick: (template: CutInTemplate) => void }) {
+function PresetTab({ fileKey, onPick }: { fileKey: string; onPick: (template: CutInTemplate, fileKey: string, from: string) => void }) {
+  const saved = Object.entries(CUTIN_TEMPLATES)
   return <>
-    <p>出発点にするテンプレートを選びます。いまの編集内容は置き換わります（必要ならJSONタブで保存してください）。</p>
+    <p>編集するテンプレートを選びます。いまの編集内容は置き換わります（必要ならJSONタブで保存してください）。</p>
+    <Section title="保存済み">
+      <p className="cutin-note"><code>{TEMPLATE_DIR}</code> のJSON。ゲームからは <code>CUTIN_TEMPLATES['ファイル名']</code> で使えます。</p>
+      {saved.length === 0 && <p className="cutin-note">まだありません。JSONタブでダウンロードして、このフォルダに置いてください。</p>}
+      <div className="cutin-presets">
+        {saved.map(([key, template]) => (
+          <button key={key} type="button" className="cutin-button" aria-pressed={fileKey === key} title={`${key}.json`}
+            onClick={() => onPick(template, key, '保存済みのテンプレート')}>
+            {template.name || key}<small className="cutin-file">{key}</small>
+          </button>
+        ))}
+      </div>
+    </Section>
     {PRESET_GROUPS.map(group => (
-      <Section key={group.label} title={group.label}>
+      <Section key={group.label} title={`見本: ${group.label}`}>
         <div className="cutin-presets">
           {group.templates.map(({ id, template }) => (
-            <button key={id} type="button" className="cutin-button" aria-pressed={current.name === template.name}
-              onClick={() => onPick(normalizeCutInTemplate(template))}>{template.name}</button>
+            <button key={id} type="button" className="cutin-button"
+              onClick={() => onPick(normalizeCutInTemplate(template), toFileKey(id), '見本')}>{template.name}</button>
           ))}
         </div>
       </Section>
     ))}
-    <button type="button" className="reset-button" onClick={() => onPick({ ...CUTIN_DEFAULTS, name: '新規' })}>初期値から作る</button>
+    <button type="button" className="reset-button" onClick={() => onPick({ ...CUTIN_DEFAULTS, name: '新規' }, 'new', '初期値')}>初期値から作る</button>
   </>
 }
 
@@ -302,7 +332,15 @@ function MotionTab({ template: t, update }: TabProps) {
   </>
 }
 
-function JsonTab({ template, onLoad, onLog }: { template: CutInTemplate; onLoad: (template: CutInTemplate) => void; onLog: (text: string) => void }) {
+interface JsonTabProps {
+  template: CutInTemplate
+  fileKey: string
+  onFileKey: (key: string) => void
+  onLoad: (template: CutInTemplate) => void
+  onLog: (text: string) => void
+}
+
+function JsonTab({ template, fileKey, onFileKey, onLoad, onLog }: JsonTabProps) {
   const [draft, setDraft] = useState(() => toJson(template))
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -313,8 +351,10 @@ function JsonTab({ template, onLoad, onLog }: { template: CutInTemplate; onLoad:
     try {
       onLoad(normalizeCutInTemplate(text))
       setError('')
+      return true
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
+      return false
     }
   }
   const copy = async () => {
@@ -329,17 +369,23 @@ function JsonTab({ template, onLoad, onLog }: { template: CutInTemplate; onLoad:
     const url = URL.createObjectURL(new Blob([toJson(template)], { type: 'application/json' }))
     const link = document.createElement('a')
     link.href = url
-    link.download = fileName(template)
+    link.download = `${fileKey || 'cutin'}.json`
     link.click()
     URL.revokeObjectURL(url)
-    onLog(`${fileName(template)} をダウンロードしました`)
+    onLog(`${fileKey || 'cutin'}.json をダウンロードしました。${TEMPLATE_DIR} に置くと「保存済み」に並びます`)
   }
   const readFile = async (file: File | undefined) => {
-    if (file) apply(await file.text())
+    if (file && apply(await file.text())) onFileKey(toFileKey(file.name))
   }
 
   return <>
     <p>ゲームでは <code>useCutIn().play(json, {'{ text }'})</code> にこのJSONを渡します。足りない項目は初期値で補います。</p>
+    <p className="cutin-note">ダウンロードしたファイルを <code>{TEMPLATE_DIR}</code> に置くと、ライブラリの <code>CUTIN_TEMPLATES['{fileKey || 'cutin'}']</code> になり、テンプレタブの「保存済み」から開けます。</p>
+    <div className="cutin-field">
+      <label>ファイル名（.json の前。英小文字とハイフン）
+        <input type="text" value={fileKey} onChange={event => onFileKey(event.target.value)} />
+      </label>
+    </div>
     <div className="cutin-presets">
       <button type="button" className="cutin-button" onClick={copy}>コピー</button>
       <button type="button" className="cutin-button" onClick={download}>ダウンロード</button>
