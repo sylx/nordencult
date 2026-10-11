@@ -1,4 +1,4 @@
-import { cropMap } from '@norden/map-runtime/core/battleArea'
+import { cropBattleArea } from '@norden/map-runtime/core/battleArea'
 import type { Offset } from '@norden/map-runtime/core/hex'
 import type { MapData } from '@norden/map-runtime/core/mapData'
 import { loadMapFile } from '@norden/map-runtime/mapFiles'
@@ -21,7 +21,8 @@ export const roadMapFile = (a: string, b: string) => `road-${[a, b].sort().join(
 
 /**
  * The map of a battle at `to` attacked from `from`: the area of the city
- * attacked on the road map between them, or the whole fallback map when
+ * attacked on the road map between them (with its deployment points, so the
+ * battle starts with the deployment phase), or the whole fallback map when
  * there is none (with a warning in the console).
  */
 export async function loadBattleMap(from: string, to: string): Promise<BattleMap> {
@@ -33,7 +34,7 @@ export async function loadBattleMap(from: string, to: string): Promise<BattleMap
     const area = road.battleAreas?.[to]
     if (!cities.includes(from) || !cities.includes(to)) reason = `${file} の link.cities が ${from}–${to} ではありません`
     else if (!area) reason = `${file} に ${to} の範囲（battleAreas.${to}）がありません`
-    else return { data: withoutUnits(cropMap(road, area)), file, area }
+    else return { data: withoutUnits(cropBattleArea(road, to)), file, area }
   } catch (e) {
     reason = `${file} を読めません（${e instanceof Error ? e.message : String(e)}）`
   }
