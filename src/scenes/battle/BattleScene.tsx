@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { BattleScreen } from '@norden/battle-runtime'
-import { CITY_MAP } from 'norden-strategy'
+import { BattleScreen, SIDE_TEAM, type BattleCutInTexts } from '@norden/battle-runtime'
+import { TEAM_DEFS, type TeamId } from '@norden/map-runtime/core/units'
+import { CITY_MAP, FACTION_MAP } from 'norden-strategy'
 import { FactionLabel } from '../../components/FactionLabel'
 import { KnightList } from '../../components/KnightList'
 import { UNIT_TYPE_MAP } from '../../data/unitTypes'
@@ -9,6 +10,21 @@ import { useScene } from '../sceneContext'
 import type { SceneProps } from '../types'
 import { loadBattleMap, type BattleMap } from './battleMap'
 import './BattleScene.css'
+
+/** Name of a faction (null / undefined: neutral) */
+const factionName = (id: string | null | undefined) => (id ? FACTION_MAP[id]?.name ?? id : '中立')
+
+/** Cut-in texts of a battle: the city fought over, and the factions in place of the teams */
+function battleCutInTexts(battle: Battle): BattleCutInTexts {
+  const names: Partial<Record<TeamId, string>> = {
+    [SIDE_TEAM.attacker]: factionName(battle.attacker.factionId),
+    [SIDE_TEAM.defender]: factionName(battle.defender.factionId),
+  }
+  return {
+    start: () => ({ text: '戦闘開始', subText: `${CITY_MAP[battle.cityId]?.name ?? battle.cityId}攻防戦` }),
+    turn: (turn, team) => ({ text: `${names[team] ?? TEAM_DEFS[team].name}のターン`, subText: `TURN  ${turn}` }),
+  }
+}
 
 /**
  * A battle: the battlefield (norden-battle's battle screen: map, units, action menu,
@@ -54,7 +70,7 @@ function Battlefield({ battle }: { battle: Battle }) {
   return (
     <div className="battle-scene">
       <div className="battle-scene__field">
-        {map ? <BattleScreen map={map.data} className="battle-scene__screen" />
+        {map ? <BattleScreen map={map.data} cutInTexts={battleCutInTexts(battle)} className="battle-scene__screen" />
           : <p className="battle-scene__placeholder">{error ? `戦闘マップを読めません: ${error}` : '戦闘マップを読み込み中…'}</p>}
       </div>
       <BattleHeader battle={battle} />
