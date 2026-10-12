@@ -46,6 +46,8 @@ export default function StrategyScene() {
   const { state: game, update } = useGame()
   const { goTo } = useScene()
   const [map, setMap] = useState<StrategyMap | null>(null)
+  // The map takes a moment to generate; the UI, cut-ins and turns wait for it
+  const ready = map !== null
   // Coming back from a battle, the camera starts over its city
   const [returnCity] = useState(() => game.lastBattle?.battle.cityId)
   const nav = useScreenStack<StrategyScreens>(
@@ -64,7 +66,7 @@ export default function StrategyScene() {
   const { queue: cutInQueue } = cutIn
 
   useEffect(() => {
-    if (!announcing || !PHASE_CUTIN) return
+    if (!ready || !announcing || !PHASE_CUTIN) return
     let cancelled = false
     cutInQueue.play(PHASE_CUTIN, { text: phaseLabel(game.phase), subText: dateLabel(game.turn) })
       .catch((error: unknown) => console.warn('カットインを再生できません', error))
@@ -73,7 +75,7 @@ export default function StrategyScene() {
       cancelled = true
       cutInQueue.clear()
     }
-  }, [announcing, phaseKey, game.phase, game.turn, cutInQueue])
+  }, [ready, announcing, phaseKey, game.phase, game.turn, cutInQueue])
 
   // Ordering belongs to the player's turn
   useEffect(() => {
@@ -137,18 +139,18 @@ export default function StrategyScene() {
   // CPU factions pass their turn (M001 has no CPU yet)
   useEffect(() => {
     const faction = game.activeFaction
-    if (game.phase !== 'strategy' || !faction || faction === game.playerFaction) return
+    if (!ready || game.phase !== 'strategy' || !faction || faction === game.playerFaction) return
     const timer = setTimeout(() => update((s) => (s.activeFaction === faction ? endFactionTurn(s) : s)), CPU_TURN_MS)
     return () => clearTimeout(timer)
-  }, [game.phase, game.activeFaction, game.playerFaction, update])
+  }, [ready, game.phase, game.activeFaction, game.playerFaction, update])
 
   // March phase: take the next order (or start the next turn when none is left)
   useEffect(() => {
-    if (game.phase !== 'march' || battle || announcing) return
+    if (!ready || game.phase !== 'march' || battle || announcing) return
     const timer = setTimeout(() => update((s) => (s.phase === 'march' && !s.march?.current ? startNextBattle(s) : s)),
       MARCH_PAUSE_MS)
     return () => clearTimeout(timer)
-  }, [game.phase, battle, announcing, update])
+  }, [ready, game.phase, battle, announcing, update])
 
   // The army of the order marches to its target, then the battle is fought
   useEffect(() => {
@@ -194,7 +196,7 @@ export default function StrategyScene() {
       : null
 
   return (
-    <div className="strategy-scene">
+    <div className={`strategy-scene${ready ? '' : ' strategy-scene--loading'}`}>
       <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false}
         cityOwners={game.cityOwners} season={mapSeason(game.turn)} />
       <ScreenHost nav={nav} screens={{
