@@ -61,17 +61,86 @@
         "我が剣の錆となれ！",
         "騎士の誇りにかけて、参る！"
       ],
+      "noble_male/cautious": [
+        "敵の備えは見切った。参る！"
+      ],
+      "noble_male/valiant": [
+        "正義は我にあり！ いざ参る！"
+      ],
+      "noble_male/devout": [
+        "神よ、この剣に力を！"
+      ],
+      "noble_male/nihilist": [
+        "大義のためではない。ただ、剣を振るうのみ。"
+      ],
+      "noble_male/strict": [
+        "隊列を乱すな！ 規律ある突撃こそ騎士の戦である！"
+      ],
+      "noble_male/stubborn": [
+        "誰が止めようと、私はこの道を行く！"
+      ],
+      "noble_male/pessimist": [
+        "この一撃が通らねば、後は無い……！"
+      ],
       "earnest_youth/*": [
         "いきます！ 覚悟してください！",
         "僕だって、やれるんです！"
+      ],
+      "earnest_youth/valiant": [
+        "正義のために……いきます！"
+      ],
+      "earnest_youth/loyal": [
+        "主君のために！ いきます！"
+      ],
+      "earnest_youth/strict": [
+        "隊列を崩さないでください！ 突撃します！"
       ],
       "wild_berserker/*": [
         "オラァ！ ぶっ潰してやるぜ！",
         "てめぇの首、もらったぁ！"
       ],
+      "wild_berserker/aggressive": [
+        "突っ込むぞ！ 考えるのは後だぜ！"
+      ],
+      "wild_berserker/cautious": [
+        "……待て、罠じゃねぇな？ よし、突っ込むぜ！"
+      ],
+      "wild_berserker/ambitious": [
+        "この首で、俺の名を上げてやるぜ！"
+      ],
+      "wild_berserker/nihilist": [
+        "大義だの神だの知るか！ 斬るだけだぜ！"
+      ],
+      "wild_berserker/generous": [
+        "てめぇらは下がってな！ 俺が道を開けるぜ！"
+      ],
+      "wild_berserker/stubborn": [
+        "誰が何と言おうと、ここは押し通るぜ！"
+      ],
+      "wild_berserker/sociable": [
+        "ひと暴れしたら酒だ！ 行くぜ！"
+      ],
+      "wild_berserker/mentor_spirit": [
+        "見てろ若ぇの！ 斬り込むってのはこうやるんだぜ！"
+      ],
+      "wild_berserker/lone_wolf": [
+        "手出しすんな！ こいつは俺の獲物だぜ！"
+      ],
       "veteran_soldier/*": [
         "若造め、年寄りの剣を甘く見るでないわ！",
         "ほれ、隙だらけじゃぞ！"
+      ],
+      "veteran_soldier/cautious": [
+        "焦らず、じっくりと……ほれ、今じゃ！"
+      ],
+      "veteran_soldier/loyal": [
+        "主君の御為、この老骨に鞭打つわい！"
+      ],
+      "veteran_soldier/generous": [
+        "お主らは下がっておれ。ワシが行くわい！"
+      ],
+      "veteran_soldier/mentor_spirit": [
+        "若いの、よう見ておれ。槍とはこう使うのじゃ！"
       ],
       "cool_tactician/*": [
         "計算通りだ。ここを突く。",
@@ -81,25 +150,100 @@
         "異端よ、消え去れ！",
         "汝に裁きを下す！"
       ],
+      "fanatic_zealot/pragmatic": [
+        "勝利こそ神意の証。最も弱き所を突け。"
+      ],
       "valkyrie_female/*": [
         "いくぞ！ この剣を受けてみろ！",
         "迷いはない。斬り込む！"
+      ],
+      "valkyrie_female/cautious": [
+        "隙は見えた。確実に斬る！"
+      ],
+      "valkyrie_female/loyal": [
+        "主君の御為に！ いくぞ！"
+      ],
+      "valkyrie_female/strict": [
+        "隊列を乱すな！ 斬り込むぞ！"
+      ],
+      "valkyrie_female/lone_wolf": [
+        "手出しは無用だ。私一人で行く！"
       ],
       "noble_lady/*": [
         "お下がりなさい、無礼者！",
         "この一撃、受けていただきますわ！"
       ],
+      "noble_lady/aggressive": [
+        "お退きなさい！ 押し通りますわ！"
+      ],
+      "noble_lady/stubborn": [
+        "何と言われようと、私はここを譲りませんわ！"
+      ],
+      "noble_lady/pessimist": [
+        "当たって……お願い、当たってくださいまし！"
+      ],
+      "noble_lady/arrogant": [
+        "身の程を知りなさい、下郎！"
+      ],
       "tomboy_warrior/*": [
         "いっくよー！ 覚悟しな！",
         "アタシの一撃、かわせるもんならかわしてみなよ！"
+      ],
+      "tomboy_warrior/aggressive": [
+        "考えるより先に行くよ！ 突撃ーっ！"
+      ],
+      "tomboy_warrior/cautious": [
+        "よーく狙って……今だよ！"
+      ],
+      "tomboy_warrior/strict": [
+        "隊列崩さないでよ！ 行くよ！"
+      ],
+      "tomboy_warrior/sociable": [
+        "いっくよー！ 終わったらみんなで宴会だよ！"
+      ],
+      "tomboy_warrior/pessimist": [
+        "当たって……お願いだから当たってよね！"
       ],
       "cool_female/*": [
         "……斬る。",
         "……終わりだ。"
       ],
+      "cool_female/cautious": [
+        "……焦るな。確実に、斬る。"
+      ],
+      "cool_female/devout": [
+        "……光よ。この刃に、加護を。"
+      ],
+      "cool_female/nihilist": [
+        "……大義など知らない。ただ、斬る。"
+      ],
+      "cool_female/generous": [
+        "……皆は下がっていろ。私が、行く。"
+      ],
+      "cool_female/strict": [
+        "……隊列を乱すな。斬り込む。"
+      ],
+      "cool_female/lone_wolf": [
+        "……邪魔をするな。私一人でいい。"
+      ],
+      "cool_female/enigmatic": [
+        "……風が、こっちだと言っている。"
+      ],
       "sisterly_veteran/*": [
         "さあ、いくよ！ 歯ぁ食いしばりな！",
         "アタシに喧嘩売ったこと、後悔させてやるさ！"
+      ],
+      "sisterly_veteran/aggressive": [
+        "ぐずぐずしてんじゃないよ！ 突っ込むよ！"
+      ],
+      "sisterly_veteran/nihilist": [
+        "大義なんて知ったこっちゃないさ。食い扶持の分は働くよ！"
+      ],
+      "sisterly_veteran/strict": [
+        "列を崩すんじゃないよ！ 行くよ！"
+      ],
+      "sisterly_veteran/mentor_spirit": [
+        "ひよっこども、よく見てな！ 戦い方を教えてやるよ！"
       ],
       "eccentric_scholar/*": [
         "さて、実験の時間だよ。",
@@ -171,17 +315,86 @@
         "諸君、顔を上げよ！ 正義は我らにある！",
         "我らの旗はまだ折れてはおらぬ！ 続け！"
       ],
+      "noble_male/cautious": [
+        "焦るな。陣を整え、確実に押し返すのだ。"
+      ],
+      "noble_male/valiant": [
+        "弱き者を守るのが騎士の務め！ 剣を取れ！"
+      ],
+      "noble_male/devout": [
+        "神は我らを見捨てぬ！ 祈りと共に進め！"
+      ],
+      "noble_male/nihilist": [
+        "旗のためでなくともよい。己と隣の者のために立て。"
+      ],
+      "noble_male/strict": [
+        "規律を守れ！ 乱れた者から倒れるぞ！"
+      ],
+      "noble_male/stubborn": [
+        "退かぬ！ 私が退かぬ限り、この陣は崩れぬ！"
+      ],
+      "noble_male/pessimist": [
+        "まだ望みはある……そう信じるほかあるまい！"
+      ],
       "earnest_youth/*": [
         "みなさん、まだ負けてません！ 一緒に頑張りましょう！",
         "僕たちならできます！ 前を向いてください！"
+      ],
+      "earnest_youth/valiant": [
+        "僕たちが守るんです！ 弱い人たちのために！"
+      ],
+      "earnest_youth/loyal": [
+        "主君が見ています！ 最後まで戦いましょう！"
+      ],
+      "earnest_youth/strict": [
+        "規律を守ってください！ 乱れたら負けです！"
       ],
       "wild_berserker/*": [
         "ビビってんじゃねぇ！ 暴れるのはこれからだろ！",
         "声出せ野郎ども！ まだまだ行けるぜ！"
       ],
+      "wild_berserker/aggressive": [
+        "前だ前！ 退く奴は俺が蹴飛ばすぜ！"
+      ],
+      "wild_berserker/cautious": [
+        "慌てんな！ 盾を構えてから暴れろ！"
+      ],
+      "wild_berserker/ambitious": [
+        "勝てば城の一つも手に入るぜ！ 気張れ！"
+      ],
+      "wild_berserker/nihilist": [
+        "旗なんざどうでもいい！ 生き残りたきゃ暴れろ！"
+      ],
+      "wild_berserker/generous": [
+        "誰も死なせねぇ！ 俺についてこい！"
+      ],
+      "wild_berserker/stubborn": [
+        "退けだと？ 冗談じゃねぇ、ここで踏ん張るんだよ！"
+      ],
+      "wild_berserker/sociable": [
+        "勝ったら一晩中飲み明かすぞ！ 気合い入れろ！"
+      ],
+      "wild_berserker/mentor_spirit": [
+        "ガキども、ビビんな！ 俺の背中を見てろ！"
+      ],
+      "wild_berserker/lone_wolf": [
+        "群れるのは性に合わねぇが……今日だけは付き合ってやるぜ！"
+      ],
       "veteran_soldier/*": [
         "うろたえるでない！ 戦はここからじゃ！",
         "皆、腹を据えい！ ワシらはまだ負けとらんぞ！"
+      ],
+      "veteran_soldier/cautious": [
+        "慌てるでない。守りを固めてから押し返すのじゃ。"
+      ],
+      "veteran_soldier/loyal": [
+        "主君の御旗を見よ！ まだ倒れてはおらんぞ！"
+      ],
+      "veteran_soldier/generous": [
+        "誰も見捨てはせんぞ！ ワシについて来い！"
+      ],
+      "veteran_soldier/mentor_spirit": [
+        "若い者らよ、ワシの背中を見よ！ まだ戦えるぞい！"
       ],
       "cool_tactician/*": [
         "焦るな。まだ形勢は覆せる。私の指示に従え。",
@@ -191,25 +404,100 @@
         "恐れるな！ 我らには神の加護がある！",
         "信じよ！ 死すら我らを阻めぬ！"
       ],
+      "fanatic_zealot/pragmatic": [
+        "祈りだけでは勝てぬ。剣を握れ、勝ってこそ御心に適う。"
+      ],
       "valkyrie_female/*": [
         "皆、剣を取れ！ 私が先頭に立つ！",
         "怯むな！ まだ戦える！"
+      ],
+      "valkyrie_female/cautious": [
+        "焦るな！ 陣を固めてから押し返すぞ！"
+      ],
+      "valkyrie_female/loyal": [
+        "主君の旗の下にいる限り、我らは負けない！"
+      ],
+      "valkyrie_female/strict": [
+        "持ち場を守れ！ 規律こそ我らの力だ！"
+      ],
+      "valkyrie_female/lone_wolf": [
+        "ついて来たい者だけ来い！ 私は行く！"
       ],
       "noble_lady/*": [
         "皆さま、顔をお上げなさい！ 勝利は私たちのものですわ！",
         "恐れることはありませんわ。神は見ておられます！"
       ],
+      "noble_lady/aggressive": [
+        "前へ！ 下がる者は許しませんわよ！"
+      ],
+      "noble_lady/stubborn": [
+        "退く？ ありえませんわ！ 踏みとどまりなさい！"
+      ],
+      "noble_lady/pessimist": [
+        "まだ……まだ大丈夫ですわ……きっと……！"
+      ],
+      "noble_lady/arrogant": [
+        "この私が率いているのですよ？ 負けるはずがありませんわ！"
+      ],
       "tomboy_warrior/*": [
         "みんな、しっかりしなよ！ まだまだこれからだよ！",
         "下向いてる暇なんてないよ！ 行くよ！"
+      ],
+      "tomboy_warrior/aggressive": [
+        "アタシに続けーっ！ 一気に押し切るよ！"
+      ],
+      "tomboy_warrior/cautious": [
+        "落ち着いて！ 足元しっかり固めてこ！"
+      ],
+      "tomboy_warrior/strict": [
+        "ほら、背筋伸ばす！ 持ち場を離れないの！"
+      ],
+      "tomboy_warrior/sociable": [
+        "みんな笑って笑って！ 勝ったら乾杯しよ！"
+      ],
+      "tomboy_warrior/pessimist": [
+        "だ、大丈夫だよ……たぶん……みんな、もうちょっとだけ頑張ろ！"
       ],
       "cool_female/*": [
         "……顔を上げろ。まだ終わっていない。",
         "……立て。お前たちなら、やれる。"
       ],
+      "cool_female/cautious": [
+        "……慌てるな。足元を固めろ。"
+      ],
+      "cool_female/devout": [
+        "……祈れ。光は、まだ消えていない。"
+      ],
+      "cool_female/nihilist": [
+        "……神も旗も、どうでもいい。生き残れ。"
+      ],
+      "cool_female/generous": [
+        "……無理はするな。でも……顔を上げろ。"
+      ],
+      "cool_female/strict": [
+        "……持ち場に戻れ。命令は、変わらない。"
+      ],
+      "cool_female/lone_wolf": [
+        "……私は先に行く。ついて来たければ、来い。"
+      ],
+      "cool_female/enigmatic": [
+        "……星が綺麗だ。……勝てる気がする。"
+      ],
       "sisterly_veteran/*": [
         "しゃんとしな！ アタシがついてるだろ！",
         "まだ負けちゃいないさ！ 踏ん張りな！"
+      ],
+      "sisterly_veteran/aggressive": [
+        "前へ出な！ 押して押して押しまくるんだよ！"
+      ],
+      "sisterly_veteran/nihilist": [
+        "旗なんかどうでもいい！ 生きて帰ることだけ考えな！"
+      ],
+      "sisterly_veteran/strict": [
+        "持ち場を離れるんじゃないよ！ 命令は命令さ！"
+      ],
+      "sisterly_veteran/mentor_spirit": [
+        "若いのはアタシの後ろにいな！ まだやれるさ！"
       ],
       "eccentric_scholar/*": [
         "諸君、確率はまだこちらに傾いているよ！",
@@ -226,17 +514,86 @@
         "見事討ち取った。次なる敵はどこだ。",
         "これが騎士の戦いである。"
       ],
+      "noble_male/cautious": [
+        "討ち取った。だが伏兵に備えよ。"
+      ],
+      "noble_male/valiant": [
+        "悪しき者は討たれた。正義は成された！"
+      ],
+      "noble_male/devout": [
+        "神のご加護に感謝を。"
+      ],
+      "noble_male/nihilist": [
+        "……誇りなど、所詮は飾りよ。"
+      ],
+      "noble_male/strict": [
+        "見事。規律の勝利である。"
+      ],
+      "noble_male/stubborn": [
+        "見たか。私の判断に誤りはない。"
+      ],
+      "noble_male/pessimist": [
+        "……ひとまずは凌いだか。だが油断はならぬ。"
+      ],
       "earnest_youth/*": [
         "や、やりました……！ 倒しました！",
         "まだ気は抜けません。次です！"
+      ],
+      "earnest_youth/valiant": [
+        "悪い人たちは倒しました！ 次です！"
+      ],
+      "earnest_youth/loyal": [
+        "主君にいい報告ができます！"
+      ],
+      "earnest_youth/strict": [
+        "規定通りの戦果です。次に移ります！"
       ],
       "wild_berserker/*": [
         "ハッ、歯ごたえのねぇ連中だぜ！",
         "次だ次！ もっと骨のある奴はいねぇのか！"
       ],
+      "wild_berserker/aggressive": [
+        "まだ足りねぇ！ もっと寄越しやがれ！"
+      ],
+      "wild_berserker/cautious": [
+        "よし、周りに伏兵はいねぇな。"
+      ],
+      "wild_berserker/ambitious": [
+        "いいぜ、これでまた一歩てっぺんに近づいた！"
+      ],
+      "wild_berserker/nihilist": [
+        "ハッ、死ねば皆同じだ。"
+      ],
+      "wild_berserker/generous": [
+        "おい、怪我人はいねぇか！"
+      ],
+      "wild_berserker/stubborn": [
+        "ほらな、俺のやり方で正解だったろ！"
+      ],
+      "wild_berserker/sociable": [
+        "ガハハ！ 今夜の酒は美味いぜ！"
+      ],
+      "wild_berserker/mentor_spirit": [
+        "どうだ、覚えたか？ 次はてめぇらの番だぜ！"
+      ],
+      "wild_berserker/lone_wolf": [
+        "一人で十分だったろ？"
+      ],
       "veteran_soldier/*": [
         "ふん、まだまだ腕は鈍っておらんわい。",
         "他愛もない。次はどいつじゃ。"
+      ],
+      "veteran_soldier/cautious": [
+        "一つ片付いたわい。じゃが周りをよう見ておけ。"
+      ],
+      "veteran_soldier/loyal": [
+        "主君への手土産ができたわい。"
+      ],
+      "veteran_soldier/generous": [
+        "皆、怪我はないかの？"
+      ],
+      "veteran_soldier/mentor_spirit": [
+        "どうじゃ、学んだか？ 次はお主の番じゃぞ。"
       ],
       "cool_tactician/*": [
         "想定の範囲内だな。",
@@ -246,25 +603,100 @@
         "浄化は成された。",
         "愚かなる者よ、灰に還れ。"
       ],
+      "fanatic_zealot/pragmatic": [
+        "結果は示された。神は勝者に微笑む。"
+      ],
       "valkyrie_female/*": [
         "討ち取った！ 次へいくぞ！",
         "この程度か。だが油断はしない。"
+      ],
+      "valkyrie_female/cautious": [
+        "討ち取った。だが周囲を警戒しろ！"
+      ],
+      "valkyrie_female/loyal": [
+        "主君への忠義、果たしたぞ！"
+      ],
+      "valkyrie_female/strict": [
+        "任務完了。隊を整えろ！"
+      ],
+      "valkyrie_female/lone_wolf": [
+        "一人で十分だったな。"
       ],
       "noble_lady/*": [
         "あら、もうおしまいですの？",
         "当然の結果ですわね。"
       ],
+      "noble_lady/aggressive": [
+        "まだまだ足りませんわ。次はどなた？"
+      ],
+      "noble_lady/stubborn": [
+        "ほら、私の言った通りでしょう？"
+      ],
+      "noble_lady/pessimist": [
+        "はぁ……どうにか、なりましたわね……"
+      ],
+      "noble_lady/arrogant": [
+        "所詮、私の相手ではありませんでしたわね。"
+      ],
       "tomboy_warrior/*": [
         "へへっ、楽勝だね！",
         "よっし、一丁あがり！ 次は誰だい？"
+      ],
+      "tomboy_warrior/aggressive": [
+        "まだまだ暴れ足りないよ！"
+      ],
+      "tomboy_warrior/cautious": [
+        "よし。周りもちゃんと確認したよ！"
+      ],
+      "tomboy_warrior/strict": [
+        "よし、命令通り。上出来だね！"
+      ],
+      "tomboy_warrior/sociable": [
+        "やったね！ 今夜はアタシのおごりだよ！"
+      ],
+      "tomboy_warrior/pessimist": [
+        "ふぅ……今回はなんとかなったね……"
       ],
       "cool_female/*": [
         "……片付いた。",
         "……次。"
       ],
+      "cool_female/cautious": [
+        "……片付いた。周りを、確かめろ。"
+      ],
+      "cool_female/devout": [
+        "……安らかに。"
+      ],
+      "cool_female/nihilist": [
+        "……意味など、ない。"
+      ],
+      "cool_female/generous": [
+        "……皆、無事か。"
+      ],
+      "cool_female/strict": [
+        "……任務、完了。"
+      ],
+      "cool_female/lone_wolf": [
+        "……一人で、十分だ。"
+      ],
+      "cool_female/enigmatic": [
+        "……あ。終わってた。"
+      ],
       "sisterly_veteran/*": [
         "ま、こんなもんさね。",
         "片付いたよ。怪我はないかい？"
+      ],
+      "sisterly_veteran/aggressive": [
+        "まだ暴れ足りないねえ！"
+      ],
+      "sisterly_veteran/nihilist": [
+        "ま、死んじまえば皆同じさね。"
+      ],
+      "sisterly_veteran/strict": [
+        "よし、言われた通りにできたね。上出来さ。"
+      ],
+      "sisterly_veteran/mentor_spirit": [
+        "どうだい、わかったかい？ 次はあんたの番さ。"
       ],
       "eccentric_scholar/*": [
         "ふむ、仮説は正しかったようだね。",
@@ -280,17 +712,86 @@
         "無念だが、ここは退く。体勢を立て直すぞ。",
         "恥を忍んで退く。必ずや雪辱を果たそう。"
       ],
+      "noble_male/cautious": [
+        "これ以上は危うい。退いて機を待つ。"
+      ],
+      "noble_male/valiant": [
+        "弱き者を先に逃がせ！ 殿は私が務める！"
+      ],
+      "noble_male/devout": [
+        "神よ、今は退くことをお許しください。"
+      ],
+      "noble_male/nihilist": [
+        "名誉で腹は膨れぬ。退く。"
+      ],
+      "noble_male/strict": [
+        "命令である。整然と退け！"
+      ],
+      "noble_male/stubborn": [
+        "……退くのではない。陣を移すだけである。"
+      ],
+      "noble_male/pessimist": [
+        "やはり、こうなったか……退くぞ。"
+      ],
       "earnest_youth/*": [
         "す、すみません！ 一度下がります！",
         "ここは退きます……立て直さないと！"
+      ],
+      "earnest_youth/valiant": [
+        "皆さんを先に逃がします！ 僕が殿を！"
+      ],
+      "earnest_youth/loyal": [
+        "主君のご命令です！ 下がります！"
+      ],
+      "earnest_youth/strict": [
+        "命令通り、整然と下がります！"
       ],
       "wild_berserker/*": [
         "チッ……今日はこのへんにしといてやるぜ！",
         "クソッ、覚えてやがれ！"
       ],
+      "wild_berserker/aggressive": [
+        "チッ、突っ込みすぎたか……一旦引くぜ！"
+      ],
+      "wild_berserker/cautious": [
+        "ヤバい匂いがする……下がるぜ！"
+      ],
+      "wild_berserker/ambitious": [
+        "こんなところで終われるかよ！ 下がるぜ！"
+      ],
+      "wild_berserker/nihilist": [
+        "命あっての物種だろ。逃げるぜ。"
+      ],
+      "wild_berserker/generous": [
+        "動けねぇ奴は俺が担ぐ！ 下がるぜ！"
+      ],
+      "wild_berserker/stubborn": [
+        "……退くんじゃねぇ。ちょっと下がるだけだ！"
+      ],
+      "wild_berserker/sociable": [
+        "酒も飲まずに死ねるかよ！ 退くぜ！"
+      ],
+      "wild_berserker/mentor_spirit": [
+        "若ぇのから先に下がれ！ 殿は俺がやる！"
+      ],
+      "wild_berserker/lone_wolf": [
+        "俺一人なら逃げ切れる。ついてくんなよ！"
+      ],
       "veteran_soldier/*": [
         "退け退け！ 命あっての物種じゃ！",
         "ここは引くぞい。仕切り直しじゃ。"
+      ],
+      "veteran_soldier/cautious": [
+        "引き際を誤るでないぞ。下がるのじゃ。"
+      ],
+      "veteran_soldier/loyal": [
+        "主君の御身が第一じゃ。ここは退くぞ。"
+      ],
+      "veteran_soldier/generous": [
+        "動けん者はワシが担ぐ。下がるぞい！"
+      ],
+      "veteran_soldier/mentor_spirit": [
+        "若い者から先に下がれい！ 年寄りが殿じゃ！"
       ],
       "cool_tactician/*": [
         "ここは引くのが最善だろう。",
@@ -300,25 +801,100 @@
         "退くのではない……これも神の御心よ。",
         "今は退く。だが裁きの時は必ず来る。"
       ],
+      "fanatic_zealot/pragmatic": [
+        "無駄死には神意にあらず。退け。"
+      ],
       "valkyrie_female/*": [
         "くっ……一度退く！ 隊を立て直すぞ！",
         "ここは下がる。必ず戻ってくる！"
+      ],
+      "valkyrie_female/cautious": [
+        "これ以上は危うい。退くぞ！"
+      ],
+      "valkyrie_female/loyal": [
+        "主君の命だ。退くぞ！"
+      ],
+      "valkyrie_female/strict": [
+        "命令だ、整然と退け！"
+      ],
+      "valkyrie_female/lone_wolf": [
+        "私一人なら逃げ切れる。構うな、先に行け！"
       ],
       "noble_lady/*": [
         "ここは退きますわよ。体勢を整えなさい！",
         "口惜しいですけれど……一度下がりますわ。"
       ],
+      "noble_lady/aggressive": [
+        "っ……少々、出過ぎましたわね。下がりますわ！"
+      ],
+      "noble_lady/stubborn": [
+        "……退くのではありませんわ。布陣を変えるだけです！"
+      ],
+      "noble_lady/pessimist": [
+        "ああ、やはり……下がりますわよ！"
+      ],
+      "noble_lady/arrogant": [
+        "私が退くなど……今日は特別ですわよ！"
+      ],
       "tomboy_warrior/*": [
         "ちぇっ、いったん下がるよ！",
         "くっそー、覚えてなよ！"
+      ],
+      "tomboy_warrior/aggressive": [
+        "ちょ、突っ込みすぎた！ 下がるよ！"
+      ],
+      "tomboy_warrior/cautious": [
+        "これ以上は危ないよ。下がろ！"
+      ],
+      "tomboy_warrior/strict": [
+        "命令だよ、下がって！ 勝手に残っちゃダメ！"
+      ],
+      "tomboy_warrior/sociable": [
+        "下がるよー！ 宴会の前に死んだら損だからね！"
+      ],
+      "tomboy_warrior/pessimist": [
+        "ほら、やっぱりダメだった！ 下がるよ！"
       ],
       "cool_female/*": [
         "……退く。",
         "……ここは、引く。"
       ],
+      "cool_female/cautious": [
+        "……深追いはしない。退く。"
+      ],
+      "cool_female/devout": [
+        "……光の導きに従う。退く。"
+      ],
+      "cool_female/nihilist": [
+        "……ここで死ぬ理由もない。退く。"
+      ],
+      "cool_female/generous": [
+        "……皆を先に逃がせ。私が殿だ。"
+      ],
+      "cool_female/strict": [
+        "……規定通り、退く。"
+      ],
+      "cool_female/lone_wolf": [
+        "……独りで退く。構うな。"
+      ],
+      "cool_female/enigmatic": [
+        "……今日は、帰る日。"
+      ],
       "sisterly_veteran/*": [
         "ここは引くよ！ 命を粗末にするんじゃないよ！",
         "無理は禁物さ。一度下がるよ！"
+      ],
+      "sisterly_veteran/aggressive": [
+        "ちっ、出過ぎたね。下がるよ！"
+      ],
+      "sisterly_veteran/nihilist": [
+        "義理立てして死ぬ気はないよ。下がるよ！"
+      ],
+      "sisterly_veteran/strict": [
+        "勝手に残るんじゃないよ！ 全員下がりな！"
+      ],
+      "sisterly_veteran/mentor_spirit": [
+        "若いのから先に逃がしな！ 殿はアタシさ！"
       ],
       "eccentric_scholar/*": [
         "ここは一度、検証をやり直そうかね。",
@@ -335,17 +911,86 @@
         "我が忠義……ここに尽きるか……",
         "すまぬ……後は、頼んだ……"
       ],
+      "noble_male/cautious": [
+        "備えが……足りなかったか……"
+      ],
+      "noble_male/valiant": [
+        "騎士として……恥じぬ……戦いで、あったか……"
+      ],
+      "noble_male/devout": [
+        "神よ……我が魂を……御許に……"
+      ],
+      "noble_male/nihilist": [
+        "結局……何のための……剣であったか……"
+      ],
+      "noble_male/strict": [
+        "最後まで……隊列を……乱すな……"
+      ],
+      "noble_male/stubborn": [
+        "私は……最後まで……曲げぬ……"
+      ],
+      "noble_male/pessimist": [
+        "わかっていた……こうなることは……"
+      ],
       "earnest_youth/*": [
         "すみません……僕、ここまでみたいです……",
         "まだ……何も、できていないのに……"
+      ],
+      "earnest_youth/valiant": [
+        "僕……正しいこと……できましたか……"
+      ],
+      "earnest_youth/loyal": [
+        "主君……お役に、立てなくて……すみません……"
+      ],
+      "earnest_youth/strict": [
+        "最後まで……規律は……守りました……"
       ],
       "wild_berserker/*": [
         "ぐっ……俺が、こんなところで……",
         "ちくしょう……ここまでかよ……"
       ],
+      "wild_berserker/aggressive": [
+        "へっ……最後まで……前のめりだったぜ……"
+      ],
+      "wild_berserker/cautious": [
+        "クソ……用心が……足りなかったか……"
+      ],
+      "wild_berserker/ambitious": [
+        "俺の……城が……まだ……"
+      ],
+      "wild_berserker/nihilist": [
+        "ハッ……あっけねぇ……もんだな……"
+      ],
+      "wild_berserker/generous": [
+        "てめぇら……生きて……帰れよ……"
+      ],
+      "wild_berserker/stubborn": [
+        "俺は……間違っちゃ……いねぇ……"
+      ],
+      "wild_berserker/sociable": [
+        "あぁ……最後に……一杯、やりたかったぜ……"
+      ],
+      "wild_berserker/mentor_spirit": [
+        "てめぇら……俺の分まで……強くなれよ……"
+      ],
+      "wild_berserker/lone_wolf": [
+        "一人で……くたばるのも……悪かねぇ……"
+      ],
       "veteran_soldier/*": [
         "ワシも……焼きが回ったかのう……",
         "ここが……ワシの死に場所か……"
+      ],
+      "veteran_soldier/cautious": [
+        "ワシとしたことが……読みが甘かったわい……"
+      ],
+      "veteran_soldier/loyal": [
+        "殿……長らくお仕えできて……幸せでしたわい……"
+      ],
+      "veteran_soldier/generous": [
+        "皆……ちゃんと……生き延びるんじゃぞ……"
+      ],
+      "veteran_soldier/mentor_spirit": [
+        "若い者ら……あとは……任せたぞい……"
       ],
       "cool_tactician/*": [
         "……読み違えたか。私としたことが……",
@@ -355,25 +1000,100 @@
         "我が魂……主のもとへ……",
         "これも……試練、か……"
       ],
+      "fanatic_zealot/pragmatic": [
+        "これも……神の……計算の内か……"
+      ],
       "valkyrie_female/*": [
         "無念だ……すまない、皆……",
         "私の剣も……ここまでか……"
+      ],
+      "valkyrie_female/cautious": [
+        "慎重に……戦ったつもりだったが……"
+      ],
+      "valkyrie_female/loyal": [
+        "主君……最後まで……お仕え、できず……"
+      ],
+      "valkyrie_female/strict": [
+        "最後まで……規律を……"
+      ],
+      "valkyrie_female/lone_wolf": [
+        "独りで……終わるか……それもいい……"
       ],
       "noble_lady/*": [
         "そんな……私が、ここで……",
         "申し訳……ございません……"
       ],
+      "noble_lady/aggressive": [
+        "私としたことが……前に出すぎ……ましたわ……"
+      ],
+      "noble_lady/stubborn": [
+        "私は……間違って……おりませんわ……"
+      ],
+      "noble_lady/pessimist": [
+        "わかっておりましたわ……こうなることは……"
+      ],
+      "noble_lady/arrogant": [
+        "この私が……こんな者たちに……"
+      ],
       "tomboy_warrior/*": [
         "うそ……アタシが、負けるなんて……",
         "ごめん……ここまで、みたい……"
+      ],
+      "tomboy_warrior/aggressive": [
+        "あはは……ちょっと……突っ込みすぎた……かな……"
+      ],
+      "tomboy_warrior/cautious": [
+        "気をつけてた……のになあ……"
+      ],
+      "tomboy_warrior/strict": [
+        "最後まで……ちゃんと、やれた……かな……"
+      ],
+      "tomboy_warrior/sociable": [
+        "ごめん……乾杯……できなく、なっちゃった……"
+      ],
+      "tomboy_warrior/pessimist": [
+        "やっぱり……こうなると思ったんだよね……"
       ],
       "cool_female/*": [
         "……ここまで、か……",
         "……すまない……"
       ],
+      "cool_female/cautious": [
+        "……用心、していたのに……"
+      ],
+      "cool_female/devout": [
+        "……光よ……どうか、皆を……"
+      ],
+      "cool_female/nihilist": [
+        "……結局……何も、なかったな……"
+      ],
+      "cool_female/generous": [
+        "……皆は……無事、か……"
+      ],
+      "cool_female/strict": [
+        "……規律を……守れ……最後まで……"
+      ],
+      "cool_female/lone_wolf": [
+        "……独りで終わるのも……悪くない……"
+      ],
+      "cool_female/enigmatic": [
+        "……ふしぎ……眠い……"
+      ],
       "sisterly_veteran/*": [
         "アタシも……ヤキが回ったね……",
         "あんたたち……生き延びなよ……"
+      ],
+      "sisterly_veteran/aggressive": [
+        "アタシとしたことが……突っ込みすぎた、かね……"
+      ],
+      "sisterly_veteran/nihilist": [
+        "ふん……こんなもんさね……人生なんて……"
+      ],
+      "sisterly_veteran/strict": [
+        "あんたたち……最後まで……規律を守りな……"
+      ],
+      "sisterly_veteran/mentor_spirit": [
+        "あんたたち……強く……なるんだよ……"
       ],
       "eccentric_scholar/*": [
         "計算外だね……実に、興味深い……",
