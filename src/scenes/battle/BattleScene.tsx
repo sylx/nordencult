@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react'
-import { BattleScreen, SIDE_TEAM, type BattleCutInTexts } from '@norden/battle-runtime'
+import { useEffect, useMemo, useState } from 'react'
+import { BattleScreen, SIDE_TEAM, type BarkSource, type BattleCutInTexts } from '@norden/battle-runtime'
 import { TEAM_DEFS, type TeamId } from '@norden/map-runtime/core/units'
 import { FACTION_MAP } from 'norden-strategy'
 import { FactionLabel } from '../../components/FactionLabel'
 import { KnightList } from '../../components/KnightList'
+import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPE_MAP } from '../../data/unitTypes'
 import { resolveBattle, useGame, type Battle, type BattleWinner } from '../../game'
 import { useScene } from '../sceneContext'
 import type { SceneProps } from '../types'
+import { createVoiceBarks } from './battleBarks'
 import { loadBattleMap, type BattleMap } from './battleMap'
 import './BattleScene.css'
 
@@ -25,6 +27,19 @@ function battleCutInTexts(battle: Battle): BattleCutInTexts {
     start: () => ({ text: '戦闘開始', subText: `${CITY_MAP[battle.cityId]?.name ?? battle.cityId}攻防戦` }),
     turn: (turn, team) => ({ text: `${names[team] ?? TEAM_DEFS[team].name}のターン`, subText: `TURN  ${turn}` }),
   }
+}
+
+/**
+ * What units say, in the voice of the knights of their side. For now the units are
+ * norden-battle's placeholders, not the knights' own troops, so a unit speaks as the
+ * knight of its side picked by its commander's face; a side with no knights uses the
+ * common lines
+ */
+function battleBarks(battle: Battle): BarkSource {
+  return createVoiceBarks(({ unit, status }) => {
+    const knights = unit.team === SIDE_TEAM.attacker ? battle.attacker.knights : battle.defender.knights
+    return knights.length ? CHARACTER_MAP[knights[status.face % knights.length]] : undefined
+  })
 }
 
 /**
@@ -55,6 +70,7 @@ function Battlefield({ battle }: { battle: Battle }) {
   const [error, setError] = useState('')
   const { from } = battle.attacker
   const to = battle.cityId
+  const barks = useMemo(() => battleBarks(battle), [battle])
 
   useEffect(() => {
     let cancelled = false
@@ -71,7 +87,7 @@ function Battlefield({ battle }: { battle: Battle }) {
   return (
     <div className="battle-scene">
       <div className="battle-scene__field">
-        {map ? <BattleScreen map={map.data} cutInTexts={battleCutInTexts(battle)} className="battle-scene__screen" />
+        {map ? <BattleScreen map={map.data} cutInTexts={battleCutInTexts(battle)} barks={barks} className="battle-scene__screen" />
           : <p className="battle-scene__placeholder">{error ? `戦闘マップを読めません: ${error}` : '戦闘マップを読み込み中…'}</p>}
       </div>
       <BattleHeader battle={battle} />
