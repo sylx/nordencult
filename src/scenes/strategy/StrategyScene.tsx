@@ -11,7 +11,7 @@ import {
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
-import { UNIT_TYPE_VIEWS, cityName, cityView, dateLabel, factionView, knightView, phaseLabel, turnView } from './views'
+import { UNIT_TYPE_VIEWS, cityName, cityView, dateLabel, factionView, knightView, mapSeason, phaseLabel, turnView } from './views'
 import './StrategyScene.css'
 
 /** How long each CPU faction's turn is shown (they do nothing yet) */
@@ -196,7 +196,7 @@ export default function StrategyScene() {
   return (
     <div className="strategy-scene">
       <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false}
-        cityOwners={game.cityOwners} />
+        cityOwners={game.cityOwners} season={mapSeason(game.turn)} />
       <ScreenHost nav={nav} screens={{
         cityCommand: ({ cityId }) => {
           const index = playerCities.indexOf(cityId)

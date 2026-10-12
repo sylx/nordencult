@@ -1,12 +1,12 @@
 import { createElement } from 'react'
 import type { CityView, FactionView, KnightView, TurnView, UnitTypeView } from 'norden-ui'
-import { FACTION_MAP, PLACE_ART, PLACES, emblemUrl, type PlaceType } from 'norden-strategy'
+import { FACTION_MAP, PLACE_ART, PLACES, emblemUrl, type MapSeason, type PlaceType } from 'norden-strategy'
 import { CharacterImage } from '../../components/CharacterImage'
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
-  charactersIn, dateOf, defaultUnitType, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, type GameState,
+  charactersIn, dateOf, defaultUnitType, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, type GameState, type Season,
 } from '../../game'
 
 /** The game state turned into the view types norden-ui's screens draw */
@@ -103,6 +103,11 @@ export function dateLabel(turn: number) {
   const { year, month } = dateOf(turn)
   return `灰歴${year}年${month}月 ${seasonOf(month)}`
 }
+
+const MAP_SEASONS: Readonly<Record<Season, MapSeason>> = { 春: 'spring', 夏: 'summer', 秋: 'autumn', 冬: 'winter' }
+
+/** The season the strategy map shows on this turn */
+export const mapSeason = (turn: number) => MAP_SEASONS[seasonOf(dateOf(turn).month)]
 
 export const phaseLabel = (phase: GameState['phase']) => PHASE_LABELS[phase]
 
