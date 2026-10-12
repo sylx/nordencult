@@ -1,7 +1,7 @@
 import { FactionLabel } from '../../components/FactionLabel'
 import { KnightList } from '../../components/KnightList'
 import { CITY_MAP } from '../../data/city'
-import { useGame, type CharacterMove, type MoveKind } from '../../game'
+import { useGame, type BattleEndReason, type CharacterMove, type MoveKind } from '../../game'
 import { useScene } from '../sceneContext'
 import type { SceneProps } from '../types'
 import './BattleResultScene.css'
@@ -11,6 +11,11 @@ const MOVE_LABELS: Readonly<Record<MoveKind, string>> = {
   return: '帰還',
   retreat: '退却',
   wander: '在野',
+}
+
+const REASON_LABELS: Readonly<Record<BattleEndReason, string>> = {
+  eliminated: '敵軍の殲滅・退却',
+  stronghold: '防衛拠点への入城',
 }
 
 const cityName = (id: string | null) => (id ? CITY_MAP[id]?.name ?? id : '')
@@ -29,9 +34,12 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
     )
   }
 
-  const { battle, winner, cityCaptured, moves, retreats } = report
-  // Knights captured retreating (what happens to them is not decided yet)
-  const captives = retreats.flatMap((r) => (r.captured && r.knightId ? [r.knightId] : []))
+  const { battle, winner, reason, cityCaptured, moves, retreats, wipeouts } = report
+  // Knights captured retreating or wiped out (what happens to them is not decided yet), and how
+  const captives = new Map([
+    ...retreats.flatMap((r) => (r.captured && r.knightId ? [[r.knightId, '退却に失敗し捕虜に'] as const] : [])),
+    ...wipeouts.flatMap((w) => (w.captured && w.knightId ? [[w.knightId, '殲滅され捕虜に'] as const] : [])),
+  ])
   const winnerFaction = winner === 'attacker' ? battle.attacker.factionId : battle.defender.factionId
   const city = cityName(battle.cityId)
   const kinds = (Object.keys(MOVE_LABELS) as MoveKind[]).filter((k) => moves.some((m) => m.kind === k))
@@ -44,6 +52,7 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
           {winner === 'attacker' ? '攻撃側の勝利' : '防衛側の勝利'}
         </h1>
         <p className="battle-result__winner"><FactionLabel factionId={winnerFaction} /></p>
+        {reason && <p className="battle-result__reason">{REASON_LABELS[reason]}による決着</p>}
 
         <section className="battle-result__section">
           <h2>{city}</h2>
@@ -69,10 +78,10 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
           </section>
         ))}
 
-        {captives.length > 0 && (
+        {captives.size > 0 && (
           <section className="battle-result__section">
             <h2>捕虜</h2>
-            <KnightList ids={captives} compact aside={() => '退却に失敗し捕虜に'} />
+            <KnightList ids={[...captives.keys()]} compact aside={(id) => captives.get(id)} />
           </section>
         )}
 

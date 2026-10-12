@@ -76,6 +76,13 @@ export type BattleSide = 'attacker' | 'defender'
 export type BattleWinner = BattleSide
 
 /**
+ * How the battle was decided on the battlefield (battle-runtime's BattleEndReason).
+ * eliminated: every unit of the losing side was wiped out or retreated,
+ * stronghold: an attacking unit entered the defenders' stronghold
+ */
+export type BattleEndReason = 'eliminated' | 'stronghold'
+
+/**
  * A unit that left the battlefield by retreating, as the battle screen reports
  * it (battle-runtime's RetreatReport). The retreat may fail: the knight is then
  * taken prisoner by the other side. What happens to prisoners is not decided
@@ -88,6 +95,20 @@ export interface BattleRetreat {
   /** The city retreated to (one of retreatCities) */
   to: CityId
   /** Failed to retreat and was taken prisoner */
+  captured: boolean
+}
+
+/**
+ * A unit wiped out on the battlefield, as the battle screen reports it
+ * (battle-runtime's WipeoutReport). Its knight may be captured: a prisoner,
+ * like a knight captured retreating. Otherwise they get away and go with
+ * their side as if they had fought on.
+ */
+export interface BattleWipeout {
+  side: BattleSide
+  /** The knight leading the unit; null for the battle screen's placeholder units (not tied to knights yet) */
+  knightId: CharacterId | null
+  /** The knight was captured and taken prisoner */
   captured: boolean
 }
 
@@ -104,8 +125,12 @@ export interface CharacterMove {
 export interface BattleReport {
   battle: Battle
   winner: BattleWinner
+  /** How it was decided; null when decided without fighting it out (the debug buttons) */
+  reason: BattleEndReason | null
   cityCaptured: boolean
   moves: readonly CharacterMove[]
   /** Units that retreated from the battlefield or were captured trying, in the order they did */
   retreats: readonly BattleRetreat[]
+  /** Units wiped out, in the order they were (with whether their knight was captured) */
+  wipeouts: readonly BattleWipeout[]
 }

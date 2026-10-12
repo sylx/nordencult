@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   addOrder, availableKnights, cancelOrder, charactersIn, createInitialState, dateOf, endFactionTurn, GameRuleError,
   invadeFromProblem, invasionTargets, maxSoldiers, neighbours, orderProblem, readPlayerFaction, resolveBattle,
-  retreatCities, soldierPool, seasonOf, soldiersLeft, startNextBattle, turnOrder, type BattleRetreat, type GameState,
+  retreatCities, soldierPool, seasonOf, soldiersLeft, startNextBattle, turnOrder, type BattleRetreat, type BattleWipeout,
+  type GameState,
 } from '.'
 
 // The demo of M001: カルタ書院 invades アンバリア (P004, レオニス帝国) from フルーエン (P012)
@@ -225,6 +226,31 @@ describe('battle results', () => {
     expect(moves).toContainEqual({ characterId: '013', kind: 'retreat', from: AMBARIA, to: VERSTA })
     expect(state.characters['015']).toEqual(marching.characters['015'])
     expect(state.lastBattle?.retreats).toEqual(retreats)
+  })
+
+  it('reports how the battle was decided', () => {
+    const marching = startNextBattle(endStrategyPhase(invadeAmbaria()))
+    const id = marching.march!.current!.id
+    expect(resolveBattle(marching, id, 'attacker', [], 'stronghold').lastBattle).toMatchObject({ reason: 'stronghold', cityCaptured: true })
+    expect(resolveBattle(marching, id, 'defender', [], 'eliminated').lastBattle).toMatchObject({ reason: 'eliminated', cityCaptured: false })
+    expect(resolveBattle(marching, id, 'defender').lastBattle?.reason).toBeNull()
+  })
+
+  it('knights captured when wiped out stay and are reported; those who got away go with their side', () => {
+    const wipeouts: BattleWipeout[] = [
+      { side: 'attacker', knightId: '015', captured: true },
+      { side: 'attacker', knightId: '016', captured: false },
+    ]
+    const marching = startNextBattle(endStrategyPhase(invadeAmbaria()))
+    const state = resolveBattle(marching, marching.march!.current!.id, 'defender', [], null, wipeouts)
+    expect(state.characters['015']).toEqual(marching.characters['015'])
+    expect(state.lastBattle!.moves.filter((m) => m.characterId === '015' || m.characterId === '016')).toEqual([
+      { characterId: '016', kind: 'return', from: FLUEN, to: FLUEN },
+    ])
+    expect(state.lastBattle?.wipeouts).toEqual(wipeouts)
+    expect(() => resolveBattle(marching, marching.march!.current!.id, 'defender', [], null, [
+      { side: 'defender', knightId: '015', captured: true },
+    ])).toThrow(GameRuleError)
   })
 
   it('a defender who retreated leaves even when the defence holds', () => {

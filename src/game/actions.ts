@@ -1,6 +1,7 @@
 import { orderProblem, ownerOf, retreatCities, turnOrder } from './queries'
 import type {
-  Battle, BattleReport, BattleRetreat, BattleWinner, CharacterMove, CharacterState, GameState, InvasionOrder,
+  Battle, BattleEndReason, BattleReport, BattleRetreat, BattleWinner, BattleWipeout, CharacterMove, CharacterState, GameState,
+  InvasionOrder,
 } from './types'
 import { neighbours } from './world'
 
@@ -103,22 +104,31 @@ function startTurn(state: GameState): GameState {
  *   chose instead, whoever wins (an attacker retreating to where they set out
  *   from goes back there). Knights captured retreating stay as they are for now
  *   (prisoners are not decided yet); the report lists them.
- * Characters who move lose their lordship.
+ * - Knights of units wiped out (`wipeouts`) who were captured stay as they are
+ *   too, like those captured retreating; those who got away go with their side.
+ * Characters who move lose their lordship. `reason` is how the battlefield
+ * decided it (the report keeps it); null when decided without fighting it out.
  */
 export function resolveBattle(
   state: GameState, battleId: string, winner: BattleWinner, retreats: readonly BattleRetreat[] = [],
+  reason: BattleEndReason | null = null, wipeouts: readonly BattleWipeout[] = [],
 ): GameState {
   const battle = state.march?.current
   if (!state.march || !battle || battle.id !== battleId) throw new GameRuleError(`戦闘 ${battleId} は進行中ではありません`)
   const { attacker, defender, cityId } = battle
-  for (const r of retreats) {
+  for (const r of [...retreats, ...wipeouts]) {
     if (r.knightId !== null && !battle[r.side].knights.includes(r.knightId)) {
       throw new GameRuleError(`${r.knightId} はこの戦闘の${r.side === 'attacker' ? '攻撃側' : '防衛側'}の騎士ではありません`)
     }
+  }
+  for (const r of retreats) {
     if (!retreatCities(state, battle, r.side).includes(r.to)) throw new GameRuleError(`${r.to} へは退却できません`)
   }
-  /** Knights who left the battlefield by retreating (or were captured trying) */
-  const left = new Set(retreats.flatMap((r) => r.knightId ?? []))
+  /** Knights who left the battlefield by retreating (or were captured trying), or were captured wiped out */
+  const left = new Set([
+    ...retreats.flatMap((r) => r.knightId ?? []),
+    ...wipeouts.flatMap((w) => (w.captured && w.knightId) || []),
+  ])
   const characters: Record<string, CharacterState> = { ...state.characters }
   const cityOwners = { ...state.cityOwners }
   const moves: CharacterMove[] = []
@@ -154,6 +164,6 @@ export function resolveBattle(
     for (const id of attacker.knights) if (!left.has(id)) move(id, 'return', attacker.from)
   }
 
-  const report: BattleReport = { battle, winner, cityCaptured: winner === 'attacker', moves, retreats: [...retreats] }
+  const report: BattleReport = { battle, winner, reason, cityCaptured: winner === 'attacker', moves, retreats: [...retreats], wipeouts: [...wipeouts] }
   return { ...state, cityOwners, characters, march: { ...state.march, current: null }, lastBattle: report }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  BattleScreen, lineBarks, SIDE_TEAM, type BarkSource, type BattleCutInTexts, type RetreatDestinations, type RetreatReport,
+  BATTLE_END_REASON_NAMES, BattleScreen, lineBarks, SIDE_TEAM, type BarkSource, type BattleCutInTexts, type BattleOutcome,
+  type RetreatDestinations, type RetreatReport, type WipeoutReport,
 } from '@norden/battle-runtime'
 import { TEAM_DEFS, type TeamId } from '@norden/map-runtime/core/units'
 import { FACTION_MAP } from 'norden-strategy'
@@ -11,7 +12,8 @@ import { CITY_MAP } from '../../data/city'
 import { pickVoiceLine } from '../../data/voiceLines'
 import { UNIT_TYPE_MAP } from '../../data/unitTypes'
 import {
-  resolveBattle, retreatCities, useGame, type Battle, type BattleRetreat, type BattleSide, type BattleWinner, type GameState,
+  resolveBattle, retreatCities, useGame, type Battle, type BattleEndReason, type BattleRetreat, type BattleSide, type BattleWinner,
+  type BattleWipeout, type GameState,
 } from '../../game'
 import { useScene } from '../sceneContext'
 import type { SceneProps } from '../types'
@@ -27,9 +29,14 @@ function battleCutInTexts(battle: Battle): BattleCutInTexts {
     [SIDE_TEAM.attacker]: factionName(battle.attacker.factionId),
     [SIDE_TEAM.defender]: factionName(battle.defender.factionId),
   }
+  const city = CITY_MAP[battle.cityId]?.name ?? battle.cityId
   return {
-    start: () => ({ text: '戦闘開始', subText: `${CITY_MAP[battle.cityId]?.name ?? battle.cityId}攻防戦` }),
+    start: () => ({ text: '戦闘開始', subText: `${city}攻防戦` }),
     turn: (turn, team) => ({ text: `${names[team] ?? TEAM_DEFS[team].name}のターン`, subText: `TURN  ${turn}` }),
+    end: ({ winner, reason }: BattleOutcome) => ({
+      text: `${names[SIDE_TEAM[winner]]}の勝利`,
+      subText: reason === 'stronghold' ? `${city}に入城` : BATTLE_END_REASON_NAMES[reason],
+    }),
   }
 }
 
@@ -57,25 +64,32 @@ function battleRetreats(game: GameState, battle: Battle): RetreatDestinations {
 }
 
 /**
- * A retreat reported by the battle screen, for resolveBattle. The unit's troop
- * id is its knight's id when the side's troops are made from its knights; the
- * placeholder troops of now are not, so their retreats have no knight.
+ * The side and knight of a unit the battle screen reports. The unit's troop id
+ * is its knight's id when the side's troops are made from its knights; the
+ * placeholder troops of now are not, so they have no knight.
  */
+function sideAndKnight(battle: Battle, { unit, troopId }: RetreatReport | WipeoutReport) {
+  const side: BattleSide = unit.team === SIDE_TEAM.attacker ? 'attacker' : 'defender'
+  return { side, knightId: troopId !== null && battle[side].knights.includes(troopId) ? troopId : null }
+}
+
+/** A retreat reported by the battle screen, for resolveBattle */
 function toBattleRetreat(battle: Battle, report: RetreatReport): BattleRetreat {
-  const side: BattleSide = report.unit.team === SIDE_TEAM.attacker ? 'attacker' : 'defender'
-  const { troopId } = report
-  return {
-    side,
-    knightId: troopId !== null && battle[side].knights.includes(troopId) ? troopId : null,
-    to: report.to.id,
-    captured: report.captured,
-  }
+  return { ...sideAndKnight(battle, report), to: report.to.id, captured: report.captured }
+}
+
+/** A unit wiped out reported by the battle screen, for resolveBattle */
+function toBattleWipeout(battle: Battle, report: WipeoutReport): BattleWipeout {
+  return { ...sideAndKnight(battle, report), captured: report.captured }
 }
 
 /**
  * A battle: the battlefield (norden-battle's battle screen: map, units, action menu,
  * terrain and battle log windows), the attacking and defending sides, and (for now)
- * debug buttons deciding who wins
+ * debug buttons deciding who wins without fighting it out. When the battlefield is
+ * decided (a side wiped out or retreated, or the attackers entered the stronghold),
+ * the button of the battle screen's outcome window hands it to resolveBattle and
+ * goes to the result
  */
 export default function BattleScene({ params }: SceneProps<'battle'>) {
   const { state: game } = useGame()
@@ -104,6 +118,8 @@ function Battlefield({ battle }: { battle: Battle }) {
   const retreatTo = useMemo(() => battleRetreats(game, battle), [game, battle])
   /** Units that retreated (or were captured trying), handed to resolveBattle */
   const [retreats, setRetreats] = useState<readonly BattleRetreat[]>([])
+  /** Units wiped out (with whether their knight was captured), handed to resolveBattle */
+  const [wipeouts, setWipeouts] = useState<readonly BattleWipeout[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -112,8 +128,8 @@ function Battlefield({ battle }: { battle: Battle }) {
     return () => { cancelled = true }
   }, [from, to])
 
-  const decide = (winner: BattleWinner) => {
-    update((s) => resolveBattle(s, battle.id, winner, retreats))
+  const decide = (winner: BattleWinner, reason: BattleEndReason | null = null) => {
+    update((s) => resolveBattle(s, battle.id, winner, retreats, reason, wipeouts))
     goTo('battleResult', { battleId: battle.id })
   }
 
@@ -124,6 +140,8 @@ function Battlefield({ battle }: { battle: Battle }) {
           <BattleScreen
             map={map.data} cutInTexts={battleCutInTexts(battle)} barks={barks} retreats={retreatTo}
             onRetreat={(report) => setRetreats((list) => [...list, toBattleRetreat(battle, report)])}
+            onWipeout={(report) => setWipeouts((list) => [...list, toBattleWipeout(battle, report)])}
+            onEnd={(outcome) => decide(outcome.winner, outcome.reason)} endLabel="戦闘の結果へ"
             className="battle-scene__screen"
           />
         )
@@ -131,7 +149,7 @@ function Battlefield({ battle }: { battle: Battle }) {
       </div>
       <BattleHeader battle={battle} />
       <aside className="battle-debug" aria-label="デバッグ">
-        <h2>デバッグ: 勝敗を決める</h2>
+        <h2>デバッグ: 決着を待たずに勝敗を決める</h2>
         <button type="button" className="battle-button" onClick={() => decide('attacker')}>攻撃側の勝利</button>
         <button type="button" className="battle-button" onClick={() => decide('defender')}>防衛側の勝利</button>
         {map && (
@@ -147,6 +165,16 @@ function Battlefield({ battle }: { battle: Battle }) {
               <span key={i}>
                 <br />{r.side === 'attacker' ? '攻撃' : '防衛'} {r.knightId ?? '(騎士なし)'} → {CITY_MAP[r.to]?.name ?? r.to}
                 {r.captured && '（失敗・捕虜）'}
+              </span>
+            ))}
+          </p>
+        )}
+        {wipeouts.length > 0 && (
+          <p className="battle-debug__map">
+            殲滅: {wipeouts.map((w, i) => (
+              <span key={i}>
+                <br />{w.side === 'attacker' ? '攻撃' : '防衛'} {w.knightId ?? '(騎士なし)'}
+                {w.captured ? '（捕縛・捕虜）' : '（落ち延びた）'}
               </span>
             ))}
           </p>

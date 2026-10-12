@@ -33,6 +33,7 @@
 }
 
 .battle-result__winner { margin: 0; font-size: 18px; font-weight: 700; }
+.battle-result__reason { margin: 0; font-size: 13px; color: #8a7050; letter-spacing: 0.08em; }
 .battle-result__section { width: 100%; }
 
 .battle-result__section h2 {
