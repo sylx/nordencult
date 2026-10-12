@@ -2,12 +2,9 @@
  * セリフのデータ（norden-data のセリフエディタが voiceLines.json を書く）。
  *
  * 場面（situation）ごとに、口調 × 性格のマトリックスの各セルにセリフを並べる。
- * セルは `口調/性格` で、どちらも '*'（共通）にできる。騎士が場面で言うセリフは次から選ぶ:
- *
- * 1. 騎士の口調の列のセル（性格が共通のセルと、騎士の性格ごとのセル）
- * 2. 1 が無ければ口調が共通の列のセル（同じく、性格が共通のセルと性格ごとのセル）
- *
- * 口調が決まれば話し方が決まるので、口調が共通のセルは口調を問わず通じる言い回しにする。
+ * セルは `口調/性格` で、どちらも '*'（共通）にできる。騎士は口調の列から、性格が共通のセルと
+ * 自分の性格ごとのセルを合わせた中から選ぶ。口調が未設定の騎士（と騎士のいない部隊）は口調が共通の列から選ぶ。
+ * 口調のある騎士は共通の列を使わないので、口調の列にその場面のセリフが無ければ何も言わない。
  */
 import voiceLineData from './voiceLines.json'
 import { PERSONALITY_TAGS, VOICE_TONE_IDS, type PersonalityTag, type VoiceToneId } from './characterVoice'
@@ -49,14 +46,12 @@ export const cellKey = (tone: ToneKey, personality: PersonalityKey): CellKey => 
 export const CELL_ORDER: readonly CellKey[] = ([ANY, ...VOICE_TONE_IDS] as ToneKey[])
   .flatMap((tone) => ([ANY, ...PERSONALITY_TAGS] as PersonalityKey[]).map((p) => cellKey(tone, p)))
 
-/** profile が situation でセリフを引くセル（上の 1・2 の順で、セリフのある方。セリフのあるセルだけ） */
+/** profile が situation でセリフを引くセル（口調の列の、性格が共通のセルと性格ごとのセル。セリフのあるセルだけ） */
 export function voiceLineCells(situation: string, profile: VoiceProfile | undefined, data: VoiceLineData = VOICE_LINES): CellKey[] {
   const cells = data.lines[situation] ?? {}
-  const column = (tone: ToneKey) => ([ANY, ...(profile?.personality ?? [])] as PersonalityKey[])
-    .map((p) => cellKey(tone, p))
+  return ([ANY, ...(profile?.personality ?? [])] as PersonalityKey[])
+    .map((p) => cellKey(profile?.voiceTone ?? ANY, p))
     .filter((key) => cells[key]?.length)
-  const own = profile?.voiceTone ? column(profile.voiceTone) : []
-  return own.length ? own : column(ANY)
 }
 
 /** profile が situation で言いうるセリフ */
