@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  BATTLE_END_REASON_NAMES, BattleScreen, lineBarks, SIDE_TEAM, type BarkSource, type BattleCutInTexts, type BattleOutcome,
+  BattleScreen, lineBarks, SIDE_TEAM, type BarkSource, type BattleCutInTexts,
   type RetreatDestinations, type RetreatReport, type WipeoutReport,
 } from '@norden/battle-runtime'
 import { TEAM_DEFS, type TeamId } from '@norden/map-runtime/core/units'
@@ -23,6 +23,12 @@ import './BattleScene.css'
 /** Name of a faction (null / undefined: neutral) */
 const factionName = (id: string | null | undefined) => (id ? FACTION_MAP[id]?.name ?? id : '中立')
 
+/** The side the player's faction fights on; null when the battle is between others */
+function playerSideOf(game: GameState, battle: Battle): BattleSide | null {
+  if (battle.attacker.factionId === game.playerFaction) return 'attacker'
+  return battle.defender.factionId === game.playerFaction ? 'defender' : null
+}
+
 /** Cut-in texts of a battle: the city fought over, and the factions in place of the teams */
 function battleCutInTexts(battle: Battle): BattleCutInTexts {
   const names: Partial<Record<TeamId, string>> = {
@@ -33,10 +39,6 @@ function battleCutInTexts(battle: Battle): BattleCutInTexts {
   return {
     start: () => ({ text: '戦闘開始', subText: `${city}攻防戦` }),
     turn: (turn, team) => ({ text: `${names[team] ?? TEAM_DEFS[team].name}のターン`, subText: `TURN  ${turn}` }),
-    end: ({ winner, reason }: BattleOutcome) => ({
-      text: `${names[SIDE_TEAM[winner]]}の勝利`,
-      subText: reason === 'stronghold' ? `${city}に入城` : BATTLE_END_REASON_NAMES[reason],
-    }),
   }
 }
 
@@ -142,6 +144,7 @@ function Battlefield({ battle }: { battle: Battle }) {
             onRetreat={(report) => setRetreats((list) => [...list, toBattleRetreat(battle, report)])}
             onWipeout={(report) => setWipeouts((list) => [...list, toBattleWipeout(battle, report)])}
             onEnd={(outcome) => decide(outcome.winner, outcome.reason)} endLabel="戦闘の結果へ"
+            playerSide={playerSideOf(game, battle)}
             className="battle-scene__screen"
           />
         )
