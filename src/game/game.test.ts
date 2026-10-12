@@ -31,8 +31,8 @@ describe('setup', () => {
     expect(state.characters['029'].isLord).toBe(true)
   })
 
-  it('gives characters without a faction the faction of their city', () => {
-    expect(createInitialState().characters['028']).toMatchObject({ cityId: 'P001', factionId: 'taurus' })
+  it('leaves mercenaries without a faction unhired', () => {
+    expect(createInitialState().characters['028']).toEqual({ cityId: null, factionId: null, isLord: false })
   })
 
   it('reads the player faction from the URL', () => {

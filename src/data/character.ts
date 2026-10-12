@@ -1,5 +1,6 @@
 import characterData from './characterData.json'
 import characterStart from './characterStart.json'
+import type { PersonalityTag, VoiceToneId } from './characterVoice'
 
 /** 騎士・学者・政治家・魔法使い・狩人 */
 export type CharacterType = 'knight' | 'scholar' | 'politician' | 'magician' | 'hunter'
@@ -33,6 +34,10 @@ export interface Character {
   id: string
   name: string
   gender?: 'male' | 'female'
+  /** 口調 */
+  voiceTone?: VoiceToneId
+  /** 性格。PERSONALITY_AXES の軸ごとに 1 つまで */
+  personality?: PersonalityTag[]
   type: CharacterType
   imageInfo: CharacterImageInfo
   /** 政治・知力・統率・武力・魅力 (0-100) */

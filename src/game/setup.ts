@@ -1,4 +1,4 @@
-import { CHARACTER_START } from '../data/character'
+import { CHARACTER_MAP, CHARACTER_START } from '../data/character'
 import { CITY_LIST } from '../data/city'
 import { turnOrder } from './queries'
 import type { CharacterState, FactionId, GameState } from './types'
@@ -21,8 +21,10 @@ export function createInitialState(playerFaction: FactionId = DEFAULT_PLAYER_FAC
   for (const city of CITY_LIST) if (city.belongTo) cityOwners[city.id] = city.belongTo
   const characters: Record<string, CharacterState> = {}
   for (const start of CHARACTER_START) {
-    // Characters without a faction of their own serve the faction of their city
-    const factionId = start.factionId ?? cityOwners[start.cityId] ?? null
+    // Characters without a faction of their own serve the faction of their city, except mercenaries:
+    // they wait to be hired (the mercenary market is open to every city for now, so their city is dropped)
+    const mercenary = Boolean(CHARACTER_MAP[start.id]?.mercenaryInfo)
+    const factionId = start.factionId ?? (mercenary ? null : cityOwners[start.cityId] ?? null)
     characters[start.id] = {
       cityId: factionId ? start.cityId : null,
       factionId,
