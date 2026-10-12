@@ -1,6 +1,6 @@
-import { orderProblem, ownerOf, turnOrder } from './queries'
+import { orderProblem, ownerOf, retreatCities, turnOrder } from './queries'
 import type {
-  Battle, BattleReport, BattleWinner, CharacterMove, CharacterState, GameState, InvasionOrder,
+  Battle, BattleReport, BattleRetreat, BattleWinner, CharacterMove, CharacterState, GameState, InvasionOrder,
 } from './types'
 import { neighbours } from './world'
 
@@ -99,12 +99,26 @@ function startTurn(state: GameState): GameState {
  *   in. The defenders retreat to the first neighbouring city of their own
  *   (in ROAD_LINKS order), or become unaffiliated when there is none.
  * - The defender wins: the attacking knights go back where they set out from.
+ * - Knights who retreated from the battlefield (`retreats`) go to the city they
+ *   chose instead, whoever wins (an attacker retreating to where they set out
+ *   from goes back there). Knights captured retreating stay as they are for now
+ *   (prisoners are not decided yet); the report lists them.
  * Characters who move lose their lordship.
  */
-export function resolveBattle(state: GameState, battleId: string, winner: BattleWinner): GameState {
+export function resolveBattle(
+  state: GameState, battleId: string, winner: BattleWinner, retreats: readonly BattleRetreat[] = [],
+): GameState {
   const battle = state.march?.current
   if (!state.march || !battle || battle.id !== battleId) throw new GameRuleError(`戦闘 ${battleId} は進行中ではありません`)
   const { attacker, defender, cityId } = battle
+  for (const r of retreats) {
+    if (r.knightId !== null && !battle[r.side].knights.includes(r.knightId)) {
+      throw new GameRuleError(`${r.knightId} はこの戦闘の${r.side === 'attacker' ? '攻撃側' : '防衛側'}の騎士ではありません`)
+    }
+    if (!retreatCities(state, battle, r.side).includes(r.to)) throw new GameRuleError(`${r.to} へは退却できません`)
+  }
+  /** Knights who left the battlefield by retreating (or were captured trying) */
+  const left = new Set(retreats.flatMap((r) => r.knightId ?? []))
   const characters: Record<string, CharacterState> = { ...state.characters }
   const cityOwners = { ...state.cityOwners }
   const moves: CharacterMove[] = []
@@ -116,21 +130,30 @@ export function resolveBattle(state: GameState, battleId: string, winner: Battle
       : { ...before, cityId: to, isLord: before.isLord && to === before.cityId }
   }
 
+  for (const r of retreats) {
+    if (r.knightId === null || r.captured) continue
+    if (r.side === 'attacker') move(r.knightId, r.to === attacker.from ? 'return' : 'retreat', r.to)
+    // Only defenders still in the city (another battle may have moved them)
+    else if (characters[r.knightId].cityId === cityId && characters[r.knightId].factionId === defender.factionId) {
+      move(r.knightId, 'retreat', r.to)
+    }
+  }
+
   if (winner === 'attacker') {
     cityOwners[cityId] = attacker.factionId
-    for (const id of attacker.knights) move(id, 'enter', cityId)
+    for (const id of attacker.knights) if (!left.has(id)) move(id, 'enter', cityId)
     const refuge = defender.factionId
       ? neighbours(cityId).find((id) => cityOwners[id] === defender.factionId)
       : undefined
     for (const id of defender.knights) {
       // Only those still in the city (another battle may have moved them)
-      if (characters[id].cityId !== cityId || characters[id].factionId !== defender.factionId) continue
+      if (left.has(id) || characters[id].cityId !== cityId || characters[id].factionId !== defender.factionId) continue
       move(id, refuge ? 'retreat' : 'wander', refuge ?? null)
     }
   } else {
-    for (const id of attacker.knights) move(id, 'return', attacker.from)
+    for (const id of attacker.knights) if (!left.has(id)) move(id, 'return', attacker.from)
   }
 
-  const report: BattleReport = { battle, winner, cityCaptured: winner === 'attacker', moves }
+  const report: BattleReport = { battle, winner, cityCaptured: winner === 'attacker', moves, retreats: [...retreats] }
   return { ...state, cityOwners, characters, march: { ...state.march, current: null }, lastBattle: report }
 }

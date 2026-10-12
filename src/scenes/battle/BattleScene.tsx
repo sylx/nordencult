@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BattleScreen, lineBarks, SIDE_TEAM, type BarkSource, type BattleCutInTexts } from '@norden/battle-runtime'
+import {
+  BattleScreen, lineBarks, SIDE_TEAM, type BarkSource, type BattleCutInTexts, type RetreatDestinations, type RetreatReport,
+} from '@norden/battle-runtime'
 import { TEAM_DEFS, type TeamId } from '@norden/map-runtime/core/units'
 import { FACTION_MAP } from 'norden-strategy'
 import { FactionLabel } from '../../components/FactionLabel'
@@ -8,7 +10,9 @@ import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { pickVoiceLine } from '../../data/voiceLines'
 import { UNIT_TYPE_MAP } from '../../data/unitTypes'
-import { resolveBattle, useGame, type Battle, type BattleWinner } from '../../game'
+import {
+  resolveBattle, retreatCities, useGame, type Battle, type BattleRetreat, type BattleSide, type BattleWinner, type GameState,
+} from '../../game'
 import { useScene } from '../sceneContext'
 import type { SceneProps } from '../types'
 import { loadBattleMap, type BattleMap } from './battleMap'
@@ -42,6 +46,32 @@ function battleBarks(battle: Battle): BarkSource {
   })
 }
 
+const BATTLE_SIDES: readonly BattleSide[] = ['attacker', 'defender']
+
+/** Where each side's units can retreat to: the neighbouring cities of their own (retreatCities), by team */
+function battleRetreats(game: GameState, battle: Battle): RetreatDestinations {
+  return Object.fromEntries(BATTLE_SIDES.map((side) => [
+    SIDE_TEAM[side],
+    retreatCities(game, battle, side).map((id) => ({ id, name: CITY_MAP[id]?.name ?? id })),
+  ]))
+}
+
+/**
+ * A retreat reported by the battle screen, for resolveBattle. The unit's troop
+ * id is its knight's id when the side's troops are made from its knights; the
+ * placeholder troops of now are not, so their retreats have no knight.
+ */
+function toBattleRetreat(battle: Battle, report: RetreatReport): BattleRetreat {
+  const side: BattleSide = report.unit.team === SIDE_TEAM.attacker ? 'attacker' : 'defender'
+  const { troopId } = report
+  return {
+    side,
+    knightId: troopId !== null && battle[side].knights.includes(troopId) ? troopId : null,
+    to: report.to.id,
+    captured: report.captured,
+  }
+}
+
 /**
  * A battle: the battlefield (norden-battle's battle screen: map, units, action menu,
  * terrain and battle log windows), the attacking and defending sides, and (for now)
@@ -64,13 +94,16 @@ export default function BattleScene({ params }: SceneProps<'battle'>) {
 }
 
 function Battlefield({ battle }: { battle: Battle }) {
-  const { update } = useGame()
+  const { state: game, update } = useGame()
   const { goTo } = useScene()
   const [map, setMap] = useState<BattleMap | null>(null)
   const [error, setError] = useState('')
   const { from } = battle.attacker
   const to = battle.cityId
   const barks = useMemo(() => battleBarks(battle), [battle])
+  const retreatTo = useMemo(() => battleRetreats(game, battle), [game, battle])
+  /** Units that retreated (or were captured trying), handed to resolveBattle */
+  const [retreats, setRetreats] = useState<readonly BattleRetreat[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -80,14 +113,20 @@ function Battlefield({ battle }: { battle: Battle }) {
   }, [from, to])
 
   const decide = (winner: BattleWinner) => {
-    update((s) => resolveBattle(s, battle.id, winner))
+    update((s) => resolveBattle(s, battle.id, winner, retreats))
     goTo('battleResult', { battleId: battle.id })
   }
 
   return (
     <div className="battle-scene">
       <div className="battle-scene__field">
-        {map ? <BattleScreen map={map.data} cutInTexts={battleCutInTexts(battle)} barks={barks} className="battle-scene__screen" />
+        {map ? (
+          <BattleScreen
+            map={map.data} cutInTexts={battleCutInTexts(battle)} barks={barks} retreats={retreatTo}
+            onRetreat={(report) => setRetreats((list) => [...list, toBattleRetreat(battle, report)])}
+            className="battle-scene__screen"
+          />
+        )
           : <p className="battle-scene__placeholder">{error ? `戦闘マップを読めません: ${error}` : '戦闘マップを読み込み中…'}</p>}
       </div>
       <BattleHeader battle={battle} />
@@ -100,6 +139,16 @@ function Battlefield({ battle }: { battle: Battle }) {
             マップ: {map.file}
             {map.area ? `（${to} の範囲 (${map.area.col}, ${map.area.row})）` : '（全体・フォールバック）'}
             {map.fallback && <><br />{map.fallback}</>}
+          </p>
+        )}
+        {retreats.length > 0 && (
+          <p className="battle-debug__map">
+            退却: {retreats.map((r, i) => (
+              <span key={i}>
+                <br />{r.side === 'attacker' ? '攻撃' : '防衛'} {r.knightId ?? '(騎士なし)'} → {CITY_MAP[r.to]?.name ?? r.to}
+                {r.captured && '（失敗・捕虜）'}
+              </span>
+            ))}
           </p>
         )}
       </aside>

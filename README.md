@@ -64,7 +64,7 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | `src/scenes/strategy/StrategyScene.tsx` | 地図と画面スタック（`cityCommand` / `pickTarget` / `invasion`）。地図の強調は表示中の画面（`nav.top`）から決める |
 | `src/scenes/strategy/views.ts` | ゲームの状態 → norden-ui のview型（`CityView`・`KnightView`・`TurnView`） |
 | `src/scenes/strategy/OrderList.tsx` | 侵攻予約・行軍の一覧（都市コマンド画面に重ねるHUD） |
-| `src/scenes/battle/BattleScene.tsx` | 戦闘マップを読み込み、battle-runtime の `BattleScreen` に渡す（アンマウントで破棄）。ユニットはまだ置かない（置くときはマップの `units` と `statuses` で渡す） |
+| `src/scenes/battle/BattleScene.tsx` | 戦闘マップを読み込み、battle-runtime の `BattleScreen` に渡す（アンマウントで破棄）。ユニットはまだ置かない（置くときはマップの `units` と `statuses` で渡す）。退却先の拠点（`retreatCities`）を軍ごとに渡し、退却した・捕虜になった部隊（`RetreatReport`）を `BattleRetreat` にして勝敗のボタンで `resolveBattle` に渡す |
 | `src/scenes/battle/battleMap.ts` | 戦闘マップの選択。攻撃元と目標の街道マップ `road-<小さい ID>-<大きい ID>.json` から目標の範囲（`battleAreas[目標]`）を切り出す。無ければ `fluen.json` 全体（コンソールに警告） |
 
 ## ゲームの状態
@@ -75,7 +75,7 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | --- | --- |
 | `src/game/types.ts` | `GameState` などの型 |
 | `src/game/setup.ts` | 初期状態（都市・キャラクターの初期配置）、`?faction=` の読み取り |
-| `src/game/queries.ts` | 状態の問い合わせ（手番の順・都市の騎士・侵攻先・予約の条件・残りの兵） |
+| `src/game/queries.ts` | 状態の問い合わせ（手番の順・都市の騎士・侵攻先・予約の条件・残りの兵・戦闘からの退却先） |
 | `src/game/army.ts` | 兵の仮の規則（都市の兵・騎士の率兵・既定の兵科） |
 | `src/game/actions.ts` | 予約の追加・取消、手番の終了、戦闘の開始、`resolveBattle`（戦後処理） |
 | `src/game/store.ts`, `gameContext.ts` | `App` に置くストアと `useGame()`（シーンを切り替えても状態が残る） |
@@ -84,6 +84,8 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 シーンからは `const { state, update } = useGame()` で読み、`update((s) => addOrder(s, draft))` のように変えます。規則に反する操作は `GameRuleError` を投げます。
 
 侵攻予約は騎士ごとの兵科と兵数（`InvasionOrder.units`）を持ちます。戦闘の規則が入るまでの仮の値で、都市が1ターンに出せる兵は生産×5（`soldierPool`）、騎士が率いる兵は統率×5（`maxSoldiers`）、兵科の既定は種別から決めます（`src/data/unitTypes.ts`）。戦闘ではまだ使わず、戦闘シーンに表示するだけです。
+
+戦闘からの退却: 戦闘画面では、部隊は戦場の拠点に街道でつながる自勢力の拠点（`retreatCities`。攻撃側には出撃元も入る）へ退却でき、隣接する敵の数に応じて失敗すると捕虜になります。戦闘画面は結果を部隊ごとに知らせ（battle-runtime の `RetreatReport`）、戦闘シーンが `BattleRetreat`（陣営・騎士・退却先・捕虜になったか）にして `resolveBattle` に渡します。退却した騎士は勝敗に関わらず選んだ拠点へ移り、捕虜になった騎士はまだ扱いが決まっていないので、そのままにして戦闘の結果（`BattleReport.retreats`）と結果画面の「捕虜」に出すだけです。いまの戦闘の部隊は騎士と結び付いていない仮の部隊なので、騎士は null になります（部隊の ID を騎士の ID で作れば結び付きます）。
 
 拠点の初期データ（人口・農業・商業・生産・初期の所属）は `src/data/cityData.json`（`src/data/city.ts`）です。地図の描画は `norden-strategy` の `CITY_LIST` を使います。
 

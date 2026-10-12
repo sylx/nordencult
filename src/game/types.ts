@@ -71,7 +71,25 @@ export interface Battle {
   defender: { factionId: FactionId | null; knights: readonly CharacterId[] }
 }
 
-export type BattleWinner = 'attacker' | 'defender'
+export type BattleSide = 'attacker' | 'defender'
+
+export type BattleWinner = BattleSide
+
+/**
+ * A unit that left the battlefield by retreating, as the battle screen reports
+ * it (battle-runtime's RetreatReport). The retreat may fail: the knight is then
+ * taken prisoner by the other side. What happens to prisoners is not decided
+ * yet; for now they stay where they were and are only listed in the report.
+ */
+export interface BattleRetreat {
+  side: BattleSide
+  /** The knight leading the unit; null for the battle screen's placeholder units (not tied to knights yet) */
+  knightId: CharacterId | null
+  /** The city retreated to (one of retreatCities) */
+  to: CityId
+  /** Failed to retreat and was taken prisoner */
+  captured: boolean
+}
 
 /** enter: into the captured city, return: back to where the attack started, retreat: to a city of their own, wander: unaffiliated */
 export type MoveKind = 'enter' | 'return' | 'retreat' | 'wander'
@@ -88,4 +106,6 @@ export interface BattleReport {
   winner: BattleWinner
   cityCaptured: boolean
   moves: readonly CharacterMove[]
+  /** Units that retreated from the battlefield or were captured trying, in the order they did */
+  retreats: readonly BattleRetreat[]
 }

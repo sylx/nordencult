@@ -1,6 +1,6 @@
 import { UNIT_TYPE_MAP } from '../data/unitTypes'
 import { maxSoldiers, soldierPool } from './army'
-import type { ArmyUnit, CharacterId, CityId, FactionId, GameState, InvasionOrder } from './types'
+import type { ArmyUnit, Battle, BattleSide, CharacterId, CityId, FactionId, GameState, InvasionOrder } from './types'
 import { CITY_IDS, FACTION_IDS, areNeighbours, neighbours } from './world'
 
 /** The faction of a city; undefined when neutral */
@@ -60,6 +60,17 @@ export const availableKnights = (state: GameState, cityId: CityId): CharacterId[
 export function invasionTargets(state: GameState, from: CityId): CityId[] {
   const faction = ownerOf(state, from)
   return neighbours(from).filter((id) => ownerOf(state, id) !== faction)
+}
+
+/**
+ * Cities a side of a battle can retreat to from the battlefield: the
+ * neighbours of the city fought over held by the side's faction, in ROAD_LINKS
+ * order (for the attacker this includes the city it set out from). None for
+ * the defender of a neutral city.
+ */
+export function retreatCities(state: GameState, battle: Battle, side: BattleSide): CityId[] {
+  const factionId = side === 'attacker' ? battle.attacker.factionId : battle.defender.factionId
+  return factionId ? neighbours(battle.cityId).filter((id) => ownerOf(state, id) === factionId) : []
 }
 
 /** Soldiers of a city not yet sent on an invasion this turn */

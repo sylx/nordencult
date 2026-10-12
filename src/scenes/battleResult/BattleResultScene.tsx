@@ -29,7 +29,9 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
     )
   }
 
-  const { battle, winner, cityCaptured, moves } = report
+  const { battle, winner, cityCaptured, moves, retreats } = report
+  // Knights captured retreating (what happens to them is not decided yet)
+  const captives = retreats.flatMap((r) => (r.captured && r.knightId ? [r.knightId] : []))
   const winnerFaction = winner === 'attacker' ? battle.attacker.factionId : battle.defender.factionId
   const city = cityName(battle.cityId)
   const kinds = (Object.keys(MOVE_LABELS) as MoveKind[]).filter((k) => moves.some((m) => m.kind === k))
@@ -66,6 +68,13 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
             <MoveList moves={moves.filter((m) => m.kind === kind)} />
           </section>
         ))}
+
+        {captives.length > 0 && (
+          <section className="battle-result__section">
+            <h2>捕虜</h2>
+            <KnightList ids={captives} compact aside={() => '退却に失敗し捕虜に'} />
+          </section>
+        )}
 
         <button type="button" className="battle-result__button" onClick={() => goTo('strategy')}>戦略マップへ</button>
       </div>

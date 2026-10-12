@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   addOrder, availableKnights, cancelOrder, charactersIn, createInitialState, dateOf, endFactionTurn, GameRuleError,
-  invadeFromProblem, invasionTargets, maxSoldiers, orderProblem, readPlayerFaction, resolveBattle, soldierPool,
-  seasonOf, soldiersLeft, startNextBattle, turnOrder, type GameState,
+  invadeFromProblem, invasionTargets, maxSoldiers, neighbours, orderProblem, readPlayerFaction, resolveBattle,
+  retreatCities, soldierPool, seasonOf, soldiersLeft, startNextBattle, turnOrder, type BattleRetreat, type GameState,
 } from '.'
 
 // The demo of M001: カルタ書院 invades アンバリア (P004, レオニス帝国) from フルーエン (P012)
@@ -198,6 +198,51 @@ describe('battle results', () => {
     state = fight('attacker', state)
     expect(state.characters['013']).toEqual({ cityId: null, factionId: null, isLord: false })
     expect(state.lastBattle?.moves.at(-1)).toMatchObject({ characterId: '013', kind: 'wander', to: null })
+  })
+
+  it('lists the cities each side can retreat to', () => {
+    const marching = startNextBattle(endStrategyPhase(invadeAmbaria()))
+    const battle = marching.march!.current!
+    expect(retreatCities(marching, battle, 'attacker')).toEqual([FLUEN])
+    expect(retreatCities(marching, battle, 'defender')).toContain(VERSTA)
+    expect(retreatCities(marching, battle, 'defender').every((id) => marching.cityOwners[id] === 'leonis')).toBe(true)
+    expect(neighbours(AMBARIA)).toEqual(expect.arrayContaining([...retreatCities(marching, battle, 'defender'), FLUEN]))
+  })
+
+  it('knights who retreated go where they chose; captured ones stay and are reported', () => {
+    const retreats: BattleRetreat[] = [
+      { side: 'attacker', knightId: '016', to: FLUEN, captured: false },
+      { side: 'attacker', knightId: '015', to: FLUEN, captured: true },
+      { side: 'defender', knightId: null, to: VERSTA, captured: true },
+    ]
+    const marching = startNextBattle(endStrategyPhase(invadeAmbaria()))
+    const state = resolveBattle(marching, marching.march!.current!.id, 'attacker', retreats)
+    expect(state.cityOwners[AMBARIA]).toBe('carta')
+    const moves = state.lastBattle!.moves
+    expect(moves.filter((m) => m.characterId === '015' || m.characterId === '016')).toEqual([
+      { characterId: '016', kind: 'return', from: FLUEN, to: FLUEN },
+    ])
+    expect(moves).toContainEqual({ characterId: '013', kind: 'retreat', from: AMBARIA, to: VERSTA })
+    expect(state.characters['015']).toEqual(marching.characters['015'])
+    expect(state.lastBattle?.retreats).toEqual(retreats)
+  })
+
+  it('a defender who retreated leaves even when the defence holds', () => {
+    const marching = startNextBattle(endStrategyPhase(invadeAmbaria()))
+    const state = resolveBattle(marching, marching.march!.current!.id, 'defender', [
+      { side: 'defender', knightId: '013', to: VERSTA, captured: false },
+    ])
+    expect(state.cityOwners[AMBARIA]).toBe('leonis')
+    expect(state.characters['013']).toMatchObject({ cityId: VERSTA, factionId: 'leonis' })
+  })
+
+  it('refuses retreats to cities not of their own or by knights not in the battle', () => {
+    const marching = startNextBattle(endStrategyPhase(invadeAmbaria()))
+    const id = marching.march!.current!.id
+    expect(() => resolveBattle(marching, id, 'attacker', [{ side: 'attacker', knightId: '015', to: VERSTA, captured: false }]))
+      .toThrow(GameRuleError)
+    expect(() => resolveBattle(marching, id, 'attacker', [{ side: 'defender', knightId: '015', to: VERSTA, captured: false }]))
+      .toThrow(GameRuleError)
   })
 
   it('a lord who leaves their city is no longer its lord', () => {
