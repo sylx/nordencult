@@ -82,10 +82,10 @@ describe('orders', () => {
 })
 
 describe('turns', () => {
-  it('counts a turn as a month from 灰歴312年1月', () => {
-    expect(dateOf(1)).toEqual({ year: 312, month: 1 })
-    expect(dateOf(12)).toEqual({ year: 312, month: 12 })
-    expect(dateOf(13)).toEqual({ year: 313, month: 1 })
+  it('counts a turn as a month from 灰歴312年4月', () => {
+    expect(dateOf(1)).toEqual({ year: 312, month: 4 })
+    expect(dateOf(9)).toEqual({ year: 312, month: 12 })
+    expect(dateOf(10)).toEqual({ year: 313, month: 1 })
   })
 
   it('names the season of a month', () => {

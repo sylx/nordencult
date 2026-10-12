@@ -98,7 +98,7 @@ export function cityView(game: GameState, id: string): CityView {
   }
 }
 
-/** e.g. 灰歴312年1月 冬 */
+/** e.g. 灰歴312年4月 春 */
 export function dateLabel(turn: number) {
   const { year, month } = dateOf(turn)
   return `灰歴${year}年${month}月 ${seasonOf(month)}`
