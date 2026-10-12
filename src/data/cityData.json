@@ -199,10 +199,9 @@
     "type": "port_city",
     "tags": [
       "港湾",
-      "西岸",
       "河川"
     ],
-    "population": 11000,
+    "population": 12400,
     "agriculture": 220,
     "market": 440,
     "production": 220,
