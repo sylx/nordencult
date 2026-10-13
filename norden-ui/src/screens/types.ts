@@ -55,6 +55,8 @@ export interface KnightView extends KnightCardData {
   maxSoldiers?: number
   /** Unit type chosen first when they are picked for an army */
   defaultUnitType?: string
+  /** Ids of the unit types they can lead; all of them when omitted */
+  unitTypes?: readonly string[]
   /** Why they cannot be picked (they are shown but cannot be selected) */
   unavailableReason?: string
 }

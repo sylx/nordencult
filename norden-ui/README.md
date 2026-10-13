@@ -127,7 +127,7 @@ function BattleUi() {
 アクションツールバーのコマンドは `CITY_COMMAND_GROUPS` に定義しています。内政（建設・割当）、軍事（移動・侵攻・募兵・輸送）、研究、商人（購入・売却）と、最後にターン終了です。
 分類を押すと上にサブコマンドが開きます。`commandState={{ invade: { disabled: true, reason: '出撃できる騎士がいません' } }}` で無効にし、理由をツールチップに出します。
 
-侵攻画面は騎士ごとに1つの兵科と兵数を決めます。騎士を選ぶと、`defaultUnitType`（無ければ先頭の兵科）と、騎士の上限（`maxSoldiers`）と残りの兵数の小さい方で部隊に加わります。
+侵攻画面は騎士ごとに1つの兵科と兵数を決めます。兵科は騎士の `unitTypes`（率いられる兵科の id。無ければ全兵科）に含まれるものだけを選べます。騎士を選ぶと、`defaultUnitType`（選べる兵科に無ければ選べる兵科の先頭）と、騎士の上限（`maxSoldiers`）と残りの兵数の小さい方で部隊に加わります。
 兵数の合計は `soldierPool` を超えません。0人、兵数0の部隊、`validate` が返した理由があると「予約」を押せません。`onConfirm` には選んだ順の `{ knightId, unitType, soldiers }[]` を渡します。
 `unavailableReason` を持つ騎士は一覧に出ますが選べません。
 

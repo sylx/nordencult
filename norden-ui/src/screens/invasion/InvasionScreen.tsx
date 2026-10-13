@@ -64,12 +64,15 @@ export default function InvasionScreen({
   const problem = draftProblem(draft) ?? validate?.(draft) ?? null
   const knightMap = new Map(knights.map(knight => [knight.id, knight]))
   const capOf = (knight: KnightView | undefined) => knight?.maxSoldiers ?? soldierPool
+  const unitTypesOf = (knight: KnightView) =>
+    knight.unitTypes ? unitTypes.filter(type => knight.unitTypes!.includes(type.id)) : unitTypes
 
   const toggle = (knight: KnightView) => setDraft(current => {
     if (current.some(item => item.knightId === knight.id)) return current.filter(item => item.knightId !== knight.id)
     const left = Math.max(0, soldierPool - total(current))
-    const unitType = knight.defaultUnitType && unitTypes.some(type => type.id === knight.defaultUnitType)
-      ? knight.defaultUnitType : unitTypes[0]?.id ?? ''
+    const choices = unitTypesOf(knight)
+    const unitType = knight.defaultUnitType && choices.some(type => type.id === knight.defaultUnitType)
+      ? knight.defaultUnitType : choices[0]?.id ?? ''
     return [...current, { knightId: knight.id, unitType, soldiers: Math.min(capOf(knight), left) }]
   })
   const change = (knightId: string, patch: Partial<InvasionAssignment>) =>
@@ -121,7 +124,7 @@ export default function InvasionScreen({
                 <section key={item.knightId} className="norden-invasion-unit" aria-label={`${knight.name}の部隊`}>
                   <KnightCard knight={{ ...knight, stats: undefined }} compact />
                   <ChoiceGroup label={`${knight.name}の兵科`} value={item.unitType}
-                    options={unitTypes.map(type => ({ value: type.id, label: type.name, icon: type.icon, title: type.description }))}
+                    options={unitTypesOf(knight).map(type => ({ value: type.id, label: type.name, icon: type.icon, title: type.description }))}
                     onChange={unitType => change(item.knightId, { unitType })} />
                   <QuantityInput label={`${knight.name}の兵数`} unit="人" step={soldierStep} value={item.soldiers}
                     max={Math.min(capOf(knight), item.soldiers + remaining)}

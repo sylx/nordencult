@@ -25,11 +25,15 @@ export interface MockKnight extends KnightView { cityId: string }
 const characterIds: Record<string, string> = { k1: '029', k2: '016', k3: '011', k4: '001', k5: '019', k6: '015', k7: '017', k8: '024', k9: '003' }
 const characterFor = (id: string) => repositoryCharacters.find(character => character.id === characterIds[id])
 
+// The game's rule: anyone can lead 歩兵, and each class one more unit type
+const classUnitTypes: Record<string, string[]> = { 騎士: ['infantry', 'cavalry'], 狩人: ['infantry', 'archer'], 魔法使い: ['infantry', 'mage'] }
+
 const knight = (id: string, name: string, cityId: string, subtitle: string, leadership: number, strength: number, intelligence: number,
   defaultUnitType?: string): MockKnight => {
   const character = characterFor(id)
   return {
     id, name, cityId, subtitle, defaultUnitType, maxSoldiers: leadership * 5,
+    unitTypes: classUnitTypes[subtitle.split(' / ')[0] ?? ''] ?? ['infantry'],
     portrait: character ? createElement(RepositoryPortrait, { character }) : undefined,
     stats: [{ label: '統率', value: leadership }, { label: '武力', value: strength }, { label: '知力', value: intelligence }],
   }

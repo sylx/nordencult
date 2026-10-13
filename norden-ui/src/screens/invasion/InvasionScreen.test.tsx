@@ -51,6 +51,20 @@ describe('InvasionScreen', () => {
     ])
   })
 
+  it('offers only the unit types a knight can lead', async () => {
+    setup({ knights: [
+      { id: 'k1', name: 'エルネスト', maxSoldiers: 400, defaultUnitType: 'archer', unitTypes: ['infantry', 'cavalry'] },
+      { id: 'k2', name: 'リディア', maxSoldiers: 300 },
+    ] })
+    await userEvent.click(screen.getByRole('checkbox', { name: /エルネスト/ }))
+    await userEvent.click(screen.getByRole('checkbox', { name: /リディア/ }))
+    const ernest = within(screen.getByRole('radiogroup', { name: 'エルネストの兵科' }))
+    expect(ernest.getAllByRole('radio').map(radio => radio.textContent)).toEqual(['歩兵', '騎兵'])
+    // their default is not among them, so the first one is chosen
+    expect(ernest.getByRole('radio', { name: '歩兵' })).toHaveAttribute('aria-checked', 'true')
+    expect(within(screen.getByRole('radiogroup', { name: 'リディアの兵科' })).getAllByRole('radio')).toHaveLength(3)
+  })
+
   it('removes a knight when unchecked and blocks empty units', async () => {
     setup({ soldierPool: 400 })
     await userEvent.click(screen.getByRole('checkbox', { name: /エルネスト/ }))
