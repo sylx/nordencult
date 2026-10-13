@@ -15,17 +15,19 @@ test('city command → invade → pick a target on the map → invasion screen, 
 
   await page.getByRole('button', { name: 'アンバリア' }).click()
   await expect(page.getByRole('region', { name: '出撃する騎士' })).toBeVisible()
-  await page.getByRole('checkbox', { name: /エルネスト/ }).check()
+  await page.getByRole('button', { name: 'エルネスト・ヴァイスを軍団長にする' }).click()
   await expect(page.getByRole('region', { name: 'エルネスト・ヴァイスの部隊' })).toBeVisible()
 
   await page.keyboard.press('Escape')
   await expect(stack).toHaveText('cityCommand › pickTarget')
   await page.getByRole('button', { name: 'アンバリア' }).click()
   // The screen is mounted fresh: nobody is picked
-  await expect(page.getByRole('checkbox', { name: /エルネスト/ })).not.toBeChecked()
-  await page.getByRole('checkbox', { name: /エルネスト/ }).check()
-  await page.getByRole('checkbox', { name: /リディア/ }).check()
-  await page.getByRole('radiogroup', { name: 'リディア・ハーンの兵科' }).getByRole('radio', { name: '騎兵' }).click()
+  await expect(page.getByRole('region', { name: 'エルネスト・ヴァイスの部隊' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'エルネスト・ヴァイスを軍団長にする' }).click()
+  await page.getByRole('button', { name: 'リディア・ハーンを加える' }).click()
+  await page.getByRole('radiogroup', { name: 'リディア・ハーンの兵科' }).getByRole('radio', { name: '歩兵' }).click()
+  await page.getByRole('button', { name: /間接指揮部隊/ }).click()
+  await expect(page.getByRole('region', { name: '間接指揮部隊1' })).toBeVisible()
   await page.getByRole('button', { name: '予約' }).click()
 
   await expect(stack).toHaveText('cityCommand')

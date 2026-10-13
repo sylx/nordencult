@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, CityCommandScreen, InvasionScreen, MapPickScreen, ScreenHost, useScreenStack } from '../../src'
 import type { CityCommandId, InvasionDraft, KnightView } from '../../src'
-import { CITY_MAP, FACTIONS, PLAYER, TURN, UNIT_TYPES, cityView, invasionTargets, knightsIn, playerCities } from '../mock/data'
+import { CITY_MAP, FACTIONS, INDIRECT_UNIT_TYPES, PLAYER, TURN, UNIT_TYPES, cityView, invasionTargets, knightsIn, playerCities } from '../mock/data'
 import MockMap from '../mock/MockMap'
 import type { MapRoad } from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
@@ -29,14 +29,14 @@ export default function StrategyFlowEntry() {
   const [turn, setTurn] = useState(TURN.turn)
   const top = nav.top
 
-  const ordered = new Map(orders.flatMap(order => order.draft.map(item => [item.knightId, order.to] as const)))
+  const ordered = new Map(orders.flatMap(order => order.draft.units.flatMap(item => (item.knightId ? [[item.knightId, order.to] as const] : []))))
   const knightsOf = (cityId: string): KnightView[] => knightsIn(cityId).map(knight => {
     const to = ordered.get(knight.id)
     return to ? { ...knight, subtitle: `${knight.subtitle} / ${name(to)}へ侵攻予約中`, unavailableReason: '侵攻予約中' } : knight
   })
   const openTargets = (from: string) => invasionTargets(from).filter(to => !orders.some(order => order.to === to))
   const soldiersLeft = (from: string) =>
-    (CITY_MAP[from]?.soldiers ?? 0) - orders.filter(order => order.from === from).flatMap(order => order.draft).reduce((sum, item) => sum + item.soldiers, 0)
+    (CITY_MAP[from]?.soldiers ?? 0) - orders.filter(order => order.from === from).flatMap(order => order.draft.units).reduce((sum, item) => sum + item.soldiers, 0)
 
   const invadeProblem = (cityId: string) => {
     if (CITY_MAP[cityId]?.owner !== PLAYER) return '自勢力の都市ではありません'
@@ -72,7 +72,7 @@ export default function StrategyFlowEntry() {
           : <ol>{orders.map(order => (
             <li key={order.id}>
               <span>{name(order.from)} → {name(order.to)}</span>
-              <span className="demo-orders-count">{order.draft.length}人・{order.draft.reduce((sum, item) => sum + item.soldiers, 0)}兵</span>
+              <span className="demo-orders-count">{order.draft.units.length}部隊・{order.draft.units.reduce((sum, item) => sum + item.soldiers, 0)}兵</span>
               <Button variant="quiet" size="small" onClick={() => setOrders(current => current.filter(item => item.id !== order.id))}>取消</Button>
             </li>
           ))}</ol>}
@@ -110,11 +110,11 @@ export default function StrategyFlowEntry() {
         ),
         invasion: ({ from, to }) => (
           <InvasionScreen from={cityView(from)} to={cityView(to)} defenders={knightsIn(to).length}
-            knights={knightsOf(from)} unitTypes={UNIT_TYPES} soldierPool={soldiersLeft(from)}
+            knights={knightsOf(from)} unitTypes={UNIT_TYPES} indirectUnitTypes={INDIRECT_UNIT_TYPES} soldierPool={soldiersLeft(from)}
             onCancel={nav.pop}
             onConfirm={draft => {
               setOrders(current => [...current, { id: (current.at(-1)?.id ?? 0) + 1, from, to, draft }])
-              add(`予約: ${name(from)} → ${name(to)}（${draft.length}人）`)
+              add(`予約: ${name(from)} → ${name(to)}（${draft.units.length}部隊）`)
               nav.popTo('cityCommand')
             }} />
         ),

@@ -34,6 +34,8 @@ const knight = (id: string, name: string, cityId: string, subtitle: string, lead
   return {
     id, name, cityId, subtitle, defaultUnitType, maxSoldiers: leadership * 5,
     unitTypes: classUnitTypes[subtitle.split(' / ')[0] ?? ''] ?? ['infantry'],
+    commandRank: subtitle.includes('領主') ? 1 : undefined,
+    indirectSoldiers: Math.floor(leadership * 5 / 2),
     portrait: character ? createElement(RepositoryPortrait, { character }) : undefined,
     stats: [{ label: '統率', value: leadership }, { label: '武力', value: strength }, { label: '知力', value: intelligence }],
   }
@@ -91,6 +93,9 @@ export const UNIT_TYPES: UnitTypeView[] = [
   { id: 'cavalry', name: '騎兵', description: '移動が速い' },
   { id: 'mage', name: '魔術師', description: '魔法で攻撃する' },
 ]
+
+/** Unit types of the units a commander leads indirectly */
+export const INDIRECT_UNIT_TYPES = ['infantry', 'archer']
 
 export const CITY_MAP = Object.fromEntries(CITIES.map(city => [city.id, city]))
 

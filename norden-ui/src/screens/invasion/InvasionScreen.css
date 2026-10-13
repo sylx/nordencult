@@ -17,6 +17,17 @@
   border-radius: 5px;
 }
 .norden-invasion-unit .norden-knight-card { width: 100%; }
+.norden-invasion-unit.is-commander { background: rgb(255 246 214 / 0.7); border-color: #b38d52; box-shadow: inset 0 0 0 1px #fff9e6; }
+.norden-invasion-unit.is-indirect { background: rgb(255 255 255 / 0.25); border-style: dashed; }
+.norden-invasion-indirect { display: flex; align-items: baseline; gap: 10px; }
+.norden-invasion-indirect span { font-size: 12px; color: #8a7050; }
+.norden-invasion-indirect .norden-button { margin-left: auto; }
+.norden-invasion-pick { display: inline-flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+.norden-invasion-role { padding: 1px 8px; font-size: 12px; font-weight: 700; color: #6a5030; background: #fff4d580; border: 1px solid #b38d5280; border-radius: 3px; }
+.norden-invasion-role.is-commander { color: #fff4d5; background: #8a5a20; border-color: #6a4010; }
+.norden-invasion-count { margin: 0; font-size: 13px; color: #8a7050; text-align: right; }
+.norden-invasion-count b { font-size: 16px; color: #2a1a0a; }
+.norden-invasion-add-indirect { justify-self: start; }
 
 .norden-invasion-summary { white-space: nowrap; }
 .norden-invasion-total { display: inline-flex; align-items: baseline; gap: 6px; font-size: 15px; }
