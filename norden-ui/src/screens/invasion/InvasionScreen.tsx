@@ -216,7 +216,7 @@ export default function InvasionScreen({
                 const isCommander = knight === commander
                 return (
                   <section key={item.key} className={`norden-invasion-unit ${isCommander ? 'is-commander' : ''}`} aria-label={`${knight.name}の部隊`}>
-                    <KnightCard knight={{ ...knight, stats: undefined }} compact
+                    <KnightCard knight={{ ...knight, subtitle: undefined, stats: undefined }} compact className="norden-invasion-unit-card"
                       aside={isCommander
                         ? <span className="norden-invasion-role is-commander">軍団長</span>
                         : <span className="norden-invasion-pick">

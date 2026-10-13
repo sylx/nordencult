@@ -17,6 +17,18 @@
   border-radius: 5px;
 }
 .norden-invasion-unit .norden-knight-card { width: 100%; }
+/* face | name, and the buttons under the name */
+.norden-invasion-unit .norden-invasion-unit-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 2px 10px;
+  min-height: 0;
+  padding: 8px 10px;
+}
+.norden-invasion-unit-card .norden-knight-face { grid-row: span 2; width: 48px; }
+.norden-invasion-unit-card .norden-knight-info { min-width: 0; }
+.norden-invasion-unit-card .norden-knight-aside { grid-column: 2; justify-self: end; margin-left: 0; }
 .norden-invasion-unit.is-commander { background: rgb(255 246 214 / 0.7); border-color: #b38d52; box-shadow: inset 0 0 0 1px #fff9e6; }
 .norden-invasion-unit.is-indirect { background: rgb(255 255 255 / 0.25); border-style: dashed; }
 .norden-invasion-indirect { display: flex; align-items: baseline; gap: 10px; }
