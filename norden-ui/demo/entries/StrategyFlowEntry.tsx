@@ -3,6 +3,7 @@ import { Button, CityCommandScreen, InvasionScreen, MapPickScreen, ScreenHost, u
 import type { CityCommandId, InvasionDraft, KnightView } from '../../src'
 import { CITY_MAP, FACTIONS, INDIRECT_UNIT_TYPES, MORALE, PLAYER, TURN, UNIT_TYPES, cityView, invasionTargets, knightsIn, playerCities } from '../mock/data'
 import MockMap from '../mock/MockMap'
+import { mockUnitPower } from '../mock/unitPower'
 import type { MapRoad } from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
 
@@ -110,7 +111,7 @@ export default function StrategyFlowEntry() {
         ),
         invasion: ({ from, to }) => (
           <InvasionScreen from={cityView(from)} to={cityView(to)} defenders={knightsIn(to).length}
-            knights={knightsOf(from)} unitTypes={UNIT_TYPES} indirectUnitTypes={INDIRECT_UNIT_TYPES} soldierPool={soldiersLeft(from)} morale={MORALE}
+            knights={knightsOf(from)} unitTypes={UNIT_TYPES} indirectUnitTypes={INDIRECT_UNIT_TYPES} soldierPool={soldiersLeft(from)} morale={MORALE} unitPower={mockUnitPower}
             onCancel={nav.pop}
             onConfirm={draft => {
               setOrders(current => [...current, { id: (current.at(-1)?.id ?? 0) + 1, from, to, draft }])

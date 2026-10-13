@@ -119,7 +119,8 @@ describe('InvasionScreen', () => {
   })
 
   it('pictures the units with their soldiers and morale, and the empty slots', async () => {
-    setup({ soldierPool: 2000, maxUnits: 4, morale: 70,
+    const unitPower = vi.fn((unit: { soldiers: number }, commander: string) => ({ attack: unit.soldiers / 10, defense: commander === 'k1' ? 120 : 0 }))
+    setup({ soldierPool: 2000, maxUnits: 4, morale: 70, unitPower,
       unitTypes: unitTypes.map(type => ({ ...type, image: `/units/${type.id}.png` })) })
     const formation = within(screen.getByRole('list', { name: '編成した部隊' }))
     expect(formation.getAllByRole('listitem').map(slot => slot.textContent)).toEqual(['空き', '空き', '空き', '空き'])
@@ -129,16 +130,22 @@ describe('InvasionScreen', () => {
     const commander = within(formation.getByRole('listitem', { name: 'エルネスト' }))
     expect(commander.getByText('騎兵')).toBeInTheDocument()
     expect(commander.getByText('軍団長')).toBeInTheDocument()
-    expect(commander.getByText('400')).toBeInTheDocument()
+    expect(commander.getByRole('meter', { name: 'エルネストの兵数' })).toHaveAttribute('aria-valuetext', '400 / 400')
     expect(commander.getByRole('meter', { name: 'エルネストの士気' })).toHaveAttribute('aria-valuenow', '70')
     expect(formation.getByRole('listitem', { name: 'エルネスト' }).querySelector('img')).toHaveAttribute('src', '/units/cavalry.png')
+    // the knight's face (their initial without a portrait), clipped round at the top left
+    expect(formation.getByRole('listitem', { name: 'エルネスト' }).querySelector('.norden-invasion-slot-face')).toHaveTextContent('エ')
+    expect(commander.getByText('攻撃').nextElementSibling).toHaveTextContent('40')
+    expect(commander.getByText('防御').nextElementSibling).toHaveTextContent('120')
     const indirect = within(formation.getByRole('listitem', { name: '間接指揮部隊1' }))
-    expect(indirect.getByText('間接指揮')).toBeInTheDocument()
-    expect(indirect.getByText('150')).toBeInTheDocument()
+    expect(indirect.getByText('間接指揮（エルネスト）')).toBeInTheDocument()
+    expect(indirect.getByRole('meter', { name: '間接指揮部隊1の兵数' })).toHaveAttribute('aria-valuetext', '150 / 150')
+    expect(unitPower).toHaveBeenCalledWith({ knightId: null, unitType: 'infantry', soldiers: 150 }, 'k1')
     expect(formation.getAllByText('空き')).toHaveLength(2)
 
     fireEvent.change(screen.getByRole('spinbutton', { name: 'エルネストの兵数（数値）' }), { target: { value: '300' } })
-    expect(commander.getByText('300')).toBeInTheDocument()
+    expect(commander.getByRole('meter', { name: 'エルネストの兵数' })).toHaveAttribute('aria-valuenow', '300')
+    expect(commander.getByText('攻撃').nextElementSibling).toHaveTextContent('30')
   })
 
   it('offers only the unit types a knight can lead', async () => {

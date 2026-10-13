@@ -35,14 +35,14 @@
 .norden-invasion-remaining { margin-left: 8px; font-size: 12px; color: #c8b490; }
 .norden-invasion-problem { min-width: 14em; font-size: 12px; color: #f0b090; }
 
-.norden-invasion-formation { display: grid; gap: 6px; width: 216px; margin: 0; padding: 0; list-style: none; color: #2a1a0a; }
+.norden-invasion-formation { display: grid; gap: 6px; width: 276px; margin: 0; padding: 0; list-style: none; color: #2a1a0a; }
 .norden-invasion-slot {
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 60px 1fr auto;
   align-items: center;
   gap: 8px;
-  min-height: 72px;
-  padding: 4px 8px 4px 4px;
+  min-height: 70px;
+  padding: 3px 8px 3px 3px;
   background: rgb(255 255 255 / 0.4);
   border: 1px solid rgb(0 0 0 / 0.12);
   border-radius: 5px;
@@ -59,15 +59,47 @@
   border-style: dashed;
   border-color: rgb(0 0 0 / 0.1);
 }
-.norden-invasion-slot-art { display: flex; align-items: flex-end; justify-content: center; width: 64px; height: 64px; font-size: 24px; font-weight: 700; color: #8a7050; }
-.norden-invasion-slot-art img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; filter: drop-shadow(0 2px 2px #38251040); }
+.norden-invasion-slot-art {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 60px;
+  height: 64px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #8a7050;
+}
+.norden-invasion-slot-art > img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; filter: drop-shadow(0 2px 2px #38251040); }
+.norden-invasion-slot-face {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  overflow: hidden;
+  font-size: 13px;
+  color: #fff4d5;
+  background: #6a5030;
+  border: 2px solid #d8b25a;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px #38251060;
+}
+.norden-invasion-slot.is-indirect .norden-invasion-slot-face { border-color: #a89070; border-style: dashed; }
+.norden-invasion-slot-face > * { display: block; width: 100%; height: 100%; object-fit: cover; }
 .norden-invasion-slot-info { display: grid; gap: 1px; min-width: 0; }
 .norden-invasion-slot-name { display: flex; align-items: center; gap: 6px; font-size: 14px; }
 .norden-invasion-slot-name .norden-invasion-role { padding: 0 6px; font-size: 11px; }
 .norden-invasion-slot-leader { overflow: hidden; font-size: 11px; color: #8a7050; white-space: nowrap; text-overflow: ellipsis; }
-.norden-invasion-slot-soldiers { font-size: 12px; color: #6a5030; }
-.norden-invasion-slot-soldiers b { font-size: 16px; color: #2a1a0a; font-variant-numeric: tabular-nums; }
-.norden-invasion-slot-morale { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #6a5030; }
-.norden-invasion-slot-morale .norden-stat-bar { flex: 1; gap: 4px; }
-.norden-invasion-slot-morale .norden-stat-bar-graphic { height: 14px; }
-.norden-invasion-slot-morale .norden-stat-bar-value { font-size: 12px; }
+.norden-invasion-slot-gauge { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #6a5030; }
+.norden-invasion-slot-gauge > span:first-child { flex-shrink: 0; width: 2.2em; }
+.norden-invasion-slot-gauge .norden-stat-bar { flex: 1; gap: 4px; }
+.norden-invasion-slot-gauge .norden-stat-bar-graphic { height: 13px; }
+.norden-invasion-slot-gauge .norden-stat-bar-value { min-width: 4ch; font-size: 12px; }
+.norden-invasion-slot-power { display: grid; gap: 4px; margin: 0; padding-left: 8px; border-left: 1px solid #8a705040; }
+.norden-invasion-slot-power div { display: grid; justify-items: center; }
+.norden-invasion-slot-power dt { font-size: 10px; color: #8a7050; }
+.norden-invasion-slot-power dd { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }

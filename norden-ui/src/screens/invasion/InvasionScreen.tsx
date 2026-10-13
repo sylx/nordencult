@@ -42,6 +42,8 @@ export interface InvasionScreenProps {
   soldierPool: number
   /** Morale of the starting city's soldiers (0..100), which every unit has. Omitted: not shown */
   morale?: number
+  /** The host's basic attack and defense of a unit led by its knight (or indirectly by `commander`). Omitted: not shown */
+  unitPower?: (unit: InvasionAssignment, commander: string) => { attack: number; defense: number }
   /** Soldiers step of the sliders */
   soldierStep?: number
   /** The host's rules. Return why the army cannot be ordered, or null */
@@ -74,7 +76,7 @@ function draftProblem(units: readonly InvasionAssignment[]) {
  * While there is room, the commander can also lead units without a knight (indirectUnitTypes).
  */
 export default function InvasionScreen({
-  from, to, defenders, knights, unitTypes, indirectUnitTypes, maxUnits = 6, soldierPool, morale, soldierStep = 10, validate,
+  from, to, defenders, knights, unitTypes, indirectUnitTypes, maxUnits = 6, soldierPool, morale, unitPower, soldierStep = 10, validate,
   onConfirm, onCancel, confirmLabel = '予約', layout = {}, skin = windowSkins.thin, children,
 }: InvasionScreenProps) {
   const [units, setUnits] = useState<readonly Slot[]>([])
@@ -123,9 +125,9 @@ export default function InvasionScreen({
   const change = (key: string, patch: Partial<InvasionAssignment>) =>
     update(current => current.map(item => (item.key === key ? { ...item, ...patch } : item)))
 
-  const knightsAt = layout.knights ?? { x: 24, y: 72 }
-  const armyAt = layout.army ?? { x: 464, y: 72 }
-  const formationAt = layout.formation ?? { x: 964, y: 72 }
+  const knightsAt = layout.knights ?? { x: 16, y: 16 }
+  const armyAt = layout.army ?? { x: 452, y: 16 }
+  const formationAt = layout.formation ?? { x: 948, y: 16 }
   const fullReason = `${maxUnits}部隊までです`
   // Only a knight of the commander's rank can take over from them
   const leadReason = commander?.commandRank ? `${commander.name}が出撃するため軍団長は変えられません` : undefined
@@ -247,25 +249,44 @@ export default function InvasionScreen({
             if (!item) return <li key={`empty-${index}`} className="norden-invasion-slot is-empty">空き</li>
             const name = names.get(item.key)!
             const type = unitTypes.find(unitType => unitType.id === item.unitType)
+            // An indirect unit shows the face of the commander who leads it
+            const leader = item.knightId === null ? commander : knightMap.get(item.knightId)
+            const power = unitPower && commander
+              ? unitPower({ knightId: item.knightId, unitType: item.unitType, soldiers: item.soldiers }, commander.id) : undefined
             return (
               <li key={item.key} aria-label={name}
                 className={`norden-invasion-slot ${index === 0 ? 'is-commander' : ''} ${item.knightId === null ? 'is-indirect' : ''}`}>
                 <span className="norden-invasion-slot-art">
                   {type?.image ? <img src={type.image} alt="" /> : type?.icon ?? type?.name.slice(0, 1)}
+                  {leader && (
+                    <span className="norden-invasion-slot-face">
+                      {leader.portraitSrc ? <img src={leader.portraitSrc} alt="" /> : leader.portrait ?? leader.name.slice(0, 1)}
+                    </span>
+                  )}
                 </span>
                 <span className="norden-invasion-slot-info">
                   <span className="norden-invasion-slot-name">
                     <b>{type?.name ?? item.unitType}</b>
                     {index === 0 && <span className="norden-invasion-role is-commander">軍団長</span>}
                   </span>
-                  <span className="norden-invasion-slot-leader">{item.knightId === null ? '間接指揮' : name}</span>
-                  <span className="norden-invasion-slot-soldiers">兵数 <b>{item.soldiers.toLocaleString()}</b></span>
+                  <span className="norden-invasion-slot-leader">{item.knightId === null ? `間接指揮（${commander?.name}）` : name}</span>
+                  <span className="norden-invasion-slot-gauge">
+                    <span>兵数</span>
+                    <StatBar label={`${name}の兵数`} value={item.soldiers}
+                      max={item.knightId === null ? indirectCapOf(commander) : capOf(leader)} tone="production" />
+                  </span>
                   {morale !== undefined && (
-                    <span className="norden-invasion-slot-morale">
+                    <span className="norden-invasion-slot-gauge">
                       <span>士気</span><StatBar label={`${name}の士気`} value={morale} max={100} tone="morale" />
                     </span>
                   )}
                 </span>
+                {power && (
+                  <dl className="norden-invasion-slot-power">
+                    <div><dt>攻撃</dt><dd>{power.attack}</dd></div>
+                    <div><dt>防御</dt><dd>{power.defense}</dd></div>
+                  </dl>
+                )}
               </li>
             )
           })}
