@@ -118,6 +118,29 @@ describe('InvasionScreen', () => {
     expect(button('リディアを加える')).toBeEnabled()
   })
 
+  it('pictures the units with their soldiers and morale, and the empty slots', async () => {
+    setup({ soldierPool: 2000, maxUnits: 4, morale: 70,
+      unitTypes: unitTypes.map(type => ({ ...type, image: `/units/${type.id}.png` })) })
+    const formation = within(screen.getByRole('list', { name: '編成した部隊' }))
+    expect(formation.getAllByRole('listitem').map(slot => slot.textContent)).toEqual(['空き', '空き', '空き', '空き'])
+
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('＋ 間接指揮部隊（歩兵・弓兵）'))
+    const commander = within(formation.getByRole('listitem', { name: 'エルネスト' }))
+    expect(commander.getByText('騎兵')).toBeInTheDocument()
+    expect(commander.getByText('軍団長')).toBeInTheDocument()
+    expect(commander.getByText('400')).toBeInTheDocument()
+    expect(commander.getByRole('meter', { name: 'エルネストの士気' })).toHaveAttribute('aria-valuenow', '70')
+    expect(formation.getByRole('listitem', { name: 'エルネスト' }).querySelector('img')).toHaveAttribute('src', '/units/cavalry.png')
+    const indirect = within(formation.getByRole('listitem', { name: '間接指揮部隊1' }))
+    expect(indirect.getByText('間接指揮')).toBeInTheDocument()
+    expect(indirect.getByText('150')).toBeInTheDocument()
+    expect(formation.getAllByText('空き')).toHaveLength(2)
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'エルネストの兵数（数値）' }), { target: { value: '300' } })
+    expect(commander.getByText('300')).toBeInTheDocument()
+  })
+
   it('offers only the unit types a knight can lead', async () => {
     setup({ knights: [
       { id: 'k1', name: 'エルネスト', maxSoldiers: 400, defaultUnitType: 'archer', unitTypes: ['infantry', 'cavalry'] },

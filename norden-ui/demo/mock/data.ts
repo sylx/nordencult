@@ -87,12 +87,19 @@ export const ROADS: [string, string][] = [
   ['P004', 'P006'], ['P015', 'P021'], ['P004', 'P021'], ['P020', 'P006'],
 ]
 
+// The battle screen's unit sprites when the catalog runs inside the game's repository (norden-battle/assets/units/)
+const unitImages = import.meta.glob<string>('../../../norden-battle/assets/units/*.png', { eager: true, query: '?url', import: 'default' })
+const unitImage = (id: string) => unitImages[`../../../norden-battle/assets/units/${id}.png`]
+
 export const UNIT_TYPES: UnitTypeView[] = [
-  { id: 'infantry', name: '歩兵', description: '守りに強い' },
-  { id: 'archer', name: '弓兵', description: '遠くから攻撃する' },
-  { id: 'cavalry', name: '騎兵', description: '移動が速い' },
-  { id: 'mage', name: '魔術師', description: '魔法で攻撃する' },
+  { id: 'infantry', name: '歩兵', description: '守りに強い', image: unitImage('infantry') },
+  { id: 'archer', name: '弓兵', description: '遠くから攻撃する', image: unitImage('archer') },
+  { id: 'cavalry', name: '騎兵', description: '移動が速い', image: unitImage('cavalry') },
+  { id: 'mage', name: '魔術師', description: '魔法で攻撃する', image: unitImage('mage') },
 ]
+
+/** Morale of a city's soldiers (the same everywhere in the demo) */
+export const MORALE = 70
 
 /** Unit types of the units a commander leads indirectly */
 export const INDIRECT_UNIT_TYPES = ['infantry', 'archer']

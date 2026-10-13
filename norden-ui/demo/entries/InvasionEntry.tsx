@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { InvasionScreen } from '../../src'
 import type { InvasionDraft } from '../../src'
-import { CITY_MAP, INDIRECT_UNIT_TYPES, KNIGHTS, UNIT_TYPES, cityView, knightsIn } from '../mock/data'
+import { CITY_MAP, INDIRECT_UNIT_TYPES, KNIGHTS, MORALE, UNIT_TYPES, cityView, knightsIn } from '../mock/data'
 import MockMap from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
 
@@ -21,7 +21,7 @@ export default function InvasionEntry() {
     stage={<>
       <MockMap routes={[{ from: 'P012', to: 'P004', color: '#ff6a3d' }]} />
       <InvasionScreen key={`${instance}-${pool}`} from={cityView('P012')} to={cityView('P004')} defenders={knightsIn('P004').length}
-        knights={knights} unitTypes={UNIT_TYPES} indirectUnitTypes={INDIRECT_UNIT_TYPES} soldierPool={pool}
+        knights={knights} unitTypes={UNIT_TYPES} indirectUnitTypes={INDIRECT_UNIT_TYPES} soldierPool={pool} morale={MORALE}
         validate={limit ? draft => (draft.units.length > 2 ? '一度に出撃できるのは2部隊までです' : null) : undefined}
         onConfirm={draft => add(`予約: ${describe(draft)}`)} onCancel={() => add('やめる')} />
     </>}

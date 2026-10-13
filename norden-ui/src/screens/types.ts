@@ -79,5 +79,7 @@ export interface UnitTypeView {
   id: string
   name: string
   icon?: ReactNode
+  /** Picture of the unit, facing right (e.g. the battle screen's unit sprite) */
+  image?: string
   description?: string
 }

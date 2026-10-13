@@ -5,13 +5,14 @@ export interface StatBarProps {
   label: string
   value: number
   max: number
-  tone?: 'agriculture' | 'commerce' | 'production'
+  tone?: 'agriculture' | 'commerce' | 'production' | 'morale'
 }
 
 const palettes = {
   agriculture: ['#355143', '#79a56b', '#dde9aa'],
   commerce: ['#82531f', '#d4a94c', '#fff0ae'],
   production: ['#394e67', '#799ab1', '#d3e8f1'],
+  morale: ['#6b2420', '#c25a3c', '#f6c9a0'],
 } as const
 
 /** An engraved metal gauge with a jewel fill, inset track and ten divisions. */

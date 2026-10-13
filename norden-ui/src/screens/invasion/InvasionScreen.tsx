@@ -6,6 +6,8 @@ import ChoiceGroup from '../../components/parts/ChoiceGroup'
 import QuantityInput from '../../components/parts/QuantityInput'
 import FactionMark from '../../components/parts/FactionMark'
 import Button from '../../components/parts/Button'
+import StatBar from '../../components/parts/StatBar'
+import { windowSkins } from '../../skins'
 import type { InfoWindowSkin } from '../../skins'
 import type { CityView, KnightView, UnitTypeView } from '../types'
 import '../screens.css'
@@ -38,6 +40,8 @@ export interface InvasionScreenProps {
   maxUnits?: number
   /** Soldiers available in the starting city, shared by the whole army */
   soldierPool: number
+  /** Morale of the starting city's soldiers (0..100), which every unit has. Omitted: not shown */
+  morale?: number
   /** Soldiers step of the sliders */
   soldierStep?: number
   /** The host's rules. Return why the army cannot be ordered, or null */
@@ -45,8 +49,9 @@ export interface InvasionScreenProps {
   onConfirm: (draft: InvasionDraft) => void
   onCancel: () => void
   confirmLabel?: string
-  /** Initial positions of the two windows */
-  layout?: { knights?: { x: number; y: number }; army?: { x: number; y: number } }
+  /** Initial positions of the windows: the knights, the army and the picture of its units */
+  layout?: { knights?: { x: number; y: number }; army?: { x: number; y: number }; formation?: { x: number; y: number } }
+  /** Frame of the windows; the thin one by default */
   skin?: InfoWindowSkin
   children?: ReactNode
 }
@@ -69,8 +74,8 @@ function draftProblem(units: readonly InvasionAssignment[]) {
  * While there is room, the commander can also lead units without a knight (indirectUnitTypes).
  */
 export default function InvasionScreen({
-  from, to, defenders, knights, unitTypes, indirectUnitTypes, maxUnits = 6, soldierPool, soldierStep = 10, validate,
-  onConfirm, onCancel, confirmLabel = '予約', layout = {}, skin, children,
+  from, to, defenders, knights, unitTypes, indirectUnitTypes, maxUnits = 6, soldierPool, morale, soldierStep = 10, validate,
+  onConfirm, onCancel, confirmLabel = '予約', layout = {}, skin = windowSkins.thin, children,
 }: InvasionScreenProps) {
   const [units, setUnits] = useState<readonly Slot[]>([])
   const serial = useRef(0)
@@ -120,10 +125,16 @@ export default function InvasionScreen({
 
   const knightsAt = layout.knights ?? { x: 24, y: 72 }
   const armyAt = layout.army ?? { x: 464, y: 72 }
+  const formationAt = layout.formation ?? { x: 964, y: 72 }
   const fullReason = `${maxUnits}部隊までです`
   // Only a knight of the commander's rank can take over from them
   const leadReason = commander?.commandRank ? `${commander.name}が出撃するため軍団長は変えられません` : undefined
+  // Names of the units: the knight's, or 間接指揮部隊1, 2… in order
+  const names = new Map<string, string>()
   let indirectNumber = 0
+  for (const item of units) {
+    names.set(item.key, item.knightId === null ? `間接指揮部隊${++indirectNumber}` : knightMap.get(item.knightId)?.name ?? item.knightId)
+  }
 
   const pickAction = (knight: KnightView) => {
     const unit = units.find(item => item.knightId === knight.id)
@@ -181,7 +192,7 @@ export default function InvasionScreen({
               <p className="norden-invasion-count">部隊 <b>{units.length}</b> / {maxUnits}</p>
               {units.map(item => {
                 if (item.knightId === null) {
-                  const name = `間接指揮部隊${++indirectNumber}`
+                  const name = names.get(item.key)!
                   return (
                     <section key={item.key} className="norden-invasion-unit is-indirect" aria-label={name}>
                       <header className="norden-invasion-indirect">
@@ -227,6 +238,38 @@ export default function InvasionScreen({
               )}
             </>}
         </div>
+      </InfoWindow>
+
+      <InfoWindow title="編成した部隊" showTitleBar={false} x={formationAt.x} y={formationAt.y} skin={skin}>
+        <ol className="norden-invasion-formation" aria-label="編成した部隊">
+          {Array.from({ length: maxUnits }, (_, index) => {
+            const item = units[index]
+            if (!item) return <li key={`empty-${index}`} className="norden-invasion-slot is-empty">空き</li>
+            const name = names.get(item.key)!
+            const type = unitTypes.find(unitType => unitType.id === item.unitType)
+            return (
+              <li key={item.key} aria-label={name}
+                className={`norden-invasion-slot ${index === 0 ? 'is-commander' : ''} ${item.knightId === null ? 'is-indirect' : ''}`}>
+                <span className="norden-invasion-slot-art">
+                  {type?.image ? <img src={type.image} alt="" /> : type?.icon ?? type?.name.slice(0, 1)}
+                </span>
+                <span className="norden-invasion-slot-info">
+                  <span className="norden-invasion-slot-name">
+                    <b>{type?.name ?? item.unitType}</b>
+                    {index === 0 && <span className="norden-invasion-role is-commander">軍団長</span>}
+                  </span>
+                  <span className="norden-invasion-slot-leader">{item.knightId === null ? '間接指揮' : name}</span>
+                  <span className="norden-invasion-slot-soldiers">兵数 <b>{item.soldiers.toLocaleString()}</b></span>
+                  {morale !== undefined && (
+                    <span className="norden-invasion-slot-morale">
+                      <span>士気</span><StatBar label={`${name}の士気`} value={morale} max={100} tone="morale" />
+                    </span>
+                  )}
+                </span>
+              </li>
+            )
+          })}
+        </ol>
       </InfoWindow>
 
       <div className="norden-screen-bottom-center">

@@ -122,7 +122,7 @@ function BattleUi() {
 | --- | --- | --- |
 | `CityCommandScreen` | 都市の切り替え ◀ ▶（左上）、都市情報ウィンドウ（都市情報・騎士・街道タブ）、ターン情報（右上）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `onSelectNeighbour`, `turnMenu`, `children`（ホストの追加HUD） |
 | `MapPickScreen` | 案内の帯と「やめる」 | `message`, `onCancel`, `cancelLabel` |
-| `InvasionScreen` | 出撃する騎士の選択ウィンドウ、軍団編成（部隊ごとの兵科と兵数）のウィンドウ、合計兵数と「やめる / 予約」 | `from` / `to: CityView`, `defenders`, `knights: KnightView[]`, `unitTypes`, `indirectUnitTypes`, `maxUnits`, `soldierPool`, `soldierStep`, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
+| `InvasionScreen` | 出撃する騎士の選択ウィンドウ、軍団編成（部隊ごとの兵科と兵数）のウィンドウ、編成した部隊の図（タイトルなしのウィンドウ）、合計兵数と「やめる / 予約」 | `from` / `to: CityView`, `defenders`, `knights: KnightView[]`, `unitTypes`, `indirectUnitTypes`, `maxUnits`, `soldierPool`, `morale`, `soldierStep`, `skin`（既定は thin）, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
 
 アクションツールバーのコマンドは `CITY_COMMAND_GROUPS` に定義しています。内政（建設・割当）、軍事（移動・侵攻・募兵・輸送）、研究、商人（購入・売却）と、最後にターン終了です。
 分類を押すと上にサブコマンドが開きます。`commandState={{ invade: { disabled: true, reason: '出撃できる騎士がいません' } }}` で無効にし、理由をツールチップに出します。
@@ -132,6 +132,7 @@ function BattleUi() {
 `indirectUnitTypes` を渡すと、騎士がいない部隊（間接指揮部隊）を軍団長の下に編成できます。兵科は `indirectUnitTypes` の中から選び、兵数の上限は軍団長の `indirectSoldiers`（無ければ `maxSoldiers`）です。騎士が1人もいなくなると間接指揮部隊も外れます。
 騎士の部隊の兵科は騎士の `unitTypes`（率いられる兵科の id。無ければ全兵科）に含まれるものだけを選べます。騎士を加えると、`defaultUnitType`（選べる兵科に無ければ選べる兵科の先頭）と、騎士の上限（`maxSoldiers`）と残りの兵数の小さい方で部隊に加わります。
 兵数の合計は `soldierPool` を超えません。軍団長がいない、兵数0の部隊がある、`validate` が理由を返した、のどれかに当たると「予約」を押せません。`onConfirm` には `{ commander, units }` を渡します。`units` は軍団長の部隊が先頭の `{ knightId, unitType, soldiers }[]` で、間接指揮部隊の `knightId` は `null` です。
+編成した部隊は右端のタイトルなしのウィンドウに、軍団長の部隊から順に縦に並べて図示します。兵科の画像（`UnitTypeView.image`。戦闘画面のユニット画像など右向きの絵）、兵数、士気（`morale`。出発都市の兵の士気で全部隊に共通。省略すると出さない）を出し、残りの枠は「空き」と出します。
 `unavailableReason` を持つ騎士は一覧に出ますが選べません。
 
 騎士の顔は `KnightView.portrait`（ReactNode）または `portraitSrc`（画像URL）で渡します。両方指定した場合は `portraitSrc` を優先します。省略すると頭文字を表示します。紋章は `FactionView.emblem`（画像URL）です。
