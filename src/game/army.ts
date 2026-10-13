@@ -10,6 +10,11 @@ const SOLDIERS_PER_LEADERSHIP = 5
 /** Most units of an invasion, those the commander leads indirectly included */
 export const MAX_UNITS = 6
 
+/** Morale of soldiers: 0..MAX_MORALE (the battle screen's scale) */
+export const MAX_MORALE = 100
+/** Morale of every city's soldiers at the start (provisional until training and transport come in) */
+export const INITIAL_MORALE = 70
+
 const PRODUCTION = new Map(CITY_LIST.map((c) => [c.id, c.production]))
 
 /** Soldiers a city can send out in a turn: its 生産 × 5 */

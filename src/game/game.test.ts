@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   addOrder, availableKnights, cancelOrder, charactersIn, commandRank, createInitialState, dateOf, endFactionTurn, GameRuleError,
-  indirectMaxSoldiers, invadeFromProblem, invasionTargets, maxSoldiers, neighbours, orderProblem, readPlayerFaction,
+  indirectMaxSoldiers, INITIAL_MORALE, invadeFromProblem, invasionTargets, maxSoldiers, neighbours, orderProblem, readPlayerFaction,
   resolveBattle, retreatCities, soldierPool, seasonOf, soldiersLeft, startNextBattle, turnOrder, type ArmyUnit,
   type BattleRetreat, type BattleWipeout, type GameState,
 } from '.'
@@ -195,6 +195,13 @@ describe('units', () => {
   it('takes the units into the battle', () => {
     const marching = startNextBattle(endStrategyPhase(addOrder(createInitialState('carta'), draft)))
     expect(marching.march?.current?.attacker.units).toEqual(units)
+  })
+
+  it('gives the units the morale of the city they set out from', () => {
+    const state = createInitialState('carta')
+    expect(state.cityMorale[FLUEN]).toBe(INITIAL_MORALE)
+    const marching = startNextBattle(endStrategyPhase(addOrder({ ...state, cityMorale: { ...state.cityMorale, [FLUEN]: 85 } }, draft)))
+    expect(marching.march?.current?.attacker.morale).toBe(85)
   })
 
   it('keeps the indirect units in the battle; the knight of the highest rank left takes over a commander who is gone', () => {

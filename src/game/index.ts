@@ -2,7 +2,7 @@
 export * from './types'
 export * from './actions'
 export * from './queries'
-export { MAX_UNITS, defaultUnitType, indirectMaxSoldiers, maxSoldiers, soldierPool, unitTypesOf } from './army'
+export { INITIAL_MORALE, MAX_MORALE, MAX_UNITS, defaultUnitType, indirectMaxSoldiers, maxSoldiers, soldierPool, unitTypesOf } from './army'
 export { DEFAULT_PLAYER_FACTION, createInitialState, readPlayerFaction } from './setup'
 export { createGameStore, type GameStore } from './store'
 export { GameContext, useGame } from './gameContext'

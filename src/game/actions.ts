@@ -1,3 +1,4 @@
+import { INITIAL_MORALE } from './army'
 import { commandRank, leadingKnight, orderProblem, ownerOf, retreatCities, turnOrder } from './queries'
 import type {
   Battle, BattleEndReason, BattleReport, BattleRetreat, BattleWinner, BattleWipeout, CharacterMove, CharacterState, GameState,
@@ -84,7 +85,7 @@ function createBattle(state: GameState, order: InvasionOrder): Battle | null {
     id: `battle-${state.serial}`,
     orderId: order.id,
     cityId: to,
-    attacker: { factionId, from, commander, knights, ...(units && { units }) },
+    attacker: { factionId, from, commander, knights, ...(units && { units }), morale: state.cityMorale[from] ?? INITIAL_MORALE },
     defender: {
       factionId: defender,
       knights: Object.keys(state.characters).sort()

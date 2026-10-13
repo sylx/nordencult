@@ -1,5 +1,6 @@
 import { CHARACTER_MAP, CHARACTER_START } from '../data/character'
 import { CITY_LIST } from '../data/city'
+import { INITIAL_MORALE } from './army'
 import { turnOrder } from './queries'
 import type { CharacterState, FactionId, GameState } from './types'
 import { isFactionId } from './world'
@@ -38,6 +39,7 @@ export function createInitialState(playerFaction: FactionId = DEFAULT_PLAYER_FAC
     playerFaction,
     cityOwners,
     characters,
+    cityMorale: Object.fromEntries(CITY_LIST.map((city) => [city.id, INITIAL_MORALE])),
     orders: [],
     march: null,
     lastBattle: null,

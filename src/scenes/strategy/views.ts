@@ -124,4 +124,9 @@ export function turnView(game: GameState): TurnView {
   }
 }
 
-export const UNIT_TYPE_VIEWS: readonly UnitTypeView[] = UNIT_TYPES
+/** The battle screen's unit sprites (norden-battle/assets/units/<unit type>.png), facing right */
+const UNIT_IMAGES = import.meta.glob<string>('../../../norden-battle/assets/units/*.png', { eager: true, query: '?url', import: 'default' })
+
+export const UNIT_TYPE_VIEWS: readonly UnitTypeView[] = UNIT_TYPES.map((type) => ({
+  ...type, image: UNIT_IMAGES[`../../../norden-battle/assets/units/${type.id}.png`],
+}))

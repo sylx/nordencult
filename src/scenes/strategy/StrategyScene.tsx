@@ -231,6 +231,7 @@ export default function StrategyScene() {
           <InvasionScreen from={cityView(game, from)} to={cityView(game, to)} defenders={charactersIn(game, to).length}
             knights={charactersIn(game, from).map((id) => knightView(game, id))} unitTypes={UNIT_TYPE_VIEWS}
             indirectUnitTypes={INDIRECT_UNIT_TYPES} maxUnits={MAX_UNITS} soldierPool={soldiersLeft(game, from)}
+            morale={game.cityMorale[from]}
             validate={(draft) => orderProblem(game, draftOrder(game.playerFaction, from, to, draft))}
             onCancel={nav.pop}
             onConfirm={(draft) => {

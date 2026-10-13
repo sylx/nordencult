@@ -18,6 +18,11 @@ export interface GameState {
   /** Current faction of each city (starts from the city data's belongTo); a city not listed is neutral */
   cityOwners: Readonly<Record<CityId, FactionId>>
   characters: Readonly<Record<CharacterId, CharacterState>>
+  /**
+   * Morale of each city's soldiers (0..MAX_MORALE), which every unit setting out from it has.
+   * Training in the city and soldiers transported in will change it; for now it stays where it starts
+   */
+  cityMorale: Readonly<Record<CityId, number>>
   /** Invasions ordered this turn, in the order they were made */
   orders: readonly InvasionOrder[]
   /** The march phase: orders still to resolve and the battle being fought */
@@ -72,7 +77,15 @@ export interface Battle {
   id: string
   orderId: string
   cityId: CityId
-  attacker: { factionId: FactionId; from: CityId; commander: CharacterId; knights: readonly CharacterId[]; units?: readonly ArmyUnit[] }
+  attacker: {
+    factionId: FactionId
+    from: CityId
+    commander: CharacterId
+    knights: readonly CharacterId[]
+    units?: readonly ArmyUnit[]
+    /** Morale of the units: their city's when they set out */
+    morale: number
+  }
   /** The city's faction (null for a neutral city) and the knights in it */
   defender: { factionId: FactionId | null; knights: readonly CharacterId[] }
 }
