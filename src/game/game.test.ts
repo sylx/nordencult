@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addOrder, availableKnights, cancelOrder, charactersIn, commandRank, createInitialState, dateOf, endFactionTurn, GameRuleError,
+  addOrder, availableKnights, cancelOrder, charactersIn, commandRank, createInitialState, dateOf, defenderArmy, endFactionTurn,
+  GameRuleError,
   indirectMaxSoldiers, INITIAL_MORALE, invadeFromProblem, invasionTargets, maxSoldiers, neighbours, orderProblem, readPlayerFaction,
   resolveBattle, retreatCities, soldierPool, seasonOf, soldiersLeft, startNextBattle, turnOrder, type ArmyUnit,
   type BattleRetreat, type BattleWipeout, type GameState,
@@ -195,6 +196,32 @@ describe('units', () => {
   it('takes the units into the battle', () => {
     const marching = startNextBattle(endStrategyPhase(addOrder(createInitialState('carta'), draft)))
     expect(marching.march?.current?.attacker.units).toEqual(units)
+  })
+
+  it('sends each knight with their default unit type when an order has no units', () => {
+    const marching = startNextBattle(endStrategyPhase(invadeAmbaria(['015', '016'])))
+    expect(marching.march?.current?.attacker.units).toEqual([
+      { knightId: '015', unitType: 'infantry', soldiers: maxSoldiers('015') },
+      { knightId: '016', unitType: 'cavalry', soldiers: maxSoldiers('016') },
+    ])
+  })
+
+  it('defends with a provisional army: the knights of the city, or a garrison without them', () => {
+    const state = createInitialState('carta')
+    const army = defenderArmy(state, AMBARIA, 'leonis', ['013'])
+    // 生産 × 5 soldiers shared out within the knight's maxSoldiers
+    expect(army).toEqual({
+      factionId: 'leonis', knights: ['013'], commander: '013', morale: INITIAL_MORALE,
+      units: [{ knightId: '013', unitType: 'archer', soldiers: Math.min(maxSoldiers('013'), Math.floor(soldierPool(AMBARIA) / 10) * 10) }],
+    })
+    // マルクス (029) is the head of カルタ書院: they lead the defence of フルーエン
+    expect(defenderArmy(state, FLUEN, 'carta', ['015', '016', '029']).commander).toBe('029')
+    const garrison = defenderArmy(state, AMBARIA, null, [])
+    expect(garrison.commander).toBeNull()
+    expect(garrison.units).toEqual([
+      { knightId: null, unitType: 'infantry', soldiers: Math.floor(soldierPool(AMBARIA) / 2 / 10) * 10 },
+      { knightId: null, unitType: 'infantry', soldiers: Math.floor(soldierPool(AMBARIA) / 2 / 10) * 10 },
+    ])
   })
 
   it('gives the units the morale of the city they set out from', () => {

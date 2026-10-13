@@ -1,4 +1,5 @@
-import { INITIAL_MORALE } from './army'
+import { defaultUnitType, maxSoldiers } from './army'
+import { defenderArmy } from './defense'
 import { commandRank, leadingKnight, orderProblem, ownerOf, retreatCities, turnOrder } from './queries'
 import type {
   Battle, BattleEndReason, BattleReport, BattleRetreat, BattleWinner, BattleWipeout, CharacterMove, CharacterState, GameState,
@@ -79,18 +80,18 @@ function createBattle(state: GameState, order: InvasionOrder): Battle | null {
   const leader = leadingKnight(state, knights)!
   const commander = knights.includes(order.commander) && commandRank(state, order.commander) >= commandRank(state, leader)
     ? order.commander : leader
-  const units = order.units?.filter((u) => u.knightId === null || knights.includes(u.knightId))
+  // An order without units (none chosen) sends each knight with their default unit type, as many soldiers as they lead
+  const units = (order.units ?? knights.map((id) => ({ knightId: id, unitType: defaultUnitType(id), soldiers: maxSoldiers(id) })))
+    .filter((u) => u.knightId === null || knights.includes(u.knightId))
   const defender = ownerOf(state, to) ?? null
+  const defenders = Object.keys(state.characters).sort()
+    .filter((id) => state.characters[id].cityId === to && state.characters[id].factionId === defender)
   return {
     id: `battle-${state.serial}`,
     orderId: order.id,
     cityId: to,
-    attacker: { factionId, from, commander, knights, ...(units && { units }), morale: state.cityMorale[from] ?? INITIAL_MORALE },
-    defender: {
-      factionId: defender,
-      knights: Object.keys(state.characters).sort()
-        .filter((id) => state.characters[id].cityId === to && state.characters[id].factionId === defender),
-    },
+    attacker: { factionId, from, commander, knights, units, morale: state.cityMorale[from] },
+    defender: defenderArmy(state, to, defender, defenders),
   }
 }
 

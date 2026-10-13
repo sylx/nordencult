@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   BattleScreen, lineBarks, SIDE_TEAM, type BarkSource, type BattleCutInTexts,
-  type RetreatDestinations, type RetreatReport, type WipeoutReport,
+  type RetreatDestinations, type RetreatReport, type UnitStatus, type WipeoutReport,
 } from '@norden/battle-runtime'
 import { TEAM_DEFS, type TeamId } from '@norden/map-runtime/core/units'
 import { FACTION_MAP } from 'norden-strategy'
@@ -12,12 +12,13 @@ import { CITY_MAP } from '../../data/city'
 import { pickVoiceLine } from '../../data/voiceLines'
 import { UNIT_TYPE_MAP } from '../../data/unitTypes'
 import {
-  resolveBattle, retreatCities, useGame, type Battle, type BattleEndReason, type BattleRetreat, type BattleSide, type BattleWinner,
+  resolveBattle, retreatCities, useGame, type ArmyUnit, type Battle, type BattleArmy, type BattleEndReason, type BattleRetreat, type BattleSide, type BattleWinner,
   type BattleWipeout, type GameState,
 } from '../../game'
 import { useScene } from '../sceneContext'
 import type { SceneProps } from '../types'
 import { loadBattleMap, type BattleMap } from './battleMap'
+import { battleTroops } from './battleTroops'
 import './BattleScene.css'
 
 /** Name of a faction (null / undefined: neutral) */
@@ -43,15 +44,14 @@ function battleCutInTexts(battle: Battle): BattleCutInTexts {
 }
 
 /**
- * What units say (voiceLines.json), in the voice of the knights of their side. For now the units are
- * norden-battle's placeholders, not the knights' own troops, so a unit speaks as the
- * knight of its side picked by its commander's face; a side with no knights uses the
- * common lines
+ * What units say (voiceLines.json), in the voice of the knight leading them: a knight's unit
+ * speaks as the knight, a unit led indirectly as its side's commander; units nobody leads use
+ * the common lines
  */
-function battleBarks(battle: Battle): BarkSource {
+function battleBarks(battle: Battle, knightOf: (status: UnitStatus) => string | null): BarkSource {
   return lineBarks((situation, { unit, status }) => {
-    const knights = unit.team === SIDE_TEAM.attacker ? battle.attacker.knights : battle.defender.knights
-    return pickVoiceLine(situation, knights.length ? CHARACTER_MAP[knights[status.face % knights.length]] : undefined)
+    const army = unit.team === SIDE_TEAM.attacker ? battle.attacker : battle.defender
+    return pickVoiceLine(situation, CHARACTER_MAP[knightOf(status) ?? army.commander ?? ''])
   })
 }
 
@@ -66,9 +66,9 @@ function battleRetreats(game: GameState, battle: Battle): RetreatDestinations {
 }
 
 /**
- * The side and knight of a unit the battle screen reports. The unit's troop id
- * is its knight's id when the side's troops are made from its knights; the
- * placeholder troops of now are not, so they have no knight.
+ * The side and knight of a unit the battle screen reports. The troop id of a
+ * knight's unit is the knight's id (battleTroops); units led indirectly or by
+ * nobody have no knight.
  */
 function sideAndKnight(battle: Battle, { unit, troopId }: RetreatReport | WipeoutReport) {
   const side: BattleSide = unit.team === SIDE_TEAM.attacker ? 'attacker' : 'defender'
@@ -116,7 +116,8 @@ function Battlefield({ battle }: { battle: Battle }) {
   const [error, setError] = useState('')
   const { from } = battle.attacker
   const to = battle.cityId
-  const barks = useMemo(() => battleBarks(battle), [battle])
+  const troops = useMemo(() => battleTroops(battle), [battle])
+  const barks = useMemo(() => battleBarks(battle, troops.knightOf), [battle, troops])
   const retreatTo = useMemo(() => battleRetreats(game, battle), [game, battle])
   /** Units that retreated (or were captured trying), handed to resolveBattle */
   const [retreats, setRetreats] = useState<readonly BattleRetreat[]>([])
@@ -140,7 +141,7 @@ function Battlefield({ battle }: { battle: Battle }) {
       <div className="battle-scene__field">
         {map ? (
           <BattleScreen
-            map={map.data} cutInTexts={battleCutInTexts(battle)} barks={barks} retreats={retreatTo}
+            map={map.data} troops={troops.troops} cutInTexts={battleCutInTexts(battle)} barks={barks} retreats={retreatTo}
             onRetreat={(report) => setRetreats((list) => [...list, toBattleRetreat(battle, report)])}
             onWipeout={(report) => setWipeouts((list) => [...list, toBattleWipeout(battle, report)])}
             onEnd={(outcome) => decide(outcome.winner, outcome.reason)} endLabel="戦闘の結果へ"
@@ -187,18 +188,37 @@ function Battlefield({ battle }: { battle: Battle }) {
   )
 }
 
+/** A unit as text, e.g. 騎兵 400 */
+const unitLabel = (unit: ArmyUnit) => `${UNIT_TYPE_MAP[unit.unitType]?.name ?? unit.unitType} ${unit.soldiers.toLocaleString()}`
+
+/** A side's knights with their units, and the units no knight of their own leads */
+function ArmyList({ army, empty }: { army: BattleArmy; empty?: string }) {
+  const unitOf = (id: string) => {
+    const unit = army.units.find((u) => u.knightId === id)
+    return unit && unitLabel(unit)
+  }
+  const others = army.units.filter((u) => u.knightId === null)
+  return (
+    <>
+      <KnightList ids={army.knights} compact notes={(id) => (id === army.commander ? ['軍団長'] : [])} aside={unitOf} empty={empty} />
+      {others.length > 0 && (
+        <p className="battle-side__from">
+          {army.commander ? '間接指揮' : '守備隊'}: {others.map(unitLabel).join('・')}
+        </p>
+      )}
+      <p className="battle-side__from">士気 {army.morale}</p>
+    </>
+  )
+}
+
 function BattleHeader({ battle }: { battle: Battle }) {
   const { attacker, defender } = battle
-  const unitOf = (id: string) => {
-    const unit = attacker.units?.find((u) => u.knightId === id)
-    return unit && `${UNIT_TYPE_MAP[unit.unitType]?.name ?? unit.unitType} ${unit.soldiers.toLocaleString()}`
-  }
   return (
     <header className="battle-header">
       <section className="battle-side battle-side--attacker">
         <h2><span className="battle-side__role">攻撃</span><FactionLabel factionId={attacker.factionId} /></h2>
         <p className="battle-side__from">{CITY_MAP[attacker.from]?.name}から出撃</p>
-        <KnightList ids={attacker.knights} compact notes={(id) => (id === attacker.commander ? ['軍団長'] : [])} aside={unitOf} />
+        <ArmyList army={attacker} />
       </section>
       <div className="battle-header__city">
         <span>{CITY_MAP[battle.cityId]?.name}</span>
@@ -207,7 +227,7 @@ function BattleHeader({ battle }: { battle: Battle }) {
       <section className="battle-side battle-side--defender">
         <h2><span className="battle-side__role">防衛</span><FactionLabel factionId={defender.factionId} /></h2>
         <p className="battle-side__from">{CITY_MAP[battle.cityId]?.name}の守備</p>
-        <KnightList ids={defender.knights} compact empty="守備の騎士はいません。" />
+        <ArmyList army={defender} empty="守備の騎士はいません。" />
       </section>
     </header>
   )

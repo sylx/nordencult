@@ -73,21 +73,27 @@ export interface MarchState {
   current: Battle | null
 }
 
+/** A side of a battle: its knights and the units it fights with (the battle screen's troops) */
+export interface BattleArmy {
+  /** null: a neutral city's defenders */
+  factionId: FactionId | null
+  knights: readonly CharacterId[]
+  /** The knight who leads the side; null when no knight does (a city without knights) */
+  commander: CharacterId | null
+  /** Each knight's unit and those the commander (or nobody, without one) leads indirectly, MAX_UNITS at most */
+  units: readonly ArmyUnit[]
+  /** Morale of the units (0..MAX_MORALE): their city's */
+  morale: number
+}
+
 export interface Battle {
   id: string
   orderId: string
   cityId: CityId
-  attacker: {
-    factionId: FactionId
-    from: CityId
-    commander: CharacterId
-    knights: readonly CharacterId[]
-    units?: readonly ArmyUnit[]
-    /** Morale of the units: their city's when they set out */
-    morale: number
-  }
-  /** The city's faction (null for a neutral city) and the knights in it */
-  defender: { factionId: FactionId | null; knights: readonly CharacterId[] }
+  /** The invasion's army, from the city it set out from */
+  attacker: BattleArmy & { factionId: FactionId; from: CityId; commander: CharacterId }
+  /** The city's faction (null for a neutral city), the knights in it and the army they defend with (defenderArmy) */
+  defender: BattleArmy
 }
 
 export type BattleSide = 'attacker' | 'defender'
