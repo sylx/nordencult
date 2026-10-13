@@ -1,6 +1,6 @@
 import { CHARACTER_MAP } from '../data/character'
 import { CITY_LIST } from '../data/city'
-import { DEFAULT_UNIT_TYPES, type UnitTypeId } from '../data/unitTypes'
+import { DEFAULT_UNIT_TYPES, UNIT_TYPES_BY_CHARACTER_TYPE, type UnitTypeId } from '../data/unitTypes'
 import type { CharacterId, CityId } from './types'
 
 /** Provisional soldier rules until the battle rules (battle-editor) come in: numbers only scale the stats */
@@ -19,3 +19,7 @@ export const maxSoldiers = (characterId: CharacterId): number =>
 /** The unit type a character leads unless the player picks another */
 export const defaultUnitType = (characterId: CharacterId): UnitTypeId =>
   DEFAULT_UNIT_TYPES[CHARACTER_MAP[characterId]?.type ?? 'knight']
+
+/** The unit types a character can lead, by their type */
+export const unitTypesOf = (characterId: CharacterId): readonly UnitTypeId[] =>
+  UNIT_TYPES_BY_CHARACTER_TYPE[CHARACTER_MAP[characterId]?.type ?? 'knight']

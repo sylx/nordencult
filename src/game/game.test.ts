@@ -127,7 +127,7 @@ describe('turns', () => {
 })
 
 describe('units', () => {
-  const units = [{ knightId: '015', unitType: 'cavalry', soldiers: 300 }, { knightId: '016', unitType: 'archer', soldiers: 200 }]
+  const units = [{ knightId: '015', unitType: 'infantry', soldiers: 300 }, { knightId: '016', unitType: 'cavalry', soldiers: 200 }]
   const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, knights: ['015', '016'], units }
 
   it('takes the soldiers of an order from its city', () => {
@@ -142,6 +142,10 @@ describe('units', () => {
     expect(orderProblem(state, { ...draft, units: units.slice(0, 1) })).not.toBeNull()
     expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], soldiers: 0 }] })).not.toBeNull()
     expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], unitType: 'dragon' }] })).not.toBeNull()
+    // クラリス is a scholar (歩兵 only); エルヴィン is a knight (歩兵 or 騎兵)
+    expect(orderProblem(state, { ...draft, units: [{ ...units[0], unitType: 'cavalry' }, units[1]] })).not.toBeNull()
+    expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], unitType: 'archer' }] })).not.toBeNull()
+    expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], unitType: 'infantry' }] })).toBeNull()
     expect(orderProblem(state, { ...draft, units: [{ ...units[0], soldiers: maxSoldiers('015') + 5 }, units[1]] }))
       .not.toBeNull()
     expect(orderProblem({ ...state, orders: [{ ...draft, id: 'x', to: 'P026', knights: ['027'], units: [

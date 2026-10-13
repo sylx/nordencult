@@ -19,7 +19,16 @@ export const UNIT_TYPES: readonly UnitType[] = [
 
 export const UNIT_TYPE_MAP: Readonly<Record<string, UnitType>> = Object.fromEntries(UNIT_TYPES.map((t) => [t.id, t]))
 
-/** The unit type chosen first for each type of character */
+/** The unit types each type of character can lead: anyone can lead 歩兵 */
+export const UNIT_TYPES_BY_CHARACTER_TYPE: Readonly<Record<CharacterType, readonly UnitTypeId[]>> = {
+  knight: ['infantry', 'cavalry'],
+  hunter: ['infantry', 'archer'],
+  magician: ['infantry', 'mage'],
+  scholar: ['infantry'],
+  politician: ['infantry'],
+}
+
+/** The unit type chosen first for each type of character (one of UNIT_TYPES_BY_CHARACTER_TYPE) */
 export const DEFAULT_UNIT_TYPES: Readonly<Record<CharacterType, UnitTypeId>> = {
   knight: 'cavalry',
   hunter: 'archer',

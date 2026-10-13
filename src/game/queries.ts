@@ -1,5 +1,5 @@
 import { UNIT_TYPE_MAP } from '../data/unitTypes'
-import { maxSoldiers, soldierPool } from './army'
+import { maxSoldiers, soldierPool, unitTypesOf } from './army'
 import type { ArmyUnit, Battle, BattleSide, CharacterId, CityId, FactionId, GameState, InvasionOrder } from './types'
 import { CITY_IDS, FACTION_IDS, areNeighbours, neighbours } from './world'
 
@@ -86,6 +86,7 @@ function unitsProblem(state: GameState, from: CityId, knights: readonly Characte
   }
   for (const u of units) {
     if (!UNIT_TYPE_MAP[u.unitType]) return `${u.unitType} は兵科ではありません`
+    if (!unitTypesOf(u.knightId).some((id) => id === u.unitType)) return `${u.knightId} は${UNIT_TYPE_MAP[u.unitType].name}を率いられません`
     if (!Number.isInteger(u.soldiers) || u.soldiers <= 0) return '兵数が0の騎士がいます'
     if (u.soldiers > maxSoldiers(u.knightId)) return `${u.knightId} の兵数が率兵の上限を超えています`
   }
