@@ -12,7 +12,9 @@ import {
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
-import { UNIT_TYPE_VIEWS, cityName, cityView, dateLabel, factionView, knightView, mapSeason, phaseLabel, turnView } from './views'
+import {
+  UNIT_TYPE_VIEWS, cityName, cityView, dateLabel, factionView, knightView, mapSeason, phaseLabel, turnView, unitPower,
+} from './views'
 import './StrategyScene.css'
 
 /** How long each CPU faction's turn is shown (they do nothing yet) */
@@ -231,7 +233,7 @@ export default function StrategyScene() {
           <InvasionScreen from={cityView(game, from)} to={cityView(game, to)} defenders={charactersIn(game, to).length}
             knights={charactersIn(game, from).map((id) => knightView(game, id))} unitTypes={UNIT_TYPE_VIEWS}
             indirectUnitTypes={INDIRECT_UNIT_TYPES} maxUnits={MAX_UNITS} soldierPool={soldiersLeft(game, from)}
-            morale={game.cityMorale[from]}
+            morale={game.cityMorale[from]} unitPower={(unit, commander) => unitPower(game, from, unit, commander)}
             validate={(draft) => orderProblem(game, draftOrder(game.playerFaction, from, to, draft))}
             onCancel={nav.pop}
             onConfirm={(draft) => {

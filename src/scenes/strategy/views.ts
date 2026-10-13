@@ -1,5 +1,7 @@
 import { createElement } from 'react'
-import type { CityView, FactionView, KnightView, TurnView, UnitTypeView } from 'norden-ui'
+import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
+import type { UnitType } from '@norden/map-runtime/core/units'
+import type { CityView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView } from 'norden-ui'
 import { FACTION_MAP, PLACE_ART, PLACES, emblemUrl, type MapSeason, type PlaceType } from 'norden-strategy'
 import { CharacterImage } from '../../components/CharacterImage'
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
@@ -130,3 +132,20 @@ const UNIT_IMAGES = import.meta.glob<string>('../../../norden-battle/assets/unit
 export const UNIT_TYPE_VIEWS: readonly UnitTypeView[] = UNIT_TYPES.map((type) => ({
   ...type, image: UNIT_IMAGES[`../../../norden-battle/assets/units/${type.id}.png`],
 }))
+
+/**
+ * Basic attack and defense of a unit of an invasion from `from` (norden-battle's rules): its soldiers and unit type,
+ * the city's morale, and its knight's 統率・武力 (知力 for mages), or the commander's for an indirect unit
+ */
+export function unitPower(game: GameState, from: string, unit: InvasionAssignment, commander: string) {
+  const leader = CHARACTER_MAP[unit.knightId ?? commander]
+  const type = unit.unitType as UnitType
+  const power = {
+    type,
+    soldiers: unit.soldiers,
+    morale: game.cityMorale[from] ?? 0,
+    leadership: leader?.leadership ?? 0,
+    strength: leader ? mightFor(type, leader) : 0,
+  }
+  return { attack: basicAttack(power), defense: basicDefense(power) }
+}
