@@ -14,7 +14,7 @@ export interface MockFaction extends FactionView { id: string; color: string }
 export const FACTIONS: Record<string, MockFaction> = {
   carta: { id: 'carta', name: 'カルタ書院', color: '#5a3a7a', emblem: emblem('#5a3a7a', '書') },
   leonis: { id: 'leonis', name: 'レオニス帝国', color: '#a83a2a', emblem: emblem('#a83a2a', '獅') },
-  esuhara: { id: 'esuhara', name: 'エスハラ法王庁', color: '#2a6a8a', emblem: emblem('#2a6a8a', '灰') },
+  esuhara: { id: 'esuhara', name: 'エスハラ法王府', color: '#2a6a8a', emblem: emblem('#2a6a8a', '灰') },
 }
 
 export const PLAYER = 'carta'
