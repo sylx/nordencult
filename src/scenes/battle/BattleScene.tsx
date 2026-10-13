@@ -198,7 +198,7 @@ function BattleHeader({ battle }: { battle: Battle }) {
       <section className="battle-side battle-side--attacker">
         <h2><span className="battle-side__role">攻撃</span><FactionLabel factionId={attacker.factionId} /></h2>
         <p className="battle-side__from">{CITY_MAP[attacker.from]?.name}から出撃</p>
-        <KnightList ids={attacker.knights} compact aside={unitOf} />
+        <KnightList ids={attacker.knights} compact notes={(id) => (id === attacker.commander ? ['軍団長'] : [])} aside={unitOf} />
       </section>
       <div className="battle-header__city">
         <span>{CITY_MAP[battle.cityId]?.name}</span>

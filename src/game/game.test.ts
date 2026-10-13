@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addOrder, availableKnights, cancelOrder, charactersIn, createInitialState, dateOf, endFactionTurn, GameRuleError,
-  invadeFromProblem, invasionTargets, maxSoldiers, neighbours, orderProblem, readPlayerFaction, resolveBattle,
-  retreatCities, soldierPool, seasonOf, soldiersLeft, startNextBattle, turnOrder, type BattleRetreat, type BattleWipeout,
-  type GameState,
+  addOrder, availableKnights, cancelOrder, charactersIn, commandRank, createInitialState, dateOf, endFactionTurn, GameRuleError,
+  indirectMaxSoldiers, invadeFromProblem, invasionTargets, maxSoldiers, neighbours, orderProblem, readPlayerFaction,
+  resolveBattle, retreatCities, soldierPool, seasonOf, soldiersLeft, startNextBattle, turnOrder, type ArmyUnit,
+  type BattleRetreat, type BattleWipeout, type GameState,
 } from '.'
 
 // The demo of M001: カルタ書院 invades アンバリア (P004, レオニス帝国) from フルーエン (P012)
@@ -17,8 +17,10 @@ function endStrategyPhase(state: GameState): GameState {
   return state
 }
 
+/** マルクス (029) is the lord of フルーエン and the head of カルタ書院: they lead whenever they go */
 function invadeAmbaria(knights = ['015', '016']): GameState {
-  return addOrder(createInitialState('carta'), { factionId: 'carta', from: FLUEN, to: AMBARIA, knights })
+  const commander = knights.includes('029') ? '029' : knights[0]
+  return addOrder(createInitialState('carta'), { factionId: 'carta', from: FLUEN, to: AMBARIA, commander, knights })
 }
 
 describe('setup', () => {
@@ -62,7 +64,7 @@ describe('orders', () => {
 
   it('rejects orders breaking the rules', () => {
     const state = createInitialState('carta')
-    const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, knights: ['015'] }
+    const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015'] }
     expect(orderProblem(state, draft)).toBeNull()
     expect(orderProblem(state, { ...draft, knights: [] })).not.toBeNull()
     expect(orderProblem(state, { ...draft, to: 'P005' })).not.toBeNull() // not joined by a road
@@ -71,8 +73,19 @@ describe('orders', () => {
     expect(orderProblem(state, { ...draft, factionId: 'leonis', from: AMBARIA, to: FLUEN, knights: ['013'] }))
       .not.toBeNull() // not leonis's turn
     const ordered = addOrder(state, draft)
-    expect(orderProblem(ordered, { ...draft, knights: ['016'] })).not.toBeNull() // same target
+    expect(orderProblem(ordered, { ...draft, commander: '016', knights: ['016'] })).not.toBeNull() // same target
     expect(() => addOrder(ordered, draft)).toThrow(GameRuleError)
+  })
+
+  it('needs a commander among the knights; the lord or the head of the faction leads when they go', () => {
+    const state = createInitialState('carta')
+    const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '016', knights: ['015', '016'] }
+    expect(orderProblem(state, draft)).toBeNull()
+    expect(orderProblem(state, { ...draft, commander: '027' })).toBe('軍団長が出撃する騎士にいません')
+    expect(commandRank(state, '029')).toBe(2) // head of カルタ書院 (and lord of フルーエン)
+    expect(commandRank(state, '016')).toBe(0)
+    expect(orderProblem(state, { ...draft, knights: ['015', '016', '029'] })).toBe('029 が出撃するときは軍団長になります')
+    expect(orderProblem(state, { ...draft, commander: '029', knights: ['015', '016', '029'] })).toBeNull()
   })
 
   it('allows sending every knight of a city', () => {
@@ -113,7 +126,7 @@ describe('turns', () => {
     const battle = marching.march?.current
     expect(battle).toMatchObject({
       cityId: AMBARIA,
-      attacker: { factionId: 'carta', from: FLUEN, knights: ['015', '016'] },
+      attacker: { factionId: 'carta', from: FLUEN, commander: '015', knights: ['015', '016'] },
       defender: { factionId: 'leonis', knights: ['013'] },
     })
     expect(startNextBattle(marching)).toBe(marching)
@@ -127,8 +140,9 @@ describe('turns', () => {
 })
 
 describe('units', () => {
-  const units = [{ knightId: '015', unitType: 'infantry', soldiers: 300 }, { knightId: '016', unitType: 'cavalry', soldiers: 200 }]
-  const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, knights: ['015', '016'], units }
+  const units: ArmyUnit[] = [{ knightId: '015', unitType: 'infantry', soldiers: 300 }, { knightId: '016', unitType: 'cavalry', soldiers: 200 }]
+  const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015', '016'], units }
+  const indirect = (unitType: string, soldiers = 50): ArmyUnit => ({ knightId: null, unitType, soldiers })
 
   it('takes the soldiers of an order from its city', () => {
     const state = createInitialState('carta')
@@ -148,9 +162,26 @@ describe('units', () => {
     expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], unitType: 'infantry' }] })).toBeNull()
     expect(orderProblem(state, { ...draft, units: [{ ...units[0], soldiers: maxSoldiers('015') + 5 }, units[1]] }))
       .not.toBeNull()
-    expect(orderProblem({ ...state, orders: [{ ...draft, id: 'x', to: 'P026', knights: ['027'], units: [
+    expect(orderProblem({ ...state, orders: [{ ...draft, id: 'x', to: 'P026', commander: '027', knights: ['027'], units: [
       { knightId: '027', unitType: 'infantry', soldiers: 1000 },
     ] }] }, draft)).toBe('出撃できる兵が足りません')
+  })
+
+  it('checks the units the commander leads indirectly', () => {
+    const state = createInitialState('carta')
+    // クラリス leads 72 × 5 = 360 soldiers, so 180 in each indirect unit
+    expect(indirectMaxSoldiers('015')).toBe(180)
+    expect(orderProblem(state, { ...draft, units: [units[0], indirect('archer', 180), units[1], indirect('infantry')] })).toBeNull()
+    expect(orderProblem(state, { ...draft, units: [...units, indirect('cavalry')] })).toBe('間接指揮部隊は騎兵にできません')
+    expect(orderProblem(state, { ...draft, units: [...units, indirect('archer', 190)] })).toBe('間接指揮部隊の兵数が上限を超えています')
+    expect(orderProblem(state, { ...draft, units: [...units, indirect('infantry', 0)] })).toBe('兵数が0の部隊があります')
+  })
+
+  it('allows 6 units at most', () => {
+    const state = createInitialState('carta')
+    const sixth = [...units, ...Array.from({ length: 4 }, () => indirect('infantry'))]
+    expect(orderProblem(state, { ...draft, units: sixth })).toBeNull()
+    expect(orderProblem(state, { ...draft, units: [...sixth, indirect('infantry')] })).toBe('部隊は6つまでです')
   })
 
   it('says why a city cannot start an invasion', () => {
@@ -164,6 +195,18 @@ describe('units', () => {
   it('takes the units into the battle', () => {
     const marching = startNextBattle(endStrategyPhase(addOrder(createInitialState('carta'), draft)))
     expect(marching.march?.current?.attacker.units).toEqual(units)
+  })
+
+  it('keeps the indirect units in the battle; the knight of the highest rank left takes over a commander who is gone', () => {
+    const order = { ...draft, units: [...units, indirect('archer')] }
+    const marching = startNextBattle(endStrategyPhase(addOrder(createInitialState('carta'), order)))
+    expect(marching.march?.current?.attacker).toMatchObject({ commander: '015', units: [...units, indirect('archer')] })
+
+    let state = endStrategyPhase(addOrder(createInitialState('carta'), order))
+    state = { ...state, characters: { ...state.characters, '015': { ...state.characters['015'], cityId: 'P026' } } }
+    expect(startNextBattle(state).march?.current?.attacker).toMatchObject({
+      commander: '016', knights: ['016'], units: [units[1], indirect('archer')],
+    })
   })
 })
 

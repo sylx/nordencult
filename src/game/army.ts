@@ -7,6 +7,9 @@ import type { CharacterId, CityId } from './types'
 const SOLDIERS_PER_PRODUCTION = 5
 const SOLDIERS_PER_LEADERSHIP = 5
 
+/** Most units of an invasion, those the commander leads indirectly included */
+export const MAX_UNITS = 6
+
 const PRODUCTION = new Map(CITY_LIST.map((c) => [c.id, c.production]))
 
 /** Soldiers a city can send out in a turn: its 生産 × 5 */
@@ -23,3 +26,6 @@ export const defaultUnitType = (characterId: CharacterId): UnitTypeId =>
 /** The unit types a character can lead, by their type */
 export const unitTypesOf = (characterId: CharacterId): readonly UnitTypeId[] =>
   UNIT_TYPES_BY_CHARACTER_TYPE[CHARACTER_MAP[characterId]?.type ?? 'knight']
+
+/** Most soldiers of each unit a commander leads indirectly: half of what they lead themselves */
+export const indirectMaxSoldiers = (commanderId: CharacterId): number => Math.floor(maxSoldiers(commanderId) / 2)

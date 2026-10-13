@@ -43,14 +43,20 @@ export interface InvasionOrder {
   /** One city per order in M001. Joint invasions will give each knight their own */
   from: CityId
   to: CityId
+  /** The knight who leads the invasion: one of `knights`, the one of the highest commandRank */
+  commander: CharacterId
   knights: readonly CharacterId[]
-  /** Each knight's unit, in the order of `knights`. Omitted: no soldiers chosen (battles do not use them yet) */
+  /**
+   * The units, MAX_UNITS at most: each knight's, in the order of `knights`, and those the
+   * commander leads indirectly among them. Omitted: no soldiers chosen (battles do not use them yet)
+   */
   units?: readonly ArmyUnit[]
 }
 
-/** The unit type a knight leads into an invasion and its soldiers */
+/** A unit of an invasion: the knight leading it, its unit type and soldiers */
 export interface ArmyUnit {
-  knightId: CharacterId
+  /** null: no knight of its own; the commander leads it indirectly (INDIRECT_UNIT_TYPES only) */
+  knightId: CharacterId | null
   unitType: UnitTypeId
   soldiers: number
 }
@@ -66,7 +72,7 @@ export interface Battle {
   id: string
   orderId: string
   cityId: CityId
-  attacker: { factionId: FactionId; from: CityId; knights: readonly CharacterId[]; units?: readonly ArmyUnit[] }
+  attacker: { factionId: FactionId; from: CityId; commander: CharacterId; knights: readonly CharacterId[]; units?: readonly ArmyUnit[] }
   /** The city's faction (null for a neutral city) and the knights in it */
   defender: { factionId: FactionId | null; knights: readonly CharacterId[] }
 }

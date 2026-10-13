@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Banner, CITY_COMMAND_GROUPS, CUTIN_TEMPLATES, CityCommandScreen, CutInLayer, FactionMark, InvasionScreen, MapPickScreen,
-  ScreenHost, useCutIn, useScreenStack, type CityCommandId, type CommandState,
+  ScreenHost, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
 } from 'norden-ui'
 import { FACTION_MAP, MapView, type CityHighlight, type RoadHighlight, type StrategyMap } from 'norden-strategy'
 import { factionColor } from '../../data/factionColors'
+import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
-  addOrder, cancelOrder, charactersIn, citiesOf, endFactionTurn, invadeFromProblem, isPlayerTurn, openInvasionTargets,
-  orderProblem, soldiersLeft, startNextBattle, useGame,
+  MAX_UNITS, addOrder, cancelOrder, charactersIn, citiesOf, endFactionTurn, invadeFromProblem, isPlayerTurn, openInvasionTargets,
+  orderProblem, soldiersLeft, startNextBattle, useGame, type CityId, type FactionId, type InvasionOrder,
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
@@ -40,6 +41,12 @@ type StrategyScreens = {
 /** Commands not made yet (M001 has only the invasion) */
 const NOT_YET: CommandState = { disabled: true, reason: 'まだ使えません' }
 const COMMAND_IDS = CITY_COMMAND_GROUPS.flatMap((g) => g.commands?.map((c) => c.id) ?? [g.id as CityCommandId])
+
+/** The army of the invasion screen as an order (the screen does not confirm one without a commander) */
+const draftOrder = (factionId: FactionId, from: CityId, to: CityId, draft: InvasionDraft): Omit<InvasionOrder, 'id'> => ({
+  factionId, from, to, commander: draft.commander ?? '',
+  knights: draft.units.flatMap((u) => (u.knightId === null ? [] : [u.knightId])), units: draft.units,
+})
 
 /** The strategy map with the game UI (norden-ui's screens) on top */
 export default function StrategyScene() {
@@ -223,13 +230,11 @@ export default function StrategyScene() {
         invasion: ({ from, to }) => (
           <InvasionScreen from={cityView(game, from)} to={cityView(game, to)} defenders={charactersIn(game, to).length}
             knights={charactersIn(game, from).map((id) => knightView(game, id))} unitTypes={UNIT_TYPE_VIEWS}
-            soldierPool={soldiersLeft(game, from)}
-            validate={(draft) => orderProblem(game,
-              { factionId: game.playerFaction, from, to, knights: draft.map((u) => u.knightId), units: draft })}
+            indirectUnitTypes={INDIRECT_UNIT_TYPES} maxUnits={MAX_UNITS} soldierPool={soldiersLeft(game, from)}
+            validate={(draft) => orderProblem(game, draftOrder(game.playerFaction, from, to, draft))}
             onCancel={nav.pop}
             onConfirm={(draft) => {
-              update((s) => addOrder(s,
-                { factionId: s.playerFaction, from, to, knights: draft.map((u) => u.knightId), units: draft }))
+              update((s) => addOrder(s, draftOrder(s.playerFaction, from, to, draft)))
               popTo('cityCommand')
             }} />
         ),

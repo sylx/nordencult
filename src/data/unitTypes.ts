@@ -28,6 +28,9 @@ export const UNIT_TYPES_BY_CHARACTER_TYPE: Readonly<Record<CharacterType, readon
   politician: ['infantry'],
 }
 
+/** The unit types of the units a commander leads indirectly, without a knight of their own */
+export const INDIRECT_UNIT_TYPES: readonly UnitTypeId[] = ['infantry', 'archer']
+
 /** The unit type chosen first for each type of character (one of UNIT_TYPES_BY_CHARACTER_TYPE) */
 export const DEFAULT_UNIT_TYPES: Readonly<Record<CharacterType, UnitTypeId>> = {
   knight: 'cavalry',

@@ -6,8 +6,8 @@ import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
-  charactersIn, dateOf, defaultUnitType, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, unitTypesOf, type GameState,
-  type Season,
+  charactersIn, commandRank, dateOf, defaultUnitType, indirectMaxSoldiers, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf,
+  unitTypesOf, type GameState, type Season,
 } from '../../game'
 
 /** The game state turned into the view types norden-ui's screens draw */
@@ -64,6 +64,8 @@ export function knightView(game: GameState, id: string): KnightView {
     maxSoldiers: maxSoldiers(id),
     defaultUnitType: defaultUnitType(id),
     unitTypes: unitTypesOf(id),
+    commandRank: commandRank(game, id),
+    indirectSoldiers: indirectMaxSoldiers(id),
     unavailableReason: order ? '侵攻予約中' : undefined,
   }
 }

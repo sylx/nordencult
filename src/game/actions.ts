@@ -1,4 +1,4 @@
-import { orderProblem, ownerOf, retreatCities, turnOrder } from './queries'
+import { commandRank, leadingKnight, orderProblem, ownerOf, retreatCities, turnOrder } from './queries'
 import type {
   Battle, BattleEndReason, BattleReport, BattleRetreat, BattleWinner, BattleWipeout, CharacterMove, CharacterState, GameState,
   InvasionOrder,
@@ -74,13 +74,17 @@ function createBattle(state: GameState, order: InvasionOrder): Battle | null {
     return c?.cityId === from && c.factionId === factionId
   })
   if (knights.length === 0) return null
-  const units = order.units?.filter((u) => knights.includes(u.knightId))
+  // A commander who is gone hands the command (and the indirect units) to the knight of the highest rank left
+  const leader = leadingKnight(state, knights)!
+  const commander = knights.includes(order.commander) && commandRank(state, order.commander) >= commandRank(state, leader)
+    ? order.commander : leader
+  const units = order.units?.filter((u) => u.knightId === null || knights.includes(u.knightId))
   const defender = ownerOf(state, to) ?? null
   return {
     id: `battle-${state.serial}`,
     orderId: order.id,
     cityId: to,
-    attacker: { factionId, from, knights, ...(units && { units }) },
+    attacker: { factionId, from, commander, knights, ...(units && { units }) },
     defender: {
       factionId: defender,
       knights: Object.keys(state.characters).sort()

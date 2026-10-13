@@ -34,7 +34,7 @@ export function OrderList({ game, onCancel, onSelectCity }: Props) {
                     {cityName(o.from)} → {cityName(o.to)}
                   </button>
                   <span className="order-list__count">
-                    {o.knights.length}人{o.units && `・${soldiersOf(o).toLocaleString()}兵`}
+                    {o.units ? `${o.units.length}部隊・${soldiersOf(o).toLocaleString()}兵` : `${o.knights.length}人`}
                   </span>
                   {playerTurn && o.factionId === game.playerFaction && (
                     <Button variant="quiet" size="small" onClick={() => onCancel(o.id)}>取消</Button>
