@@ -285,7 +285,7 @@
     "agriculture": 140,
     "market": 560,
     "production": 220,
-    "belongTo": "dracken"
+    "belongTo": "nordis"
   },
   {
     "id": "P018",
@@ -318,7 +318,7 @@
     "market": 100,
     "production": 240,
     "special": "未知領域への入口",
-    "belongTo": "dracken"
+    "belongTo": "nordis"
   },
   {
     "id": "P020",
@@ -334,7 +334,7 @@
     "agriculture": 140,
     "market": 160,
     "production": 460,
-    "belongTo": "dracken"
+    "belongTo": "nordis"
   },
   {
     "id": "P021",
@@ -449,7 +449,7 @@
     "market": 240,
     "production": 140,
     "special": "魔法師ギルド本部",
-    "belongTo": "dracken"
+    "belongTo": "nordis"
   },
   {
     "id": "P028",

@@ -46,7 +46,7 @@ describe('setup', () => {
 
   it('plays the player first, then the others in FACTION_LIST order', () => {
     expect(turnOrder(createInitialState('leonis'))).toEqual(
-      ['leonis', 'valhardt', 'dracken', 'carta', 'aqua', 'rosalia', 'taurus', 'sede'])
+      ['leonis', 'valhardt', 'nordis', 'carta', 'aqua', 'rosalia', 'taurus', 'sede'])
   })
 })
 
