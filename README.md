@@ -8,7 +8,6 @@
 | `norden-ui` | React UI ライブラリ（基本部品・画面・画面スタック。カタログで各画面を作り込む） |
 | `norden-battle` | 戦闘。`battle-runtime`（戦闘画面 `BattleScreen`。地形・戦闘記録・行動メニューは norden-ui の部品）・`map-runtime`（HEX マップの描画）・`assets/maps/`（戦闘マップ）を使う |
 | `norden-data` | 拠点データ・騎士データのエディタ（`src/data/` などに書き出す。開発時だけ使う） |
-| `nordencult-old` | 分割前の旧実装（参照用） |
 
 ```sh
 git submodule update --init

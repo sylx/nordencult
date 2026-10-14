@@ -1,6 +1,3 @@
-[submodule "nordencult-old"]
-	path = nordencult-old
-	url = git@github.com:sylx/nordencult-old.git
 [submodule "norden-strategy"]
 	path = norden-strategy
 	url = git@github.com:sylx/norden-strategy.git
