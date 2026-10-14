@@ -72,6 +72,7 @@ src/songs/                  LLM が書いた曲
   white-sanctum.ts            『白亜の聖都』
   holding-breath.ts           『息を潜めて』 (索敵)
   battle-cry.ts               『鬨の声』 (会敵)
+  mist-pilgrim.ts             『霧の巡礼』 (タイトル)
 src/main.ts                 テストページ
 src/songs-page.ts           テストページの LLM 作成曲タブ
 src/bgm-page.ts             テストページの BGM 生成タブ
