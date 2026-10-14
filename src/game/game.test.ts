@@ -11,6 +11,8 @@ import {
 const FLUEN = 'P012'
 const AMBARIA = 'P004'
 const VERSTA = 'P005' // レオニス帝国, next to アンバリア
+/** The knights of アンバリア: 013 and its lord コンラート (046) */
+const AMBARIA_KNIGHTS = ['013', '046']
 
 /** Ends the strategy phase of every faction */
 function endStrategyPhase(state: GameState): GameState {
@@ -128,7 +130,7 @@ describe('turns', () => {
     expect(battle).toMatchObject({
       cityId: AMBARIA,
       attacker: { factionId: 'carta', from: FLUEN, commander: '015', knights: ['015', '016'] },
-      defender: { factionId: 'leonis', knights: ['013'] },
+      defender: { factionId: 'leonis', knights: AMBARIA_KNIGHTS },
     })
     expect(startNextBattle(marching)).toBe(marching)
   })
@@ -255,11 +257,14 @@ describe('battle results', () => {
     expect(state.cityOwners[AMBARIA]).toBe('carta')
     expect(state.characters['015']).toMatchObject({ cityId: AMBARIA, factionId: 'carta' })
     expect(state.characters['013']).toMatchObject({ cityId: VERSTA, factionId: 'leonis' })
+    // The lord who left the city is no longer its lord
+    expect(state.characters['046']).toEqual({ cityId: VERSTA, factionId: 'leonis', isLord: false })
     expect(state.lastBattle).toMatchObject({ winner: 'attacker', cityCaptured: true })
     expect(state.lastBattle?.moves).toEqual([
       { characterId: '015', kind: 'enter', from: FLUEN, to: AMBARIA },
       { characterId: '016', kind: 'enter', from: FLUEN, to: AMBARIA },
       { characterId: '013', kind: 'retreat', from: AMBARIA, to: VERSTA },
+      { characterId: '046', kind: 'retreat', from: AMBARIA, to: VERSTA },
     ])
     expect(state.march?.current).toBeNull()
     expect(startNextBattle(state)).toMatchObject({ turn: 2, phase: 'strategy', activeFaction: 'carta' })
@@ -278,8 +283,9 @@ describe('battle results', () => {
     let state = invadeAmbaria()
     state = { ...state, cityOwners: { ...state.cityOwners, [VERSTA]: 'taurus' } }
     state = fight('attacker', state)
-    expect(state.characters['013']).toEqual({ cityId: null, factionId: null, isLord: false })
-    expect(state.lastBattle?.moves.at(-1)).toMatchObject({ characterId: '013', kind: 'wander', to: null })
+    for (const id of AMBARIA_KNIGHTS) expect(state.characters[id]).toEqual({ cityId: null, factionId: null, isLord: false })
+    expect(state.lastBattle?.moves.slice(-2)).toMatchObject(
+      AMBARIA_KNIGHTS.map((characterId) => ({ characterId, kind: 'wander', to: null })))
   })
 
   it('lists the cities each side can retreat to', () => {
