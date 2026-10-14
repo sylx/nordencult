@@ -73,6 +73,7 @@ src/songs/                  LLM が書いた曲
   holding-breath.ts           『息を潜めて』 (索敵)
   battle-cry.ts               『鬨の声』 (会敵)
   mist-pilgrim.ts             『霧の巡礼』 (タイトル)
+  winter-council.ts           『雪原の評議』 (冬の戦略画面)
 src/main.ts                 テストページ
 src/songs-page.ts           テストページの LLM 作成曲タブ
 src/bgm-page.ts             テストページの BGM 生成タブ

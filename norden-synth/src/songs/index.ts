@@ -11,8 +11,9 @@ import { starReader } from './star-reader.ts'
 import { tundraMarch } from './tundra-march.ts'
 import { wanderingBird } from './wandering-bird.ts'
 import { whiteSanctum } from './white-sanctum.ts'
+import { winterCouncil } from './winter-council.ts'
 import type { Song } from './song.ts'
 
 export { barAt, compileSong, type CompiledSong, type Song, type SongBar, type SongNote, type SongPart, type SongSection } from './song.ts'
 
-export const SONGS: Song[] = [hokuten, fairyRing, imperialTriumph, wanderingBird, northernOath, tundraMarch, goldenSails, starReader, whiteSanctum, holdingBreath, battleCry, mistPilgrim]
+export const SONGS: Song[] = [hokuten, fairyRing, imperialTriumph, wanderingBird, northernOath, tundraMarch, goldenSails, starReader, whiteSanctum, holdingBreath, battleCry, mistPilgrim, winterCouncil]
