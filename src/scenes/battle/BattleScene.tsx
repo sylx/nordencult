@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  BattleScreen, lineBarks, SIDE_TEAM, type BarkSource, type BattleCutInTexts,
+  BattleScreen, lineBarks, SIDE_TEAM, type BarkSource, type BattleCutInTexts, type BattleFactions,
   type RetreatDestinations, type RetreatReport, type UnitStatus, type WipeoutReport,
 } from '@norden/battle-runtime'
-import { TEAM_DEFS, type TeamId } from '@norden/map-runtime/core/units'
 import { FACTION_MAP } from 'norden-strategy'
 import { FactionLabel } from '../../components/FactionLabel'
 import { KnightList } from '../../components/KnightList'
@@ -30,17 +29,18 @@ function playerSideOf(game: GameState, battle: Battle): BattleSide | null {
   return battle.defender.factionId === game.playerFaction ? 'defender' : null
 }
 
-/** Cut-in texts of a battle: the city fought over, and the factions in place of the teams */
-function battleCutInTexts(battle: Battle): BattleCutInTexts {
-  const names: Partial<Record<TeamId, string>> = {
-    [SIDE_TEAM.attacker]: factionName(battle.attacker.factionId),
-    [SIDE_TEAM.defender]: factionName(battle.defender.factionId),
-  }
-  const city = CITY_MAP[battle.cityId]?.name ?? battle.cityId
+/** The factions of a battle's sides; the battle screen calls each side's army by its faction's name */
+function battleFactions(battle: Battle): BattleFactions {
   return {
-    start: () => ({ text: '戦闘開始', subText: `${city}攻防戦` }),
-    turn: (turn, team) => ({ text: `${names[team] ?? TEAM_DEFS[team].name}のターン`, subText: `TURN  ${turn}` }),
+    attacker: { name: factionName(battle.attacker.factionId) },
+    defender: { name: factionName(battle.defender.factionId) },
   }
+}
+
+/** Cut-in texts of a battle: the city fought over (turns are announced by faction name) */
+function battleCutInTexts(battle: Battle): BattleCutInTexts {
+  const city = CITY_MAP[battle.cityId]?.name ?? battle.cityId
+  return { start: () => ({ text: '戦闘開始', subText: `${city}攻防戦` }) }
 }
 
 /**
@@ -117,6 +117,7 @@ function Battlefield({ battle }: { battle: Battle }) {
   const { from } = battle.attacker
   const to = battle.cityId
   const troops = useMemo(() => battleTroops(battle), [battle])
+  const factions = useMemo(() => battleFactions(battle), [battle])
   const barks = useMemo(() => battleBarks(battle, troops.knightOf), [battle, troops])
   const retreatTo = useMemo(() => battleRetreats(game, battle), [game, battle])
   /** Units that retreated (or were captured trying), handed to resolveBattle */
@@ -141,7 +142,7 @@ function Battlefield({ battle }: { battle: Battle }) {
       <div className="battle-scene__field">
         {map ? (
           <BattleScreen
-            map={map.data} troops={troops.troops} cutInTexts={battleCutInTexts(battle)} barks={barks} retreats={retreatTo}
+            map={map.data} troops={troops.troops} factions={factions} cutInTexts={battleCutInTexts(battle)} barks={barks} retreats={retreatTo}
             onRetreat={(report) => setRetreats((list) => [...list, toBattleRetreat(battle, report)])}
             onWipeout={(report) => setWipeouts((list) => [...list, toBattleWipeout(battle, report)])}
             onEnd={(outcome) => decide(outcome.winner, outcome.reason)} endLabel="戦闘の結果へ"
