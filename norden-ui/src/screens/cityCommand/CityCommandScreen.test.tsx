@@ -54,8 +54,8 @@ describe('CityCommandScreen', () => {
   it('shows the city\'s economy: tier, soldiers, supplies, effective stats and building slots', () => {
     setup({
       city: {
-        ...city, tier: 2, troops: 1100, supplies: 440,
-        stats: [{ label: '商業', value: 506, max: 720, base: 440 }, { label: '練度', value: 72, max: 100 }],
+        ...city, tier: 2, troops: 1100, troopMorale: 72, supplies: 440,
+        stats: [{ label: '商業', value: 506, max: 720, base: 440 }],
         buildings: {
           slots: 4, built: [{ id: 'market', name: '市場' }],
           construction: { building: { id: 'workshop', name: '工房' }, invested: 260, required: 400, turnsLeft: 1 },
@@ -64,9 +64,10 @@ describe('CityCommandScreen', () => {
       turn: { turn: 2, phaseLabel: '戦略フェーズ', gold: 620, goldForecast: 110 },
     })
     expect(screen.getByText('Tier 2')).toBeInTheDocument()
-    expect(screen.getByText('1,100')).toBeInTheDocument()
+    expect(screen.getByText('兵数').nextSibling).toHaveTextContent('1,100')
+    expect(screen.getByText('練度').nextSibling).toHaveTextContent('72')
+    expect(screen.getByText('物資').nextSibling).toHaveTextContent('440')
     expect(screen.getByText('基礎 440')).toBeInTheDocument()
-    expect(screen.getByRole('meter', { name: '練度' })).toHaveAttribute('aria-valuenow', '72')
     const slots = screen.getByRole('list', { name: '施設 1 / 4' })
     expect(within(slots).getByText('市場')).toBeInTheDocument()
     expect(within(slots).getByText('建設中')).toBeInTheDocument()

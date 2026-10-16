@@ -45,7 +45,7 @@ export type { ScreenHostProps, ScreenRenderers } from './navigation/ScreenHost'
 
 // Screens
 export type {
-  BuildingView, CityBuildingsView, CityStatView, CityView, ConstructionView, FactionView, KnightView, NeighbourView, TurnView, UnitTypeView,
+  AssignmentRoleView, BuildOptionView, BuildingView, CityAssignmentsView, CityBuildingsView, CityStatView, CityView, ConstructionView, FactionView, KnightView, NeighbourView, TurnView, UnitTypeView,
 } from './screens/types'
 export { default as CityCommandScreen, turnText } from './screens/cityCommand/CityCommandScreen'
 export type { CityCommandScreenProps, CommandState } from './screens/cityCommand/CityCommandScreen'
@@ -55,6 +55,8 @@ export { CITY_COMMAND_GROUPS } from './screens/cityCommand/cityCommands'
 export type { CityCommandGroup, CityCommandId } from './screens/cityCommand/cityCommands'
 export { default as MapPickScreen } from './screens/mapPick/MapPickScreen'
 export type { MapPickScreenProps } from './screens/mapPick/MapPickScreen'
+export { default as DomesticScreen } from './screens/domestic/DomesticScreen'
+export type { DomesticScreenProps, DomesticTab } from './screens/domestic/DomesticScreen'
 export { default as InvasionScreen } from './screens/invasion/InvasionScreen'
 export type { InvasionAssignment, InvasionDraft, InvasionScreenProps } from './screens/invasion/InvasionScreen'
 

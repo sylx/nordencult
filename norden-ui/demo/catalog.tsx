@@ -6,6 +6,7 @@ import PartsEntry from './entries/PartsEntry'
 import CityCommandEntry from './entries/CityCommandEntry'
 import MapPickEntry from './entries/MapPickEntry'
 import InvasionEntry from './entries/InvasionEntry'
+import DomesticEntry from './entries/DomesticEntry'
 import StrategyFlowEntry from './entries/StrategyFlowEntry'
 import CutInEditorEntry from './entries/CutInEditorEntry'
 
@@ -29,7 +30,7 @@ export const CATALOG: CatalogGroup[] = [
     label: '画面フロー',
     entries: [
       { id: 'strategy-flow', label: '戦略画面', name: 'useScreenStack + ScreenHost', Component: StrategyFlowEntry,
-        description: '都市コマンド → 軍事 → 侵攻 → 地図で侵攻先を選ぶ → 侵攻画面。Escで1段ずつ戻る。画面の積み重ねは useScreenStack、表示は ScreenHost' },
+        description: '都市コマンド → 内政 → 建設・割当で内政画面。都市コマンド → 軍事 → 侵攻 → 地図で侵攻先を選ぶ → 侵攻画面。Escで1段ずつ戻る。画面の積み重ねは useScreenStack、表示は ScreenHost' },
     ],
   },
   {
@@ -39,6 +40,8 @@ export const CATALOG: CatalogGroup[] = [
         description: '都市情報ウィンドウ、都市の切り替え、ターン情報、アクションツールバー（内政・軍事・研究・商人・ターン終了）' },
       { id: 'map-pick', label: '地図で選ぶ', name: 'MapPickScreen', Component: MapPickEntry,
         description: '地図上で都市などを選ぶステップ。案内の帯と「やめる」だけを出し、候補の強調と選択は呼び出し側の地図が行う' },
+      { id: 'domestic', label: '内政', name: 'DomesticScreen', Component: DomesticEntry,
+        description: '都市の建設（施設スロット・建てられる施設・着工・中止）と割当（代官・軍事担当と補正の見込み）をタブで切り替える' },
       { id: 'invasion', label: '侵攻', name: 'InvasionScreen', Component: InvasionEntry,
         description: '出撃する騎士の選択と、騎士ごとの兵科・兵数。兵数の合計は出発都市の兵数まで' },
     ],

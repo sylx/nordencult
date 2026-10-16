@@ -1,7 +1,6 @@
 import type { BuildingView, CityBuildingsView, CityView, FactionView, KnightView, TurnView, UnitTypeView } from '../../src'
 import { createElement } from 'react'
 import { repositoryCharacters, RepositoryCharacterArt, RepositoryPortrait } from '../repositoryCharacters'
-import cityArt from '../assets/place_city.webp'
 
 /** Demo-only data. The game passes its own state converted into the same view types */
 
@@ -61,11 +60,10 @@ export interface MockCity extends Omit<CityView, 'knights' | 'neighbours' | 'fac
   soldiers: number
 }
 
-/** 商業・生産 (with the base before bonuses) and 練度 */
-const stats = (market: number, production: number, morale = 70, base?: { market: number; production: number }) => [
+/** 商業・生産 (with the base before bonuses) */
+const stats = (market: number, production: number, base?: { market: number; production: number }) => [
   { label: '商業', value: market, max: 720, base: base?.market },
   { label: '生産', value: production, max: 640, base: base?.production },
-  { label: '練度', value: morale, max: 100 },
 ]
 
 // The game's building images when the catalog runs inside the game's repository (src/assets/buildings/)
@@ -92,20 +90,20 @@ const buildings = (slots: number, built: string[], construction?: { id: string; 
 })
 
 export const CITIES: MockCity[] = [
-  { id: 'P012', name: 'フルーエン', owner: 'carta', typeLabel: '港湾都市', scaleLabel: '大きな街', population: 11000, tier: 2, art: cityArt,
-    stats: stats(506, 253, 72, { market: 440, production: 220 }), supplies: 440,
+  { id: 'P012', name: 'フルーエン', owner: 'carta', typeLabel: '港湾都市', scaleLabel: '大きな街', population: 11000, tier: 2,
+    stats: stats(506, 253, { market: 440, production: 220 }), troopMorale: 72, supplies: 440,
     buildings: buildings(4, ['market'], { id: 'workshop', invested: 260, turnsLeft: 1 }), tags: ['港', '交易'], at: { x: 52, y: 52 }, soldiers: 1200 },
-  { id: 'P010', name: 'ヴェステル', owner: 'carta', typeLabel: '農業都市', scaleLabel: '小さな町', population: 4200, tier: 1, art: cityArt,
+  { id: 'P010', name: 'ヴェステル', owner: 'carta', typeLabel: '農業都市', scaleLabel: '小さな町', population: 4200, tier: 1,
     stats: stats(120, 140), supplies: 280, buildings: buildings(2, []), tags: ['穀倉'], at: { x: 46, y: 22 }, soldiers: 600 },
-  { id: 'P015', name: 'ミルデン', owner: 'carta', typeLabel: '辺境都市', scaleLabel: '小さな町', population: 2600, tier: 1, art: cityArt,
-    stats: stats(90, 80, 40), supplies: 120, buildings: buildings(2, ['granary']), tags: [], at: { x: 58, y: 78 }, soldiers: 200 },
-  { id: 'P020', name: 'セイルの砦', typeLabel: '軍事都市', scaleLabel: '要塞', population: 900, tier: 1, art: cityArt,
+  { id: 'P015', name: 'ミルデン', owner: 'carta', typeLabel: '辺境都市', scaleLabel: '小さな町', population: 2600, tier: 1,
+    stats: stats(90, 80), troopMorale: 40, supplies: 120, buildings: buildings(2, ['granary']), tags: [], at: { x: 58, y: 78 }, soldiers: 200 },
+  { id: 'P020', name: 'セイルの砦', typeLabel: '軍事都市', scaleLabel: '要塞', population: 900, tier: 1,
     stats: stats(30, 380), supplies: 760, buildings: buildings(2, []), tags: ['山岳'], at: { x: 66, y: 12 }, soldiers: 300 },
-  { id: 'P004', name: 'アンバリア', owner: 'leonis', typeLabel: '交易都市', scaleLabel: '大きな街', population: 9800, tier: 2, art: cityArt,
+  { id: 'P004', name: 'アンバリア', owner: 'leonis', typeLabel: '交易都市', scaleLabel: '大きな街', population: 9800, tier: 2,
     stats: stats(520, 300), supplies: 600, buildings: buildings(4, ['market', 'barracks']), tags: ['城塞'], at: { x: 72, y: 46 }, soldiers: 900 },
-  { id: 'P006', name: 'グラウブルク', owner: 'leonis', typeLabel: '軍事都市', scaleLabel: '大都市', population: 15400, tier: 3, art: cityArt,
-    stats: stats(360, 560, 85), supplies: 1200, buildings: buildings(6, ['barracks', 'training_ground', 'workshop', 'market']), tags: ['帝都'], at: { x: 87, y: 22 }, soldiers: 2000 },
-  { id: 'P021', name: 'オルデン', owner: 'esuhara', typeLabel: '聖都', scaleLabel: '聖地', population: 7000, tier: 2, art: cityArt,
+  { id: 'P006', name: 'グラウブルク', owner: 'leonis', typeLabel: '軍事都市', scaleLabel: '大都市', population: 15400, tier: 3,
+    stats: stats(360, 560), troopMorale: 85, supplies: 1200, buildings: buildings(6, ['barracks', 'training_ground', 'workshop', 'market']), tags: ['帝都'], at: { x: 87, y: 22 }, soldiers: 2000 },
+  { id: 'P021', name: 'オルデン', owner: 'esuhara', typeLabel: '聖都', scaleLabel: '聖地', population: 7000, tier: 2,
     stats: stats(300, 160), supplies: 320, buildings: buildings(4, ['temple'], { id: 'market', invested: 40, turnsLeft: 3 }), tags: ['聖地'], at: { x: 84, y: 74 }, soldiers: 500 },
 ]
 
@@ -148,6 +146,7 @@ export function cityView(id: string, knights: readonly KnightView[] = knightsIn(
   return {
     ...city,
     troops: soldiers,
+    troopMorale: city.troopMorale ?? MORALE,
     lord: lord ? { name: lord.name, image: character ? createElement(RepositoryCharacterArt, { character }) : undefined } : undefined,
     faction: owner ? FACTIONS[owner] : undefined,
     knights,

@@ -43,6 +43,25 @@ export interface ConstructionView {
   turnsLeft?: number | null
 }
 
+/** A building the city could start: its costs, and why it cannot now */
+export interface BuildOptionView extends BuildingView {
+  /** Supplies it takes and gold paid when started */
+  supplies: number
+  gold: number
+  /** Turns to complete it at the city's 生産; null: never */
+  turns?: number | null
+  /** Why it cannot be started now (shown, but cannot be chosen) */
+  unavailableReason?: string
+}
+
+/** The knights holding the city's assignments (ids of its knights) */
+export interface CityAssignmentsView {
+  governor?: string
+  military: readonly string[]
+}
+
+export type AssignmentRoleView = 'governor' | 'military'
+
 /** A city's building slots: those built (in slot order), the one being built and the empty ones up to `slots` */
 export interface CityBuildingsView {
   slots: number
@@ -62,17 +81,17 @@ export interface CityView {
   population?: number
   /** City tier (e.g. 2), which decides its building slots */
   tier?: number
-  /** Illustration URL */
-  art?: string
   /** The governor (代官, the city's lord): name and full character illustration (URL or host-rendered sprite). */
   lord?: { name: string; image?: ReactNode; imageSrc?: string }
   special?: string
-  /** e.g. 商業・生産・練度 */
+  /** e.g. 商業・生産 */
   stats?: readonly CityStatView[]
-  /** 備蓄物資 */
-  supplies?: number
   /** 兵数 */
   troops?: number
+  /** 練度 of the soldiers (0..100) */
+  troopMorale?: number
+  /** 備蓄物資 */
+  supplies?: number
   buildings?: CityBuildingsView
   tags?: readonly string[]
   knights?: readonly KnightView[]

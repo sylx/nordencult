@@ -120,8 +120,9 @@ function BattleUi() {
 
 | 画面 | 構成 | 主なprops |
 | --- | --- | --- |
-| `CityCommandScreen` | 都市の切り替え ◀ ▶（左上）、都市情報ウィンドウ（都市情報・騎士・街道タブ。都市情報は代官・人口と Tier・兵数・備蓄・商業と生産（実効値と基礎値）・練度・施設スロット）、ターン情報（右上。金を含む）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `onSelectNeighbour`, `turnMenu`, `children`（ホストの追加HUD） |
+| `CityCommandScreen` | 都市の切り替え ◀ ▶（左上）、都市情報ウィンドウ（都市情報・騎士・街道タブ。都市情報は代官・人口と Tier、兵数・練度・物資（大きな数字で横に並べる）、商業と生産（実効値と基礎値）、施設スロット）、ターン情報（右上。金を含む）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `onSelectNeighbour`, `turnMenu`, `children`（ホストの追加HUD） |
 | `MapPickScreen` | 案内の帯と「やめる」 | `message`, `onCancel`, `cancelLabel` |
+| `DomesticScreen` | 都市の内政のウィンドウ（建設・割当のタブ）と、金・「閉じる」のHUD。建設: 施設スロット、建設中の中止（確認つき）、建てられる施設（効果・物資・金・ターン数・着工できない理由）。割当: 代官・軍事担当と今の補正、都市の騎士（代官に・軍事担当に・外す、担当したときの補正の見込み） | `city: CityView`, `tab`（`'build' \| 'assign'`）, `gold`, `buildOptions: BuildOptionView[]`, `onBuild(id)`, `onCancelConstruction`, `knights: KnightView[]`, `assignments`, `bonuses`, `forecast(knightId, role)`, `onAssign(knightId, role)`, `onUnassign(knightId)`, `onClose` |
 | `InvasionScreen` | 出撃する騎士の選択ウィンドウ、軍団編成（部隊ごとの兵科と兵数）のウィンドウ、編成した部隊の図（タイトルなしのウィンドウ）、合計兵数と「やめる / 予約」 | `from` / `to: CityView`, `defenders`, `knights: KnightView[]`, `unitTypes`, `indirectUnitTypes`, `maxUnits`, `soldierPool`, `morale`, `unitPower`, `soldierStep`, `skin`（既定は thin）, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
 
 アクションツールバーのコマンドは `CITY_COMMAND_GROUPS` に定義しています。内政（建設・割当）、軍事（移動・侵攻・募兵・輸送）、研究、商人（購入・売却）と、最後にターン終了です。

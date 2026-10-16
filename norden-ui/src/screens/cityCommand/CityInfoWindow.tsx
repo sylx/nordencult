@@ -70,10 +70,7 @@ function CityInfo({ city }: { city: CityView }) {
             {city.scaleLabel && <div><dt>規模</dt><dd>{city.scaleLabel}</dd></div>}
             {city.special && <div><dt>特殊</dt><dd>{city.special}</dd></div>}
             <div><dt>騎士</dt><dd>{city.knights?.length ?? 0}人</dd></div>
-            {city.troops !== undefined && <div><dt>兵数</dt><dd>{city.troops.toLocaleString()}</dd></div>}
-            {city.supplies !== undefined && <div><dt>備蓄</dt><dd>{city.supplies.toLocaleString()}</dd></div>}
           </dl>
-          {city.art && <img className="norden-city-info-art" src={city.art} alt="" />}
         </div>
         {city.lord && (city.lord.imageSrc || city.lord.image) && (
           <div className="norden-city-info-lord" role="img" aria-label={`${city.lord.name}の立ち絵`}>
@@ -81,6 +78,7 @@ function CityInfo({ city }: { city: CityView }) {
           </div>
         )}
       </div>
+      <CityResources city={city} />
       {city.stats && city.stats.length > 0 && (
         <dl className="norden-city-info-stats">
           {city.stats.map(stat => (
@@ -108,6 +106,26 @@ function CityInfo({ city }: { city: CityView }) {
         </ul>
       )}
     </div>
+  )
+}
+
+/** 兵数・練度・物資 side by side, as large numbers */
+function CityResources({ city }: { city: CityView }) {
+  const items = [
+    { label: '兵数', value: city.troops },
+    { label: '練度', value: city.troopMorale },
+    { label: '物資', value: city.supplies },
+  ].filter((item): item is { label: string; value: number } => item.value !== undefined)
+  if (items.length === 0) return null
+  return (
+    <dl className="norden-city-info-resources">
+      {items.map(item => (
+        <div key={item.label}>
+          <dt>{item.label}</dt>
+          <dd>{item.value.toLocaleString()}</dd>
+        </div>
+      ))}
+    </dl>
   )
 }
 
