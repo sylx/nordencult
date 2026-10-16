@@ -1,4 +1,4 @@
-import type { CityView, FactionView, KnightView, TurnView, UnitTypeView } from '../../src'
+import type { BuildingView, CityBuildingsView, CityView, FactionView, KnightView, TurnView, UnitTypeView } from '../../src'
 import { createElement } from 'react'
 import { repositoryCharacters, RepositoryCharacterArt, RepositoryPortrait } from '../repositoryCharacters'
 import cityArt from '../assets/place_city.webp'
@@ -61,25 +61,52 @@ export interface MockCity extends Omit<CityView, 'knights' | 'neighbours' | 'fac
   soldiers: number
 }
 
-const stats = (agriculture: number, market: number, production: number) => [
-  { label: '農業', value: agriculture, max: 720 }, { label: '商業', value: market, max: 720 }, { label: '生産', value: production, max: 640 },
+/** 商業・生産 (with the base before bonuses) and 練度 */
+const stats = (market: number, production: number, morale = 70, base?: { market: number; production: number }) => [
+  { label: '商業', value: market, max: 720, base: base?.market },
+  { label: '生産', value: production, max: 640, base: base?.production },
+  { label: '練度', value: morale, max: 100 },
 ]
 
+// The game's building images when the catalog runs inside the game's repository (src/assets/buildings/)
+const buildingImages = import.meta.glob<string>('../../../src/assets/buildings/*.webp', { eager: true, query: '?url', import: 'default' })
+
+export const BUILDINGS: Record<string, BuildingView> = Object.fromEntries(([
+  ['market', '市場', '商人が集まり、取引が盛んになる。', ['商業 +15%']],
+  ['workshop', '工房', '職人を抱え、物資の生産を増やす。', ['生産 +15%']],
+  ['granary', '倉庫', '食糧を蓄え、暮らしを安定させる。', ['人口の伸び +20%']],
+  ['barracks', '兵舎', '兵を寝泊まりさせる。', ['募兵数 +50%']],
+  ['training_ground', '訓練場', '兵を鍛える。', ['訓練 +50%', '新兵の練度 +10']],
+  ['harbor', '港', '船の出入りで交易が広がる。', ['商業 +20%', '傭兵が現れる']],
+  ['temple', '神殿', '人々の心の拠り所。', ['人口の伸び +30%']],
+] as const).map(([id, name, description, effects]) => [id, {
+  id, name, description, effects, image: buildingImages[`../../../src/assets/buildings/${id}.webp`],
+}]))
+
+const buildings = (slots: number, built: string[], construction?: { id: string; invested: number; turnsLeft: number | null }): CityBuildingsView => ({
+  slots,
+  built: built.map(id => BUILDINGS[id]!),
+  construction: construction && {
+    building: BUILDINGS[construction.id]!, invested: construction.invested, required: 400, turnsLeft: construction.turnsLeft,
+  },
+})
+
 export const CITIES: MockCity[] = [
-  { id: 'P012', name: 'フルーエン', owner: 'carta', typeLabel: '港湾都市', scaleLabel: '大きな街', population: 11000, art: cityArt,
-    stats: stats(220, 440, 220), tags: ['港', '交易'], at: { x: 52, y: 52 }, soldiers: 1200 },
-  { id: 'P010', name: 'ヴェステル', owner: 'carta', typeLabel: '農業都市', scaleLabel: '小さな町', population: 4200, art: cityArt,
-    stats: stats(480, 120, 140), tags: ['穀倉'], at: { x: 46, y: 22 }, soldiers: 600 },
-  { id: 'P015', name: 'ミルデン', owner: 'carta', typeLabel: '辺境都市', scaleLabel: '小さな町', population: 2600, art: cityArt,
-    stats: stats(180, 90, 80), tags: [], at: { x: 58, y: 78 }, soldiers: 200 },
-  { id: 'P020', name: 'セイルの砦', typeLabel: '軍事都市', scaleLabel: '要塞', population: 900, art: cityArt,
-    stats: stats(40, 30, 380), tags: ['山岳'], at: { x: 66, y: 12 }, soldiers: 300 },
-  { id: 'P004', name: 'アンバリア', owner: 'leonis', typeLabel: '交易都市', scaleLabel: '大きな街', population: 9800, art: cityArt,
-    stats: stats(260, 520, 300), tags: ['城塞'], at: { x: 72, y: 46 }, soldiers: 900 },
-  { id: 'P006', name: 'グラウブルク', owner: 'leonis', typeLabel: '軍事都市', scaleLabel: '大都市', population: 15400, art: cityArt,
-    stats: stats(300, 360, 560), tags: ['帝都'], at: { x: 87, y: 22 }, soldiers: 2000 },
-  { id: 'P021', name: 'オルデン', owner: 'esuhara', typeLabel: '聖都', scaleLabel: '聖地', population: 7000, art: cityArt,
-    stats: stats(200, 300, 160), tags: ['聖地'], at: { x: 84, y: 74 }, soldiers: 500 },
+  { id: 'P012', name: 'フルーエン', owner: 'carta', typeLabel: '港湾都市', scaleLabel: '大きな街', population: 11000, tier: 2, art: cityArt,
+    stats: stats(506, 253, 72, { market: 440, production: 220 }), supplies: 440,
+    buildings: buildings(4, ['market'], { id: 'workshop', invested: 260, turnsLeft: 1 }), tags: ['港', '交易'], at: { x: 52, y: 52 }, soldiers: 1200 },
+  { id: 'P010', name: 'ヴェステル', owner: 'carta', typeLabel: '農業都市', scaleLabel: '小さな町', population: 4200, tier: 1, art: cityArt,
+    stats: stats(120, 140), supplies: 280, buildings: buildings(2, []), tags: ['穀倉'], at: { x: 46, y: 22 }, soldiers: 600 },
+  { id: 'P015', name: 'ミルデン', owner: 'carta', typeLabel: '辺境都市', scaleLabel: '小さな町', population: 2600, tier: 1, art: cityArt,
+    stats: stats(90, 80, 40), supplies: 120, buildings: buildings(2, ['granary']), tags: [], at: { x: 58, y: 78 }, soldiers: 200 },
+  { id: 'P020', name: 'セイルの砦', typeLabel: '軍事都市', scaleLabel: '要塞', population: 900, tier: 1, art: cityArt,
+    stats: stats(30, 380), supplies: 760, buildings: buildings(2, []), tags: ['山岳'], at: { x: 66, y: 12 }, soldiers: 300 },
+  { id: 'P004', name: 'アンバリア', owner: 'leonis', typeLabel: '交易都市', scaleLabel: '大きな街', population: 9800, tier: 2, art: cityArt,
+    stats: stats(520, 300), supplies: 600, buildings: buildings(4, ['market', 'barracks']), tags: ['城塞'], at: { x: 72, y: 46 }, soldiers: 900 },
+  { id: 'P006', name: 'グラウブルク', owner: 'leonis', typeLabel: '軍事都市', scaleLabel: '大都市', population: 15400, tier: 3, art: cityArt,
+    stats: stats(360, 560, 85), supplies: 1200, buildings: buildings(6, ['barracks', 'training_ground', 'workshop', 'market']), tags: ['帝都'], at: { x: 87, y: 22 }, soldiers: 2000 },
+  { id: 'P021', name: 'オルデン', owner: 'esuhara', typeLabel: '聖都', scaleLabel: '聖地', population: 7000, tier: 2, art: cityArt,
+    stats: stats(300, 160), supplies: 320, buildings: buildings(4, ['temple'], { id: 'market', invested: 40, turnsLeft: 3 }), tags: ['聖地'], at: { x: 84, y: 74 }, soldiers: 500 },
 ]
 
 export const ROADS: [string, string][] = [
@@ -115,11 +142,12 @@ export const invasionTargets = (from: string) => neighboursOf(from).filter(id =>
 
 /** The view type the screens draw */
 export function cityView(id: string, knights: readonly KnightView[] = knightsIn(id)): CityView {
-  const { owner, at: _at, soldiers: _soldiers, ...city } = CITY_MAP[id]!
+  const { owner, at: _at, soldiers, ...city } = CITY_MAP[id]!
   const lord = knightsIn(id)[0]
   const character = lord ? characterFor(lord.id) : undefined
   return {
     ...city,
+    troops: soldiers,
     lord: lord ? { name: lord.name, image: character ? createElement(RepositoryCharacterArt, { character }) : undefined } : undefined,
     faction: owner ? FACTIONS[owner] : undefined,
     knights,
@@ -127,4 +155,6 @@ export function cityView(id: string, knights: readonly KnightView[] = knightsIn(
   }
 }
 
-export const TURN: TurnView = { turn: 1, phaseLabel: '戦略フェーズ', dateLabel: '灰歴312年1月 冬', activeFaction: FACTIONS[PLAYER] }
+export const TURN: TurnView = {
+  turn: 1, phaseLabel: '戦略フェーズ', dateLabel: '灰歴312年1月 冬', activeFaction: FACTIONS[PLAYER], gold: 500, goldForecast: 110,
+}

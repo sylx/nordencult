@@ -118,6 +118,24 @@
   color: #d0c9b5;
 }
 
+.norden-date-bar-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  padding-inline: var(--date-section-gap);
+  white-space: nowrap;
+}
+.norden-date-bar-gold img { width: 24px; height: 24px; object-fit: contain; filter: drop-shadow(0 1px 1px #000); }
+.norden-date-bar-gold-amount {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: calc(var(--date-calendar-size) * .85);
+  font-variant-numeric: tabular-nums;
+  color: #fff0bc;
+}
+.norden-date-bar-gold-forecast { font-size: var(--date-suffix-size); color: #b9d99a; }
+.norden-date-bar-gold-forecast.is-negative { color: #f0a08a; }
+
 .norden-date-bar-separator {
   display: inline-flex;
   align-self: flex-end;

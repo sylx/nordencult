@@ -51,6 +51,31 @@ describe('CityCommandScreen', () => {
     expect(screen.getByRole('button', { name: /ターン終了/ })).toBeDisabled()
   })
 
+  it('shows the city\'s economy: tier, soldiers, supplies, effective stats and building slots', () => {
+    setup({
+      city: {
+        ...city, tier: 2, troops: 1100, supplies: 440,
+        stats: [{ label: '商業', value: 506, max: 720, base: 440 }, { label: '練度', value: 72, max: 100 }],
+        buildings: {
+          slots: 4, built: [{ id: 'market', name: '市場' }],
+          construction: { building: { id: 'workshop', name: '工房' }, invested: 260, required: 400, turnsLeft: 1 },
+        },
+      },
+      turn: { turn: 2, phaseLabel: '戦略フェーズ', gold: 620, goldForecast: 110 },
+    })
+    expect(screen.getByText('Tier 2')).toBeInTheDocument()
+    expect(screen.getByText('1,100')).toBeInTheDocument()
+    expect(screen.getByText('基礎 440')).toBeInTheDocument()
+    expect(screen.getByRole('meter', { name: '練度' })).toHaveAttribute('aria-valuenow', '72')
+    const slots = screen.getByRole('list', { name: '施設 1 / 4' })
+    expect(within(slots).getByText('市場')).toBeInTheDocument()
+    expect(within(slots).getByText('建設中')).toBeInTheDocument()
+    expect(within(slots).getByRole('progressbar', { name: '建設の進捗' })).toHaveAttribute('aria-valuenow', '260')
+    expect(within(slots).getByText(/あと1ターン/)).toBeInTheDocument()
+    expect(within(slots).getAllByText('空き')).toHaveLength(2)
+    expect(screen.getByRole('group', { name: '金' })).toHaveTextContent('620+110')
+  })
+
   it('lists knights and neighbours in the tabs', async () => {
     const { onSelectNeighbour } = setup()
     await userEvent.click(screen.getByRole('tab', { name: '騎士' }))

@@ -120,7 +120,7 @@ function BattleUi() {
 
 | 画面 | 構成 | 主なprops |
 | --- | --- | --- |
-| `CityCommandScreen` | 都市の切り替え ◀ ▶（左上）、都市情報ウィンドウ（都市情報・騎士・街道タブ）、ターン情報（右上）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `onSelectNeighbour`, `turnMenu`, `children`（ホストの追加HUD） |
+| `CityCommandScreen` | 都市の切り替え ◀ ▶（左上）、都市情報ウィンドウ（都市情報・騎士・街道タブ。都市情報は代官・人口と Tier・兵数・備蓄・商業と生産（実効値と基礎値）・練度・施設スロット）、ターン情報（右上。金を含む）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `onSelectNeighbour`, `turnMenu`, `children`（ホストの追加HUD） |
 | `MapPickScreen` | 案内の帯と「やめる」 | `message`, `onCancel`, `cancelLabel` |
 | `InvasionScreen` | 出撃する騎士の選択ウィンドウ、軍団編成（部隊ごとの兵科と兵数）のウィンドウ、編成した部隊の図（タイトルなしのウィンドウ）、合計兵数と「やめる / 予約」 | `from` / `to: CityView`, `defenders`, `knights: KnightView[]`, `unitTypes`, `indirectUnitTypes`, `maxUnits`, `soldierPool`, `morale`, `unitPower`, `soldierStep`, `skin`（既定は thin）, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
 
@@ -144,7 +144,7 @@ function BattleUi() {
 | 部品 | 主なprops | 振る舞い |
 | --- | --- | --- |
 | `CommandToolbar` | `commands: { id, label, icon?, onClick?, disabled?, title?, active?, tone?, children? }[]`, `movable` | 子を持つコマンドは押すと上にサブコマンドの列を開く（再クリック・Esc・外側クリックで閉じる）。`tone: 'accent'` で強調。`movable` で左右の端をドラッグ・矢印キーで移動 |
-| `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `children?` | フェーズ・勢力のターン・年月・設定の順に表示。`children` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
+| `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `gold?`, `goldForecast?`, `children?` | フェーズ・勢力のターン・年月・金（と次のターンの増減）・設定の順に表示。`children` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
 | `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `metal: 'gold' \| 'silver' \| 'none'`, `size`, `style` | 象牙の立体的なボタンに金／銀の四隅装飾、または装飾なし。生成画像を9分割で伸縮し、`style` で幅・高さを指定可能 |
 | `Banner` | `children`, `actions` | HUDの案内の帯（`role="status"`） |
 | `CityNavigator` | `name`, `onPrev`, `onNext`, `position` | ◀ 都市名 ▶。ハンドラが無い方向は無効 |
@@ -153,6 +153,7 @@ function BattleUi() {
 | `Card` | `as`, `children`, `className`, `style` | 羊皮紙とインクで描いた汎用装飾枠。`as` は div / article / section / label |
 | `KnightCard` | `knight: { name, portrait?, portraitSrc?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | `Card` に顔・名前・能力名と大きな能力値を配置。数値は段階別の色。`selection` でチェックボックスになる |
 | `FactionMark` | `faction?`, `emblemOnly` | 紋章と勢力名。省略すると中立 |
+| `BuildingSlots` | `buildings: CityBuildingsView`, `onSelect?`, `selectedId?` | 都市の施設スロット。建設済み（画像と名前）・建設中（進捗のバーと残りターン）・空きの順。`onSelect` で施設をボタンにする。`BuildingImage`（画像が無ければ頭文字）と `ConstructionProgress` も公開 |
 | `ThinFrameWithTitle` | `title`, `as`, `ref`, ほかの属性 | `ThinFrame` の上辺に題名の札を載せたHUDのパネル。題名がパネルの名前になる。札はCSSの仮組（[画像の仕様](docs/parts-assets.md#細いベゼルの題名の札)） |
 | `ThinFrame` | なし | `windowSkins.thin` の細いベゼルと暗い地。最も近い位置指定の祖先いっぱいに、中身の後ろへ敷く（祖先に `isolation: isolate`）。HUDのパネルに使う |
 

@@ -3,9 +3,11 @@ import type { InfoWindowWithTabsProps, TabInfo } from '../../components/window/I
 import KnightCard from '../../components/parts/KnightCard'
 import FactionMark from '../../components/parts/FactionMark'
 import StatBar from '../../components/parts/StatBar'
+import BuildingSlots from '../../components/parts/BuildingSlots'
 import iconAgriculture from '../../assets/ui/icons/icon-agriculture.svg'
 import iconCommerce from '../../assets/ui/icons/icon-commerce.svg'
 import iconProduction from '../../assets/ui/icons/icon-production.svg'
+import iconMorale from '../../assets/ui/icons/icon-military.png'
 import iconCity from '../../assets/ui/icons/icon_home.webp'
 import iconKnights from '../../assets/ui/icons/icon_people.webp'
 import iconRoads from '../../assets/ui/icons/icon_stat.webp'
@@ -40,8 +42,8 @@ export function createCityInfoTabs(city: CityView, onSelectNeighbour?: (cityId: 
   ]
 }
 
-const statKinds = { 農業: 'agriculture', 商業: 'commerce', 生産: 'production' } as const
-const statIcons = { agriculture: iconAgriculture, commerce: iconCommerce, production: iconProduction }
+const statKinds = { 農業: 'agriculture', 商業: 'commerce', 生産: 'production', 練度: 'morale' } as const
+const statIcons = { agriculture: iconAgriculture, commerce: iconCommerce, production: iconProduction, morale: iconMorale }
 
 function statKind(stat: CityStatView) {
   return stat.kind ?? statKinds[stat.label as keyof typeof statKinds] ?? 'commerce'
@@ -60,11 +62,16 @@ function CityInfo({ city }: { city: CityView }) {
         </header>
         <div className="norden-city-info-body">
           <dl className="norden-city-info-facts">
-            {city.lord && <div><dt>領主</dt><dd>{city.lord.name}</dd></div>}
-            {city.population !== undefined && <div><dt>人口</dt><dd>{city.population.toLocaleString()}</dd></div>}
+            {city.lord && <div><dt>代官</dt><dd>{city.lord.name}</dd></div>}
+            {city.population !== undefined && <div><dt>人口</dt><dd>
+              {city.population.toLocaleString()}
+              {city.tier !== undefined && <span className="norden-city-info-tier">Tier {city.tier}</span>}
+            </dd></div>}
             {city.scaleLabel && <div><dt>規模</dt><dd>{city.scaleLabel}</dd></div>}
             {city.special && <div><dt>特殊</dt><dd>{city.special}</dd></div>}
             <div><dt>騎士</dt><dd>{city.knights?.length ?? 0}人</dd></div>
+            {city.troops !== undefined && <div><dt>兵数</dt><dd>{city.troops.toLocaleString()}</dd></div>}
+            {city.supplies !== undefined && <div><dt>備蓄</dt><dd>{city.supplies.toLocaleString()}</dd></div>}
           </dl>
           {city.art && <img className="norden-city-info-art" src={city.art} alt="" />}
         </div>
@@ -79,10 +86,21 @@ function CityInfo({ city }: { city: CityView }) {
           {city.stats.map(stat => (
             <div key={stat.label} className="norden-city-info-stat">
               <dt><img src={statIcons[statKind(stat)]} alt="" /><span>{stat.label}</span></dt>
-              <dd><StatBar label={stat.label} value={stat.value} max={stat.max} tone={statKind(stat)} /></dd>
+              <dd>
+                <StatBar label={stat.label} value={stat.value} max={stat.max} tone={statKind(stat)} />
+                {stat.base !== undefined && stat.base !== stat.value && (
+                  <span className="norden-city-info-stat-base">基礎 {stat.base.toLocaleString()}</span>
+                )}
+              </dd>
             </div>
           ))}
         </dl>
+      )}
+      {city.buildings && (
+        <section className="norden-city-info-buildings" aria-label="施設">
+          <h3>施設 <span>{city.buildings.built.length} / {city.buildings.slots}</span></h3>
+          <BuildingSlots buildings={city.buildings} />
+        </section>
       )}
       {city.tags && city.tags.length > 0 && (
         <ul className="norden-city-info-tags" aria-label="特徴">

@@ -70,7 +70,7 @@ export default function CityCommandScreen({
       </div>
       <div className="norden-screen-top-right">
         <DateBar phaseLabel={turn.phaseLabel} factionName={turn.activeFaction ? turn.activeFaction.name : turn.activeFaction}
-          dateLabel={turn.dateLabel}>{turnMenu}</DateBar>
+          dateLabel={turn.dateLabel} gold={turn.gold} goldForecast={turn.goldForecast}>{turnMenu}</DateBar>
       </div>
       <CityInfoWindow city={city} onSelectNeighbour={onSelectNeighbour} x={windowPosition.x} y={windowPosition.y} skin={skin}
         style={{ '--norden-city-window-x': `${windowPosition.x}px`, '--norden-city-window-y': `${windowPosition.y}px` } as CSSProperties} />

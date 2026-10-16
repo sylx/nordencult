@@ -14,10 +14,40 @@ export interface FactionView {
 export interface CityStatView {
   label: string
   /** Visual treatment; known Japanese labels also resolve automatically. */
-  kind?: 'agriculture' | 'commerce' | 'production'
+  kind?: 'agriculture' | 'commerce' | 'production' | 'morale'
   value: number
   /** Full length of the bar */
   max: number
+  /** The value before bonuses (e.g. the city's base 商業), shown beside when it differs */
+  base?: number
+}
+
+/** A building: standing in a slot, being built, or one to build */
+export interface BuildingView {
+  id: string
+  name: string
+  /** Image URL */
+  image?: string
+  description?: string
+  /** e.g. 商業 +15% */
+  effects?: readonly string[]
+}
+
+/** The building under construction in a city */
+export interface ConstructionView {
+  building: BuildingView
+  /** Supplies put in so far and needed in all */
+  invested: number
+  required: number
+  /** Turns until it is completed; null: never at the current 生産 */
+  turnsLeft?: number | null
+}
+
+/** A city's building slots: those built (in slot order), the one being built and the empty ones up to `slots` */
+export interface CityBuildingsView {
+  slots: number
+  built: readonly BuildingView[]
+  construction?: ConstructionView | null
 }
 
 export interface CityView {
@@ -30,13 +60,20 @@ export interface CityView {
   /** e.g. 大きな街 */
   scaleLabel?: string
   population?: number
+  /** City tier (e.g. 2), which decides its building slots */
+  tier?: number
   /** Illustration URL */
   art?: string
-  /** Lord's name and full character illustration (URL or host-rendered sprite). */
+  /** The governor (代官, the city's lord): name and full character illustration (URL or host-rendered sprite). */
   lord?: { name: string; image?: ReactNode; imageSrc?: string }
   special?: string
-  /** e.g. 農業・商業・生産 */
+  /** e.g. 商業・生産・練度 */
   stats?: readonly CityStatView[]
+  /** 備蓄物資 */
+  supplies?: number
+  /** 兵数 */
+  troops?: number
+  buildings?: CityBuildingsView
   tags?: readonly string[]
   knights?: readonly KnightView[]
   /** Cities linked by a road */
@@ -73,6 +110,9 @@ export interface TurnView {
   dateLabel?: string
   /** Whose turn it is; null while every faction's orders are resolved */
   activeFaction?: FactionView | null
+  /** The player's treasury, and how it changes at the start of the next turn (income less salaries) */
+  gold?: number
+  goldForecast?: number
 }
 
 export interface UnitTypeView {

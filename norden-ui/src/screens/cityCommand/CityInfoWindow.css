@@ -52,3 +52,10 @@ button.norden-city-roads-row:hover { background: rgb(255 255 255 / 0.65); }
   .norden-city-info-stat dt { gap: 4px; font-size: 12px; }
   .norden-city-info-stat dt img { width: 30px; height: 30px; }
 }
+
+.norden-city-info-tier { margin-left: 8px; padding: 1px 6px; color: #fff4d8; background: #8a6430; border-radius: 3px; font-size: 11px; font-weight: 700; vertical-align: 2px; }
+.norden-city-info-stat dd { display: flex; align-items: center; gap: 8px; }
+.norden-city-info-stat-base { flex-shrink: 0; color: #8a7050; font-size: 11px; white-space: nowrap; }
+.norden-city-info-buildings { display: grid; gap: 6px; padding: 0 4px; }
+.norden-city-info-buildings h3 { margin: 0; color: #614a2c; font-size: 14px; font-weight: 700; }
+.norden-city-info-buildings h3 span { margin-left: 6px; color: #8a7050; font-size: 12px; font-weight: 600; }
