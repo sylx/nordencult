@@ -1,7 +1,6 @@
 import { CHARACTER_MAP, CHARACTER_START } from '../data/character'
 import { CITY_LIST, type City } from '../data/city'
-import { INITIAL_MORALE } from './army'
-import { INITIAL_GOLD, INITIAL_SUPPLIES_PER_PRODUCTION, INITIAL_TROOPS_PER_PRODUCTION } from './economy/balance'
+import { INITIAL_GOLD, INITIAL_MORALE, INITIAL_SUPPLIES_PER_PRODUCTION, INITIAL_TROOPS_PER_PRODUCTION } from './economy/balance'
 import { turnOrder } from './queries'
 import type { CharacterId, CharacterState, CityState, FactionId, GameState } from './types'
 import { FACTION_IDS, isFactionId } from './world'

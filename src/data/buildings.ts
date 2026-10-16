@@ -22,6 +22,24 @@ export type BuildingEffect =
 
 export type BuildingEffectKind = BuildingEffect['kind']
 
+/** What each kind of effect does, for the editor and the screens */
+export const BUILDING_EFFECT_LABELS: Readonly<Record<BuildingEffectKind, string>> = {
+  marketPct: '商業',
+  productionPct: '生産',
+  growthPct: '人口の伸び',
+  trainingPct: '訓練',
+  recruitPct: '募兵数',
+  recruitMorale: '新兵の練度',
+  mercenary: '傭兵が現れる',
+}
+
+/** e.g. 商業 +15%, 新兵の練度 +10, 傭兵が現れる */
+export function describeEffect(effect: BuildingEffect): string {
+  const label = BUILDING_EFFECT_LABELS[effect.kind]
+  if (effect.kind === 'mercenary') return label
+  return `${label} ${effect.value >= 0 ? '+' : ''}${effect.value}${effect.kind === 'recruitMorale' ? '' : '%'}`
+}
+
 /** Master data of a building (written by norden-data's building editor) */
 export interface Building {
   id: string

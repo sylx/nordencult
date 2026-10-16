@@ -10,9 +10,6 @@ export const MAX_UNITS = 6
 
 /** Morale of soldiers: 0..MAX_MORALE (the battle screen's scale) */
 export const MAX_MORALE = 100
-/** Morale of a city's soldiers at the start when its data does not say */
-export const INITIAL_MORALE = 70
-
 /** Morale of two bodies of soldiers joining: their average weighted by soldiers (the first's when there are none) */
 export function mixMorale(soldiers: number, morale: number, joining: number, joiningMorale: number): number {
   const total = soldiers + joining

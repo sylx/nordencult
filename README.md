@@ -7,7 +7,7 @@
 | `norden-strategy` | three.js の戦略マップ |
 | `norden-ui` | React UI ライブラリ（基本部品・画面・画面スタック。カタログで各画面を作り込む） |
 | `norden-battle` | 戦闘。`battle-runtime`（戦闘画面 `BattleScreen`。地形・戦闘記録・行動メニューは norden-ui の部品）・`map-runtime`（HEX マップの描画）・`assets/maps/`（戦闘マップ）を使う |
-| `norden-data` | 拠点データ・騎士データのエディタ（`src/data/` などに書き出す。開発時だけ使う） |
+| `norden-data` | 拠点データ・騎士データ・施設データ・セリフのエディタ（`src/data/`・`src/assets/` などに書き出す。開発時だけ使う） |
 
 ```sh
 git submodule update --init
@@ -102,11 +102,13 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 
 戦闘の決着: 戦闘画面（battle-runtime の `victory.ts`）は、どちらかの陣営の部隊がすべて殲滅・退却（捕虜を含む）するか、攻撃側のユニットが防衛拠点（街道マップの `strongholds[防衛する都市]`。map-editor の「防衛拠点」で置く。城の中心部の HEX）で行動を終える（もう行動できなくなる・拠点にいるまま番を終える。入城）と決着し、カットインと決着のウィンドウを出します。カットインはプレイヤーの勢力が勝てば勝利（norden-ui の `battle-win`）、負ければ敗北（`battle-lose`）で、プレイヤーの勢力がいない戦闘では勝利です（`playerSide`。文字はテンプレートのまま）。そのボタン「戦闘の結果へ」で、戦闘シーンが勝った陣営・退却の結果・決着の理由（`BattleEndReason`）を `resolveBattle` に渡して結果の画面へ進みます（理由は `BattleReport.reason`。デバッグのボタンで決めたときは null）。防衛拠点の無い戦場は入城では決着しません。
 
-拠点の初期データ（人口・商業・生産・初期の所属。省略可能な初期の備蓄・兵数・練度・施設）は `src/data/cityData.json`（`src/data/city.ts`）です。地図の描画は `norden-strategy` の `CITY_LIST` を使います。
+拠点の初期データ（人口・商業・生産・初期の所属。省略可能な初期の備蓄・兵数・練度・施設）は `src/data/cityData.json`（`src/data/city.ts`）です。地図の描画は `norden-strategy` の `CITY_LIST`（同じデータに地図の画像を足した写し）を使います。2つが食い違うと `src/data/city.test.ts` が落ちるので、拠点データを変えたら写しも直してください。
+
+施設のマスターデータは `src/data/buildingData.json`（`src/data/buildings.ts`）、画像は `src/assets/buildings/<id>.webp` です。
 
 キャラクターのマスターデータは `src/data/characterData.json`、初期配置は `src/data/characterStart.json`、顔・全身の画像は `src/components/CharacterImage.tsx`（`src/assets/character.webp` のスプライト。大きさは `src/data/characterSprite.json`）です。
 
-これらのデータは `norden-data` のエディタで編集します（`cd norden-data && npm install && npm run dev`）。拠点データはエディタが直接読み書きし、キャラクターのデータは `norden-data/characters/characters.json` から書き出します。
+これらのデータは `norden-data` のエディタで編集します（`cd norden-data && npm install && npm run dev`）。拠点データ・施設データはエディタが直接読み書きし（施設の画像は元画像から切り抜いて書き出す）、キャラクターのデータは `norden-data/characters/characters.json` から書き出します。
 
 `npm test` で `src/` の単体テスト（Vitest）を実行します。
 

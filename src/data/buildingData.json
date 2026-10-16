@@ -7,7 +7,10 @@
     "gold": 100,
     "minTier": 1,
     "effects": [
-      { "kind": "marketPct", "value": 15 }
+      {
+        "kind": "marketPct",
+        "value": 15
+      }
     ]
   },
   {
@@ -18,7 +21,10 @@
     "gold": 120,
     "minTier": 1,
     "effects": [
-      { "kind": "productionPct", "value": 15 }
+      {
+        "kind": "productionPct",
+        "value": 15
+      }
     ]
   },
   {
@@ -29,7 +35,10 @@
     "gold": 80,
     "minTier": 1,
     "effects": [
-      { "kind": "growthPct", "value": 20 }
+      {
+        "kind": "growthPct",
+        "value": 20
+      }
     ]
   },
   {
@@ -40,7 +49,10 @@
     "gold": 150,
     "minTier": 1,
     "effects": [
-      { "kind": "recruitPct", "value": 50 }
+      {
+        "kind": "recruitPct",
+        "value": 50
+      }
     ]
   },
   {
@@ -51,8 +63,14 @@
     "gold": 150,
     "minTier": 2,
     "effects": [
-      { "kind": "trainingPct", "value": 50 },
-      { "kind": "recruitMorale", "value": 10 }
+      {
+        "kind": "trainingPct",
+        "value": 50
+      },
+      {
+        "kind": "recruitMorale",
+        "value": 10
+      }
     ]
   },
   {
@@ -62,10 +80,17 @@
     "supplies": 600,
     "gold": 200,
     "minTier": 2,
-    "requiredTags": ["港湾"],
+    "requiredTags": [
+      "港湾"
+    ],
     "effects": [
-      { "kind": "marketPct", "value": 20 },
-      { "kind": "mercenary" }
+      {
+        "kind": "marketPct",
+        "value": 20
+      },
+      {
+        "kind": "mercenary"
+      }
     ]
   },
   {
@@ -76,7 +101,10 @@
     "gold": 180,
     "minTier": 2,
     "effects": [
-      { "kind": "growthPct", "value": 30 }
+      {
+        "kind": "growthPct",
+        "value": 30
+      }
     ]
   },
   {
@@ -87,7 +115,10 @@
     "gold": 300,
     "minTier": 3,
     "effects": [
-      { "kind": "marketPct", "value": 30 }
+      {
+        "kind": "marketPct",
+        "value": 30
+      }
     ]
   }
 ]

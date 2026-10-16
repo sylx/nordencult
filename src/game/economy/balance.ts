@@ -15,6 +15,9 @@ export const GOLD_PER_MARKET = 0.2
 /** Gold each knight of a faction is paid a turn */
 export const SALARY = 5
 
+/** Morale of a city's soldiers at the start when its data does not say */
+export const INITIAL_MORALE = 70
+
 /** A city's supplies and soldiers at the start, per point of 生産, when its data does not say */
 export const INITIAL_SUPPLIES_PER_PRODUCTION = 2
 export const INITIAL_TROOPS_PER_PRODUCTION = 5
