@@ -1,16 +1,19 @@
 import { createElement } from 'react'
 import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
-import type { BuildingView, CityView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView } from 'norden-ui'
-import { FACTION_MAP, PLACE_ART, PLACES, emblemUrl, type MapSeason, type PlaceType } from 'norden-strategy'
+import type {
+  AssignmentRoleView, BuildOptionView, BuildingView, CityView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView,
+} from 'norden-ui'
+import { FACTION_MAP, PLACES, emblemUrl, type MapSeason, type PlaceType } from 'norden-strategy'
 import { CharacterImage } from '../../components/CharacterImage'
-import { BUILDING_MAP, describeEffect } from '../../data/buildings'
+import { BUILDING_LIST, BUILDING_MAP, describeEffect } from '../../data/buildings'
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
-  assignmentOf, charactersIn, cityOutput, commandRank, constructionTurns, dateOf, defaultUnitType, governorOf, indirectMaxSoldiers,
-  MAX_MORALE, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, treasuryForecast, unitTypesOf, type AssignmentRole, type GameState,
+  assignmentOf, charactersIn, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType, governorBonus,
+  governorOf, indirectMaxSoldiers, militaryBonus, type GovernorBonus, type MilitaryBonus,
+  maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, treasuryForecast, unitTypesOf, type AssignmentRole, type GameState,
   type Season,
 } from '../../game'
 
@@ -109,7 +112,6 @@ export function cityView(game: GameState, id: string): CityView {
     scaleLabel: SCALE_LABELS[type],
     population: state.population,
     tier: output.tier,
-    art: PLACE_ART[type].url,
     special: city.special,
     // height: auto keeps the 2:3 figure; the window crops it from the top
     lord: lord && {
@@ -119,10 +121,10 @@ export function cityView(game: GameState, id: string): CityView {
     stats: [
       { label: '商業', value: output.market, max: 720, base: output.baseMarket },
       { label: '生産', value: output.production, max: 640, base: output.baseProduction },
-      { label: '練度', value: state.troopMorale, max: MAX_MORALE },
     ],
-    supplies: state.storedSupplies,
     troops: state.troops,
+    troopMorale: state.troopMorale,
+    supplies: state.storedSupplies,
     buildings: {
       slots: output.slots,
       built: state.buildings.map(buildingView),
@@ -137,6 +139,43 @@ export function cityView(game: GameState, id: string): CityView {
     knights: knights.map((knight) => knightView(game, knight)),
     neighbours: neighbours(id).map((other) => ({ id: other, name: cityName(other), faction: factionView(ownerOf(game, other)) })),
   }
+}
+
+/** Buildings the city could start (not standing or being built), with why each cannot be started now */
+export function buildOptions(game: GameState, cityId: string): BuildOptionView[] {
+  const city = game.cities[cityId]
+  return BUILDING_LIST
+    .filter((b) => !city.buildings.includes(b.id) && city.construction?.buildingId !== b.id)
+    .map((b) => ({
+      ...buildingView(b.id),
+      supplies: b.supplies,
+      gold: b.gold,
+      turns: constructionTurns(game, cityId, b.id),
+      unavailableReason: constructionProblem(game, cityId, b.id) ?? undefined,
+    }))
+}
+
+const percent = (value: number) => `+${Math.round(value * 100)}%`
+
+/** A governor's bonuses as text, e.g. 商業 +12% (those of 0 left out) */
+export function governorLines(bonus: GovernorBonus): string[] {
+  return [['商業', bonus.market], ['生産', bonus.production], ['人口の伸び', bonus.growth]]
+    .flatMap(([label, value]) => (Number(value) > 0 ? [`${label} ${percent(Number(value))}`] : []))
+}
+
+/** The military officers' bonuses as text, e.g. 訓練 +1.6/ターン */
+export function militaryLines(bonus: MilitaryBonus): string[] {
+  return [
+    ...(bonus.training > 0 ? [`訓練 +${bonus.training.toFixed(1)}/ターン`] : []),
+    ...(bonus.recruit > 0 ? [`募兵 ${percent(bonus.recruit)}`] : []),
+  ]
+}
+
+/** The role's bonuses if the knight were given it (the military officers' together) */
+export function assignmentForecast(game: GameState, cityId: string, knightId: string, role: AssignmentRoleView): string[] {
+  if (role === 'governor') return governorLines(governorBonus(knightId))
+  const others = game.cities[cityId].assignments.military.filter((id) => id !== knightId)
+  return militaryLines(militaryBonus([...others, knightId]))
 }
 
 /** e.g. 灰歴312年4月 春 */

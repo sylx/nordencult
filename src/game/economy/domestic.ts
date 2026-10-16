@@ -17,8 +17,8 @@ import { cityOutput } from './output'
 const withCity = (state: GameState, cityId: CityId, change: Partial<CityState>): GameState =>
   ({ ...state, cities: { ...state.cities, [cityId]: { ...state.cities[cityId], ...change } } })
 
-/** Why the active faction cannot give commands to a city now, or null */
-function commandProblem(state: GameState, cityId: CityId): string | null {
+/** Why the active faction cannot give domestic commands to a city now, or null */
+export function commandProblem(state: GameState, cityId: CityId): string | null {
   if (state.phase !== 'strategy' || !state.activeFaction) return '手番ではありません'
   if (!state.cities[cityId] || ownerOf(state, cityId) !== state.activeFaction) return '自勢力の都市ではありません'
   return null

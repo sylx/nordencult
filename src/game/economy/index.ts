@@ -1,7 +1,8 @@
 // The cities' economy: what they put out, the run at the start of each turn, and the domestic commands
 export * as BALANCE from './balance'
 export {
-  assign, assignmentOf, assignmentProblem, buildingProblem, cancelConstruction, connectedByOwnRoads, constructionProblem,
+  assign, assignmentOf, assignmentProblem, buildingProblem, cancelConstruction, commandProblem as domesticProblem, connectedByOwnRoads,
+  constructionProblem,
   constructionTurns, maxRecruit, recruit, recruitCost, recruitLeft, recruitProblem, startConstruction, transport,
   transportProblem, unassign, withoutAssignee, type Cargo,
 } from './domestic'
