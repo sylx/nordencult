@@ -1,10 +1,8 @@
 import { CHARACTER_MAP } from '../data/character'
-import { CITY_LIST } from '../data/city'
 import { DEFAULT_UNIT_TYPES, UNIT_TYPES_BY_CHARACTER_TYPE, type UnitTypeId } from '../data/unitTypes'
-import type { CharacterId, CityId } from './types'
+import type { CharacterId } from './types'
 
 /** Provisional soldier rules until the battle rules (battle-editor) come in: numbers only scale the stats */
-const SOLDIERS_PER_PRODUCTION = 5
 const SOLDIERS_PER_LEADERSHIP = 5
 
 /** Most units of an invasion, those the commander leads indirectly included */
@@ -12,13 +10,14 @@ export const MAX_UNITS = 6
 
 /** Morale of soldiers: 0..MAX_MORALE (the battle screen's scale) */
 export const MAX_MORALE = 100
-/** Morale of every city's soldiers at the start (provisional until training and transport come in) */
+/** Morale of a city's soldiers at the start when its data does not say */
 export const INITIAL_MORALE = 70
 
-const PRODUCTION = new Map(CITY_LIST.map((c) => [c.id, c.production]))
-
-/** Soldiers a city can send out in a turn: its 生産 × 5 */
-export const soldierPool = (cityId: CityId): number => (PRODUCTION.get(cityId) ?? 0) * SOLDIERS_PER_PRODUCTION
+/** Morale of two bodies of soldiers joining: their average weighted by soldiers (the first's when there are none) */
+export function mixMorale(soldiers: number, morale: number, joining: number, joiningMorale: number): number {
+  const total = soldiers + joining
+  return total > 0 ? Math.round((soldiers * morale + joining * joiningMorale) / total) : morale
+}
 
 /** Most soldiers a character can lead: their 統率 × 5 */
 export const maxSoldiers = (characterId: CharacterId): number =>

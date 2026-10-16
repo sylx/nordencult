@@ -10,7 +10,6 @@
       "中立"
     ],
     "population": 12000,
-    "agriculture": 80,
     "market": 400,
     "production": 0,
     "belongTo": "sede"
@@ -26,7 +25,6 @@
       "漁港"
     ],
     "population": 9000,
-    "agriculture": 200,
     "market": 380,
     "production": 250,
     "belongTo": "taurus"
@@ -42,7 +40,6 @@
       "果樹"
     ],
     "population": 7000,
-    "agriculture": 480,
     "market": 160,
     "production": 160,
     "belongTo": "taurus"
@@ -58,7 +55,6 @@
       "氾濫原"
     ],
     "population": 8000,
-    "agriculture": 560,
     "market": 160,
     "production": 140,
     "belongTo": "leonis"
@@ -74,7 +70,6 @@
       "軍馬"
     ],
     "population": 8000,
-    "agriculture": 560,
     "market": 160,
     "production": 220,
     "belongTo": "leonis"
@@ -90,7 +85,6 @@
       "灌漑"
     ],
     "population": 9000,
-    "agriculture": 600,
     "market": 160,
     "production": 220,
     "belongTo": "leonis"
@@ -106,7 +100,6 @@
       "塩田"
     ],
     "population": 10000,
-    "agriculture": 440,
     "market": 260,
     "production": 220,
     "belongTo": "rosalia"
@@ -122,7 +115,6 @@
       "深海"
     ],
     "population": 8000,
-    "agriculture": 140,
     "market": 380,
     "production": 220,
     "belongTo": "rosalia"
@@ -138,7 +130,6 @@
       "禁忌"
     ],
     "population": 10000,
-    "agriculture": 140,
     "market": 160,
     "production": 140,
     "special": "ゴーレム遺跡",
@@ -155,7 +146,6 @@
       "海賊"
     ],
     "population": 15000,
-    "agriculture": 120,
     "market": 560,
     "production": 280,
     "belongTo": "aqua"
@@ -171,7 +161,6 @@
       "河川"
     ],
     "population": 12000,
-    "agriculture": 640,
     "market": 240,
     "production": 220,
     "belongTo": "leonis"
@@ -187,7 +176,6 @@
       "市場"
     ],
     "population": 11000,
-    "agriculture": 220,
     "market": 460,
     "production": 220,
     "belongTo": "leonis"
@@ -202,7 +190,6 @@
       "河川"
     ],
     "population": 12400,
-    "agriculture": 220,
     "market": 440,
     "production": 220,
     "belongTo": "carta"
@@ -218,7 +205,6 @@
       "十字路"
     ],
     "population": 10000,
-    "agriculture": 220,
     "market": 240,
     "production": 460,
     "belongTo": "leonis"
@@ -234,7 +220,6 @@
       "大市場"
     ],
     "population": 20000,
-    "agriculture": 220,
     "market": 720,
     "production": 280,
     "belongTo": "leonis"
@@ -250,7 +235,6 @@
       "学術"
     ],
     "population": 10000,
-    "agriculture": 460,
     "market": 260,
     "production": 140,
     "belongTo": "leonis"
@@ -266,7 +250,6 @@
       "木材"
     ],
     "population": 5000,
-    "agriculture": 240,
     "market": 240,
     "production": 300,
     "belongTo": "valhardt"
@@ -282,7 +265,6 @@
       "大市場"
     ],
     "population": 14000,
-    "agriculture": 140,
     "market": 560,
     "production": 220,
     "belongTo": "nordis"
@@ -298,7 +280,6 @@
       "古代研究"
     ],
     "population": 4000,
-    "agriculture": 140,
     "market": 180,
     "production": 140,
     "belongTo": "leonis"
@@ -314,7 +295,6 @@
       "未知の地"
     ],
     "population": 3000,
-    "agriculture": 120,
     "market": 100,
     "production": 240,
     "special": "未知領域への入口",
@@ -331,7 +311,6 @@
       "関所"
     ],
     "population": 7000,
-    "agriculture": 140,
     "market": 160,
     "production": 460,
     "belongTo": "nordis"
@@ -347,7 +326,6 @@
       "山岳"
     ],
     "population": 8000,
-    "agriculture": 140,
     "market": 160,
     "production": 560,
     "belongTo": "valhardt"
@@ -363,7 +341,6 @@
       "海上交易"
     ],
     "population": 18000,
-    "agriculture": 140,
     "market": 660,
     "production": 280,
     "belongTo": "aqua"
@@ -379,7 +356,6 @@
       "鍛冶"
     ],
     "population": 5000,
-    "agriculture": 80,
     "market": 240,
     "production": 240,
     "special": "旧帝国鍛冶遺跡",
@@ -396,7 +372,6 @@
       "騎士団"
     ],
     "population": 9000,
-    "agriculture": 140,
     "market": 160,
     "production": 640,
     "special": "誓約騎士団の本拠地",
@@ -413,7 +388,6 @@
       "岩山"
     ],
     "population": 7000,
-    "agriculture": 60,
     "market": 140,
     "production": 560,
     "belongTo": "leonis"
@@ -429,7 +403,6 @@
       "狩人"
     ],
     "population": 4000,
-    "agriculture": 240,
     "market": 160,
     "production": 300,
     "belongTo": "carta"
@@ -445,7 +418,6 @@
       "魔法師ギルド"
     ],
     "population": 6000,
-    "agriculture": 80,
     "market": 240,
     "production": 140,
     "special": "魔法師ギルド本部",
@@ -462,7 +434,6 @@
       "鉱山"
     ],
     "population": 5000,
-    "agriculture": 140,
     "market": 240,
     "production": 300,
     "belongTo": "valhardt"
@@ -478,7 +449,6 @@
       "禁忌"
     ],
     "population": 3000,
-    "agriculture": 120,
     "market": 80,
     "production": 140,
     "special": "禁忌魔法の発生源",
@@ -495,7 +465,6 @@
       "断崖"
     ],
     "population": 6000,
-    "agriculture": 80,
     "market": 140,
     "production": 460,
     "belongTo": "taurus"

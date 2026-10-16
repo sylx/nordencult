@@ -1,6 +1,6 @@
 import { CHARACTER_MAP } from '../data/character'
 import { INDIRECT_UNIT_TYPES, UNIT_TYPE_MAP } from '../data/unitTypes'
-import { MAX_UNITS, indirectMaxSoldiers, maxSoldiers, soldierPool, unitTypesOf } from './army'
+import { MAX_UNITS, indirectMaxSoldiers, maxSoldiers, unitTypesOf } from './army'
 import type { ArmyUnit, Battle, BattleSide, CharacterId, CityId, FactionId, GameState, InvasionOrder } from './types'
 import { CITY_IDS, FACTION_IDS, areNeighbours, neighbours } from './world'
 
@@ -77,16 +77,21 @@ export function retreatCities(state: GameState, battle: Battle, side: BattleSide
 /** Soldiers of a city not yet sent on an invasion this turn */
 export function soldiersLeft(state: GameState, cityId: CityId): number {
   const sent = state.orders.filter((o) => o.from === cityId).flatMap((o) => o.units ?? [])
-  return soldierPool(cityId) - sent.reduce((sum, u) => sum + u.soldiers, 0)
+  return (state.cities[cityId]?.troops ?? 0) - sent.reduce((sum, u) => sum + u.soldiers, 0)
 }
 
+/** The governor (代官) of a city: its lord */
+export const governorOf = (state: GameState, cityId: CityId): CharacterId | undefined =>
+  state.cities[cityId]?.assignments.governor
+
 /**
- * Who must lead an invasion they join: 君主 (2) over 領主 (1); 0 for anyone else.
+ * Who must lead an invasion they join: 君主 (2) over 領主 (1, the governor of their city); 0 for anyone else.
  * The commander of an invasion is a knight of its highest rank.
  */
 export function commandRank(state: GameState, id: CharacterId): number {
   if (CHARACTER_MAP[id]?.isPatriarch) return 2
-  return state.characters[id]?.isLord ? 1 : 0
+  const cityId = state.characters[id]?.cityId
+  return cityId && governorOf(state, cityId) === id ? 1 : 0
 }
 
 /** The knight of the highest commandRank, the first of them on a tie */

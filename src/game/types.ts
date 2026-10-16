@@ -1,3 +1,7 @@
+import type { CityTier } from '../data/buildings'
+
+export type { CityTier }
+
 /** An id of FACTION_LIST */
 export type FactionId = string
 /** 'P000'..'P030' */
@@ -18,11 +22,12 @@ export interface GameState {
   /** Current faction of each city (starts from the city data's belongTo); a city not listed is neutral */
   cityOwners: Readonly<Record<CityId, FactionId>>
   characters: Readonly<Record<CharacterId, CharacterState>>
-  /**
-   * Morale of each city's soldiers (0..MAX_MORALE), which every unit setting out from it has.
-   * Training in the city and soldiers transported in will change it; for now it stays where it starts
-   */
-  cityMorale: Readonly<Record<CityId, number>>
+  /** What changes in each city turn by turn (the city data holds where it starts) */
+  cities: Readonly<Record<CityId, CityState>>
+  /** Each faction's treasury */
+  gold: Readonly<Record<FactionId, number>>
+  /** What the latest economy run (at the start of the turn) did, for showing the cities grow; null on turn 1 */
+  lastEconomy: EconomyReport | null
   /** Invasions ordered this turn, in the order they were made */
   orders: readonly InvasionOrder[]
   /** The march phase: orders still to resolve and the battle being fought */
@@ -38,8 +43,79 @@ export interface CharacterState {
   cityId: CityId | null
   /** Faction they serve; null when unaffiliated */
   factionId: FactionId | null
-  /** Lord of their city */
-  isLord: boolean
+}
+
+/** A building under construction in a city */
+export interface CityConstruction {
+  buildingId: string
+  /** Supplies (hammers) it takes: the building's when it was started */
+  requiredSupplies: number
+  investedSupplies: number
+}
+
+/** Knights assigned to the work of their city. A knight holds one assignment at most, in the city they serve in */
+export interface CityAssignments {
+  /** 代官: the lord of the city */
+  governor?: CharacterId
+  /** 軍事担当 */
+  military: readonly CharacterId[]
+}
+
+export type AssignmentRole = 'governor' | 'military'
+
+export interface CityState {
+  population: number
+  storedSupplies: number
+  troops: number
+  /** Morale of the soldiers (0..MAX_MORALE), which every unit setting out from the city has */
+  troopMorale: number
+  /** Buildings standing, in slot order */
+  buildings: readonly string[]
+  construction: CityConstruction | null
+  assignments: CityAssignments
+  /** Soldiers recruited this turn (a turn's recruiting is limited) */
+  recruited: number
+}
+
+/** The numbers of a city the economy run changes, before and after */
+export interface CitySnapshot {
+  population: number
+  tier: CityTier
+  /** Effective 商業・生産 */
+  market: number
+  production: number
+  storedSupplies: number
+  troops: number
+  troopMorale: number
+  construction: CityConstruction | null
+}
+
+export type EconomyEvent =
+  | { kind: 'buildingCompleted'; buildingId: string }
+  | { kind: 'tierUp'; tier: CityTier }
+
+export interface FactionEconomy {
+  /** Gold from the cities' 商業 */
+  income: number
+  /** Gold paid to the knights (as much as there was) */
+  salary: number
+  before: number
+  after: number
+}
+
+export interface CityEconomy {
+  before: CitySnapshot
+  after: CitySnapshot
+  /** Buildings completed, the city growing a tier */
+  events: readonly EconomyEvent[]
+}
+
+/** What an economy run did */
+export interface EconomyReport {
+  /** The turn it started */
+  turn: number
+  factions: Readonly<Record<FactionId, FactionEconomy>>
+  cities: Readonly<Record<CityId, CityEconomy>>
 }
 
 export interface InvasionOrder {

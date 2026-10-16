@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addOrder, availableKnights, cancelOrder, charactersIn, commandRank, createInitialState, dateOf, defenderArmy, endFactionTurn,
-  GameRuleError,
+  addOrder, availableKnights, BALANCE, cancelOrder, charactersIn, commandRank, createInitialState, dateOf, defenderArmy,
+  endFactionTurn, GameRuleError, governorOf,
   indirectMaxSoldiers, INITIAL_MORALE, invadeFromProblem, invasionTargets, maxSoldiers, neighbours, orderProblem, readPlayerFaction,
-  resolveBattle, retreatCities, soldierPool, seasonOf, soldiersLeft, startNextBattle, turnOrder, type ArmyUnit,
+  resolveBattle, retreatCities, seasonOf, soldiersLeft, startNextBattle, turnOrder, type ArmyUnit,
   type BattleRetreat, type BattleWipeout, type GameState,
 } from '.'
 
@@ -34,11 +34,11 @@ describe('setup', () => {
     expect(state.activeFaction).toBe('carta')
     expect(state.cityOwners[AMBARIA]).toBe('leonis')
     expect(charactersIn(state, FLUEN)).toEqual(['015', '016', '027', '029'])
-    expect(state.characters['029'].isLord).toBe(true)
+    expect(governorOf(state, FLUEN)).toBe('029')
   })
 
   it('leaves mercenaries without a faction unhired', () => {
-    expect(createInitialState().characters['028']).toEqual({ cityId: null, factionId: null, isLord: false })
+    expect(createInitialState().characters['028']).toEqual({ cityId: null, factionId: null })
   })
 
   it('reads the player faction from the URL', () => {
@@ -147,10 +147,15 @@ describe('units', () => {
   const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015', '016'], units }
   const indirect = (unitType: string, soldiers = 50): ArmyUnit => ({ knightId: null, unitType, soldiers })
 
+  /** Soldiers of フルーエン at the start: 生産 220 × 5 */
+  const fluenTroops = 220 * BALANCE.INITIAL_TROOPS_PER_PRODUCTION
+  /** Soldiers of アンバリア at the start: 生産 220 × 5 */
+  const ambariaTroops = 220 * BALANCE.INITIAL_TROOPS_PER_PRODUCTION
+
   it('takes the soldiers of an order from its city', () => {
     const state = createInitialState('carta')
-    expect(soldierPool(FLUEN)).toBe(1100) // 生産 220 × 5
-    expect(soldiersLeft(addOrder(state, draft), FLUEN)).toBe(600)
+    expect(state.cities[FLUEN].troops).toBe(fluenTroops)
+    expect(soldiersLeft(addOrder(state, draft), FLUEN)).toBe(fluenTroops - 500)
   })
 
   it('checks the units of an order', () => {
@@ -166,7 +171,7 @@ describe('units', () => {
     expect(orderProblem(state, { ...draft, units: [{ ...units[0], soldiers: maxSoldiers('015') + 5 }, units[1]] }))
       .not.toBeNull()
     expect(orderProblem({ ...state, orders: [{ ...draft, id: 'x', to: 'P026', commander: '027', knights: ['027'], units: [
-      { knightId: '027', unitType: 'infantry', soldiers: 1000 },
+      { knightId: '027', unitType: 'infantry', soldiers: fluenTroops - 100 },
     ] }] }, draft)).toBe('出撃できる兵が足りません')
   })
 
@@ -214,22 +219,23 @@ describe('units', () => {
     // 生産 × 5 soldiers shared out within the knight's maxSoldiers
     expect(army).toEqual({
       factionId: 'leonis', knights: ['013'], commander: '013', morale: INITIAL_MORALE,
-      units: [{ knightId: '013', unitType: 'archer', soldiers: Math.min(maxSoldiers('013'), Math.floor(soldierPool(AMBARIA) / 10) * 10) }],
+      units: [{ knightId: '013', unitType: 'archer', soldiers: Math.min(maxSoldiers('013'), Math.floor(ambariaTroops / 10) * 10) }],
     })
     // マルクス (029) is the head of カルタ書院: they lead the defence of フルーエン
     expect(defenderArmy(state, FLUEN, 'carta', ['015', '016', '029']).commander).toBe('029')
     const garrison = defenderArmy(state, AMBARIA, null, [])
     expect(garrison.commander).toBeNull()
     expect(garrison.units).toEqual([
-      { knightId: null, unitType: 'infantry', soldiers: Math.floor(soldierPool(AMBARIA) / 2 / 10) * 10 },
-      { knightId: null, unitType: 'infantry', soldiers: Math.floor(soldierPool(AMBARIA) / 2 / 10) * 10 },
+      { knightId: null, unitType: 'infantry', soldiers: Math.floor(ambariaTroops / 2 / 10) * 10 },
+      { knightId: null, unitType: 'infantry', soldiers: Math.floor(ambariaTroops / 2 / 10) * 10 },
     ])
   })
 
   it('gives the units the morale of the city they set out from', () => {
     const state = createInitialState('carta')
-    expect(state.cityMorale[FLUEN]).toBe(INITIAL_MORALE)
-    const marching = startNextBattle(endStrategyPhase(addOrder({ ...state, cityMorale: { ...state.cityMorale, [FLUEN]: 85 } }, draft)))
+    expect(state.cities[FLUEN].troopMorale).toBe(INITIAL_MORALE)
+    const trained = { ...state, cities: { ...state.cities, [FLUEN]: { ...state.cities[FLUEN], troopMorale: 85 } } }
+    const marching = startNextBattle(endStrategyPhase(addOrder(trained, draft)))
     expect(marching.march?.current?.attacker.morale).toBe(85)
   })
 
@@ -258,7 +264,8 @@ describe('battle results', () => {
     expect(state.characters['015']).toMatchObject({ cityId: AMBARIA, factionId: 'carta' })
     expect(state.characters['013']).toMatchObject({ cityId: VERSTA, factionId: 'leonis' })
     // The lord who left the city is no longer its lord
-    expect(state.characters['046']).toEqual({ cityId: VERSTA, factionId: 'leonis', isLord: false })
+    expect(state.characters['046']).toEqual({ cityId: VERSTA, factionId: 'leonis' })
+    expect(state.cities[AMBARIA].assignments).toEqual({ military: [] })
     expect(state.lastBattle).toMatchObject({ winner: 'attacker', cityCaptured: true })
     expect(state.lastBattle?.moves).toEqual([
       { characterId: '015', kind: 'enter', from: FLUEN, to: AMBARIA },
@@ -283,7 +290,7 @@ describe('battle results', () => {
     let state = invadeAmbaria()
     state = { ...state, cityOwners: { ...state.cityOwners, [VERSTA]: 'taurus' } }
     state = fight('attacker', state)
-    for (const id of AMBARIA_KNIGHTS) expect(state.characters[id]).toEqual({ cityId: null, factionId: null, isLord: false })
+    for (const id of AMBARIA_KNIGHTS) expect(state.characters[id]).toEqual({ cityId: null, factionId: null })
     expect(state.lastBattle?.moves.slice(-2)).toMatchObject(
       AMBARIA_KNIGHTS.map((characterId) => ({ characterId, kind: 'wander', to: null })))
   })
@@ -360,7 +367,10 @@ describe('battle results', () => {
 
   it('a lord who leaves their city is no longer its lord', () => {
     const state = fight('attacker', invadeAmbaria(['029']))
-    expect(state.characters['029']).toMatchObject({ cityId: AMBARIA, isLord: false })
-    expect(fight('defender', invadeAmbaria(['029'])).characters['029'].isLord).toBe(true)
+    expect(state.characters['029']).toMatchObject({ cityId: AMBARIA })
+    expect(governorOf(state, FLUEN)).toBeUndefined()
+    expect(governorOf(state, AMBARIA)).toBeUndefined()
+    expect(commandRank(state, '029')).toBe(2) // still the head of カルタ書院
+    expect(governorOf(fight('defender', invadeAmbaria(['029'])), FLUEN)).toBe('029')
   })
 })

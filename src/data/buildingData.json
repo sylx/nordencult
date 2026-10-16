@@ -1,0 +1,93 @@
+[
+  {
+    "id": "market",
+    "name": "市場",
+    "description": "商人が集まり、取引が盛んになる。",
+    "supplies": 300,
+    "gold": 100,
+    "minTier": 1,
+    "effects": [
+      { "kind": "marketPct", "value": 15 }
+    ]
+  },
+  {
+    "id": "workshop",
+    "name": "工房",
+    "description": "職人を抱え、物資の生産を増やす。",
+    "supplies": 400,
+    "gold": 120,
+    "minTier": 1,
+    "effects": [
+      { "kind": "productionPct", "value": 15 }
+    ]
+  },
+  {
+    "id": "granary",
+    "name": "倉庫",
+    "description": "食糧を蓄え、暮らしを安定させる。人口が増えやすくなる。",
+    "supplies": 300,
+    "gold": 80,
+    "minTier": 1,
+    "effects": [
+      { "kind": "growthPct", "value": 20 }
+    ]
+  },
+  {
+    "id": "barracks",
+    "name": "兵舎",
+    "description": "兵を寝泊まりさせる。1ターンに募兵できる数が増える。",
+    "supplies": 400,
+    "gold": 150,
+    "minTier": 1,
+    "effects": [
+      { "kind": "recruitPct", "value": 50 }
+    ]
+  },
+  {
+    "id": "training_ground",
+    "name": "訓練場",
+    "description": "兵を鍛える。練度が上がりやすく、新兵も鍛えられて加わる。",
+    "supplies": 500,
+    "gold": 150,
+    "minTier": 2,
+    "effects": [
+      { "kind": "trainingPct", "value": 50 },
+      { "kind": "recruitMorale", "value": 10 }
+    ]
+  },
+  {
+    "id": "harbor",
+    "name": "港",
+    "description": "船の出入りで交易が広がる。流れ者の傭兵も現れる。",
+    "supplies": 600,
+    "gold": 200,
+    "minTier": 2,
+    "requiredTags": ["港湾"],
+    "effects": [
+      { "kind": "marketPct", "value": 20 },
+      { "kind": "mercenary" }
+    ]
+  },
+  {
+    "id": "temple",
+    "name": "神殿",
+    "description": "人々の心の拠り所。人口が増えやすくなる。",
+    "supplies": 500,
+    "gold": 180,
+    "minTier": 2,
+    "effects": [
+      { "kind": "growthPct", "value": 30 }
+    ]
+  },
+  {
+    "id": "guild_hall",
+    "name": "商館",
+    "description": "遠方の商会が支店を置く。大きな取引が都市を潤す。",
+    "supplies": 900,
+    "gold": 300,
+    "minTier": 3,
+    "effects": [
+      { "kind": "marketPct", "value": 30 }
+    ]
+  }
+]

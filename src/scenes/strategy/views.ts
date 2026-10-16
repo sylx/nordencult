@@ -8,8 +8,8 @@ import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
-  charactersIn, commandRank, dateOf, defaultUnitType, indirectMaxSoldiers, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf,
-  unitTypesOf, type GameState, type Season,
+  charactersIn, cityOutput, commandRank, dateOf, defaultUnitType, governorOf, indirectMaxSoldiers, maxSoldiers, neighbours, orderOf,
+  ownerOf, seasonOf, unitTypesOf, type GameState, type Season,
 } from '../../game'
 
 /** The game state turned into the view types norden-ui's screens draw */
@@ -55,7 +55,7 @@ export function knightView(game: GameState, id: string): KnightView {
     portrait: createElement(CharacterImage, { character, mode: 'face' }),
     subtitle: [
       CHARACTER_TYPE_LABELS[character.type],
-      ...(game.characters[id]?.isLord ? ['領主'] : []),
+      ...(commandRank(game, id) === 1 ? ['領主'] : []),
       ...(order ? [`${cityName(order.to)}へ侵攻予約中`] : []),
     ].join(' / '),
     stats: [
@@ -78,14 +78,15 @@ export function cityView(game: GameState, id: string): CityView {
   if (!city) return { id, name: id, faction }
   const type = PLACE_TYPES.get(id) ?? 'town'
   const knights = charactersIn(game, id)
-  const lord = CHARACTER_MAP[knights.find((knight) => game.characters[knight]?.isLord) ?? '']
+  const lord = CHARACTER_MAP[governorOf(game, id) ?? '']
+  const output = cityOutput(game, id)
   return {
     id,
     name: city.name,
     faction,
     typeLabel: CITY_TYPE_LABELS[city.type] ?? city.type,
     scaleLabel: SCALE_LABELS[type],
-    population: city.population,
+    population: game.cities[id]?.population ?? city.population,
     art: PLACE_ART[type].url,
     special: city.special,
     // height: auto keeps the 2:3 figure; the window crops it from the top
@@ -94,9 +95,8 @@ export function cityView(game: GameState, id: string): CityView {
       image: createElement(CharacterImage, { character: lord, style: { height: 'auto' } }),
     },
     stats: [
-      { label: '農業', value: city.agriculture, max: 720 },
-      { label: '商業', value: city.market, max: 720 },
-      { label: '生産', value: city.production, max: 640 },
+      { label: '商業', value: output.market, max: 720 },
+      { label: '生産', value: output.production, max: 640 },
     ],
     tags: city.tags,
     knights: knights.map((knight) => knightView(game, knight)),
@@ -143,7 +143,7 @@ export function unitPower(game: GameState, from: string, unit: InvasionAssignmen
   const power = {
     type,
     soldiers: unit.soldiers,
-    morale: game.cityMorale[from] ?? 0,
+    morale: game.cities[from]?.troopMorale ?? 0,
     leadership: leader?.leadership ?? 0,
     strength: leader ? mightFor(type, leader) : 0,
   }

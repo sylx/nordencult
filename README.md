@@ -68,21 +68,33 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 
 ## ゲームの状態
 
-`src/game/` にゲームの状態（ターン・フェーズ・都市の所属・キャラクターの所属・侵攻予約・行軍・直近の戦闘）と、それを変える純粋な関数（状態 → 新しい状態）をまとめます。React と地図からは独立しています。
+`src/game/` にゲームの状態（ターン・フェーズ・都市の所属・都市の状態・勢力の金・キャラクターの所属・侵攻予約・行軍・直近の戦闘と内政処理）と、それを変える純粋な関数（状態 → 新しい状態）をまとめます。React と地図からは独立しています。
 
 | ファイル | 役割 |
 | --- | --- |
 | `src/game/types.ts` | `GameState` などの型 |
 | `src/game/setup.ts` | 初期状態（都市・キャラクターの初期配置）、`?faction=` の読み取り |
 | `src/game/queries.ts` | 状態の問い合わせ（手番の順・都市の騎士・侵攻先・予約の条件・残りの兵・戦闘からの退却先） |
-| `src/game/army.ts` | 兵の仮の規則（都市の兵・騎士の率兵・既定の兵科） |
-| `src/game/actions.ts` | 予約の追加・取消、手番の終了、戦闘の開始、`resolveBattle`（戦後処理） |
+| `src/game/army.ts` | 兵の仮の規則（騎士の率兵・既定の兵科・練度の加重平均） |
+| `src/game/actions.ts` | 予約の追加・取消、手番の終了、戦闘の開始、`resolveBattle`（戦後処理）、次のターンの開始（内政処理を含む） |
+| `src/game/economy/balance.ts` | 内政の定数（金・俸禄・Tier の閾値とスロット・担当の補正・人口の成長・募兵・出撃の費用）。すべて仮の値 |
+| `src/game/economy/output.ts` | `cityOutput`: 都市の Tier・スロット・実効の商業と生産・担当と施設の補正・収入・成長・訓練・募兵の上限（内政処理と画面の見込みで共有） |
+| `src/game/economy/runEconomy.ts` | `runEconomy`: 毎ターンの内政処理（金と俸禄 → 物資と建設 → 練度 → 人口と Tier）と、演出用の結果 `lastEconomy` |
+| `src/game/economy/domestic.ts` | 内政の操作（担当の割り当て・解除、着工・中止、募兵、輸送）と、できない理由を返す `…Problem` |
 | `src/game/store.ts`, `gameContext.ts` | `App` に置くストアと `useGame()`（シーンを切り替えても状態が残る） |
 | `src/game/world.ts` | 都市・勢力・街道のつながり（`ROAD_LINKS` から） |
 
 シーンからは `const { state, update } = useGame()` で読み、`update((s) => addOrder(s, draft))` のように変えます。規則に反する操作は `GameRuleError` を投げます。
 
-侵攻予約は騎士ごとの兵科と兵数（`InvasionOrder.units`）を持ちます。戦闘の規則が入るまでの仮の値で、都市が1ターンに出せる兵は生産×5（`soldierPool`）、騎士が率いる兵は統率×5（`maxSoldiers`）、兵科の既定は種別から決めます（`src/data/unitTypes.ts`）。戦闘ではまだ使わず、戦闘シーンに表示するだけです。
+侵攻予約は騎士ごとの兵科と兵数（`InvasionOrder.units`）を持ちます。予約できる兵数は出発する都市の兵数（`CityState.troops`）のうち、このターンにまだ予約していない分です。騎士が率いる兵は統率×5（`maxSoldiers`）、兵科の既定は種別から決めます（`src/data/unitTypes.ts`）。
+
+### 内政
+
+都市の状態（`GameState.cities` の `CityState`: 人口・備蓄物資・兵数・練度・施設・建設中・担当）と勢力の金（`GameState.gold`）を持ちます。都市のマスターデータ（`src/data/city.ts`）は初期値と基礎の商業・生産だけを持ちます。Tier と施設のスロット数は人口から求めます（`tierOf`・`slotsOf`）。
+
+- 担当: 代官（1人。都市の領主で、`commandRank` の「領主」）と軍事担当（何人でも。補正は2人目から半分ずつ）。初期の代官は `characterStart.json` の `isLord` の騎士。騎士が都市を離れると担当から外れ、攻め落とされた都市の担当は空になります
+- 毎ターンの内政処理（`runEconomy`）は、行軍フェーズを解決しきって次のターンの戦略フェーズに入る直前に、全勢力の全都市をまとめて行います。代官の能力で商業・生産・成長が、軍事担当の統率・魅力で訓練・募兵が、施設の効果で各値が伸びます
+- 施設のマスターデータは `src/data/buildingData.json`（`src/data/buildings.ts`）。1都市に同じ施設は1つ、建設中は1件だけで、建設中は都市の生産をすべて建設に回します
 
 戦闘からの退却: 戦闘画面では、部隊は戦場の拠点に街道でつながる自勢力の拠点（`retreatCities`。攻撃側には出撃元も入る）へ退却でき、隣接する敵の数に応じて失敗すると捕虜になります。戦闘画面は結果を部隊ごとに知らせ（battle-runtime の `RetreatReport`）、戦闘シーンが `BattleRetreat`（陣営・騎士・退却先・捕虜になったか）にして `resolveBattle` に渡します。退却した騎士は勝敗に関わらず選んだ拠点へ移り、捕虜になった騎士はまだ扱いが決まっていないので、そのままにして戦闘の結果（`BattleReport.retreats`）と結果画面の「捕虜」に出すだけです。いまの戦闘の部隊は騎士と結び付いていない仮の部隊なので、騎士は null になります（部隊の ID を騎士の ID で作れば結び付きます）。
 
@@ -90,7 +102,7 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 
 戦闘の決着: 戦闘画面（battle-runtime の `victory.ts`）は、どちらかの陣営の部隊がすべて殲滅・退却（捕虜を含む）するか、攻撃側のユニットが防衛拠点（街道マップの `strongholds[防衛する都市]`。map-editor の「防衛拠点」で置く。城の中心部の HEX）で行動を終える（もう行動できなくなる・拠点にいるまま番を終える。入城）と決着し、カットインと決着のウィンドウを出します。カットインはプレイヤーの勢力が勝てば勝利（norden-ui の `battle-win`）、負ければ敗北（`battle-lose`）で、プレイヤーの勢力がいない戦闘では勝利です（`playerSide`。文字はテンプレートのまま）。そのボタン「戦闘の結果へ」で、戦闘シーンが勝った陣営・退却の結果・決着の理由（`BattleEndReason`）を `resolveBattle` に渡して結果の画面へ進みます（理由は `BattleReport.reason`。デバッグのボタンで決めたときは null）。防衛拠点の無い戦場は入城では決着しません。
 
-拠点の初期データ（人口・農業・商業・生産・初期の所属）は `src/data/cityData.json`（`src/data/city.ts`）です。地図の描画は `norden-strategy` の `CITY_LIST` を使います。
+拠点の初期データ（人口・商業・生産・初期の所属。省略可能な初期の備蓄・兵数・練度・施設）は `src/data/cityData.json`（`src/data/city.ts`）です。地図の描画は `norden-strategy` の `CITY_LIST` を使います。
 
 キャラクターのマスターデータは `src/data/characterData.json`、初期配置は `src/data/characterStart.json`、顔・全身の画像は `src/components/CharacterImage.tsx`（`src/assets/character.webp` のスプライト。大きさは `src/data/characterSprite.json`）です。
 
@@ -105,3 +117,4 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | ファイル | 内容 |
 | --- | --- |
 | [m001.md](docs/milestones/m001.md) | プレイヤーの侵攻（ターン・侵攻予約・行軍・戦闘シーン・結果の反映） |
+| [m002.md](docs/milestones/m002.md) | 内政（都市の状態・担当・施設・毎ターンの内政処理・成長の演出） |

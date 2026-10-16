@@ -1,14 +1,16 @@
 import { defaultUnitType, maxSoldiers } from './army'
 import { defenderArmy } from './defense'
+import { withoutAssignee } from './economy/domestic'
+import { runEconomy } from './economy/runEconomy'
+import { GameRuleError } from './errors'
 import { commandRank, leadingKnight, orderProblem, ownerOf, retreatCities, turnOrder } from './queries'
 import type {
-  Battle, BattleEndReason, BattleReport, BattleRetreat, BattleWinner, BattleWipeout, CharacterMove, CharacterState, GameState,
-  InvasionOrder,
+  Battle, BattleEndReason, BattleReport, BattleRetreat, BattleWinner, BattleWipeout, CharacterMove, CharacterState, CityState,
+  GameState, InvasionOrder,
 } from './types'
 import { neighbours } from './world'
 
-/** An action not allowed in the current state (a bug in the caller, or a stale UI) */
-export class GameRuleError extends Error {}
+export { GameRuleError }
 
 /** Adds an invasion to this turn's orders */
 export function addOrder(state: GameState, draft: Omit<InvasionOrder, 'id'>): GameState {
@@ -90,13 +92,15 @@ function createBattle(state: GameState, order: InvasionOrder): Battle | null {
     id: `battle-${state.serial}`,
     orderId: order.id,
     cityId: to,
-    attacker: { factionId, from, commander, knights, units, morale: state.cityMorale[from] },
+    attacker: { factionId, from, commander, knights, units, morale: state.cities[from].troopMorale },
     defender: defenderArmy(state, to, defender, defenders),
   }
 }
 
+/** Every battle fought: the cities' economy runs (runEconomy), then the next turn's strategy phase starts */
 function startTurn(state: GameState): GameState {
-  const next: GameState = { ...state, turn: state.turn + 1, phase: 'strategy', orders: [], march: null }
+  const turn = state.turn + 1
+  const next: GameState = { ...runEconomy(state, turn), turn, phase: 'strategy', orders: [], march: null }
   return { ...next, activeFaction: turnOrder(next)[0] ?? null }
 }
 
@@ -112,7 +116,8 @@ function startTurn(state: GameState): GameState {
  *   (prisoners are not decided yet); the report lists them.
  * - Knights of units wiped out (`wipeouts`) who were captured stay as they are
  *   too, like those captured retreating; those who got away go with their side.
- * Characters who move lose their lordship. `reason` is how the battlefield
+ * Characters who leave their city leave their assignment there (a governor is
+ * no longer its lord); a city taken loses every assignment. `reason` is how the battlefield
  * decided it (the report keeps it); null when decided without fighting it out.
  */
 export function resolveBattle(
@@ -137,13 +142,14 @@ export function resolveBattle(
   ])
   const characters: Record<string, CharacterState> = { ...state.characters }
   const cityOwners = { ...state.cityOwners }
+  const cities: Record<string, CityState> = { ...state.cities }
   const moves: CharacterMove[] = []
   const move = (characterId: string, kind: CharacterMove['kind'], to: string | null) => {
     const before = characters[characterId]
     moves.push({ characterId, kind, from: kind === 'return' ? attacker.from : before.cityId, to })
-    characters[characterId] = to === null
-      ? { cityId: null, factionId: null, isLord: false }
-      : { ...before, cityId: to, isLord: before.isLord && to === before.cityId }
+    const left = before.cityId !== null && before.cityId !== to ? cities[before.cityId] : undefined
+    if (left) cities[before.cityId!] = { ...left, assignments: withoutAssignee(left.assignments, characterId) }
+    characters[characterId] = to === null ? { cityId: null, factionId: null } : { ...before, cityId: to }
   }
 
   for (const r of retreats) {
@@ -157,6 +163,7 @@ export function resolveBattle(
 
   if (winner === 'attacker') {
     cityOwners[cityId] = attacker.factionId
+    cities[cityId] = { ...cities[cityId], assignments: { military: [] } }
     for (const id of attacker.knights) if (!left.has(id)) move(id, 'enter', cityId)
     const refuge = defender.factionId
       ? neighbours(cityId).find((id) => cityOwners[id] === defender.factionId)
@@ -171,5 +178,5 @@ export function resolveBattle(
   }
 
   const report: BattleReport = { battle, winner, reason, cityCaptured: winner === 'attacker', moves, retreats: [...retreats], wipeouts: [...wipeouts] }
-  return { ...state, cityOwners, characters, march: { ...state.march, current: null }, lastBattle: report }
+  return { ...state, cityOwners, characters, cities, march: { ...state.march, current: null }, lastBattle: report }
 }
