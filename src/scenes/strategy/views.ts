@@ -1,15 +1,17 @@
 import { createElement } from 'react'
 import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
-import type { CityView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView } from 'norden-ui'
+import type { BuildingView, CityView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView } from 'norden-ui'
 import { FACTION_MAP, PLACE_ART, PLACES, emblemUrl, type MapSeason, type PlaceType } from 'norden-strategy'
 import { CharacterImage } from '../../components/CharacterImage'
+import { BUILDING_MAP, describeEffect } from '../../data/buildings'
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
-  charactersIn, cityOutput, commandRank, dateOf, defaultUnitType, governorOf, indirectMaxSoldiers, maxSoldiers, neighbours, orderOf,
-  ownerOf, seasonOf, unitTypesOf, type GameState, type Season,
+  assignmentOf, charactersIn, cityOutput, commandRank, constructionTurns, dateOf, defaultUnitType, governorOf, indirectMaxSoldiers,
+  MAX_MORALE, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, treasuryForecast, unitTypesOf, type AssignmentRole, type GameState,
+  type Season,
 } from '../../game'
 
 /** The game state turned into the view types norden-ui's screens draw */
@@ -37,6 +39,23 @@ const PHASE_LABELS = { strategy: '戦略フェーズ', march: '行軍フェー�
 
 const PLACE_TYPES = new Map(PLACES.map((p) => [p.id, p.type]))
 
+const ASSIGNMENT_LABELS: Readonly<Record<AssignmentRole, string>> = { governor: '代官', military: '軍事担当' }
+
+/** Building images written by norden-data (src/assets/buildings/<id>.webp) */
+const BUILDING_IMAGES = import.meta.glob<string>('../../assets/buildings/*.webp', { eager: true, query: '?url', import: 'default' })
+
+export function buildingView(id: string): BuildingView {
+  const building = BUILDING_MAP[id]
+  if (!building) return { id, name: id }
+  return {
+    id,
+    name: building.name,
+    description: building.description,
+    effects: building.effects.map(describeEffect),
+    image: building.image ? BUILDING_IMAGES[`../../assets/buildings/${building.image}`] : undefined,
+  }
+}
+
 export const cityName = (id: string) => CITY_MAP[id]?.name ?? id
 
 /** undefined: neutral */
@@ -49,13 +68,14 @@ export function knightView(game: GameState, id: string): KnightView {
   const character = CHARACTER_MAP[id]
   if (!character) return { id, name: id }
   const order = orderOf(game, id)
+  const assignment = assignmentOf(game, id)
   return {
     id,
     name: character.name,
     portrait: createElement(CharacterImage, { character, mode: 'face' }),
     subtitle: [
       CHARACTER_TYPE_LABELS[character.type],
-      ...(commandRank(game, id) === 1 ? ['領主'] : []),
+      ...(assignment ? [ASSIGNMENT_LABELS[assignment]] : []),
       ...(order ? [`${cityName(order.to)}へ侵攻予約中`] : []),
     ].join(' / '),
     stats: [
@@ -79,6 +99,7 @@ export function cityView(game: GameState, id: string): CityView {
   const type = PLACE_TYPES.get(id) ?? 'town'
   const knights = charactersIn(game, id)
   const lord = CHARACTER_MAP[governorOf(game, id) ?? '']
+  const state = game.cities[id]
   const output = cityOutput(game, id)
   return {
     id,
@@ -86,7 +107,8 @@ export function cityView(game: GameState, id: string): CityView {
     faction,
     typeLabel: CITY_TYPE_LABELS[city.type] ?? city.type,
     scaleLabel: SCALE_LABELS[type],
-    population: game.cities[id]?.population ?? city.population,
+    population: state.population,
+    tier: output.tier,
     art: PLACE_ART[type].url,
     special: city.special,
     // height: auto keeps the 2:3 figure; the window crops it from the top
@@ -95,9 +117,22 @@ export function cityView(game: GameState, id: string): CityView {
       image: createElement(CharacterImage, { character: lord, style: { height: 'auto' } }),
     },
     stats: [
-      { label: '商業', value: output.market, max: 720 },
-      { label: '生産', value: output.production, max: 640 },
+      { label: '商業', value: output.market, max: 720, base: output.baseMarket },
+      { label: '生産', value: output.production, max: 640, base: output.baseProduction },
+      { label: '練度', value: state.troopMorale, max: MAX_MORALE },
     ],
+    supplies: state.storedSupplies,
+    troops: state.troops,
+    buildings: {
+      slots: output.slots,
+      built: state.buildings.map(buildingView),
+      construction: state.construction && {
+        building: buildingView(state.construction.buildingId),
+        invested: state.construction.investedSupplies,
+        required: state.construction.requiredSupplies,
+        turnsLeft: constructionTurns(game, id),
+      },
+    },
     tags: city.tags,
     knights: knights.map((knight) => knightView(game, knight)),
     neighbours: neighbours(id).map((other) => ({ id: other, name: cityName(other), faction: factionView(ownerOf(game, other)) })),
@@ -118,11 +153,14 @@ export const mapSeason = (turn: number) => MAP_SEASONS[seasonOf(dateOf(turn).mon
 export const phaseLabel = (phase: GameState['phase']) => PHASE_LABELS[phase]
 
 export function turnView(game: GameState): TurnView {
+  const treasury = treasuryForecast(game, game.playerFaction)
   return {
     turn: game.turn,
     phaseLabel: phaseLabel(game.phase),
     dateLabel: dateLabel(game.turn),
     activeFaction: game.activeFaction ? factionView(game.activeFaction) : null,
+    gold: treasury.before,
+    goldForecast: treasury.after - treasury.before,
   }
 }
 

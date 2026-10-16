@@ -12,6 +12,19 @@ function snapshot(cityId: CityId, city: CityState): CitySnapshot {
   return { population, tier, market, production, storedSupplies, troops, troopMorale, construction }
 }
 
+/**
+ * What a faction's treasury gains and pays at the next economy run: the income
+ * of its cities and its knights' salaries (paid as far as the gold goes)
+ */
+export function treasuryForecast(state: GameState, factionId: FactionId): FactionEconomy {
+  const income = CITY_IDS.filter((id) => state.cityOwners[id] === factionId)
+    .reduce((sum, id) => sum + outputOf(id, state.cities[id]).income, 0)
+  const knights = Object.values(state.characters).filter((c) => c.factionId === factionId).length
+  const before = state.gold[factionId] ?? 0
+  const salary = Math.min(before + income, knights * SALARY)
+  return { income, salary, before, after: before + income - salary }
+}
+
 /** A city's turn: supplies into its construction (or its store), its soldiers trained, its population grown */
 function growCity(cityId: CityId, city: CityState): { city: CityState; events: EconomyEvent[] } {
   const output = outputOf(cityId, city)
@@ -61,13 +74,8 @@ export function runEconomy(state: GameState, turn: number): GameState {
   const factions: Record<FactionId, FactionEconomy> = {}
   const gold = { ...state.gold }
   for (const factionId of FACTION_IDS) {
-    const income = CITY_IDS.filter((id) => state.cityOwners[id] === factionId)
-      .reduce((sum, id) => sum + outputOf(id, state.cities[id]).income, 0)
-    const knights = Object.values(state.characters).filter((c) => c.factionId === factionId).length
-    const before = gold[factionId] ?? 0
-    const salary = Math.min(before + income, knights * SALARY)
-    gold[factionId] = before + income - salary
-    factions[factionId] = { income, salary, before, after: gold[factionId] }
+    factions[factionId] = treasuryForecast(state, factionId)
+    gold[factionId] = factions[factionId].after
   }
 
   const cities: Record<CityId, CityState> = {}

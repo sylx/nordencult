@@ -9,4 +9,4 @@ export {
   buildingBonus, cityOutput, governorBonus, militaryBonus, slotsOf, tierOf,
   type BuildingBonus, type CityOutput, type GovernorBonus, type MilitaryBonus,
 } from './output'
-export { runEconomy } from './runEconomy'
+export { runEconomy, treasuryForecast } from './runEconomy'
