@@ -1,0 +1,144 @@
+import { useEffect, useId, useRef, useState } from 'react'
+import StatBar from '../../components/parts/StatBar'
+import iconAgriculture from '../../assets/ui/icons/icon-agriculture.svg'
+import iconCommerce from '../../assets/ui/icons/icon-commerce.png'
+import iconProduction from '../../assets/ui/icons/icon-production.png'
+import iconMorale from '../../assets/ui/icons/icon-military.png'
+import type { CityStatView } from '../types'
+
+export interface DomesticStatusProps {
+  /** 商業・生産・新兵の練度 and the like, with the boosts stacked on their bars */
+  stats: readonly CityStatView[]
+  population?: number
+  supplies?: number
+  gold?: number
+}
+
+const statKinds = { 農業: 'agriculture', 商業: 'commerce', 生産: 'production', 練度: 'morale', 新兵の練度: 'morale' } as const
+const statIcons = { agriculture: iconAgriculture, commerce: iconCommerce, production: iconProduction, morale: iconMorale }
+
+const statKind = (stat: CityStatView) => stat.kind ?? statKinds[stat.label as keyof typeof statKinds] ?? 'commerce'
+const signed = (value: number) => `${value >= 0 ? '+' : ''}${value.toLocaleString()}`
+
+/**
+ * The city as it stands, at the top of the domestic screen: its stats as bars with the
+ * buildings' (and other) boosts stacked on the base, each broken down in a tooltip on hover
+ * or click, and its population, supplies and gold in large figures
+ */
+export default function DomesticStatus({ stats, population, supplies, gold }: DomesticStatusProps) {
+  const id = useId()
+  const ref = useRef<HTMLElement>(null)
+  const [hovered, setHovered] = useState<string | null>(null)
+  const [pinned, setPinned] = useState<string | null>(null)
+  const open = pinned ?? hovered
+
+  // A pinned tooltip closes on a click elsewhere or Escape
+  useEffect(() => {
+    if (!pinned) return
+    const onPointerDown = (event: PointerEvent) => {
+      const item = event.target instanceof Element ? event.target.closest('[data-stat]') : null
+      if (!item || !ref.current?.contains(item) || item.getAttribute('data-stat') !== pinned) setPinned(null)
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPinned(null)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [pinned])
+
+  const figures = [
+    { label: '人口', value: population },
+    { label: '備蓄物資', value: supplies },
+    { label: '金', value: gold },
+  ].filter((figure): figure is { label: string; value: number } => figure.value !== undefined)
+
+  return (
+    <section ref={ref} className="norden-domestic-status" aria-label="都市の現状">
+      {stats.length > 0 && (
+        <ul className="norden-domestic-stats">
+          {stats.map((stat, index) => {
+            const boosts = (stat.boosts ?? []).filter(boost => boost.value !== 0)
+            const base = stat.base ?? stat.value - boosts.reduce((sum, boost) => sum + boost.value, 0)
+            const buildingBoost = boosts.filter(boost => boost.source === 'building').reduce((sum, boost) => sum + boost.value, 0)
+            const isOpen = open === stat.label
+            const tipId = `${id}-tip-${index}`
+            return (
+              <li
+                key={stat.label}
+                data-stat={stat.label}
+                className={`norden-domestic-stat ${isOpen ? 'is-open' : ''}`}
+                onMouseEnter={() => setHovered(stat.label)}
+                onMouseLeave={() => setHovered(current => (current === stat.label ? null : current))}
+              >
+                <span className="norden-domestic-stat-label">
+                  <img src={statIcons[statKind(stat)]} alt="" />
+                  {stat.label}
+                </span>
+                <button
+                  type="button"
+                  className="norden-domestic-stat-bar"
+                  aria-label={`${stat.label}の内訳`}
+                  aria-expanded={isOpen}
+                  aria-describedby={isOpen ? tipId : undefined}
+                  onClick={() => setPinned(current => (current === stat.label ? null : stat.label))}
+                >
+                  <StatBar
+                    label={stat.label}
+                    value={stat.value}
+                    max={stat.max}
+                    tone={statKind(stat)}
+                    segments={boosts.map(boost => ({ value: boost.value, kind: boost.source === 'building' ? 'building' : 'other' }))}
+                  />
+                </button>
+                <span className={`norden-domestic-stat-boost ${buildingBoost ? '' : 'is-none'}`}>
+                  施設 {signed(buildingBoost)}
+                </span>
+                {isOpen && (
+                  <div id={tipId} role="tooltip" className="norden-domestic-stat-tip">
+                    <strong className="norden-domestic-stat-tip-title">
+                      {stat.label} <b>{stat.value.toLocaleString()}</b>
+                      <span> / {stat.max.toLocaleString()}</span>
+                    </strong>
+                    <ul className="norden-domestic-stat-tip-rows">
+                      <li>
+                        <span>基礎</span>
+                        <b>{base.toLocaleString()}</b>
+                      </li>
+                      {boosts.map(boost => (
+                        <li key={boost.label} className={boost.source === 'building' ? 'is-building' : ''}>
+                          <span>{boost.label}</span>
+                          <b>{signed(boost.value)}</b>
+                          {boost.details && boost.details.length > 0 && (
+                            <ul className="norden-domestic-stat-tip-details">
+                              {boost.details.map(detail => <li key={detail}>{detail}</li>)}
+                            </ul>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    {boosts.length === 0 && <p className="norden-domestic-stat-tip-none">ブーストはありません</p>}
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      {figures.length > 0 && (
+        <dl className="norden-domestic-figures">
+          {figures.map(figure => (
+            <div key={figure.label}>
+              <dt>{figure.label}</dt>
+              <dd>{figure.value.toLocaleString()}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </section>
+  )
+}

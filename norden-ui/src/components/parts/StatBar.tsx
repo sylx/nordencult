@@ -6,6 +6,14 @@ export interface StatBarProps {
   value: number
   max: number
   tone?: 'agriculture' | 'commerce' | 'production' | 'morale'
+  /** Shares of `value` drawn stacked at the end of the fill, in order (e.g. the buildings' bonus) */
+  segments?: readonly StatBarSegment[]
+}
+
+export interface StatBarSegment {
+  value: number
+  /** building: bright stripes; other: a lighter fill */
+  kind?: 'building' | 'other'
 }
 
 const palettes = {
@@ -16,13 +24,22 @@ const palettes = {
 } as const
 
 /** An engraved metal gauge with a jewel fill, inset track and ten divisions. */
-export default function StatBar({ label, value, max, tone = 'commerce' }: StatBarProps) {
+export default function StatBar({ label, value, max, tone = 'commerce', segments = [] }: StatBarProps) {
   const id = useId()
   const limit = Number.isFinite(max) && max > 0 ? max : 0
   const amount = Number.isFinite(value) ? value : 0
   const current = Math.max(0, Math.min(limit, amount))
   const width = limit ? current / limit * 272 : 0
   const [dark, mid, light] = palettes[tone]
+  const scale = limit ? 272 / limit : 0
+  // The segments end at the value; the base fill runs up to where they start
+  const stacked = segments.filter(segment => Number.isFinite(segment.value) && segment.value > 0)
+  let start = amount - stacked.reduce((sum, segment) => sum + segment.value, 0)
+  const bands = stacked.map(segment => {
+    const x = 14 + Math.max(0, Math.min(limit, start)) * scale
+    start += segment.value
+    return { kind: segment.kind ?? 'other', x, width: Math.max(0, 14 + Math.max(0, Math.min(limit, start)) * scale - x) }
+  })
   return <span className={`norden-stat-bar is-${tone}`}>
     <svg className="norden-stat-bar-graphic" viewBox="0 0 300 34" preserveAspectRatio="none"
       role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={limit} aria-valuenow={current}
@@ -39,6 +56,9 @@ export default function StatBar({ label, value, max, tone = 'commerce' }: StatBa
         <pattern id={`${id}-engraving`} width="12" height="18" patternUnits="userSpaceOnUse">
           <path d="m0 18 12-18M-6 18 6 0" stroke="#fff" strokeOpacity=".1" strokeWidth="1" />
         </pattern>
+        <pattern id={`${id}-boost`} width="8" height="18" patternUnits="userSpaceOnUse">
+          <path d="m-2 18 10-18M4 18 14 0" stroke={light} strokeOpacity=".75" strokeWidth="2.5" />
+        </pattern>
         <clipPath id={`${id}-clip`}><rect x="14" y="8" width={width} height="18" rx="2" /></clipPath>
       </defs>
       <path d="M2 17 10 5h280l8 12-8 12H10Z" fill={`url(#${id}-metal)`} stroke="#654a2a" />
@@ -48,6 +68,12 @@ export default function StatBar({ label, value, max, tone = 'commerce' }: StatBa
       <g clipPath={`url(#${id}-clip)`}>
         <rect x="14" y="8" width="272" height="18" fill={`url(#${id}-fill)`} />
         <rect x="14" y="8" width="272" height="18" fill={`url(#${id}-engraving)`} />
+        {bands.map((band, index) => <g key={index} className={`norden-stat-bar-segment is-${band.kind}`}>
+          <rect x={band.x} y="8" width={band.width} height="18" fill={band.kind === 'building' ? light : '#fff'}
+            fillOpacity={band.kind === 'building' ? 0.35 : 0.18} />
+          {band.kind === 'building' && <rect x={band.x} y="8" width={band.width} height="18" fill={`url(#${id}-boost)`} />}
+          <path d={`M${band.x} 8v18`} stroke="#1a120a" strokeOpacity=".7" strokeWidth="1.5" />
+        </g>)}
         <path d="M14 9h272" stroke={light} strokeOpacity=".8" />
       </g>
       {Array.from({ length: 9 }, (_, index) => <path key={index}

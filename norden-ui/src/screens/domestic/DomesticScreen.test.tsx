@@ -154,4 +154,52 @@ describe('DomesticScreen', () => {
     // The upgrade takes no slot: one empty slot remains (not addable while building)
     expect(screen.getAllByLabelText('空きスロット')).toHaveLength(1)
   })
+
+  it('shows the city state at the top with the boosts broken down on hover and click', async () => {
+    render(
+      <DomesticScreen
+        city={{ id: 'P012', name: 'フルーエン', population: 11000, supplies: 440 }}
+        gold={1500}
+        stats={[
+          {
+            label: '商業', value: 506, max: 720, base: 440,
+            boosts: [
+              { label: '代官', value: 44 },
+              { label: '施設', value: 22, source: 'building', details: ['市場: 商業 +5%'] },
+            ],
+          },
+          { label: '新兵の練度', value: 20, max: 100, base: 20, boosts: [{ label: '施設', value: 0, source: 'building' }] },
+        ]}
+        onClose={vi.fn()}
+      />,
+    )
+
+    const status = screen.getByRole('region', { name: '都市の現状' })
+    expect(within(status).getByText('11,000')).toBeInTheDocument()
+    expect(within(status).getByText('440')).toBeInTheDocument()
+    expect(within(status).getByText('1,500')).toBeInTheDocument()
+    expect(within(status).getByText('施設 +22')).toBeInTheDocument()
+    expect(within(status).getByText('施設 +0')).toBeInTheDocument()
+
+    // Hovering shows the breakdown, leaving hides it
+    const commerce = within(status).getByRole('button', { name: '商業の内訳' })
+    await userEvent.hover(commerce)
+    const tip = screen.getByRole('tooltip')
+    expect(within(tip).getByText('基礎')).toBeInTheDocument()
+    expect(within(tip).getByText('+44')).toBeInTheDocument()
+    expect(within(tip).getByText('市場: 商業 +5%')).toBeInTheDocument()
+    await userEvent.unhover(commerce)
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+
+    // Clicking keeps it open until clicked again or elsewhere
+    await userEvent.click(commerce)
+    await userEvent.unhover(commerce)
+    expect(screen.getByRole('tooltip')).toBeInTheDocument()
+    await userEvent.click(screen.getByText('フルーエンの施設'))
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+
+    const morale = within(status).getByRole('button', { name: '新兵の練度の内訳' })
+    await userEvent.click(morale)
+    expect(within(screen.getByRole('tooltip')).getByText('ブーストはありません')).toBeInTheDocument()
+  })
 })

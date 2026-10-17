@@ -1,4 +1,4 @@
-import type { BuildOptionView, BuildingView, CityBuildingsView, CityView, FactionSummaryView, FactionView, KnightView, TurnView, UnitTypeView } from '../../src'
+import type { BuildOptionView, BuildingView, CityBuildingsView, CityStatView, CityView, FactionSummaryView, FactionView, KnightView, TurnView, UnitTypeView } from '../../src'
 import { createElement } from 'react'
 import { repositoryBuildings, type BuildingSpec } from '../repositoryBuildings'
 import { repositoryCharacters, RepositoryCharacterArt, RepositoryPortrait } from '../repositoryCharacters'
@@ -153,6 +153,54 @@ export function withCompleted(built: readonly BuildingView[], building: Building
   return replaced && built.some(item => item.id === replaced)
     ? built.map(item => (item.id === replaced ? building : item))
     : [...built, building]
+}
+
+/** Morale of new recruits before buildings (the game's RECRUIT_MORALE) */
+const RECRUIT_MORALE = 20
+
+/** A building's effect on a stat read from its text (e.g. 商業 +5%) */
+function effectOn(building: BuildingView, label: string): { value: number; percent: boolean; text: string } | undefined {
+  for (const text of building.effects ?? []) {
+    const match = /^(.+) ([+-]\d+)(%?)$/.exec(text)
+    if (match?.[1] === label) return { value: Number(match[2]), percent: match[3] === '%', text }
+  }
+  return undefined
+}
+
+/**
+ * The domestic screen's bars: 商業・生産 with the buildings' bonus worked out from their effects on
+ * the base (what is left of the city's bonus going to the governor), and 新兵の練度
+ */
+export function domesticStatsFor(city: CityView): CityStatView[] {
+  const built = city.buildings?.built ?? []
+  const buildingBoost = (label: string, base: number) => {
+    const parts = built.flatMap(building => {
+      const effect = effectOn(building, label)
+      return effect ? [{ name: building.name, ...effect, amount: effect.percent ? base * effect.value / 100 : effect.value }] : []
+    })
+    return {
+      label: '施設',
+      source: 'building' as const,
+      value: Math.round(parts.reduce((sum, part) => sum + part.amount, 0)),
+      details: parts.map(part => `${part.name}: ${part.text}`),
+    }
+  }
+  const boosted = (stat: CityStatView): CityStatView => {
+    const base = stat.base ?? stat.value
+    const buildings = buildingBoost(stat.label, base)
+    const governor = stat.base === undefined ? 0 : Math.max(0, stat.value - stat.base - buildings.value)
+    return {
+      ...stat,
+      base,
+      value: base + governor + buildings.value,
+      boosts: [...(governor ? [{ label: '代官', value: governor, details: city.lord ? [city.lord.name] : [] }] : []), buildings],
+    }
+  }
+  const morale = buildingBoost('新兵の練度', RECRUIT_MORALE)
+  return [
+    ...(city.stats ?? []).map(boosted),
+    { label: '新兵の練度', kind: 'morale', value: RECRUIT_MORALE + morale.value, max: 100, base: RECRUIT_MORALE, boosts: [morale] },
+  ]
 }
 
 /** Ids missing from the buildings in use are left out */

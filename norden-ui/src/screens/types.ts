@@ -20,6 +20,19 @@ export interface CityStatView {
   max: number
   /** The value before bonuses (e.g. the city's base 商業), shown beside when it differs */
   base?: number
+  /** What the bonuses add, drawn stacked on the base at the end of the bar (they are part of `value`) */
+  boosts?: readonly StatBoostView[]
+}
+
+/** A share of a stat added by one source, e.g. the buildings' +48 of 商業 */
+export interface StatBoostView {
+  /** e.g. 施設, 代官 */
+  label: string
+  value: number
+  /** building: the buildings' share, set apart in the bar */
+  source?: 'building' | 'other'
+  /** Its breakdown for the tooltip, e.g. 市場 +5% */
+  details?: readonly string[]
 }
 
 /** A picture cut out of a sprite sheet: the sheet's URL and size, and the cell's place and size in it (pixels) */

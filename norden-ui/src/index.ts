@@ -37,7 +37,7 @@ export { default as ThinFrame } from './components/parts/ThinFrame'
 export { default as ThinFrameWithTitle } from './components/parts/ThinFrameWithTitle'
 export type { ThinFrameWithTitleProps } from './components/parts/ThinFrameWithTitle'
 export { default as StatBar } from './components/parts/StatBar'
-export type { StatBarProps } from './components/parts/StatBar'
+export type { StatBarProps, StatBarSegment } from './components/parts/StatBar'
 export { default as BuildingSlots, BuildingImage, ConstructionProgress } from './components/parts/BuildingSlots'
 export type { BuildingSlotsProps } from './components/parts/BuildingSlots'
 
@@ -49,7 +49,7 @@ export type { ScreenHostProps, ScreenRenderers } from './navigation/ScreenHost'
 
 // Screens
 export type {
-  AssignmentRoleView, BuildOptionView, BuildingView, CityAssignmentsView, CityBuildingsView, CityStatView, CityView, ConstructionView, FactionSummaryView, FactionView, KnightView, NeighbourView, SpriteImage, TurnView, UnitTypeView,
+  AssignmentRoleView, BuildOptionView, BuildingView, CityAssignmentsView, CityBuildingsView, CityStatView, CityView, ConstructionView, FactionSummaryView, FactionView, KnightView, NeighbourView, SpriteImage, StatBoostView, TurnView, UnitTypeView,
 } from './screens/types'
 export { default as CityCommandScreen, turnText } from './screens/cityCommand/CityCommandScreen'
 export type { CityCommandScreenProps, CommandState } from './screens/cityCommand/CityCommandScreen'

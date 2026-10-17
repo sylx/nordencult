@@ -60,29 +60,206 @@
   font-variant-numeric: tabular-nums;
 }
 
-.norden-domestic-resources {
+/* Top row: the city's state */
+.norden-domestic-status-frame {
+  position: relative;
+  /* Above the facility frame below, so the stats' tooltips are not hidden behind it */
+  z-index: 1;
+  isolation: isolate;
+  box-sizing: border-box;
+  flex: none;
+  padding: 14px 22px;
+}
+
+.norden-domestic-status {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  align-items: center;
+  gap: 14px 28px;
+}
+
+.norden-domestic-stats {
+  flex: 1 1 380px;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
   margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 800px;
+}
+
+.norden-domestic-stat {
+  position: relative;
+  display: grid;
+  grid-template-columns: 7.5em minmax(0, 1fr) 6.5em;
+  align-items: center;
+  gap: 10px;
+}
+
+.norden-domestic-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #f0dcb2;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.norden-domestic-stat-label img {
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(0 2px 1px #0006);
+}
+
+.norden-domestic-stat-bar {
+  display: flex;
+  min-width: 0;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  font: inherit;
+  cursor: help;
+}
+
+.norden-domestic-stat-bar:focus-visible {
+  outline: 2px solid #ffe0a1;
+  outline-offset: 2px;
+}
+
+.norden-domestic-stat-bar .norden-stat-bar-value {
+  min-width: 3.5ch;
+  color: #fff3d1;
+}
+
+.norden-domestic-stat-boost {
+  color: #b9e08f;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.norden-domestic-stat-boost.is-none {
+  color: #8f7b5c;
+  font-weight: 500;
+}
+
+/* Breakdown of a stat, below its bar */
+.norden-domestic-stat-tip {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 7.5em;
+  z-index: 20;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 10px 12px;
+  color: #3b2a16;
+  background: #fff6dcf5;
+  border: 1px solid #b38d52;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 2px #fff9e666, 0 6px 16px #000a;
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.norden-domestic-stat.is-open .norden-domestic-stat-tip {
+  pointer-events: auto;
+}
+
+.norden-domestic-stat-tip-title {
+  display: block;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #b38d5280;
   font-size: 14px;
 }
 
-.norden-domestic-resources > div {
+.norden-domestic-stat-tip-title b {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.norden-domestic-stat-tip-title span {
+  color: #8a7050;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.norden-domestic-stat-tip-rows,
+.norden-domestic-stat-tip-details {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.norden-domestic-stat-tip-rows > li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 12px;
+  padding: 2px 0;
+}
+
+.norden-domestic-stat-tip-rows b {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.norden-domestic-stat-tip-rows > li.is-building {
+  color: #2f5c34;
+}
+
+.norden-domestic-stat-tip-details {
+  grid-column: 1 / -1;
+  padding-left: 1em;
+  color: #5b4428;
+  font-size: 12px;
+}
+
+.norden-domestic-stat-tip-none {
+  margin: 4px 0 0;
+  color: #8a7050;
+  font-size: 12px;
+}
+
+/* Population, supplies and gold in large figures */
+.norden-domestic-figures {
+  flex: 0 1 auto;
   display: flex;
-  align-items: baseline;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
 }
 
-.norden-domestic-resources dt {
+.norden-domestic-figures > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 110px;
+  padding: 6px 14px 8px;
+  background: rgb(255 243 204 / 0.06);
+  border: 1px solid #b38d5260;
+  border-radius: 6px;
+}
+
+.norden-domestic-figures dt {
+  align-self: flex-start;
   color: #bfa575;
+  font-size: 13px;
+  font-weight: 700;
 }
 
-.norden-domestic-resources dd {
+.norden-domestic-figures dd {
   margin: 0;
   color: #fff3d1;
+  font-size: 30px;
   font-weight: 700;
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 3px #0008;
 }
 
 /* Building slots row: filled from left to right; each card shows its building's picture whole */

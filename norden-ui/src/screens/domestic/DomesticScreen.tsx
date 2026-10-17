@@ -4,7 +4,8 @@ import Button from '../../components/parts/Button'
 import ThinFrame from '../../components/parts/ThinFrame'
 import ConfirmDialog from '../../components/window/ConfirmDialog'
 import WindowFrame from '../../components/window/WindowFrame'
-import type { BuildOptionView, BuildingView, CityView, ConstructionView } from '../types'
+import type { BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView } from '../types'
+import DomesticStatus from './DomesticStatus'
 import '../screens.css'
 import './DomesticScreen.css'
 
@@ -16,8 +17,10 @@ export interface DomesticScreenProps {
    * the others as upgrades of the building they replace. `locked` ones are not shown
    */
   buildOptions?: readonly BuildOptionView[]
-  /** Faction treasury gold (shown alongside the city's stockpiled supplies) */
+  /** Faction treasury gold (shown alongside the city's population and stockpiled supplies) */
   gold?: number
+  /** Bars at the top (e.g. 商業・生産・新兵の練度) with the buildings' boosts stacked on them; city.stats when omitted */
+  stats?: readonly CityStatView[]
   /** Start constructing a building in the active empty slot, or an upgrade over the building it replaces */
   onBuild?: (buildingId: string) => void
   /** Demolish a standing building (invoked after the confirmation dialog is accepted) */
@@ -34,13 +37,15 @@ export interface DomesticScreenProps {
 type BuildPanel = { kind: 'add' } | { kind: 'upgrade'; building: BuildingView }
 
 /**
- * Domestic screen: full-screen window with the city's building slots (their pictures shown whole) at the top-left,
+ * Domestic screen: full-screen window with the city's state (stats with their boosts, population, supplies, gold)
+ * at the top-left, its building slots (their pictures shown whole) below,
  * open space below for knight assignments, and a panel on the right (30-40%) of the buildings to add or upgrade to.
  */
 export default function DomesticScreen({
   city,
   buildOptions = [],
   gold,
+  stats = city.stats ?? [],
   onBuild,
   onDemolish,
   onCancelConstruction,
@@ -129,6 +134,11 @@ export default function DomesticScreen({
       >
         <div className="norden-domestic-layout">
           <div className="norden-domestic-left">
+            <div className="norden-domestic-status-frame">
+              <ThinFrame />
+              <DomesticStatus stats={stats} population={city.population} supplies={city.supplies} gold={gold} />
+            </div>
+
             <section className="norden-domestic-frame" data-testid="domestic-frame" aria-label="都市の施設">
               <ThinFrame />
               <header className="norden-domestic-frame-header">
@@ -136,20 +146,6 @@ export default function DomesticScreen({
                   {city.name}の施設
                   <span className="norden-domestic-slot-count">{built.length} / {slots}</span>
                 </h2>
-                <dl className="norden-domestic-resources">
-                  {city.supplies !== undefined && (
-                    <div>
-                      <dt>備蓄物資</dt>
-                      <dd>{city.supplies.toLocaleString()}</dd>
-                    </div>
-                  )}
-                  {gold !== undefined && (
-                    <div>
-                      <dt>金</dt>
-                      <dd>{gold.toLocaleString()}</dd>
-                    </div>
-                  )}
-                </dl>
               </header>
 
               <ul className="norden-domestic-slots" aria-label={`施設スロット ${built.length} / ${slots}`}>
