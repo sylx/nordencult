@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import InfoWindowEntry from './entries/InfoWindowEntry'
 import CommandToolbarEntry from './entries/CommandToolbarEntry'
 import DateBarEntry from './entries/DateBarEntry'
+import FactionBarEntry from './entries/FactionBarEntry'
 import PartsEntry from './entries/PartsEntry'
 import CityCommandEntry from './entries/CityCommandEntry'
 import MapPickEntry from './entries/MapPickEntry'
@@ -30,18 +31,18 @@ export const CATALOG: CatalogGroup[] = [
     label: '画面フロー',
     entries: [
       { id: 'strategy-flow', label: '戦略画面', name: 'useScreenStack + ScreenHost', Component: StrategyFlowEntry,
-        description: '都市コマンド → 内政 → 建設・割当で内政画面。都市コマンド → 軍事 → 侵攻 → 地図で侵攻先を選ぶ → 侵攻画面。Escで1段ずつ戻る。画面の積み重ねは useScreenStack、表示は ScreenHost' },
+        description: '都市コマンド → 内政 → 建設で内政画面。都市コマンド → 軍事 → 侵攻 → 地図で侵攻先を選ぶ → 侵攻画面。Escで1段ずつ戻る。画面の積み重ねは useScreenStack、表示は ScreenHost' },
     ],
   },
   {
     label: '画面',
     entries: [
       { id: 'city-command', label: '都市コマンド', name: 'CityCommandScreen', Component: CityCommandEntry,
-        description: '都市情報ウィンドウ、都市の切り替え、ターン情報、アクションツールバー（内政・軍事・研究・商人・ターン終了）' },
+        description: '都市情報ウィンドウ、勢力の情報と都市の切り替え、ターン情報、アクションツールバー（内政・軍事・研究・商人・ターン終了）' },
       { id: 'map-pick', label: '地図で選ぶ', name: 'MapPickScreen', Component: MapPickEntry,
         description: '地図上で都市などを選ぶステップ。案内の帯と「やめる」だけを出し、候補の強調と選択は呼び出し側の地図が行う' },
       { id: 'domestic', label: '内政', name: 'DomesticScreen', Component: DomesticEntry,
-        description: '都市の建設（施設スロット・建てられる施設・着工・中止）と割当（代官・軍事担当と補正の見込み）をタブで切り替える' },
+        description: '画面いっぱいの暗い羊皮紙のウィンドウ。いまは左上の枠と「閉じる」だけ（中身はこれから）' },
       { id: 'invasion', label: '侵攻', name: 'InvasionScreen', Component: InvasionEntry,
         description: '出撃する騎士の選択と、騎士ごとの兵科・兵数。兵数の合計は出発都市の兵数まで' },
     ],
@@ -62,8 +63,10 @@ export const CATALOG: CatalogGroup[] = [
         description: 'コマンドの並び。子を持つコマンドは押すと上にサブコマンドが開く' },
       { id: 'date-bar', label: 'ターン情報', name: 'DateBar', Component: DateBarEntry,
         description: '年月・ターンの表示と、歯車の設定メニュー' },
+      { id: 'faction-bar', label: '勢力の情報', name: 'FactionBar', Component: FactionBarEntry,
+        description: '金（次のターンの増減）・総生産・総兵力と、都市の切り替え（◀ ▶）。装飾は仮' },
       { id: 'parts', label: 'UIパーツ', name: 'Button / ChoiceGroup / QuantityInput …', Component: PartsEntry,
-        description: '画面を組み立てる小さな部品。ボタン、単一選択、数量、騎士カード、勢力、案内の帯、都市の切り替え' },
+        description: '画面を組み立てる小さな部品。ボタン、単一選択、数量、騎士カード、勢力、案内の帯' },
     ],
   },
 ]

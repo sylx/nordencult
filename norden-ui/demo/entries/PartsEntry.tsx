@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ButtonProps } from '../../src'
-import { Banner, Button, Card, ChoiceGroup, CityNavigator, FactionMark, InfoWindow, KnightCard, QuantityInput, ThinFrameWithTitle } from '../../src'
+import { Banner, Button, Card, ChoiceGroup, FactionMark, InfoWindow, KnightCard, QuantityInput, ThinFrameWithTitle } from '../../src'
 import { repositoryCharacters, RepositoryPortrait } from '../repositoryCharacters'
 import { FACTIONS, KNIGHTS, UNIT_TYPES } from '../mock/data'
 import { Log, useLog, Workbench } from '../Workbench'
@@ -10,7 +10,6 @@ export default function PartsEntry() {
   const [unit, setUnit] = useState('infantry')
   const [soldiers, setSoldiers] = useState(240)
   const [selected, setSelected] = useState(true)
-  const [city, setCity] = useState(0)
   const [characterId, setCharacterId] = useState(repositoryCharacters[0]?.id ?? '')
   const character = repositoryCharacters.find(item => item.id === characterId)
   const [portraitMode, setPortraitMode] = useState('repository')
@@ -29,7 +28,6 @@ export default function PartsEntry() {
     portraitSrc: portraitMode === 'url' ? portraitUrl : portraitMode === 'upload' ? uploadedUrl : undefined,
     stats: [{ label: '統率', value: stats.leadership }, { label: '武力', value: stats.strength }, { label: '知力', value: stats.intelligence }],
   }
-  const cities = ['フルーエン', 'ヴェステル', 'ミルデン']
 
   return <Workbench
     stage={<>
@@ -60,9 +58,6 @@ export default function PartsEntry() {
         </div>
       </InfoWindow>
       <div className="demo-dark-parts">
-        <CityNavigator name={cities[city]!} position={{ index: city, count: cities.length }}
-          onPrev={() => setCity(value => (value + cities.length - 1) % cities.length)}
-          onNext={() => setCity(value => (value + 1) % cities.length)} />
         <Banner actions={<Button variant="quiet" size="small" onClick={() => add('やめる')}>やめる</Button>}>
           フルーエンからの侵攻先を選んでください
         </Banner>

@@ -1,6 +1,6 @@
 # UIパーツの装飾と画像
 
-CityNavigatorとBannerはInfoWindowの最も細いベゼル（`windowSkins.thin`）を共用します。HUDに合わせて角領域を22pxで描き、背景を内側に配置して外周の透過を保ちます。
+FactionBarとBannerはInfoWindowの最も細いベゼル（`windowSkins.thin`）を共用します。HUDに合わせて角領域を22pxで描き、背景を内側に配置して外周の透過を保ちます。
 
 ## 細いベゼルの題名の札
 

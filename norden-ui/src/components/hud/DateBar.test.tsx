@@ -21,14 +21,6 @@ describe('DateBar', () => {
     expect(screen.queryByRole('region', { name: '設定' })).not.toBeInTheDocument()
   })
 
-  it('shows the treasury and the next turn\'s change after the date', () => {
-    render(<DateBar {...labels} gold={1234} goldForecast={-56} />)
-    const gold = screen.getByRole('group', { name: '金' })
-    expect(gold).toHaveTextContent('1,234')
-    expect(gold).toHaveTextContent('−56')
-    expect(screen.getByTitle(labels.dateLabel).compareDocumentPosition(gold) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  })
-
   it.each(['灰歴312年1月', '灰歴３１２年１月', '灰歴312年 春', '日付未定'])(
     'preserves the complete date label when formatting %s', dateLabel => {
       render(<DateBar {...labels} dateLabel={dateLabel} />)

@@ -4,7 +4,7 @@
 
 | 層 | 内容 | 場所 |
 | --- | --- | --- |
-| 基本部品 | ウィンドウ（`InfoWindow` / `InfoWindowWithTabs`）、ツールバー（`CommandToolbar`）、ターン情報（`DateBar`）、UIパーツ（`Button`・`ChoiceGroup`・`QuantityInput`・`KnightCard` など） | `src/components/` |
+| 基本部品 | ウィンドウ（`InfoWindow` / `InfoWindowWithTabs`）、ツールバー（`CommandToolbar`）、ターン情報（`DateBar`）、勢力の情報（`FactionBar`）、UIパーツ（`Button`・`ChoiceGroup`・`QuantityInput`・`KnightCard` など） | `src/components/` |
 | 画面 | 基本部品を組み合わせた1画面分のUI。都市コマンド画面・地図で選ぶステップ・侵攻画面 | `src/screens/` |
 | 画面スタック | 画面の階層。都市コマンド → 侵攻先の選択 → 侵攻画面と積み、Escで1段戻る | `src/navigation/` |
 
@@ -120,9 +120,9 @@ function BattleUi() {
 
 | 画面 | 構成 | 主なprops |
 | --- | --- | --- |
-| `CityCommandScreen` | 都市の切り替え ◀ ▶（左上）、都市情報ウィンドウ（都市情報・騎士・街道タブ。都市情報は代官・人口と Tier、兵数・練度・物資（大きな数字で横に並べる）、商業と生産（実効値と基礎値）、施設スロット）、ターン情報（右上。金を含む）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `onSelectNeighbour`, `turnMenu`, `children`（ホストの追加HUD） |
+| `CityCommandScreen` | 勢力の情報と都市の切り替え ◀ ▶（左上の `FactionBar`）、都市情報ウィンドウ（都市情報・騎士・街道タブ。都市情報は代官・人口と Tier、兵数・練度・物資（大きな数字で横に並べる）、商業と生産（実効値と基礎値）、施設スロット）、ターン情報（右上）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `faction: FactionSummaryView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `onSelectNeighbour`, `turnMenu`, `children`（ホストの追加HUD） |
 | `MapPickScreen` | 案内の帯と「やめる」 | `message`, `onCancel`, `cancelLabel` |
-| `DomesticScreen` | 都市の内政のウィンドウ（建設・割当のタブ）と、金・「閉じる」のHUD。建設: 施設スロット、建設中の中止（確認つき）、建てられる施設（効果・物資・金・ターン数・着工できない理由）。割当: 代官・軍事担当と今の補正、都市の騎士（代官に・軍事担当に・外す、担当したときの補正の見込み） | `city: CityView`, `tab`（`'build' \| 'assign'`）, `gold`, `buildOptions: BuildOptionView[]`, `onBuild(id)`, `onCancelConstruction`, `knights: KnightView[]`, `assignments`, `bonuses`, `forecast(knightId, role)`, `onAssign(knightId, role)`, `onUnassign(knightId)`, `onClose` |
+| `DomesticScreen` | 都市の内政。画面いっぱいの暗い羊皮紙（`ThinFrame`）のウィンドウで、いまは左上の空の枠と「閉じる」だけ（建設・割当の中身はこれから） | `city: CityView`, `onClose`, `children` |
 | `InvasionScreen` | 出撃する騎士の選択ウィンドウ、軍団編成（部隊ごとの兵科と兵数）のウィンドウ、編成した部隊の図（タイトルなしのウィンドウ）、合計兵数と「やめる / 予約」 | `from` / `to: CityView`, `defenders`, `knights: KnightView[]`, `unitTypes`, `indirectUnitTypes`, `maxUnits`, `soldierPool`, `morale`, `unitPower`, `soldierStep`, `skin`（既定は thin）, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
 
 アクションツールバーのコマンドは `CITY_COMMAND_GROUPS` に定義しています。内政（建設・割当）、軍事（移動・侵攻・募兵・輸送）、研究、商人（購入・売却）と、最後にターン終了です。
@@ -145,10 +145,10 @@ function BattleUi() {
 | 部品 | 主なprops | 振る舞い |
 | --- | --- | --- |
 | `CommandToolbar` | `commands: { id, label, icon?, onClick?, disabled?, title?, active?, tone?, children? }[]`, `movable` | 子を持つコマンドは押すと上にサブコマンドの列を開く（再クリック・Esc・外側クリックで閉じる）。`tone: 'accent'` で強調。`movable` で左右の端をドラッグ・矢印キーで移動 |
-| `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `gold?`, `goldForecast?`, `children?` | フェーズ・勢力のターン・年月・金（と次のターンの増減）・設定の順に表示。`children` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
+| `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `children?` | フェーズ・勢力のターン・年月・設定の順に表示。`children` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
 | `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `metal: 'gold' \| 'silver' \| 'none'`, `size`, `style` | 象牙の立体的なボタンに金／銀の四隅装飾、または装飾なし。生成画像を9分割で伸縮し、`style` で幅・高さを指定可能 |
 | `Banner` | `children`, `actions` | HUDの案内の帯（`role="status"`） |
-| `CityNavigator` | `name`, `onPrev`, `onNext`, `position` | ◀ 都市名 ▶。ハンドラが無い方向は無効 |
+| `FactionBar` | `summary?: FactionSummaryView`, `cityName`, `onPrevCity`, `onNextCity`, `cityPosition` | 金（次のターンの増減）｜総生産｜総兵力｜◀ 都市名 ▶。`summary` が無ければ都市の切り替えだけ。ハンドラが無い方向は無効。装飾は仮 |
 | `ChoiceGroup` | `label`, `options`, `value`, `onChange` | 単一選択のボタン列。radiogroupとして矢印キーで移動し、無効な選択肢を飛ばす |
 | `QuantityInput` | `label`, `value`, `onChange`, `min`, `max`, `step`, `unit` | スライダー・± ボタン・数値入力。範囲外は丸める |
 | `Card` | `as`, `children`, `className`, `style` | 羊皮紙とインクで描いた汎用装飾枠。`as` は div / article / section / label |
@@ -160,7 +160,7 @@ function BattleUi() {
 
 DateBarは`phaseLabel`・`factionName`・`dateLabel`を個別に渡します。文字サイズ・左装飾・右上配置の調整箇所と生成プロンプトは [DateBarの装飾と調整](docs/date-bar-assets.md) を参照してください。
 
-CityNavigatorとBannerは `ThinFrame`（`windowSkins.thin` と同じ画像）で枠を描画します。ボタンの伸縮、Cardの利用例、騎士画像のプレビュー、生成プロンプトは [UIパーツの装飾と画像](docs/parts-assets.md) を参照してください。カタログ `#parts` ではルートの人物素材を直接参照でき、画像URL・ローカル画像ファイル、名前・能力値を変更できます。
+FactionBarとBannerは `ThinFrame`（`windowSkins.thin` と同じ画像）で枠を描画します。ボタンの伸縮、Cardの利用例、騎士画像のプレビュー、生成プロンプトは [UIパーツの装飾と画像](docs/parts-assets.md) を参照してください。カタログ `#parts` ではルートの人物素材を直接参照でき、画像URL・ローカル画像ファイル、名前・能力値を変更できます。
 
 旧実装（`nordencult-old/src/ui/components/`）から `CommandToolbar` と `DateBar` を移植しました。HUDのフレーム・背景画像は `src/assets/ui/hud/`、アイコンは `src/assets/ui/icons/` です。ResourceBar・PlayerEmblem・MinimapWindow は未移植です。
 
@@ -232,8 +232,8 @@ import { InfoWindowWithTabs, windowSkins } from 'norden-ui'
 ```text
 src/components/window/   ウィンドウ（InfoWindow, InfoWindowWithTabs）
 src/components/toolbar/  CommandToolbar
-src/components/hud/      DateBar
-src/components/parts/    小さな部品（Button, Banner, CityNavigator, ChoiceGroup, QuantityInput, KnightCard, FactionMark）
+src/components/hud/      DateBar, FactionBar
+src/components/parts/    小さな部品（Button, Banner, ChoiceGroup, QuantityInput, KnightCard, FactionMark）
 src/navigation/          画面スタック（useScreenStack, ScreenHost）
 src/cutin/               カットイン（template.ts にJSONの型と初期値、templates/ に作ったテンプレートのJSON、engine/ に描画、useCutIn, CutInLayer）
 src/screens/             画面（types.ts にview型、cityCommand/ mapPick/ invasion/）

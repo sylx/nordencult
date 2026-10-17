@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import iconGold from '../../assets/ui/icons/icon-gold.png'
 import './DateBar.css'
 
 export interface DateBarProps {
@@ -7,10 +6,6 @@ export interface DateBarProps {
   /** null: all factions' orders are being resolved. */
   factionName?: string | null
   dateLabel?: string
-  /** The treasury: shown after the date when given */
-  gold?: number
-  /** How the treasury changes at the start of the next turn (e.g. +120) */
-  goldForecast?: number
   /** Settings contents (buttons, forms...). Without contents, the gear is disabled. */
   children?: ReactNode
   width?: CSSProperties['width']
@@ -45,10 +40,8 @@ function DateBarCalendar({ label }: { label: string }) {
   ))
 }
 
-const signed = (value: number) => `${value >= 0 ? '+' : '−'}${Math.abs(value).toLocaleString()}`
-
 export default function DateBar({
-  phaseLabel, factionName, dateLabel, gold, goldForecast, children, width, settingsLabel = '設定', className = '', style,
+  phaseLabel, factionName, dateLabel, children, width, settingsLabel = '設定', className = '', style,
 }: DateBarProps) {
   const [open, setOpen] = useState(false)
   const menuId = useId()
@@ -109,17 +102,6 @@ export default function DateBar({
         {dateLabel && <>
           <DateBarSeparator />
           <span className="norden-date-bar-date" title={dateLabel}><DateBarCalendar label={dateLabel} /></span>
-        </>}
-        {gold !== undefined && <>
-          <DateBarSeparator />
-          <span className="norden-date-bar-gold" role="group" aria-label="金"
-            title={goldForecast === undefined ? `金 ${gold.toLocaleString()}` : `金 ${gold.toLocaleString()}（次のターン ${signed(goldForecast)}）`}>
-            <img src={iconGold} alt="" />
-            <span className="norden-date-bar-gold-amount">{gold.toLocaleString()}</span>
-            {goldForecast !== undefined && (
-              <span className={`norden-date-bar-gold-forecast ${goldForecast < 0 ? 'is-negative' : ''}`}>{signed(goldForecast)}</span>
-            )}
-          </span>
         </>}
         <DateBarSeparator />
         <button

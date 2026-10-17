@@ -129,9 +129,17 @@ export interface TurnView {
   dateLabel?: string
   /** Whose turn it is; null while every faction's orders are resolved */
   activeFaction?: FactionView | null
-  /** The player's treasury, and how it changes at the start of the next turn (income less salaries) */
-  gold?: number
+}
+
+/** The player's faction at a glance (the faction bar) */
+export interface FactionSummaryView {
+  /** The treasury, and how it changes at the start of the next turn (income less salaries) */
+  gold: number
   goldForecast?: number
+  /** 総生産: the 生産 of all its cities */
+  production: number
+  /** 総兵力: the soldiers of all its cities */
+  troops: number
 }
 
 export interface UnitTypeView {

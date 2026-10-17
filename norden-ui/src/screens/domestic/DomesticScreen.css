@@ -1,31 +1,20 @@
-/* The domestic window: framework only, decorations later */
-.norden-domestic > .norden-info-window { max-width: calc(100% - var(--norden-domestic-x, 56px) - 16px); max-height: calc(100% - var(--norden-domestic-y, 80px) - 96px); }
-.norden-domestic-panel { display: grid; gap: 14px; width: 560px; max-width: 100%; color: #2a1a0a; }
-.norden-domestic-section { display: grid; gap: 6px; }
-.norden-domestic-section h3, .norden-domestic-role h3 { margin: 0; color: #614a2c; font-size: 14px; font-weight: 700; }
-.norden-domestic-section h3 span { margin-left: 6px; color: #8a7050; font-size: 12px; }
-.norden-domestic-empty { margin: 0; padding: 8px 0; color: #8a7050; }
-.norden-domestic-cancel { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; font-size: 13px; }
-
-.norden-domestic-options { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.norden-domestic-option { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 6px 8px; background: rgb(255 255 255 / 0.35); border: 1px solid rgb(0 0 0 / 0.1); border-radius: 4px; }
-.norden-domestic-option.is-unavailable { opacity: .7; }
-.norden-domestic-option .norden-building-image { width: 48px; height: 48px; }
-.norden-domestic-option-info { display: grid; gap: 2px; min-width: 0; }
-.norden-domestic-effects { margin: 0; color: #5a4a2a; font-size: 13px; }
-.norden-domestic-costs { color: #6b5132; font-size: 12px; font-variant-numeric: tabular-nums; }
-.norden-domestic-reason { color: #a04020; font-size: 12px; }
-
-.norden-domestic-roles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.norden-domestic-role { display: grid; gap: 2px; padding: 8px 10px; background: rgb(255 246 214 / 0.6); border: 1px solid #b38d52; border-radius: 4px; }
-.norden-domestic-holders { margin: 0; font-size: 15px; font-weight: 700; }
-.norden-domestic-knights { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.norden-domestic-knight { width: 100%; }
-.norden-domestic-knight.is-assigned { box-shadow: inset 0 0 0 2px #c9963c; }
-.norden-domestic-knight-actions { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
-.norden-domestic-role-badge { padding: 1px 8px; color: #fff4d5; background: #8a5a20; border-radius: 3px; font-size: 12px; font-weight: 700; }
-.norden-domestic-forecast { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 2px 0 0 8px; color: #6b5132; font-size: 12px; }
-
-.norden-domestic-summary { gap: 18px; }
-.norden-domestic-gold { display: inline-flex; align-items: center; gap: 6px; font-size: 18px; font-variant-numeric: tabular-nums; }
-.norden-domestic-gold img { width: 24px; height: 24px; }
+/* The domestic window: the whole screen on dark parchment (ThinFrame). Framework only, contents later */
+.norden-domestic-window {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  pointer-events: auto;
+  color: #f3ead7;
+  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+}
+.norden-domestic-frame {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  isolation: isolate;
+  width: 420px;
+  height: 280px;
+  max-width: calc(100% - 80px);
+  max-height: calc(100% - 80px);
+}
+.norden-domestic-close { position: absolute; top: 32px; right: 32px; }

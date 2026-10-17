@@ -11,6 +11,8 @@ export { default as CommandToolbar } from './components/toolbar/CommandToolbar'
 export type { CommandToolbarProps, ToolbarCommand } from './components/toolbar/CommandToolbar'
 export { default as DateBar } from './components/hud/DateBar'
 export type { DateBarProps } from './components/hud/DateBar'
+export { default as FactionBar } from './components/hud/FactionBar'
+export type { FactionBarProps } from './components/hud/FactionBar'
 
 // Basic components: parts
 export { default as Card } from './components/parts/Card'
@@ -19,8 +21,6 @@ export { default as Button } from './components/parts/Button'
 export type { ButtonProps } from './components/parts/Button'
 export { default as Banner } from './components/parts/Banner'
 export type { BannerProps } from './components/parts/Banner'
-export { default as CityNavigator } from './components/parts/CityNavigator'
-export type { CityNavigatorProps } from './components/parts/CityNavigator'
 export { default as ChoiceGroup } from './components/parts/ChoiceGroup'
 export type { ChoiceGroupProps, ChoiceOption } from './components/parts/ChoiceGroup'
 export { default as QuantityInput } from './components/parts/QuantityInput'
@@ -45,7 +45,7 @@ export type { ScreenHostProps, ScreenRenderers } from './navigation/ScreenHost'
 
 // Screens
 export type {
-  AssignmentRoleView, BuildOptionView, BuildingView, CityAssignmentsView, CityBuildingsView, CityStatView, CityView, ConstructionView, FactionView, KnightView, NeighbourView, TurnView, UnitTypeView,
+  AssignmentRoleView, BuildOptionView, BuildingView, CityAssignmentsView, CityBuildingsView, CityStatView, CityView, ConstructionView, FactionSummaryView, FactionView, KnightView, NeighbourView, TurnView, UnitTypeView,
 } from './screens/types'
 export { default as CityCommandScreen, turnText } from './screens/cityCommand/CityCommandScreen'
 export type { CityCommandScreenProps, CommandState } from './screens/cityCommand/CityCommandScreen'
@@ -56,7 +56,7 @@ export type { CityCommandGroup, CityCommandId } from './screens/cityCommand/city
 export { default as MapPickScreen } from './screens/mapPick/MapPickScreen'
 export type { MapPickScreenProps } from './screens/mapPick/MapPickScreen'
 export { default as DomesticScreen } from './screens/domestic/DomesticScreen'
-export type { DomesticScreenProps, DomesticTab } from './screens/domestic/DomesticScreen'
+export type { DomesticScreenProps } from './screens/domestic/DomesticScreen'
 export { default as InvasionScreen } from './screens/invasion/InvasionScreen'
 export type { InvasionAssignment, InvasionDraft, InvasionScreenProps } from './screens/invasion/InvasionScreen'
 

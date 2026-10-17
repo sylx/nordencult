@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { Button, CityCommandScreen, DomesticScreen, InvasionScreen, MapPickScreen, ScreenHost, useScreenStack } from '../../src'
 import type { CityCommandId, InvasionDraft, KnightView } from '../../src'
-import { CITY_MAP, FACTIONS, INDIRECT_UNIT_TYPES, MORALE, PLAYER, TURN, UNIT_TYPES, cityView, invasionTargets, knightsIn, playerCities } from '../mock/data'
+import { CITY_MAP, FACTIONS, FACTION_SUMMARY, INDIRECT_UNIT_TYPES, MORALE, PLAYER, TURN, UNIT_TYPES, cityView, invasionTargets, knightsIn, playerCities } from '../mock/data'
 import MockMap from '../mock/MockMap'
 import { mockUnitPower } from '../mock/unitPower'
-import { useMockDomestic } from '../mock/domestic'
 import type { MapRoad } from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
 
@@ -13,7 +12,7 @@ type StrategyScreens = {
   cityCommand: { cityId: string }
   pickTarget: { from: string }
   invasion: { from: string; to: string }
-  domestic: { cityId: string; tab: 'build' | 'assign' }
+  domestic: { cityId: string }
 }
 
 interface Order { id: number; from: string; to: string; draft: InvasionDraft }
@@ -30,7 +29,6 @@ export default function StrategyFlowEntry() {
   const nav = useScreenStack<StrategyScreens>({ screen: 'cityCommand', params: { cityId: 'P012' } })
   const [orders, setOrders] = useState<Order[]>([])
   const [turn, setTurn] = useState(TURN.turn)
-  const domestic = useMockDomestic(add)
   const top = nav.top
 
   const ordered = new Map(orders.flatMap(order => order.draft.units.flatMap(item => (item.knightId ? [[item.knightId, order.to] as const] : []))))
@@ -94,13 +92,13 @@ export default function StrategyFlowEntry() {
           const index = playerCities.indexOf(cityId)
           const problem = invadeProblem(cityId)
           return (
-            <CityCommandScreen city={{ ...cityView(cityId, knightsOf(cityId)), buildings: domestic.view(cityId).buildings }} turn={{ ...TURN, turn }}
+            <CityCommandScreen city={cityView(cityId, knightsOf(cityId))} turn={{ ...TURN, turn }} faction={FACTION_SUMMARY}
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
               onPrevCity={() => step(cityId, -1)} onNextCity={() => step(cityId, 1)}
               commandState={{ invade: problem ? { disabled: true, reason: problem } : undefined }}
               onCommand={id => {
                 if (id === 'invade') nav.push('pickTarget', { from: cityId })
-                else if (id === 'build' || id === 'assign') nav.push('domestic', { cityId, tab: id })
+                else if (id === 'build') nav.push('domestic', { cityId })
                 else add(`${COMMAND_LABELS[id]}（未実装）`)
               }}
               onEndTurn={() => {
@@ -116,7 +114,7 @@ export default function StrategyFlowEntry() {
         pickTarget: ({ from }) => (
           <MapPickScreen message={`${name(from)}からの侵攻先を選んでください`} onCancel={nav.pop} />
         ),
-        domestic: ({ cityId, tab }) => <DomesticScreen {...domestic.props(cityId)} tab={tab} onClose={nav.pop} />,
+        domestic: ({ cityId }) => <DomesticScreen city={cityView(cityId)} onClose={nav.pop} />,
         invasion: ({ from, to }) => (
           <InvasionScreen from={cityView(from)} to={cityView(to)} defenders={knightsIn(to).length}
             knights={knightsOf(from)} unitTypes={UNIT_TYPES} indirectUnitTypes={INDIRECT_UNIT_TYPES} soldierPool={soldiersLeft(from)} morale={MORALE} unitPower={mockUnitPower}
@@ -131,7 +129,7 @@ export default function StrategyFlowEntry() {
     </>}
     controls={<>
       <h2>戦略画面のフロー</h2>
-      <p>「軍事」→「侵攻」で地図の侵攻先が強調されます。選ぶと侵攻画面に進み、予約すると都市コマンドに戻ります。</p>
+      <p>「内政」→「建設」で内政画面を開きます。「軍事」→「侵攻」で地図の侵攻先が強調されます。選ぶと侵攻画面に進み、予約すると都市コマンドに戻ります。</p>
       <dl className="demo-readout">
         <div><dt>画面スタック</dt><dd>{nav.stack.map(entry => entry.screen).join(' › ')}</dd></div>
         <div><dt>ターン</dt><dd>{turn}</dd></div>

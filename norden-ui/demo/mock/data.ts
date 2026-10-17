@@ -1,4 +1,4 @@
-import type { BuildingView, CityBuildingsView, CityView, FactionView, KnightView, TurnView, UnitTypeView } from '../../src'
+import type { BuildingView, CityBuildingsView, CityView, FactionSummaryView, FactionView, KnightView, TurnView, UnitTypeView } from '../../src'
 import { createElement } from 'react'
 import { repositoryCharacters, RepositoryCharacterArt, RepositoryPortrait } from '../repositoryCharacters'
 
@@ -155,5 +155,12 @@ export function cityView(id: string, knights: readonly KnightView[] = knightsIn(
 }
 
 export const TURN: TurnView = {
-  turn: 1, phaseLabel: '戦略フェーズ', dateLabel: '灰歴312年1月 冬', activeFaction: FACTIONS[PLAYER], gold: 500, goldForecast: 110,
+  turn: 1, phaseLabel: '戦略フェーズ', dateLabel: '灰歴312年1月 冬', activeFaction: FACTIONS[PLAYER],
+}
+
+/** The player's faction on the faction bar: 生産 and soldiers of its cities */
+export const FACTION_SUMMARY: FactionSummaryView = {
+  gold: 500, goldForecast: 110,
+  production: CITIES.filter(city => city.owner === PLAYER).reduce((sum, city) => sum + (city.stats?.find(stat => stat.label === '生産')?.value ?? 0), 0),
+  troops: CITIES.filter(city => city.owner === PLAYER).reduce((sum, city) => sum + city.soldiers, 0),
 }

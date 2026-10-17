@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { CityCommandScreen, windowSkins } from '../../src'
-import { TURN, cityView, playerCities } from '../mock/data'
+import { FACTION_SUMMARY, TURN, cityView, playerCities } from '../mock/data'
 import MockMap from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
 import { repositoryCharacters, RepositoryCharacterArt } from '../repositoryCharacters'
@@ -22,7 +22,7 @@ export default function CityCommandEntry() {
   return <Workbench variant="screen" stageClassName="city-command-preview"
     stage={<>
       <MockMap selected={cityId} />
-      <CityCommandScreen key={skin} city={{ ...city, lord }} turn={TURN} skin={windowSkins[skin]}
+      <CityCommandScreen key={skin} city={{ ...city, lord }} turn={TURN} faction={FACTION_SUMMARY} skin={windowSkins[skin]}
         cityPosition={{ index, count: playerCities.length }} onPrevCity={() => step(-1)} onNextCity={() => step(1)}
         commandState={{
           invade: noKnights ? { disabled: true, reason: '出撃できる騎士がいません' } : undefined,
@@ -33,7 +33,7 @@ export default function CityCommandEntry() {
     </>}
     controls={<>
       <h2>都市コマンド画面</h2>
-      <p>◀ ▶ で自勢力の都市を切り替えます。「研究」は無効の例です（理由はツールチップ）。</p>
+      <p>左上は勢力の情報（金・総生産・総兵力）と都市の切り替え（◀ ▶）。「研究」は無効の例です（理由はツールチップ）。</p>
       <label className="checkbox"><input type="checkbox" checked={noKnights} onChange={event => setNoKnights(event.target.checked)} />騎士がいない（侵攻を無効に）</label>
       <label className="checkbox"><input type="checkbox" checked={endTurnDisabled} onChange={event => setEndTurnDisabled(event.target.checked)} />ターン終了を無効にする</label>
       <label htmlFor="city-lord">領主画像</label>

@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import ChoiceGroup from './ChoiceGroup'
-import CityNavigator from './CityNavigator'
 import QuantityInput from './QuantityInput'
 import ThinFrameWithTitle from './ThinFrameWithTitle'
 
@@ -40,17 +39,6 @@ describe('QuantityInput', () => {
     rerender(<QuantityInput label="兵数" value={120} max={120} onChange={onChange} />)
     expect(screen.getByRole('button', { name: '兵数を増やす' })).toBeDisabled()
     expect(screen.getByRole('slider', { name: '兵数' })).toHaveAttribute('max', '120')
-  })
-})
-
-describe('CityNavigator', () => {
-  it('shows the position and disables the steps without handlers', async () => {
-    const onNext = vi.fn()
-    render(<CityNavigator name="フルーエン" position={{ index: 1, count: 3 }} onNext={onNext} />)
-    expect(screen.getByText('2 / 3')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '前の都市' })).toBeDisabled()
-    await userEvent.click(screen.getByRole('button', { name: '次の都市' }))
-    expect(onNext).toHaveBeenCalledOnce()
   })
 })
 

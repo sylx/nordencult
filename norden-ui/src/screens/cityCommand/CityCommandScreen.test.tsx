@@ -61,7 +61,7 @@ describe('CityCommandScreen', () => {
           construction: { building: { id: 'workshop', name: '工房' }, invested: 260, required: 400, turnsLeft: 1 },
         },
       },
-      turn: { turn: 2, phaseLabel: '戦略フェーズ', gold: 620, goldForecast: 110 },
+      faction: { gold: 620, goldForecast: 110, production: 820, troops: 4500 },
     })
     expect(screen.getByText('Tier 2')).toBeInTheDocument()
     expect(screen.getByText('兵数').nextSibling).toHaveTextContent('1,100')
@@ -74,7 +74,9 @@ describe('CityCommandScreen', () => {
     expect(within(slots).getByRole('progressbar', { name: '建設の進捗' })).toHaveAttribute('aria-valuenow', '260')
     expect(within(slots).getByText(/あと1ターン/)).toBeInTheDocument()
     expect(within(slots).getAllByText('空き')).toHaveLength(2)
-    expect(screen.getByRole('group', { name: '金' })).toHaveTextContent('620+110')
+    const faction = screen.getByRole('group', { name: '勢力' })
+    expect(within(faction).getByRole('group', { name: '金' })).toHaveTextContent('620（+110）')
+    expect(within(screen.getByRole('group', { name: 'ターン情報' })).queryByText('620')).not.toBeInTheDocument()
   })
 
   it('lists knights and neighbours in the tabs', async () => {
