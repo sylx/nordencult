@@ -3,7 +3,7 @@ import { BUILDING_MAP } from '../../data/buildings'
 import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import {
-  addOrder, assign, assignmentOf, assignmentProblem, BALANCE, buildingBonus, cancelConstruction, cityOutput, commandRank,
+  addOrder, assign, assignmentOf, assignmentProblem, BALANCE, buildingBonus, buildingLocked, cancelConstruction, cityOutput, commandRank,
   connectedByOwnRoads, constructionProblem, constructionTurns, createInitialState, endFactionTurn, GameRuleError, governorBonus,
   governorOf, maxRecruit, MAX_MORALE, militaryBonus, recruit, recruitCost, recruitLeft, recruitProblem, runEconomy, slotsOf,
   soldiersLeft, startConstruction, startNextBattle, tierOf, transport, transportProblem, unassign,
@@ -249,6 +249,18 @@ describe('construction', () => {
     expect(state.cities[FLUEN].buildings).toEqual(['workshop', 'grand_market', 'granary', 'barracks'])
     // The market cannot be built again beside its upgrade
     expect(constructionProblem(withCity(state, FLUEN, { buildings: ['grand_market'] }), FLUEN, 'market')).toBe('大市場が建っています')
+  })
+
+  it('locks the buildings the city cannot build at all yet, not those waiting for gold or a slot', () => {
+    const state = withCity(createInitialState('carta'), FLUEN, { buildings: ['workshop'] })
+    expect(buildingLocked(state, FLUEN, 'market')).toBe(false)
+    expect(buildingLocked({ ...state, gold: { ...state.gold, carta: 0 } }, FLUEN, 'market')).toBe(false)
+    expect(buildingLocked(state, FLUEN, 'harbor')).toBe(false) // フルーエン is a port
+    expect(buildingLocked(state, SILVA, 'harbor')).toBe(true)
+    expect(buildingLocked(state, FLUEN, 'reliquary')).toBe(true)
+    expect(buildingLocked(state, FLUEN, 'grand_market')).toBe(true)
+    expect(buildingLocked(withCity(state, FLUEN, { buildings: ['market'] }), FLUEN, 'grand_market')).toBe(false)
+    expect(buildingLocked(withCity(state, FLUEN, { buildings: ['grand_market'] }), FLUEN, 'market')).toBe(true)
   })
 
   it('cancels the construction without giving anything back', () => {

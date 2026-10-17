@@ -102,6 +102,21 @@ export function buildingProblem(state: GameState, cityId: CityId, buildingId: st
   return null
 }
 
+/**
+ * Whether the city cannot build it at all yet: a tag or relic it needs is missing, the building it
+ * upgrades is not standing, or it has been upgraded past (the screens leave such buildings unrevealed)
+ */
+export function buildingLocked(state: GameState, cityId: CityId, buildingId: string): boolean {
+  const building = BUILDING_MAP[buildingId]
+  const city = state.cities[cityId]
+  if (!building || !city) return true
+  const tags = CITY_MAP[cityId]?.tags ?? []
+  return upgradesOf(buildingId).some((id) => city.buildings.includes(id))
+    || Boolean(building.requiredTags && !building.requiredTags.some((tag) => tags.includes(tag)))
+    || Boolean(building.requiredRelic)
+    || Boolean(building.upgradeFrom && !city.buildings.includes(building.upgradeFrom))
+}
+
 export function constructionProblem(state: GameState, cityId: CityId, buildingId: string): string | null {
   const problem = commandProblem(state, cityId) ?? buildingProblem(state, cityId, buildingId)
   if (problem) return problem

@@ -13,7 +13,7 @@ import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
-  assignmentOf, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType, governorBonus,
+  assignmentOf, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType, governorBonus,
   governorOf, indirectMaxSoldiers, militaryBonus, type GovernorBonus, type MilitaryBonus,
   maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, treasuryForecast, unitTypesOf, type AssignmentRole, type GameState,
   type Season,
@@ -55,6 +55,7 @@ export function buildingView(id: string): BuildingView {
     name: building.name,
     description: building.description,
     effects: building.effects.map(describeEffect),
+    upgradeFrom: building.upgradeFrom,
     image: building.sprite && {
       src: buildingSheet,
       sheetWidth: buildingSprite.width,
@@ -149,7 +150,7 @@ export function cityView(game: GameState, id: string): CityView {
   }
 }
 
-/** Buildings the city could start (not standing or being built), with why each cannot be started now */
+/** Buildings the city could start (not standing or being built), with why each cannot be started now and whether it is locked */
 export function buildOptions(game: GameState, cityId: string): BuildOptionView[] {
   const city = game.cities[cityId]
   return BUILDING_LIST
@@ -160,6 +161,7 @@ export function buildOptions(game: GameState, cityId: string): BuildOptionView[]
       gold: b.gold,
       turns: constructionTurns(game, cityId, b.id),
       unavailableReason: constructionProblem(game, cityId, b.id) ?? undefined,
+      locked: buildingLocked(game, cityId, b.id),
     }))
 }
 
