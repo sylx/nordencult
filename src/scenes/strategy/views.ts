@@ -2,20 +2,20 @@ import { createElement } from 'react'
 import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import type {
-  AssignmentRoleView, BuildOptionView, BuildingView, CityView, FactionSummaryView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView,
+  AssignmentRoleView, BuildOptionView, BuildingView, CityStatView, CityView, FactionSummaryView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView,
 } from 'norden-ui'
 import { FACTION_MAP, PLACES, emblemUrl, type MapSeason, type PlaceType } from 'norden-strategy'
 import buildingSheet from '../../assets/buildings.webp'
 import { CharacterImage } from '../../components/CharacterImage'
-import { BUILDING_LIST, BUILDING_MAP, describeEffect } from '../../data/buildings'
+import { BUILDING_LIST, BUILDING_MAP, describeEffect, type BuildingEffectKind } from '../../data/buildings'
 import buildingSprite from '../../data/buildingSprite.json'
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
-  assignmentOf, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType, governorBonus,
+  assignmentOf, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType, governorBonus,
   governorOf, indirectMaxSoldiers, militaryBonus, type GovernorBonus, type MilitaryBonus,
-  maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, treasuryForecast, unitTypesOf, type AssignmentRole, type GameState,
+  MAX_MORALE, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, treasuryForecast, unitTypesOf, type AssignmentRole, type GameState,
   type Season,
 } from '../../game'
 
@@ -148,6 +148,38 @@ export function cityView(game: GameState, id: string): CityView {
     knights: knights.map((knight) => knightView(game, knight)),
     neighbours: neighbours(id).map((other) => ({ id: other, name: cityName(other), faction: factionView(ownerOf(game, other)) })),
   }
+}
+
+/**
+ * The domestic screen's bars: 商業・生産 with the governor's and the buildings' shares
+ * stacked on the city's base, and the morale of new recruits with the buildings' share
+ */
+export function domesticStats(game: GameState, cityId: string): CityStatView[] {
+  const output = cityOutput(game, cityId)
+  const buildings = game.cities[cityId].buildings
+  const governor = CHARACTER_MAP[governorOf(game, cityId) ?? '']
+  // Each building's effects of the kind, e.g. 市場: 商業 +5%
+  const details = (kind: BuildingEffectKind) => buildings.flatMap((id) => (BUILDING_MAP[id]?.effects ?? [])
+    .filter((effect) => effect.kind === kind)
+    .map((effect) => `${BUILDING_MAP[id].name}: ${describeEffect(effect)}`))
+  const boosted = (label: string, base: number, value: number, governorShare: number, kind: BuildingEffectKind, max: number): CityStatView => {
+    const fromGovernor = Math.round(base * governorShare)
+    return {
+      label, value, max, base,
+      boosts: [
+        ...(fromGovernor ? [{ label: '代官', value: fromGovernor, details: governor ? [governor.name] : [] }] : []),
+        { label: '施設', value: value - base - fromGovernor, source: 'building' as const, details: details(kind) },
+      ],
+    }
+  }
+  return [
+    boosted('商業', output.baseMarket, output.market, output.governor.market, 'marketPct', 720),
+    boosted('生産', output.baseProduction, output.production, output.governor.production, 'productionPct', 640),
+    {
+      label: '新兵の練度', kind: 'morale', value: output.recruitMorale, max: MAX_MORALE, base: BALANCE.RECRUIT_MORALE,
+      boosts: [{ label: '施設', value: output.recruitMorale - BALANCE.RECRUIT_MORALE, source: 'building', details: details('recruitMorale') }],
+    },
+  ]
 }
 
 /** Buildings the city could start (not standing or being built), with why each cannot be started now and whether it is locked */

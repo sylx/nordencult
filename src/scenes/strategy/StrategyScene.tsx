@@ -14,7 +14,7 @@ import {
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import {
-  UNIT_TYPE_VIEWS, buildOptions, cityName, cityView, dateLabel, factionSummary, factionView, knightView, mapSeason, phaseLabel, turnView, unitPower,
+  UNIT_TYPE_VIEWS, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, mapSeason, phaseLabel, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
 
@@ -245,6 +245,7 @@ export default function StrategyScene() {
             city={cityView(game, cityId)}
             buildOptions={buildOptions(game, cityId)}
             gold={game.gold[game.playerFaction]}
+            stats={domesticStats(game, cityId)}
             onBuild={(buildingId) => update((s) => startConstruction(s, cityId, buildingId))}
             onDemolish={(buildingId) => update((s) => demolishBuilding(s, cityId, buildingId))}
             onCancelConstruction={() => update((s) => cancelConstruction(s, cityId))}
