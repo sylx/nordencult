@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react'
 import iconGold from '../../assets/ui/icons/icon-gold.png'
-import iconProduction from '../../assets/ui/icons/icon-production.svg'
+import iconProduction from '../../assets/ui/icons/icon-production.png'
 import iconTroops from '../../assets/ui/icons/icon-military.png'
 import type { FactionSummaryView, FactionView } from '../../screens/types'
 import './FactionBar.css'
