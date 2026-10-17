@@ -1,21 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Banner, CITY_COMMAND_GROUPS, CUTIN_TEMPLATES, CityCommandScreen, CutInLayer, DomesticScreen, FactionMark, InvasionScreen,
-  MapPickScreen, ScreenHost, useCutIn, useScreenStack, type CityCommandId, type CommandState, type DomesticTab, type InvasionDraft,
+  MapPickScreen, ScreenHost, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
 } from 'norden-ui'
 import { FACTION_MAP, MapView, type CityHighlight, type RoadHighlight, type StrategyMap } from 'norden-strategy'
 import { factionColor } from '../../data/factionColors'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
-  MAX_UNITS, addOrder, assign, cancelConstruction, cancelOrder, charactersIn, citiesOf, cityOutput, domesticProblem, endFactionTurn,
-  invadeFromProblem, isPlayerTurn, openInvasionTargets, orderProblem, soldiersLeft, startConstruction, startNextBattle, unassign,
-  useGame, type CityId, type FactionId, type InvasionOrder,
+  MAX_UNITS, addOrder, cancelOrder, charactersIn, citiesOf, domesticProblem, endFactionTurn, invadeFromProblem, isPlayerTurn,
+  openInvasionTargets, orderProblem, soldiersLeft, startNextBattle, useGame, type CityId, type FactionId, type InvasionOrder,
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import {
-  UNIT_TYPE_VIEWS, assignmentForecast, buildOptions, cityName, cityView, dateLabel, factionView, governorLines, knightView, mapSeason,
-  militaryLines, phaseLabel, turnView, unitPower,
+  UNIT_TYPE_VIEWS, cityName, cityView, dateLabel, factionSummary, factionView, knightView, mapSeason, phaseLabel, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
 
@@ -40,8 +38,8 @@ type StrategyScreens = {
   pickTarget: { from: string }
   /** Choosing the knights, unit types and soldiers */
   invasion: { from: string; to: string }
-  /** Building and assigning the knights of a city of the player's */
-  domestic: { cityId: string; tab: DomesticTab }
+  /** The domestic screen of a city of the player's (building; assigning the knights joins it later) */
+  domestic: { cityId: string }
 }
 
 /** Commands not made yet */
@@ -202,7 +200,7 @@ export default function StrategyScene() {
     const problem = playerTurn ? invadeFromProblem(game, cityId) : '手番ではありません'
     state.invade = problem ? { disabled: true, reason: problem } : {}
     const domestic = playerTurn ? domesticProblem(game, cityId) : '手番ではありません'
-    state.build = state.assign = domestic ? { disabled: true, reason: domestic } : {}
+    state.build = domestic ? { disabled: true, reason: domestic } : {}
     return state
   }
 
@@ -220,14 +218,14 @@ export default function StrategyScene() {
         cityCommand: ({ cityId }) => {
           const index = playerCities.indexOf(cityId)
           return (
-            <CityCommandScreen city={cityView(game, cityId)} turn={turnView(game)}
+            <CityCommandScreen city={cityView(game, cityId)} turn={turnView(game)} faction={factionSummary(game)}
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
               onPrevCity={playerCities.length > 0 ? () => stepCity(cityId, -1) : undefined}
               onNextCity={playerCities.length > 0 ? () => stepCity(cityId, 1) : undefined}
               commandState={commandState(cityId)}
               onCommand={(id) => {
                 if (id === 'invade') nav.push('pickTarget', { from: cityId })
-                else if (id === 'build' || id === 'assign') nav.push('domestic', { cityId, tab: id })
+                else if (id === 'build') nav.push('domestic', { cityId })
               }}
               onEndTurn={endTurn} endTurnDisabled={!playerTurn}
               onSelectNeighbour={showCity}
@@ -240,22 +238,7 @@ export default function StrategyScene() {
         pickTarget: ({ from }) => (
           <MapPickScreen message={`${cityName(from)}からの侵攻先を選んでください`} onCancel={nav.pop} />
         ),
-        domestic: ({ cityId, tab }) => {
-          const output = cityOutput(game, cityId)
-          return (
-            <DomesticScreen city={cityView(game, cityId)} tab={tab} gold={game.gold[game.playerFaction]}
-              buildOptions={buildOptions(game, cityId)}
-              onBuild={(id) => update((s) => startConstruction(s, cityId, id))}
-              onCancelConstruction={() => update((s) => cancelConstruction(s, cityId))}
-              knights={charactersIn(game, cityId).map((id) => knightView(game, id))}
-              assignments={game.cities[cityId].assignments}
-              bonuses={{ governor: governorLines(output.governor), military: militaryLines(output.military) }}
-              forecast={(id, role) => assignmentForecast(game, cityId, id, role)}
-              onAssign={(id, role) => update((s) => assign(s, cityId, id, role))}
-              onUnassign={(id) => update((s) => unassign(s, cityId, id))}
-              onClose={nav.pop} />
-          )
-        },
+        domestic: ({ cityId }) => <DomesticScreen city={cityView(game, cityId)} onClose={nav.pop} />,
         invasion: ({ from, to }) => (
           <InvasionScreen from={cityView(game, from)} to={cityView(game, to)} defenders={charactersIn(game, to).length}
             knights={charactersIn(game, from).map((id) => knightView(game, id))} unitTypes={UNIT_TYPE_VIEWS}

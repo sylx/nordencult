@@ -2,7 +2,7 @@ import { createElement } from 'react'
 import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import type {
-  AssignmentRoleView, BuildOptionView, BuildingView, CityView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView,
+  AssignmentRoleView, BuildOptionView, BuildingView, CityView, FactionSummaryView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView,
 } from 'norden-ui'
 import { FACTION_MAP, PLACES, emblemUrl, type MapSeason, type PlaceType } from 'norden-strategy'
 import { CharacterImage } from '../../components/CharacterImage'
@@ -11,7 +11,7 @@ import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
-  assignmentOf, charactersIn, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType, governorBonus,
+  assignmentOf, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType, governorBonus,
   governorOf, indirectMaxSoldiers, militaryBonus, type GovernorBonus, type MilitaryBonus,
   maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, treasuryForecast, unitTypesOf, type AssignmentRole, type GameState,
   type Season,
@@ -192,14 +192,23 @@ export const mapSeason = (turn: number) => MAP_SEASONS[seasonOf(dateOf(turn).mon
 export const phaseLabel = (phase: GameState['phase']) => PHASE_LABELS[phase]
 
 export function turnView(game: GameState): TurnView {
-  const treasury = treasuryForecast(game, game.playerFaction)
   return {
     turn: game.turn,
     phaseLabel: phaseLabel(game.phase),
     dateLabel: dateLabel(game.turn),
     activeFaction: game.activeFaction ? factionView(game.activeFaction) : null,
+  }
+}
+
+/** The player's faction on the faction bar: the treasury and its change next turn, the 生産 and soldiers of its cities */
+export function factionSummary(game: GameState): FactionSummaryView {
+  const treasury = treasuryForecast(game, game.playerFaction)
+  const cities = citiesOf(game, game.playerFaction)
+  return {
     gold: treasury.before,
     goldForecast: treasury.after - treasury.before,
+    production: cities.reduce((sum, id) => sum + cityOutput(game, id).production, 0),
+    troops: cities.reduce((sum, id) => sum + game.cities[id].troops, 0),
   }
 }
 
