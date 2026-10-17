@@ -150,7 +150,7 @@ export default function DomesticEntry() {
     </>}
     controls={<>
       <h2>内政画面</h2>
-      <p>左上に都市の施設スロット、空きスロットの「+」から右側に追加可能な施設一覧を開いて建設できます。建設済み施設の右下「削除」で確認ダイアログ付きで取り壊せます。</p>
+      <p>左上に都市の施設スロット、空きスロットの「+」から右側に追加可能な施設一覧を開いて建設できます。建設済み施設に上位の施設があれば「アップグレード」から右側にアップグレード先を開いて改築でき、完成すると同じスロットで置き換わります（スロットは増えません）。「削除」で確認ダイアログ付きで取り壊せます。その都市でまだ建てられない施設（必要な都市の特性・遺物・元の施設が無いもの）は一覧に出しません。</p>
       <label htmlFor="domestic-city">都市</label>
       <select id="domestic-city" value={cityId} onChange={event => setCityId(event.target.value)}>
         {playerCities.map(id => <option key={id} value={id}>{CITY_MAP[id]?.name}</option>)}

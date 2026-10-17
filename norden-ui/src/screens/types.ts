@@ -42,6 +42,8 @@ export interface BuildingView {
   description?: string
   /** e.g. 商業 +15% */
   effects?: readonly string[]
+  /** Id of the building it is built over and replaces in its slot (e.g. 大市場 over 市場); omitted: built in an empty slot */
+  upgradeFrom?: string
 }
 
 /** The building under construction in a city */
@@ -65,6 +67,11 @@ export interface BuildOptionView extends BuildingView {
   turns?: number | null
   /** Why it cannot be started now (shown, but cannot be chosen) */
   unavailableReason?: string
+  /**
+   * It cannot be built in this city at all yet (a tag or relic it needs is missing,
+   * or the building it upgrades is not standing): left out of the lists so it is not revealed
+   */
+  locked?: boolean
 }
 
 /** The knights holding the city's assignments (ids of its knights) */

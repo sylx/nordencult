@@ -102,6 +102,19 @@ function upgradesOf(id: string): string[] {
   return found
 }
 
+/**
+ * Whether the city cannot build it at all yet (a tag or relic it needs is missing, the building it
+ * upgrades is not standing, or it has been upgraded past): such buildings are kept out of the lists
+ */
+function isLocked(city: CityView, spec: MockBuildingSpec): boolean {
+  const built = city.buildings?.built.map(item => item.id) ?? []
+  const tags = city.tags ?? []
+  return upgradesOf(spec.id).some(id => built.includes(id))
+    || Boolean(spec.requiredTags && !spec.requiredTags.some(tag => tags.includes(tag)))
+    || Boolean(spec.requiredRelic)
+    || Boolean(spec.upgradeFrom && !built.includes(spec.upgradeFrom))
+}
+
 /** Why a building cannot be started, following the game's rules (src/game/economy/domestic.ts) */
 function buildProblem(city: CityView, spec: MockBuildingSpec, gold: number): string | undefined {
   const built = city.buildings?.built.map(item => item.id) ?? []
@@ -130,6 +143,7 @@ export function buildOptionsFor(city: CityView, gold = FACTION_SUMMARY.gold): Bu
       ...spec,
       turns: production > 0 ? Math.ceil(spec.supplies / production) : null,
       unavailableReason: buildProblem(city, spec, gold),
+      locked: isLocked(city, spec),
     }))
 }
 

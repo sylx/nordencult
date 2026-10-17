@@ -90,4 +90,68 @@ describe('DomesticScreen', () => {
     await userEvent.click(screen.getByRole('button', { name: '工房の建設を取り消す' }))
     expect(onCancelConstruction).toHaveBeenCalledOnce()
   })
+
+  it('hides locked buildings and lists upgrades from the standing building', async () => {
+    const onBuild = vi.fn()
+    render(
+      <DomesticScreen
+        city={{
+          id: 'P012',
+          name: 'フルーエン',
+          buildings: { slots: 3, built: [{ id: 'market', name: '市場' }] },
+        }}
+        buildOptions={[
+          { id: 'workshop', name: '工房', supplies: 400, gold: 120 },
+          { id: 'cannon', name: '据付大砲', supplies: 1200, gold: 400, unavailableReason: '遺物が必要です', locked: true },
+          { id: 'grand_market', name: '大市場', supplies: 1000, gold: 250, upgradeFrom: 'market' },
+          { id: 'comprehensive_market', name: '総合市場', supplies: 2000, gold: 500, upgradeFrom: 'grand_market', locked: true },
+        ]}
+        onBuild={onBuild}
+        onClose={vi.fn()}
+      />,
+    )
+
+    // The empty slot offers only new buildings that are not locked
+    await userEvent.click(screen.getByRole('button', { name: '施設を追加' }))
+    const addPanel = screen.getByRole('complementary', { name: '追加できる施設' })
+    expect(within(addPanel).getByText('工房')).toBeInTheDocument()
+    expect(within(addPanel).queryByText('据付大砲')).not.toBeInTheDocument()
+    expect(within(addPanel).queryByText('大市場')).not.toBeInTheDocument()
+
+    // The standing building opens its upgrades in the same panel
+    await userEvent.click(screen.getByRole('button', { name: '市場をアップグレード' }))
+    const upgradePanel = screen.getByRole('complementary', { name: '市場のアップグレード' })
+    expect(within(upgradePanel).getByText('大市場')).toBeInTheDocument()
+    expect(within(upgradePanel).queryByText('総合市場')).not.toBeInTheDocument()
+    await userEvent.click(within(upgradePanel).getByRole('button', { name: '大市場にアップグレード' }))
+    expect(onBuild).toHaveBeenCalledWith('grand_market')
+  })
+
+  it('shows an upgrade under construction in the slot of the building it replaces', () => {
+    render(
+      <DomesticScreen
+        city={{
+          id: 'P012',
+          name: 'フルーエン',
+          buildings: {
+            slots: 2,
+            built: [{ id: 'market', name: '市場' }],
+            construction: {
+              building: { id: 'grand_market', name: '大市場', upgradeFrom: 'market' },
+              invested: 100,
+              required: 1000,
+              turnsLeft: 5,
+            },
+          },
+        }}
+        onClose={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('アップグレード中')).toBeInTheDocument()
+    expect(screen.getByText('市場から')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '市場を削除' })).not.toBeInTheDocument()
+    // The upgrade takes no slot: one empty slot remains (not addable while building)
+    expect(screen.getAllByLabelText('空きスロット')).toHaveLength(1)
+  })
 })
