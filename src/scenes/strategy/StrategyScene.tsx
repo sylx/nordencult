@@ -7,13 +7,14 @@ import { FACTION_MAP, MapView, type CityHighlight, type RoadHighlight, type Stra
 import { factionColor } from '../../data/factionColors'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
-  MAX_UNITS, addOrder, cancelOrder, charactersIn, citiesOf, domesticProblem, endFactionTurn, invadeFromProblem, isPlayerTurn,
-  openInvasionTargets, orderProblem, soldiersLeft, startNextBattle, useGame, type CityId, type FactionId, type InvasionOrder,
+  MAX_UNITS, addOrder, cancelConstruction, cancelOrder, charactersIn, citiesOf, demolishBuilding, domesticProblem, endFactionTurn,
+  invadeFromProblem, isPlayerTurn, openInvasionTargets, orderProblem, pauseConstruction, soldiersLeft, startConstruction, startNextBattle,
+  useGame, type CityId, type FactionId, type InvasionOrder,
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import {
-  UNIT_TYPE_VIEWS, cityName, cityView, dateLabel, factionSummary, factionView, knightView, mapSeason, phaseLabel, turnView, unitPower,
+  UNIT_TYPE_VIEWS, buildOptions, cityName, cityView, dateLabel, factionSummary, factionView, knightView, mapSeason, phaseLabel, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
 
@@ -239,7 +240,18 @@ export default function StrategyScene() {
         pickTarget: ({ from }) => (
           <MapPickScreen message={`${cityName(from)}からの侵攻先を選んでください`} onCancel={nav.pop} />
         ),
-        domestic: ({ cityId }) => <DomesticScreen city={cityView(game, cityId)} onClose={nav.pop} />,
+        domestic: ({ cityId }) => (
+          <DomesticScreen
+            city={cityView(game, cityId)}
+            buildOptions={buildOptions(game, cityId)}
+            gold={game.gold[game.playerFaction]}
+            onBuild={(buildingId) => update((s) => startConstruction(s, cityId, buildingId))}
+            onDemolish={(buildingId) => update((s) => demolishBuilding(s, cityId, buildingId))}
+            onCancelConstruction={() => update((s) => cancelConstruction(s, cityId))}
+            onPauseConstruction={(paused) => update((s) => pauseConstruction(s, cityId, paused))}
+            onClose={nav.pop}
+          />
+        ),
         invasion: ({ from, to }) => (
           <InvasionScreen from={cityView(game, from)} to={cityView(game, to)} defenders={charactersIn(game, to).length}
             knights={charactersIn(game, from).map((id) => knightView(game, id))} unitTypes={UNIT_TYPE_VIEWS}

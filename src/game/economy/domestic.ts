@@ -116,10 +116,32 @@ export function startConstruction(state: GameState, cityId: CityId, buildingId: 
   return { ...next, gold: { ...state.gold, [factionId]: state.gold[factionId] - building.gold } }
 }
 
-/** Gives up the building under construction; the supplies and gold put into it are lost */
+/** Gives up the building under construction; half of the supplies put into it return to the city's store */
 export function cancelConstruction(state: GameState, cityId: CityId): GameState {
   check(commandProblem(state, cityId))
-  return state.cities[cityId].construction ? withCity(state, cityId, { construction: null }) : state
+  const city = state.cities[cityId]
+  if (!city.construction) return state
+  const refund = Math.floor(city.construction.investedSupplies / 2)
+  return withCity(state, cityId, {
+    construction: null,
+    storedSupplies: city.storedSupplies + refund,
+  })
+}
+
+/** Pauses or resumes the building under construction; while paused, the city's 生産 goes into its store */
+export function pauseConstruction(state: GameState, cityId: CityId, paused = true): GameState {
+  check(commandProblem(state, cityId))
+  const construction = state.cities[cityId].construction
+  if (!construction) return state
+  return withCity(state, cityId, { construction: { ...construction, paused } })
+}
+
+/** Demolishes a standing building in the city */
+export function demolishBuilding(state: GameState, cityId: CityId, buildingId: string): GameState {
+  check(commandProblem(state, cityId))
+  const buildings = state.cities[cityId].buildings
+  if (!buildings.includes(buildingId)) return state
+  return withCity(state, cityId, { buildings: buildings.filter((id) => id !== buildingId) })
 }
 
 /**

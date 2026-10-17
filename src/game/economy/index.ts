@@ -3,7 +3,7 @@ export * as BALANCE from './balance'
 export {
   assign, assignmentOf, assignmentProblem, buildingProblem, cancelConstruction, commandProblem as domesticProblem, connectedByOwnRoads,
   constructionProblem,
-  constructionTurns, maxRecruit, recruit, recruitCost, recruitLeft, recruitProblem, startConstruction, transport,
+  constructionTurns, demolishBuilding, maxRecruit, pauseConstruction, recruit, recruitCost, recruitLeft, recruitProblem, startConstruction, transport,
   transportProblem, unassign, withoutAssignee, type Cargo,
 } from './domestic'
 export {

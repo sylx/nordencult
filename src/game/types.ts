@@ -51,6 +51,8 @@ export interface CityConstruction {
   /** Supplies (hammers) it takes: the building's when it was started */
   requiredSupplies: number
   investedSupplies: number
+  /** Paused: the city's 生産 goes to storedSupplies instead of this construction */
+  paused?: boolean
 }
 
 /** Knights assigned to the work of their city. A knight holds one assignment at most, in the city they serve in */

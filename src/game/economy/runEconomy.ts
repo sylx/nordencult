@@ -30,7 +30,7 @@ function growCity(cityId: CityId, city: CityState): { city: CityState; events: E
   const output = outputOf(cityId, city)
   const events: EconomyEvent[] = []
   let { storedSupplies, construction, buildings } = city
-  if (construction) {
+  if (construction && !construction.paused) {
     const invested = construction.investedSupplies + output.production
     if (invested >= construction.requiredSupplies) {
       buildings = [...buildings, construction.buildingId]
