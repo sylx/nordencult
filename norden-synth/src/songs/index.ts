@@ -9,6 +9,7 @@ import { hokuten } from './hokuten.ts'
 import { imperialTriumph } from './imperial-triumph.ts'
 import { mistPilgrim } from './mist-pilgrim.ts'
 import { northernOath } from './northern-oath.ts'
+import { spiralCurrent } from './spiral-current.ts'
 import { starReader } from './star-reader.ts'
 import { tundraMarch } from './tundra-march.ts'
 import { wanderingBird } from './wandering-bird.ts'
@@ -18,4 +19,4 @@ import type { Song } from './song.ts'
 
 export { barAt, compileSong, type CompiledSong, type Song, type SongBar, type SongNote, type SongPart, type SongSection } from './song.ts'
 
-export const SONGS: Song[] = [hokuten, fairyRing, imperialTriumph, wanderingBird, northernOath, tundraMarch, goldenSails, starReader, whiteSanctum, holdingBreath, battleCry, mistPilgrim, winterCouncil, glassRipples, crookedPendulum]
+export const SONGS: Song[] = [hokuten, fairyRing, imperialTriumph, wanderingBird, northernOath, tundraMarch, goldenSails, starReader, whiteSanctum, holdingBreath, battleCry, mistPilgrim, winterCouncil, glassRipples, crookedPendulum, spiralCurrent]
