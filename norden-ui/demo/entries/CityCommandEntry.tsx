@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { CityCommandScreen, windowSkins } from '../../src'
-import { FACTION_SUMMARY, TURN, cityView, playerCities } from '../mock/data'
+import { FACTIONS, FACTION_SUMMARY, PLAYER, TURN, cityView, playerCities } from '../mock/data'
 import MockMap from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
 import { repositoryCharacters, RepositoryCharacterArt } from '../repositoryCharacters'
@@ -23,6 +23,7 @@ export default function CityCommandEntry() {
     stage={<>
       <MockMap selected={cityId} />
       <CityCommandScreen key={skin} city={{ ...city, lord }} turn={TURN} faction={FACTION_SUMMARY} skin={windowSkins[skin]}
+        playerFaction={FACTIONS[PLAYER]}
         cityPosition={{ index, count: playerCities.length }} onPrevCity={() => step(-1)} onNextCity={() => step(1)}
         commandState={{
           invade: noKnights ? { disabled: true, reason: '出撃できる騎士がいません' } : undefined,

@@ -93,6 +93,7 @@ export default function StrategyFlowEntry() {
           const problem = invadeProblem(cityId)
           return (
             <CityCommandScreen city={cityView(cityId, knightsOf(cityId))} turn={{ ...TURN, turn }} faction={FACTION_SUMMARY}
+              playerFaction={FACTIONS[PLAYER]}
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
               onPrevCity={() => step(cityId, -1)} onNextCity={() => step(cityId, 1)}
               commandState={{ invade: problem ? { disabled: true, reason: problem } : undefined }}

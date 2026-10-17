@@ -162,7 +162,7 @@ function BattleUi() {
 | `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `children?` | フェーズ・勢力のターン・年月・設定の順に表示。`children` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
 | `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `metal: 'gold' \| 'silver' \| 'none'`, `size`, `style` | 象牙の立体的なボタンに金／銀の四隅装飾、または装飾なし。生成画像を9分割で伸縮し、`style` で幅・高さを指定可能 |
 | `Banner` | `children`, `actions` | HUDの案内の帯（`role="status"`） |
-| `FactionBar` | `summary?: FactionSummaryView`, `cityName`, `onPrevCity`, `onNextCity`, `cityPosition` | 金（次のターンの増減）｜総生産｜総兵力｜◀ 都市名 ▶。`summary` が無ければ都市の切り替えだけ。ハンドラが無い方向は無効。装飾は仮 |
+| `FactionBar` | `faction?: FactionView`, `summary?: FactionSummaryView`, `cityName`, `onPrevCity`, `onNextCity`, `cityPosition`, `movable`, `position`, `onPositionChange` | 左端の球に勢力のエンブレムを表示。球をドラッグしてバー全体を移動。矢印キーは10px、Shift併用は1px、Homeで元の位置。金（次のターンの増減）｜総生産｜総兵力｜◀ 都市名 ▶。`summary` が無ければ都市の切り替えだけ。ハンドラが無い方向は無効 |
 | `ChoiceGroup` | `label`, `options`, `value`, `onChange` | 単一選択のボタン列。radiogroupとして矢印キーで移動し、無効な選択肢を飛ばす |
 | `QuantityInput` | `label`, `value`, `onChange`, `min`, `max`, `step`, `unit` | スライダー・± ボタン・数値入力。範囲外は丸める |
 | `Card` | `as`, `children`, `className`, `style` | 羊皮紙とインクで描いた汎用装飾枠。`as` は div / article / section / label |
@@ -174,7 +174,9 @@ function BattleUi() {
 
 DateBarは`phaseLabel`・`factionName`・`dateLabel`を個別に渡します。文字サイズ・左装飾・右上配置の調整箇所と生成プロンプトは [DateBarの装飾と調整](docs/date-bar-assets.md) を参照してください。
 
-FactionBarとBannerは `ThinFrame`（`windowSkins.thin` と同じ画像）で枠を描画します。ボタンの伸縮、Cardの利用例、騎士画像のプレビュー、生成プロンプトは [UIパーツの装飾と画像](docs/parts-assets.md) を参照してください。カタログ `#parts` ではルートの人物素材を直接参照でき、画像URL・ローカル画像ファイル、名前・能力値を変更できます。
+FactionBar の `--faction-bar-height` はバー部分の最小高さ（既定56px）、`--faction-orb-size` は球の装飾サイズ（既定88px）です。球は常に正方形の領域に描画し、バーの高さから独立しています。内容は上下10pxの余白を持ちます。カタログで両方のサイズを個別に変更できます。
+
+FactionBar は専用の球体と彫刻の画像で枠を描画します（[素材と生成プロンプト](docs/faction-bar-assets.md)）。カタログ `#faction-bar` で勢力の切り替え・ドラッグ・位置のリセット・透過を確認できます。都市コマンド画面には `playerFaction` でプレイヤーの勢力を渡します。Banner は `ThinFrame`（`windowSkins.thin` と同じ画像）を使います。ボタンの伸縮、Cardの利用例、騎士画像のプレビュー、生成プロンプトは [UIパーツの装飾と画像](docs/parts-assets.md) を参照してください。カタログ `#parts` ではルートの人物素材を直接参照でき、画像URL・ローカル画像ファイル、名前・能力値を変更できます。
 
 旧実装（`nordencult-old/src/ui/components/`）から `CommandToolbar` と `DateBar` を移植しました。HUDのフレーム・背景画像は `src/assets/ui/hud/`、アイコンは `src/assets/ui/icons/` です。ResourceBar・PlayerEmblem・MinimapWindow は未移植です。
 

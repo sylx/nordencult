@@ -26,4 +26,27 @@ describe('FactionBar', () => {
     await userEvent.click(screen.getByRole('button', { name: '次の都市' }))
     expect(onNext).toHaveBeenCalledOnce()
   })
+
+  it('moves with the orb keyboard controls, keeps the offset across city changes, and resets with Home', async () => {
+    const onPositionChange = vi.fn()
+    const faction = { name: 'カルタ書院', emblem: '/emblem.png' }
+    const { rerender } = render(<FactionBar faction={faction} cityName="フルーエン" onPositionChange={onPositionChange} />)
+    const orb = screen.getByRole('button', { name: 'カルタ書院のバーを移動' })
+    expect(screen.getByRole('img', { name: 'カルタ書院' })).toHaveAttribute('src', '/emblem.png')
+    orb.focus()
+    await userEvent.keyboard('{ArrowRight}{Shift>}{ArrowDown}{/Shift}')
+    expect(onPositionChange).toHaveBeenLastCalledWith({ x: 10, y: 1 })
+    rerender(<FactionBar faction={faction} cityName="ヴェステル" onPositionChange={onPositionChange} />)
+    expect(screen.getByRole('group', { name: '勢力' })).toHaveStyle({ translate: '10px 1px' })
+    await userEvent.keyboard('{Home}')
+    expect(onPositionChange).toHaveBeenLastCalledWith({ x: 0, y: 0 })
+  })
+
+  it('can lock movement and accept a new position from the caller', () => {
+    const { rerender } = render(<FactionBar cityName="フルーエン" movable={false} position={{ x: 20, y: 30 }} />)
+    expect(screen.getByRole('button', { name: '勢力のバーを移動' })).toBeDisabled()
+    expect(screen.getByRole('group', { name: '勢力' })).toHaveStyle({ translate: '20px 30px' })
+    rerender(<FactionBar cityName="フルーエン" movable={false} position={{ x: 0, y: 0 }} />)
+    expect(screen.getByRole('group', { name: '勢力' })).toHaveStyle({ translate: '0px 0px' })
+  })
 })

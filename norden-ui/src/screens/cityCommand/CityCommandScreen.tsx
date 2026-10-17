@@ -8,7 +8,7 @@ import iconEndTurn from '../../assets/ui/icons/icon-sun.png'
 import CityInfoWindow from './CityInfoWindow'
 import { CITY_COMMAND_GROUPS } from './cityCommands'
 import type { CityCommandId } from './cityCommands'
-import type { CityView, FactionSummaryView, TurnView } from '../types'
+import type { CityView, FactionSummaryView, FactionView, TurnView } from '../types'
 import '../screens.css'
 
 export interface CommandState {
@@ -22,6 +22,8 @@ export interface CityCommandScreenProps {
   turn: TurnView
   /** The player's faction (金・総生産・総兵力), shown on the faction bar with the city switcher */
   faction?: FactionSummaryView
+  /** The player's identity, even when inspecting another faction's city. */
+  playerFaction?: FactionView
   /** ◀ ▶ are disabled when omitted */
   onPrevCity?: () => void
   onNextCity?: () => void
@@ -49,7 +51,7 @@ export function turnText(turn: TurnView) {
 
 /** City command screen: the faction bar with ◀ ▶ between cities and the city window (left), turn bar (top right) and the action toolbar (bottom) */
 export default function CityCommandScreen({
-  city, turn, faction, onPrevCity, onNextCity, cityPosition, commandState = {}, onCommand, onEndTurn, endTurnDisabled = false,
+  city, turn, faction, playerFaction, onPrevCity, onNextCity, cityPosition, commandState = {}, onCommand, onEndTurn, endTurnDisabled = false,
   onSelectNeighbour, turnMenu, windowPosition = { x: 56, y: 96 }, skin, children,
 }: CityCommandScreenProps) {
   const command = (id: CityCommandId, label: string): ToolbarCommand => ({
@@ -68,7 +70,7 @@ export default function CityCommandScreen({
   return (
     <div className="norden-screen norden-city-command">
       <div className="norden-screen-top-left">
-        <FactionBar summary={faction} cityName={city.name} onPrevCity={onPrevCity} onNextCity={onNextCity} cityPosition={cityPosition} />
+        <FactionBar faction={playerFaction} summary={faction} cityName={city.name} onPrevCity={onPrevCity} onNextCity={onNextCity} cityPosition={cityPosition} />
       </div>
       <div className="norden-screen-top-right">
         <DateBar phaseLabel={turn.phaseLabel} factionName={turn.activeFaction ? turn.activeFaction.name : turn.activeFaction}

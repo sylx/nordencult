@@ -67,7 +67,7 @@ export const CATALOG: CatalogGroup[] = [
       { id: 'date-bar', label: 'ターン情報', name: 'DateBar', Component: DateBarEntry,
         description: '年月・ターンの表示と、歯車の設定メニュー' },
       { id: 'faction-bar', label: '勢力の情報', name: 'FactionBar', Component: FactionBarEntry,
-        description: '金（次のターンの増減）・総生産・総兵力と、都市の切り替え（◀ ▶）。装飾は仮' },
+        description: 'エンブレムが浮かぶ球と金属彫刻の専用バー。球をドラッグして移動。金と増減・総生産・総兵力・都市の切り替え' },
       { id: 'parts', label: 'UIパーツ', name: 'Button / ChoiceGroup / QuantityInput …', Component: PartsEntry,
         description: '画面を組み立てる小さな部品。ボタン、単一選択、数量、騎士カード、勢力、案内の帯' },
     ],
