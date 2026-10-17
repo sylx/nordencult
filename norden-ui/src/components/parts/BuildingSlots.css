@@ -28,6 +28,8 @@ button.norden-building-slot:hover { background: #fffaea; }
 .norden-building-slot .norden-construction-progress-text { font-size: 10px; }
 
 .norden-building-image { display: block; width: 56px; height: 56px; object-fit: cover; border-radius: 3px; }
+.norden-building-image.is-sprite { display: flex; align-items: center; overflow: hidden; }
+.norden-building-image-cell { display: block; flex: none; width: 100%; background-repeat: no-repeat; }
 .norden-building-image.is-placeholder { display: flex; align-items: center; justify-content: center; color: #f6ead0; background: linear-gradient(#9b7a4c, #6d5232); font-size: 24px; font-weight: 700; }
 
 .norden-construction-progress { display: grid; gap: 2px; width: 100%; }

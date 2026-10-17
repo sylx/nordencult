@@ -22,12 +22,23 @@ export interface CityStatView {
   base?: number
 }
 
+/** A picture cut out of a sprite sheet: the sheet's URL and size, and the cell's place and size in it (pixels) */
+export interface SpriteImage {
+  src: string
+  sheetWidth: number
+  sheetHeight: number
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 /** A building: standing in a slot, being built, or one to build */
 export interface BuildingView {
   id: string
   name: string
-  /** Image URL */
-  image?: string
+  /** Its picture on the game's building sheet */
+  image?: SpriteImage
   description?: string
   /** e.g. 商業 +15% */
   effects?: readonly string[]

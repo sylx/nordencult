@@ -11,11 +11,26 @@ export interface BuildingSlotsProps {
   className?: string
 }
 
-/** The picture of a building: its image, or its initial on a plain tile */
+/** Where a cell sits on its sheet as a background-position percentage (0% when the cell spans the sheet) */
+const spriteOffset = (position: number, cell: number, sheet: number) => (sheet > cell ? `${(position / (sheet - cell)) * 100}%` : '0%')
+
+/**
+ * The picture of a building: its cell of the sprite sheet fitted to the tile's width
+ * (the tall picture cut top and bottom), or its initial on a plain tile
+ */
 export function BuildingImage({ building, className = '' }: { building: BuildingView; className?: string }) {
-  return building.image
-    ? <img className={`norden-building-image ${className}`} src={building.image} alt="" />
-    : <span className={`norden-building-image is-placeholder ${className}`} aria-hidden="true">{building.name.slice(0, 1)}</span>
+  const image = building.image
+  if (!image) return <span className={`norden-building-image is-placeholder ${className}`} aria-hidden="true">{building.name.slice(0, 1)}</span>
+  return (
+    <span className={`norden-building-image is-sprite ${className}`} aria-hidden="true">
+      <span className="norden-building-image-cell" style={{
+        aspectRatio: `${image.width} / ${image.height}`,
+        backgroundImage: `url(${JSON.stringify(image.src)})`,
+        backgroundSize: `${(image.sheetWidth / image.width) * 100}% ${(image.sheetHeight / image.height) * 100}%`,
+        backgroundPosition: `${spriteOffset(image.x, image.width, image.sheetWidth)} ${spriteOffset(image.y, image.height, image.sheetHeight)}`,
+      }} />
+    </span>
+  )
 }
 
 /** Progress of a construction: a bar of the supplies put in, and the turns left */

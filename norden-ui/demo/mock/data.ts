@@ -66,9 +66,6 @@ const stats = (market: number, production: number, base?: { market: number; prod
   { label: '生産', value: production, max: 640, base: base?.production },
 ]
 
-// The game's building images when the catalog runs inside the game's repository (src/assets/buildings/)
-const buildingImages = import.meta.glob<string>('../../../src/assets/buildings/*.webp', { eager: true, query: '?url', import: 'default' })
-
 export interface MockBuildingSpec extends BuildingView {
   supplies: number
   gold: number
@@ -87,7 +84,6 @@ export const BUILDING_SPECS: MockBuildingSpec[] = ([
   ['guild_hall', '商館', '遠方の商会が支店を置く。大きな取引が都市を潤す。', ['商業 +30%'], 900, 300, 3],
 ] as const).map(([id, name, description, effects, supplies, gold, minTier, requiredTags]) => ({
   id, name, description, effects, supplies, gold, minTier, requiredTags,
-  image: buildingImages[`../../../src/assets/buildings/${id}.webp`],
 }))
 
 export const BUILDINGS: Record<string, MockBuildingSpec> = Object.fromEntries(BUILDING_SPECS.map(spec => [spec.id, spec]))

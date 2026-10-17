@@ -49,7 +49,7 @@ export type { ScreenHostProps, ScreenRenderers } from './navigation/ScreenHost'
 
 // Screens
 export type {
-  AssignmentRoleView, BuildOptionView, BuildingView, CityAssignmentsView, CityBuildingsView, CityStatView, CityView, ConstructionView, FactionSummaryView, FactionView, KnightView, NeighbourView, TurnView, UnitTypeView,
+  AssignmentRoleView, BuildOptionView, BuildingView, CityAssignmentsView, CityBuildingsView, CityStatView, CityView, ConstructionView, FactionSummaryView, FactionView, KnightView, NeighbourView, SpriteImage, TurnView, UnitTypeView,
 } from './screens/types'
 export { default as CityCommandScreen, turnText } from './screens/cityCommand/CityCommandScreen'
 export type { CityCommandScreenProps, CommandState } from './screens/cityCommand/CityCommandScreen'
