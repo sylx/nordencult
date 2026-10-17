@@ -15,7 +15,7 @@ export default function DomesticEntry() {
     </>}
     controls={<>
       <h2>内政画面</h2>
-      <p>画面いっぱいの暗い羊皮紙のウィンドウです。いまは左上の枠と「閉じる」だけで、建設・割当の中身はこれから詰めます。</p>
+      <p>共通部品 WindowFrame を画面いっぱいに表示しています。右上の × で閉じられます。建設・割当の中身はこれから詰めます。</p>
       <label htmlFor="domestic-city">都市</label>
       <select id="domestic-city" value={cityId} onChange={event => setCityId(event.target.value)}>
         {playerCities.map(id => <option key={id} value={id}>{CITY_MAP[id]?.name}</option>)}

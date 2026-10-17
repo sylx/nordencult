@@ -1,4 +1,6 @@
 // Basic components: windows
+export { default as WindowFrame } from './components/window/WindowFrame'
+export type { WindowFrameProps } from './components/window/WindowFrame'
 export { default as InfoWindow } from './components/window/InfoWindow'
 export type { InfoWindowProps } from './components/window/InfoWindow'
 export { default as InfoWindowWithTabs } from './components/window/InfoWindowWithTabs'

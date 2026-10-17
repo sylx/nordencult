@@ -26,7 +26,7 @@ http://localhost:5173 でカタログを開きます。左の一覧から項目�
 | --- | --- |
 | 画面フロー | 戦略画面（`#strategy-flow`、既定）: 都市コマンド → 軍事 → 侵攻 → 地図で侵攻先を選ぶ → 侵攻画面 → 予約。Escで1段ずつ戻る |
 | 画面 | 都市コマンド（`#city-command`）、地図で選ぶ（`#map-pick`）、侵攻（`#invasion`） |
-| 基本部品 | ウィンドウ（`#info-window`、従来の調整画面）、ツールバー（`#command-toolbar`）、ターン情報（`#date-bar`）、UIパーツ（`#parts`） |
+| 基本部品 | ウィンドウ（`#info-window`）、ウィンドウ（閉じるボタン付き）（`#window-frame`）、ツールバー（`#command-toolbar`）、ターン情報（`#date-bar`）、UIパーツ（`#parts`） |
 | 演出 | カットインエディタ（`#cutin-editor`）: テンプレートを作り、JSONで書き出す。`src/cutin/templates/` のJSONを開いて直せる |
 
 画面の項目は仮の地図（`demo/mock/MockMap.tsx`）の上に重ねます。都市・騎士・兵科は `demo/mock/data.ts` の仮データです。
@@ -48,6 +48,20 @@ nordencult のルートは `norden-ui/src/index.ts` をエイリアスで直接�
 
 React / React DOMはpeer dependencyとしてゲームと共有し、ライブラリのJSには含めません。装飾画像はライブラリに含みます。
 配置先には `position: relative` を指定してください。ウィンドウの `x` / `y` と画面のレイヤーは配置先を基準にします。
+
+### 閉じるボタン付きウィンドウ枠
+
+`WindowFrame` は暗い羊皮紙に medium 相当の厚みの金属装飾枠を重ねた共通部品です。右上の閉じるボタンは、枠の彫刻が絡み合う円形の意匠に組み込まれています。内容だけがスクロールし、閉じるボタンは常に表示されます。配置と寸法は `className` / `style`、ウィンドウ名は `aria-label` / `aria-labelledby` で指定します。
+
+カタログの基本部品 → **ウィンドウ（閉じるボタン付き）**（`/#window-frame`）で、寸法・装飾のサイズ・× の位置と操作領域・内容の余白・背景を調整できます。設定は画面下の `style` 欄からコピーできます。数値の調整は CSS カスタムプロパティで行い、枠の装飾サイズに閉じる部分の位置が追従します。閉じると実際にウィンドウが消え、「ウィンドウを再表示」で開き直せます。
+
+```tsx
+import { WindowFrame } from 'norden-ui'
+
+<WindowFrame aria-label="施設の詳細" onClose={onClose} style={{ width: 480, height: 320 }}>
+  <p>ウィンドウの内容</p>
+</WindowFrame>
+```
 
 ### 画面スタック
 

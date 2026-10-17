@@ -1,0 +1,88 @@
+.norden-window-frame {
+  --norden-window-frame-size: 64px;
+  --norden-window-close-size: 44px;
+  --norden-window-close-icon-size: 20px;
+  --norden-window-close-x: 0px;
+  --norden-window-close-y: 0px;
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-width: calc(var(--norden-window-frame-size) * 2);
+  min-height: calc(var(--norden-window-frame-size) * 2);
+  padding: var(--norden-window-content-top, 44px)
+    var(--norden-window-content-right, 25px)
+    var(--norden-window-content-bottom, calc(var(--norden-window-frame-size) * .625))
+    var(--norden-window-content-left, 30px);
+  pointer-events: auto;
+  color: #f3ead7;
+  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+}
+.norden-window-frame-decoration {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.norden-window-frame-surface {
+  position: absolute;
+  inset: var(--norden-window-surface-inset, calc(var(--norden-window-frame-size) * .28125));
+  border-radius: var(--norden-window-surface-radius, 20px);
+  background: #211b14 url('../../assets/ui/hud/dark-texture.png') repeat;
+  opacity: var(--norden-window-surface-opacity, 1);
+}
+.norden-window-frame-border {
+  position: absolute;
+  inset: 0;
+  border: var(--norden-window-frame-size) solid transparent;
+  border-image: url('../../assets/ui/skins/ornate-close-frame.png') 25% / var(--norden-window-frame-size) / 0 stretch;
+}
+/* The medallion is part of the corner image; this transparent hit target carries its live cross. */
+.norden-window-frame-close {
+  position: absolute;
+  top: calc(var(--norden-window-frame-size) * .484375 - var(--norden-window-close-size) / 2 + var(--norden-window-close-y));
+  right: calc(var(--norden-window-frame-size) * .40625 - var(--norden-window-close-size) / 2 + var(--norden-window-close-x));
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: var(--norden-window-close-size);
+  height: var(--norden-window-close-size);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #f2d69b;
+  cursor: pointer;
+}
+.norden-window-frame-close::before {
+  content: '';
+  position: absolute;
+  inset: 16%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffe3a54d, #ffe3a500 72%);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.norden-window-frame-close svg {
+  position: relative;
+  width: var(--norden-window-close-icon-size);
+  height: var(--norden-window-close-icon-size);
+  filter: drop-shadow(0 1px 1px #100b05);
+}
+.norden-window-frame-close:hover { color: #fff3cc; }
+.norden-window-frame-close:hover::before { opacity: 1; }
+.norden-window-frame-close:active svg { transform: translateY(1px); }
+.norden-window-frame-close:focus-visible { outline: 2px solid #ffe0a1; outline-offset: -5px; }
+.norden-window-frame-content {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  scrollbar-width: thin;
+  scrollbar-color: #94703b #211b14;
+}
+@media (prefers-reduced-motion: reduce) {
+  .norden-window-frame-close::before { transition: none; }
+}

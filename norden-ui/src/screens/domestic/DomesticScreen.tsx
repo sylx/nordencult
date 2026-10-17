@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import ThinFrame from '../../components/parts/ThinFrame'
-import Button from '../../components/parts/Button'
+import WindowFrame from '../../components/window/WindowFrame'
 import type { CityView } from '../types'
 import '../screens.css'
 import './DomesticScreen.css'
@@ -16,11 +16,9 @@ export interface DomesticScreenProps {
 export default function DomesticScreen({ city, onClose, children }: DomesticScreenProps) {
   return (
     <div className="norden-screen norden-domestic">
-      <section className="norden-domestic-window" aria-label={`${city.name}の内政`}>
-        <ThinFrame />
+      <WindowFrame className="norden-domestic-window" aria-label={`${city.name}の内政`} onClose={onClose}>
         <div className="norden-domestic-frame" data-testid="domestic-frame"><ThinFrame /></div>
-        <Button variant="quiet" size="small" className="norden-domestic-close" onClick={onClose}>閉じる</Button>
-      </section>
+      </WindowFrame>
       {children}
     </div>
   )

@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import InfoWindowEntry from './entries/InfoWindowEntry'
+import WindowFrameEntry from './entries/WindowFrameEntry'
 import CommandToolbarEntry from './entries/CommandToolbarEntry'
 import DateBarEntry from './entries/DateBarEntry'
 import FactionBarEntry from './entries/FactionBarEntry'
@@ -42,7 +43,7 @@ export const CATALOG: CatalogGroup[] = [
       { id: 'map-pick', label: '地図で選ぶ', name: 'MapPickScreen', Component: MapPickEntry,
         description: '地図上で都市などを選ぶステップ。案内の帯と「やめる」だけを出し、候補の強調と選択は呼び出し側の地図が行う' },
       { id: 'domestic', label: '内政', name: 'DomesticScreen', Component: DomesticEntry,
-        description: '画面いっぱいの暗い羊皮紙のウィンドウ。いまは左上の枠と「閉じる」だけ（中身はこれから）' },
+        description: '閉じるボタンを組み込んだ共通の WindowFrame を画面いっぱいに表示。暗い羊皮紙と左上の空の枠（中身はこれから）' },
       { id: 'invasion', label: '侵攻', name: 'InvasionScreen', Component: InvasionEntry,
         description: '出撃する騎士の選択と、騎士ごとの兵科・兵数。兵数の合計は出発都市の兵数まで' },
     ],
@@ -59,6 +60,8 @@ export const CATALOG: CatalogGroup[] = [
     entries: [
       { id: 'info-window', label: 'ウィンドウ', name: 'InfoWindow / InfoWindowWithTabs', Component: InfoWindowEntry,
         description: '羊皮紙と装飾枠のウィンドウ。タブ、スキン、自動サイズ、ドラッグ、リサイズ' },
+      { id: 'window-frame', label: 'ウィンドウ（閉じるボタン付き）', name: 'WindowFrame', Component: WindowFrameEntry,
+        description: '右上の彫刻に閉じる操作が組み込まれた装飾枠。寸法、装飾のサイズ、閉じる位置、内容の余白と透過を調整' },
       { id: 'command-toolbar', label: 'ツールバー', name: 'CommandToolbar', Component: CommandToolbarEntry,
         description: 'コマンドの並び。子を持つコマンドは押すと上にサブコマンドが開く' },
       { id: 'date-bar', label: 'ターン情報', name: 'DateBar', Component: DateBarEntry,
