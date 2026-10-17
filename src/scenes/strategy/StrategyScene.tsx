@@ -219,6 +219,7 @@ export default function StrategyScene() {
           const index = playerCities.indexOf(cityId)
           return (
             <CityCommandScreen city={cityView(game, cityId)} turn={turnView(game)} faction={factionSummary(game)}
+              playerFaction={factionView(game.playerFaction)}
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
               onPrevCity={playerCities.length > 0 ? () => stepCity(cityId, -1) : undefined}
               onNextCity={playerCities.length > 0 ? () => stepCity(cityId, 1) : undefined}
