@@ -1,5 +1,6 @@
 import { useScene } from '../sceneContext'
 import logoUrl from '../../assets/logo.png'
+import { TitleFog } from './TitleFog'
 import './TitleScene.css'
 
 export default function TitleScene() {
@@ -11,6 +12,9 @@ export default function TitleScene() {
 
       {/* ロゴ背後のスポットライト（炎の照り返しのように揺らぐ） */}
       <div className="title-scene__spotlight" aria-hidden="true" />
+
+      {/* 足元を流れる霧（速さの違う 2 層） */}
+      <TitleFog />
 
       {/* タイトル画面コンテンツ */}
       <div className="title-scene__content">

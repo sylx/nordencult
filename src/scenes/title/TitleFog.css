@@ -1,0 +1,60 @@
+/*
+ * 足元の霧。タイル 1 枚分だけ横に動かしてから戻すので継ぎ目なくループする。
+ * 動かすのは transform だけにして、毎フレームの再描画を避ける
+ */
+.title-fog {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50%;
+  overflow: hidden;
+  z-index: 4;
+  pointer-events: none;
+  animation: title-fog-in 4s ease-out 0.8s both;
+}
+
+@keyframes title-fog-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* タイル自体が上下の端で透明になっているので、層の縁はどこに置いても見えない */
+.title-fog__layer {
+  position: absolute;
+  left: 0;
+  background-repeat: repeat-x;
+}
+
+.title-fog__layer--far {
+  --fog-tile: 1600px;
+  top: 0;
+  bottom: 10%;
+  width: calc(100% + var(--fog-tile));
+  background-size: var(--fog-tile) 100%;
+  opacity: 0.3;
+  animation: title-fog-drift 120s linear infinite;
+}
+
+.title-fog__layer--near {
+  --fog-tile: 2200px;
+  top: 35%;
+  bottom: -15%;
+  width: calc(100% + var(--fog-tile));
+  background-size: var(--fog-tile) 100%;
+  background-position: 700px 0;
+  opacity: 0.25;
+  animation: title-fog-drift 80s linear infinite;
+}
+
+@keyframes title-fog-drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-1 * var(--fog-tile))); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-fog,
+  .title-fog__layer {
+    animation: none;
+  }
+}

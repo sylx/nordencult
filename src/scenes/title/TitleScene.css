@@ -52,7 +52,10 @@
   animation: title-fade-in 1.9s ease-out 0.3s both;
 }
 
-/* 広い照り返し：ゆっくり大きく揺らぐ */
+/*
+ * 広い照り返し：ゆっくり大きく揺らぐ。
+ * グラデーションは closest-side で箱の内側に収め、縁で透明にしないと暗い画面に四角が浮く
+ */
 .title-scene__spotlight::before,
 .title-scene__spotlight::after {
   content: '';
@@ -62,10 +65,10 @@
 
 .title-scene__spotlight::before {
   background: radial-gradient(
-    ellipse 60% 55% at 50% 50%,
+    ellipse closest-side at 50% 50%,
     rgba(255, 230, 160, 0.28) 0%,
-    rgba(215, 170, 95, 0.16) 35%,
-    rgba(140, 95, 40, 0.06) 65%,
+    rgba(215, 170, 95, 0.16) 42%,
+    rgba(140, 95, 40, 0.06) 78%,
     transparent 100%
   );
   animation: title-flicker-wide 7.3s ease-in-out infinite;
