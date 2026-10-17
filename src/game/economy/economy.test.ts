@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { BUILDING_MAP } from '../../data/buildings'
 import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
@@ -9,6 +9,20 @@ import {
   soldiersLeft, startConstruction, startNextBattle, tierOf, transport, transportProblem, unassign,
   type CityState, type GameState,
 } from '..'
+
+// The tests' own buildings, so that they do not follow the game's data
+vi.mock('../../data/buildingData.json', () => ({
+  default: [
+    { id: 'market', name: '市場', description: '', supplies: 300, gold: 100, effects: [{ kind: 'marketPct', value: 15 }] },
+    { id: 'workshop', name: '工房', description: '', supplies: 400, gold: 120, effects: [{ kind: 'productionPct', value: 15 }] },
+    { id: 'granary', name: '倉庫', description: '', supplies: 300, gold: 80, effects: [{ kind: 'growthPct', value: 20 }] },
+    { id: 'barracks', name: '兵舎', description: '', supplies: 400, gold: 150, effects: [{ kind: 'recruitPct', value: 50 }] },
+    { id: 'temple', name: '神殿', description: '', supplies: 500, gold: 180, effects: [{ kind: 'growthPct', value: 30 }] },
+    { id: 'grand_market', name: '大市場', description: '', supplies: 600, gold: 200, upgradeFrom: 'market', effects: [{ kind: 'marketPct', value: 30 }] },
+    { id: 'harbor', name: '港', description: '', supplies: 600, gold: 200, requiredTags: ['港', '港湾'], effects: [{ kind: 'marketPct', value: 20 }] },
+    { id: 'reliquary', name: '聖遺物堂', description: '', supplies: 500, gold: 200, requiredRelic: '聖杯', effects: [] },
+  ],
+}))
 
 const FLUEN = 'P012' // カルタ書院, 港湾
 const SILVA = 'P026' // カルタ書院, joined to フルーエン by a road
@@ -210,18 +224,31 @@ describe('construction', () => {
 
   it('refuses buildings breaking the rules', () => {
     const state = createInitialState('carta')
-    expect(constructionProblem(state, FLUEN, 'harbor')).toBeNull() // フルーエン is a port of tier 2
-    expect(constructionProblem(state, SILVA, 'harbor')).toBe('Tier 2 以上の都市で建てられます') // シルヴァ is tier 1
-    expect(constructionProblem(withCity(state, SILVA, { population: BALANCE.TIER_POPULATION[0] }), SILVA, 'harbor'))
-      .toBe('港湾の都市で建てられます')
-    expect(constructionProblem(state, FLUEN, 'guild_hall')).toBe('Tier 3 以上の都市で建てられます')
     expect(constructionProblem(state, FLUEN, 'nope')).not.toBeNull()
     expect(constructionProblem(startConstruction(state, FLUEN, 'market'), FLUEN, 'workshop')).toBe('ほかの施設を建設中です')
     expect(constructionProblem(withCity(state, FLUEN, { buildings: ['market'] }), FLUEN, 'market')).toBe('すでに建っています')
     expect(constructionProblem(withCity(state, FLUEN, { buildings: ['market', 'workshop', 'granary', 'barracks'] }), FLUEN, 'temple'))
       .toBe('施設の空きがありません')
+    expect(constructionProblem(state, FLUEN, 'harbor')).toBeNull() // フルーエン is a port
+    expect(constructionProblem(state, SILVA, 'harbor')).toBe('港・港湾の都市で建てられます')
+    expect(constructionProblem(state, FLUEN, 'reliquary')).toBe('遺物「聖杯」が必要です')
     expect(constructionProblem({ ...state, gold: { ...state.gold, carta: 0 } }, FLUEN, 'market')).toBe('金が足りません')
     expect(constructionProblem(state, AMBARIA, 'market')).toBe('自勢力の都市ではありません')
+  })
+
+  it('builds an upgrade over the building it replaces', () => {
+    let state = createInitialState('carta')
+    expect(constructionProblem(state, FLUEN, 'grand_market')).toBe('市場がある都市で建てられます')
+    // No free slot is needed: it takes the market's
+    state = withCity(state, FLUEN, { buildings: ['workshop', 'market', 'granary', 'barracks'] })
+    expect(constructionProblem(state, FLUEN, 'grand_market')).toBeNull()
+    state = startConstruction(state, FLUEN, 'grand_market')
+    const required = BUILDING_MAP.grand_market.supplies
+    state = withCity(state, FLUEN, { construction: { buildingId: 'grand_market', requiredSupplies: required, investedSupplies: required - 1 } })
+    state = runEconomy(state, 2)
+    expect(state.cities[FLUEN].buildings).toEqual(['workshop', 'grand_market', 'granary', 'barracks'])
+    // The market cannot be built again beside its upgrade
+    expect(constructionProblem(withCity(state, FLUEN, { buildings: ['grand_market'] }), FLUEN, 'market')).toBe('大市場が建っています')
   })
 
   it('cancels the construction without giving anything back', () => {

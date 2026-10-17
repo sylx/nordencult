@@ -5,8 +5,10 @@ import type {
   AssignmentRoleView, BuildOptionView, BuildingView, CityView, FactionSummaryView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView,
 } from 'norden-ui'
 import { FACTION_MAP, PLACES, emblemUrl, type MapSeason, type PlaceType } from 'norden-strategy'
+import buildingSheet from '../../assets/buildings.webp'
 import { CharacterImage } from '../../components/CharacterImage'
 import { BUILDING_LIST, BUILDING_MAP, describeEffect } from '../../data/buildings'
+import buildingSprite from '../../data/buildingSprite.json'
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
@@ -44,8 +46,6 @@ const PLACE_TYPES = new Map(PLACES.map((p) => [p.id, p.type]))
 
 const ASSIGNMENT_LABELS: Readonly<Record<AssignmentRole, string>> = { governor: '代官', military: '軍事担当' }
 
-/** Building images written by norden-data (src/assets/buildings/<id>.webp) */
-const BUILDING_IMAGES = import.meta.glob<string>('../../assets/buildings/*.webp', { eager: true, query: '?url', import: 'default' })
 
 export function buildingView(id: string): BuildingView {
   const building = BUILDING_MAP[id]
@@ -55,7 +55,14 @@ export function buildingView(id: string): BuildingView {
     name: building.name,
     description: building.description,
     effects: building.effects.map(describeEffect),
-    image: building.image ? BUILDING_IMAGES[`../../assets/buildings/${building.image}`] : undefined,
+    image: building.sprite && {
+      src: buildingSheet,
+      sheetWidth: buildingSprite.width,
+      sheetHeight: buildingSprite.height,
+      ...building.sprite,
+      width: buildingSprite.cellWidth,
+      height: buildingSprite.cellHeight,
+    },
   }
 }
 

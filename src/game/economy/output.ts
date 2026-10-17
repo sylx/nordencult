@@ -29,8 +29,8 @@ export interface MilitaryBonus {
   recruit: number
 }
 
-/** The buildings' effects summed; the percentages as fractions, recruitMorale as morale */
-export type BuildingBonus = Record<Exclude<BuildingEffectKind, 'mercenary'>, number>
+/** The buildings' effects summed; the percentages as fractions, recruitMorale as morale, tradeRoutes as routes (not used yet) */
+export type BuildingBonus = Record<Exclude<BuildingEffectKind, 'etc'>, number>
 
 /** 0 up to ABILITY_BASE, 1 at 100 */
 const abilityScale = (value: number) => Math.max(0, (value - ABILITY_BASE) / (100 - ABILITY_BASE))
@@ -65,11 +65,11 @@ export function militaryBonus(officers: readonly CharacterId[]): MilitaryBonus {
 }
 
 export function buildingBonus(buildings: readonly string[]): BuildingBonus {
-  const bonus: BuildingBonus = { marketPct: 0, productionPct: 0, growthPct: 0, trainingPct: 0, recruitPct: 0, recruitMorale: 0 }
+  const bonus: BuildingBonus = { marketPct: 0, productionPct: 0, growthPct: 0, trainingPct: 0, recruitPct: 0, recruitMorale: 0, tradeRoutes: 0 }
   for (const id of buildings) {
     for (const effect of BUILDING_MAP[id]?.effects ?? []) {
-      if (effect.kind === 'mercenary') continue
-      bonus[effect.kind] += effect.kind === 'recruitMorale' ? effect.value : effect.value / 100
+      if (effect.kind === 'etc') continue
+      bonus[effect.kind] += effect.kind === 'recruitMorale' || effect.kind === 'tradeRoutes' ? effect.value : effect.value / 100
     }
   }
   return bonus

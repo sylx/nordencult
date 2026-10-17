@@ -1,3 +1,4 @@
+import { BUILDING_MAP } from '../../data/buildings'
 import { MAX_MORALE } from '../army'
 import type {
   CityEconomy, CityId, CitySnapshot, CityState, EconomyEvent, EconomyReport, FactionEconomy, FactionId, GameState,
@@ -33,7 +34,12 @@ function growCity(cityId: CityId, city: CityState): { city: CityState; events: E
   if (construction && !construction.paused) {
     const invested = construction.investedSupplies + output.production
     if (invested >= construction.requiredSupplies) {
-      buildings = [...buildings, construction.buildingId]
+      // An upgrade takes the place of the building it was built over
+      const { buildingId } = construction
+      const replaced = BUILDING_MAP[buildingId]?.upgradeFrom
+      buildings = replaced && buildings.includes(replaced)
+        ? buildings.map((id) => (id === replaced ? buildingId : id))
+        : [...buildings, buildingId]
       storedSupplies += invested - construction.requiredSupplies
       events.push({ kind: 'buildingCompleted', buildingId: construction.buildingId })
       construction = null

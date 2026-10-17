@@ -1,4 +1,4 @@
-import { BUILDING_MAP } from '../../data/buildings'
+import { BUILDING_MAP, upgradesOf } from '../../data/buildings'
 import { CITY_MAP } from '../../data/city'
 import { mixMorale } from '../army'
 import { GameRuleError } from '../errors'
@@ -87,13 +87,18 @@ export function buildingProblem(state: GameState, cityId: CityId, buildingId: st
   const city = state.cities[cityId]
   if (!city) return '都市がありません'
   if (city.buildings.includes(buildingId)) return 'すでに建っています'
-  const { tier, slots } = cityOutput(state, cityId)
-  if (tier < building.minTier) return `Tier ${building.minTier} 以上の都市で建てられます`
+  const upgraded = upgradesOf(buildingId).find((id) => city.buildings.includes(id))
+  if (upgraded) return `${BUILDING_MAP[upgraded].name}が建っています`
   const tags = CITY_MAP[cityId]?.tags ?? []
   if (building.requiredTags && !building.requiredTags.some((tag) => tags.includes(tag))) {
     return `${building.requiredTags.join('・')}の都市で建てられます`
   }
-  if (city.buildings.length >= slots) return '施設の空きがありません'
+  if (building.requiredRelic) return `遺物「${building.requiredRelic}」が必要です`
+  // An upgrade is built over the building it replaces, taking no slot of its own
+  if (building.upgradeFrom) {
+    return city.buildings.includes(building.upgradeFrom) ? null : `${BUILDING_MAP[building.upgradeFrom]?.name ?? building.upgradeFrom}がある都市で建てられます`
+  }
+  if (city.buildings.length >= cityOutput(state, cityId).slots) return '施設の空きがありません'
   return null
 }
 
