@@ -1,5 +1,6 @@
 import type { BuildOptionView, BuildingView, CityBuildingsView, CityView, FactionSummaryView, FactionView, KnightView, TurnView, UnitTypeView } from '../../src'
 import { createElement } from 'react'
+import { repositoryBuildings, type BuildingSpec } from '../repositoryBuildings'
 import { repositoryCharacters, RepositoryCharacterArt, RepositoryPortrait } from '../repositoryCharacters'
 
 /** Demo-only data. The game passes its own state converted into the same view types */
@@ -66,73 +67,106 @@ const stats = (market: number, production: number, base?: { market: number; prod
   { label: '生産', value: production, max: 640, base: base?.production },
 ]
 
-export interface MockBuildingSpec extends BuildingView {
-  supplies: number
-  gold: number
-  minTier: number
-  requiredTags?: readonly string[]
-}
+export type MockBuildingSpec = BuildingSpec
 
-export const BUILDING_SPECS: MockBuildingSpec[] = ([
-  ['market', '市場', '商人が集まり、取引が盛んになる。', ['商業 +15%'], 300, 100, 1],
-  ['workshop', '工房', '職人を抱え、物資の生産を増やす。', ['生産 +15%'], 400, 120, 1],
-  ['granary', '倉庫', '食糧を蓄え、暮らしを安定させる。', ['人口の伸び +20%'], 300, 80, 1],
-  ['barracks', '兵舎', '兵を寝泊まりさせる。', ['募兵数 +50%'], 400, 150, 1],
-  ['training_ground', '訓練場', '兵を鍛える。', ['訓練 +50%', '新兵の練度 +10'], 500, 150, 2],
-  ['harbor', '港', '船の出入りで交易が広がる。', ['商業 +20%', '傭兵が現れる'], 600, 200, 2, ['港', '港湾']],
-  ['temple', '神殿', '人々の心の拠り所。', ['人口の伸び +30%'], 500, 180, 2],
-  ['guild_hall', '商館', '遠方の商会が支店を置く。大きな取引が都市を潤す。', ['商業 +30%'], 900, 300, 3],
-] as const).map(([id, name, description, effects, supplies, gold, minTier, requiredTags]) => ({
-  id, name, description, effects, supplies, gold, minTier, requiredTags,
-}))
+/** Used when the catalog runs outside the game's repository (the same ids as the game's data) */
+const MOCK_BUILDING_SPECS: MockBuildingSpec[] = [
+  { id: 'market', name: '市場', description: '週に一度、近在の農家が荷車を連ねてやって来る。', effects: ['商業 +5%'], supplies: 400, gold: 100 },
+  { id: 'grand_market', name: '大市場', description: '屋根付きの通りに常設の店が並ぶ。', effects: ['商業 +10%'], supplies: 1000, gold: 250, upgradeFrom: 'market' },
+  { id: 'workshop', name: '工房', description: '親方と徒弟が一つ屋根の下で鎚を振るう。', effects: ['生産 +5%'], supplies: 400, gold: 120 },
+  { id: 'artisans_quarter', name: '職人街', description: '煙と槌音の絶えない一角。', effects: ['生産 +10%'], supplies: 1000, gold: 280, upgradeFrom: 'workshop' },
+  { id: 'drill', name: '練兵場', description: '朝から号令と木剣の打ち合う音が響く。', effects: ['訓練 +10%', '新兵の練度 +5'], supplies: 600, gold: 150 },
+  { id: 'warehouse', name: '倉庫', description: '麦袋と樽が天井まで積まれている。', effects: ['物資の保存上限が上がる'], supplies: 500, gold: 80 },
+  { id: 'port', name: '港', description: '潮の香りと積み荷の掛け声。', effects: ['商業 +5%', '交易路 +2'], supplies: 700, gold: 200, requiredTags: ['港湾'] },
+  { id: 'chapel_of_emissaries', name: '聖堂使節館', description: '灰都から遣わされた使者が逗留する館。', effects: ['人口の伸び +5%'], supplies: 800, gold: 250 },
+  { id: 'cannon', name: '据付大砲', description: '城壁に据えた鋼の筒。', effects: ['射程5の砲撃'], supplies: 1200, gold: 400, requiredRelic: '大砲の設計図' },
+]
+
+/** The game's buildings (norden-data's export) inside its repository, otherwise the mock ones */
+export const BUILDING_SPECS: MockBuildingSpec[] = repositoryBuildings ?? MOCK_BUILDING_SPECS
 
 export const BUILDINGS: Record<string, MockBuildingSpec> = Object.fromEntries(BUILDING_SPECS.map(spec => [spec.id, spec]))
+
+/** The buildings upgraded from a building, directly or through others */
+function upgradesOf(id: string): string[] {
+  const found: string[] = []
+  const walk = (from: string) => {
+    for (const spec of BUILDING_SPECS) {
+      if (spec.upgradeFrom === from && !found.includes(spec.id)) {
+        found.push(spec.id)
+        walk(spec.id)
+      }
+    }
+  }
+  walk(id)
+  return found
+}
+
+/** Why a building cannot be started, following the game's rules (src/game/economy/domestic.ts) */
+function buildProblem(city: CityView, spec: MockBuildingSpec, gold: number): string | undefined {
+  const built = city.buildings?.built.map(item => item.id) ?? []
+  const upgraded = upgradesOf(spec.id).find(id => built.includes(id))
+  if (upgraded) return `${BUILDINGS[upgraded]?.name ?? upgraded}が建っています`
+  const tags = city.tags ?? []
+  if (spec.requiredTags && !spec.requiredTags.some(tag => tags.includes(tag))) return `${spec.requiredTags.join('・')}の都市で建てられます`
+  if (spec.requiredRelic) return `遺物「${spec.requiredRelic}」が必要です`
+  if (spec.upgradeFrom) {
+    if (!built.includes(spec.upgradeFrom)) return `${BUILDINGS[spec.upgradeFrom]?.name ?? spec.upgradeFrom}がある都市で建てられます`
+  } else if (built.length >= (city.buildings?.slots ?? 0)) {
+    return '施設の空きがありません'
+  }
+  if (city.buildings?.construction) return 'ほかの施設を建設中です'
+  if (gold < spec.gold) return '金が足りません'
+  return undefined
+}
 
 export function buildOptionsFor(city: CityView, gold = FACTION_SUMMARY.gold): BuildOptionView[] {
   const builtIds = new Set(city.buildings?.built.map(item => item.id) ?? [])
   const constructingId = city.buildings?.construction?.building.id
   const production = city.stats?.find(stat => stat.label === '生産')?.value ?? 0
-  const tier = city.tier ?? 1
-  const tags = city.tags ?? []
   return BUILDING_SPECS
     .filter(spec => !builtIds.has(spec.id) && spec.id !== constructingId)
-    .map(spec => {
-      let unavailableReason: string | undefined
-      if (tier < spec.minTier) unavailableReason = `Tier ${spec.minTier} 以上の都市で建てられます`
-      else if (spec.requiredTags && !spec.requiredTags.some(tag => tags.includes(tag))) unavailableReason = `港湾都市で建てられます`
-      else if (gold < spec.gold) unavailableReason = '金が足りません'
-      return {
-        ...spec,
-        turns: production > 0 ? Math.ceil(spec.supplies / production) : null,
-        unavailableReason,
-      }
-    })
+    .map(spec => ({
+      ...spec,
+      turns: production > 0 ? Math.ceil(spec.supplies / production) : null,
+      unavailableReason: buildProblem(city, spec, gold),
+    }))
 }
 
-const buildings = (slots: number, built: string[], construction?: { id: string; invested: number; turnsLeft: number | null }): CityBuildingsView => ({
-  slots,
-  built: built.map(id => BUILDINGS[id]!),
-  construction: construction && {
-    building: BUILDINGS[construction.id]!, invested: construction.invested, required: 400, turnsLeft: construction.turnsLeft,
-  },
-})
+/** The buildings of a city after one is completed: an upgrade takes the place of the building it was built over */
+export function withCompleted(built: readonly BuildingView[], building: BuildingView): BuildingView[] {
+  const replaced = BUILDINGS[building.id]?.upgradeFrom
+  return replaced && built.some(item => item.id === replaced)
+    ? built.map(item => (item.id === replaced ? building : item))
+    : [...built, building]
+}
+
+/** Ids missing from the buildings in use are left out */
+const buildings = (slots: number, built: string[], construction?: { id: string; invested: number; turnsLeft: number | null }): CityBuildingsView => {
+  const spec = construction && BUILDINGS[construction.id]
+  return {
+    slots,
+    built: built.flatMap(id => BUILDINGS[id] ?? []),
+    construction: spec && { building: spec, invested: construction.invested, required: spec.supplies, turnsLeft: construction.turnsLeft },
+  }
+}
 
 export const CITIES: MockCity[] = [
   { id: 'P012', name: 'フルーエン', owner: 'carta', typeLabel: '港湾都市', scaleLabel: '大きな街', population: 11000, tier: 2,
     stats: stats(506, 253, { market: 440, production: 220 }), troopMorale: 72, supplies: 440,
-    buildings: buildings(4, ['market'], { id: 'workshop', invested: 260, turnsLeft: 1 }), tags: ['港', '交易'], at: { x: 52, y: 52 }, soldiers: 1200 },
+    buildings: buildings(4, ['market'], { id: 'workshop', invested: 260, turnsLeft: 1 }), tags: ['港湾', '交易'], at: { x: 52, y: 52 }, soldiers: 1200 },
   { id: 'P010', name: 'ヴェステル', owner: 'carta', typeLabel: '農業都市', scaleLabel: '小さな町', population: 4200, tier: 1,
     stats: stats(120, 140), supplies: 280, buildings: buildings(2, []), tags: ['穀倉'], at: { x: 46, y: 22 }, soldiers: 600 },
   { id: 'P015', name: 'ミルデン', owner: 'carta', typeLabel: '辺境都市', scaleLabel: '小さな町', population: 2600, tier: 1,
-    stats: stats(90, 80), troopMorale: 40, supplies: 120, buildings: buildings(2, ['granary']), tags: [], at: { x: 58, y: 78 }, soldiers: 200 },
+    stats: stats(90, 80), troopMorale: 40, supplies: 120, buildings: buildings(2, ['warehouse']), tags: [], at: { x: 58, y: 78 }, soldiers: 200 },
   { id: 'P020', name: 'セイルの砦', typeLabel: '軍事都市', scaleLabel: '要塞', population: 900, tier: 1,
-    stats: stats(30, 380), supplies: 760, buildings: buildings(2, []), tags: ['山岳'], at: { x: 66, y: 12 }, soldiers: 300 },
+    stats: stats(30, 380), supplies: 760, buildings: buildings(2, []), tags: ['山岳', '鉱山'], at: { x: 66, y: 12 }, soldiers: 300 },
   { id: 'P004', name: 'アンバリア', owner: 'leonis', typeLabel: '交易都市', scaleLabel: '大きな街', population: 9800, tier: 2,
-    stats: stats(520, 300), supplies: 600, buildings: buildings(4, ['market', 'barracks']), tags: ['城塞'], at: { x: 72, y: 46 }, soldiers: 900 },
+    stats: stats(520, 300), supplies: 600, buildings: buildings(4, ['grand_market', 'drill']), tags: ['城塞'], at: { x: 72, y: 46 }, soldiers: 900 },
   { id: 'P006', name: 'グラウブルク', owner: 'leonis', typeLabel: '軍事都市', scaleLabel: '大都市', population: 15400, tier: 3,
-    stats: stats(360, 560), troopMorale: 85, supplies: 1200, buildings: buildings(6, ['barracks', 'training_ground', 'workshop', 'market']), tags: ['帝都'], at: { x: 87, y: 22 }, soldiers: 2000 },
+    stats: stats(360, 560), troopMorale: 85, supplies: 1200, buildings: buildings(6, ['drill', 'artisans_quarter', 'market', 'warehouse']), tags: ['帝都'], at: { x: 87, y: 22 }, soldiers: 2000 },
   { id: 'P021', name: 'オルデン', owner: 'esuhara', typeLabel: '聖都', scaleLabel: '聖地', population: 7000, tier: 2,
-    stats: stats(300, 160), supplies: 320, buildings: buildings(4, ['temple'], { id: 'market', invested: 40, turnsLeft: 3 }), tags: ['聖地'], at: { x: 84, y: 74 }, soldiers: 500 },
+    stats: stats(300, 160), supplies: 320, buildings: buildings(4, ['chapel_of_emissaries'], { id: 'market', invested: 40, turnsLeft: 3 }), tags: ['聖地'], at: { x: 84, y: 74 }, soldiers: 500 },
 ]
 
 export const ROADS: [string, string][] = [

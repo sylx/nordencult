@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { DomesticScreen } from '../../src'
 import type { BuildingView, CityView, ConstructionView } from '../../src'
-import { BUILDINGS, CITIES, CITY_MAP, FACTION_SUMMARY, buildOptionsFor, cityView, playerCities } from '../mock/data'
+import { BUILDINGS, CITIES, CITY_MAP, FACTION_SUMMARY, buildOptionsFor, cityView, playerCities, withCompleted } from '../mock/data'
 import MockMap from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
 
@@ -108,7 +108,7 @@ export default function DomesticEntry() {
         const surplus = nextInvested - current.construction.required
         const finished = current.construction.building
         updateCity({
-          built: [...current.built, finished],
+          built: withCompleted(current.built, finished),
           construction: null,
           supplies: current.supplies + surplus,
         })
