@@ -77,8 +77,8 @@ function CityInfo({ city }: { city: CityView }) {
             {city.lord.imageSrc ? <img src={city.lord.imageSrc} alt="" /> : city.lord.image}
           </div>
         )}
+        <CityResources city={city} />
       </div>
-      <CityResources city={city} />
       {city.stats && city.stats.length > 0 && (
         <dl className="norden-city-info-stats">
           {city.stats.map(stat => (
