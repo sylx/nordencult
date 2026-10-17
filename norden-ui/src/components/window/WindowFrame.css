@@ -38,6 +38,43 @@
   border: var(--norden-window-frame-size) solid transparent;
   border-image: url('../../assets/ui/skins/ornate-close-frame.png') 25% / var(--norden-window-frame-size) / 0 stretch;
 }
+.norden-window-frame-title {
+  position: absolute;
+  top: var(--norden-window-title-y, 2px);
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  width: max-content;
+  max-width: calc(100% - 140px);
+  height: var(--norden-window-title-height, 44px);
+  padding: 0 44px;
+  isolation: isolate;
+  user-select: none;
+  pointer-events: none;
+}
+.norden-window-frame-title::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 0 solid transparent;
+  border-inline-width: 30px;
+  border-image: url('../../assets/ui/info_window_title_full.png') 0 8% fill / 0 30px / 0 stretch;
+}
+.norden-window-frame-title-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #eee1ca;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 2px #0f0a05;
+}
 /* The medallion is part of the corner image; this transparent hit target carries its live cross. */
 .norden-window-frame-close {
   position: absolute;

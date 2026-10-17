@@ -1,21 +1,36 @@
-import type { HTMLAttributes } from 'react'
+import { useId, type HTMLAttributes, type ReactNode } from 'react'
 import './WindowFrame.css'
 
-export interface WindowFrameProps extends HTMLAttributes<HTMLElement> {
+export interface WindowFrameProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
+  title?: ReactNode
   onClose: () => void
   closeLabel?: string
 }
 
 /** Sculpted metal frame with a close control woven into its top-right corner.
- * The caller supplies its accessible name and controls its position and size via className/style.
+ * The caller supplies its accessible name (or `title`) and controls its position and size via className/style.
  */
-export default function WindowFrame({ onClose, closeLabel = '閉じる', className = '', children, ...props }: WindowFrameProps) {
+export default function WindowFrame({
+  title, onClose, closeLabel = '閉じる', className = '', children,
+  'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledby, ...props
+}: WindowFrameProps) {
+  const titleId = useId()
   return (
-    <section className={`norden-window-frame ${className}`} {...props}>
+    <section
+      className={`norden-window-frame ${className}`}
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabel ? ariaLabelledby : (ariaLabelledby ?? (title ? titleId : undefined))}
+      {...props}
+    >
       <div className="norden-window-frame-decoration" aria-hidden="true">
         <div className="norden-window-frame-surface" />
         <div className="norden-window-frame-border" />
       </div>
+      {title !== undefined && title !== null && (
+        <div className="norden-window-frame-title">
+          <span id={titleId} className="norden-window-frame-title-text">{title}</span>
+        </div>
+      )}
       <button type="button" className="norden-window-frame-close"
         aria-label={closeLabel} title={closeLabel} onClick={onClose}>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"

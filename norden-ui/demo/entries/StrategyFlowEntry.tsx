@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, CityCommandScreen, DomesticScreen, InvasionScreen, MapPickScreen, ScreenHost, useScreenStack } from '../../src'
 import type { CityCommandId, InvasionDraft, KnightView } from '../../src'
-import { CITY_MAP, FACTIONS, FACTION_SUMMARY, INDIRECT_UNIT_TYPES, MORALE, PLAYER, TURN, UNIT_TYPES, cityView, invasionTargets, knightsIn, playerCities } from '../mock/data'
+import { CITY_MAP, FACTIONS, FACTION_SUMMARY, INDIRECT_UNIT_TYPES, MORALE, PLAYER, TURN, UNIT_TYPES, buildOptionsFor, cityView, invasionTargets, knightsIn, playerCities } from '../mock/data'
 import MockMap from '../mock/MockMap'
 import { mockUnitPower } from '../mock/unitPower'
 import type { MapRoad } from '../mock/MockMap'
@@ -115,7 +115,21 @@ export default function StrategyFlowEntry() {
         pickTarget: ({ from }) => (
           <MapPickScreen message={`${name(from)}からの侵攻先を選んでください`} onCancel={nav.pop} />
         ),
-        domestic: ({ cityId }) => <DomesticScreen city={cityView(cityId)} onClose={nav.pop} />,
+        domestic: ({ cityId }) => {
+          const city = cityView(cityId)
+          return (
+            <DomesticScreen
+              city={city}
+              buildOptions={buildOptionsFor(city)}
+              gold={FACTION_SUMMARY.gold}
+              onBuild={id => add(`${city.name}: 建設開始 (${id})`)}
+              onDemolish={id => add(`${city.name}: 施設削除 (${id})`)}
+              onCancelConstruction={() => add(`${city.name}: 建設取消`)}
+              onPauseConstruction={paused => add(`${city.name}: 建設${paused ? '中断' : '再開'}`)}
+              onClose={nav.pop}
+            />
+          )
+        },
         invasion: ({ from, to }) => (
           <InvasionScreen from={cityView(from)} to={cityView(to)} defenders={knightsIn(to).length}
             knights={knightsOf(from)} unitTypes={UNIT_TYPES} indirectUnitTypes={INDIRECT_UNIT_TYPES} soldierPool={soldiersLeft(from)} morale={MORALE} unitPower={mockUnitPower}

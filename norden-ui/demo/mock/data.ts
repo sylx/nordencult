@@ -1,4 +1,4 @@
-import type { BuildingView, CityBuildingsView, CityView, FactionSummaryView, FactionView, KnightView, TurnView, UnitTypeView } from '../../src'
+import type { BuildOptionView, BuildingView, CityBuildingsView, CityView, FactionSummaryView, FactionView, KnightView, TurnView, UnitTypeView } from '../../src'
 import { createElement } from 'react'
 import { repositoryCharacters, RepositoryCharacterArt, RepositoryPortrait } from '../repositoryCharacters'
 
@@ -69,17 +69,49 @@ const stats = (market: number, production: number, base?: { market: number; prod
 // The game's building images when the catalog runs inside the game's repository (src/assets/buildings/)
 const buildingImages = import.meta.glob<string>('../../../src/assets/buildings/*.webp', { eager: true, query: '?url', import: 'default' })
 
-export const BUILDINGS: Record<string, BuildingView> = Object.fromEntries(([
-  ['market', '市場', '商人が集まり、取引が盛んになる。', ['商業 +15%']],
-  ['workshop', '工房', '職人を抱え、物資の生産を増やす。', ['生産 +15%']],
-  ['granary', '倉庫', '食糧を蓄え、暮らしを安定させる。', ['人口の伸び +20%']],
-  ['barracks', '兵舎', '兵を寝泊まりさせる。', ['募兵数 +50%']],
-  ['training_ground', '訓練場', '兵を鍛える。', ['訓練 +50%', '新兵の練度 +10']],
-  ['harbor', '港', '船の出入りで交易が広がる。', ['商業 +20%', '傭兵が現れる']],
-  ['temple', '神殿', '人々の心の拠り所。', ['人口の伸び +30%']],
-] as const).map(([id, name, description, effects]) => [id, {
-  id, name, description, effects, image: buildingImages[`../../../src/assets/buildings/${id}.webp`],
-}]))
+export interface MockBuildingSpec extends BuildingView {
+  supplies: number
+  gold: number
+  minTier: number
+  requiredTags?: readonly string[]
+}
+
+export const BUILDING_SPECS: MockBuildingSpec[] = ([
+  ['market', '市場', '商人が集まり、取引が盛んになる。', ['商業 +15%'], 300, 100, 1],
+  ['workshop', '工房', '職人を抱え、物資の生産を増やす。', ['生産 +15%'], 400, 120, 1],
+  ['granary', '倉庫', '食糧を蓄え、暮らしを安定させる。', ['人口の伸び +20%'], 300, 80, 1],
+  ['barracks', '兵舎', '兵を寝泊まりさせる。', ['募兵数 +50%'], 400, 150, 1],
+  ['training_ground', '訓練場', '兵を鍛える。', ['訓練 +50%', '新兵の練度 +10'], 500, 150, 2],
+  ['harbor', '港', '船の出入りで交易が広がる。', ['商業 +20%', '傭兵が現れる'], 600, 200, 2, ['港', '港湾']],
+  ['temple', '神殿', '人々の心の拠り所。', ['人口の伸び +30%'], 500, 180, 2],
+  ['guild_hall', '商館', '遠方の商会が支店を置く。大きな取引が都市を潤す。', ['商業 +30%'], 900, 300, 3],
+] as const).map(([id, name, description, effects, supplies, gold, minTier, requiredTags]) => ({
+  id, name, description, effects, supplies, gold, minTier, requiredTags,
+  image: buildingImages[`../../../src/assets/buildings/${id}.webp`],
+}))
+
+export const BUILDINGS: Record<string, MockBuildingSpec> = Object.fromEntries(BUILDING_SPECS.map(spec => [spec.id, spec]))
+
+export function buildOptionsFor(city: CityView, gold = FACTION_SUMMARY.gold): BuildOptionView[] {
+  const builtIds = new Set(city.buildings?.built.map(item => item.id) ?? [])
+  const constructingId = city.buildings?.construction?.building.id
+  const production = city.stats?.find(stat => stat.label === '生産')?.value ?? 0
+  const tier = city.tier ?? 1
+  const tags = city.tags ?? []
+  return BUILDING_SPECS
+    .filter(spec => !builtIds.has(spec.id) && spec.id !== constructingId)
+    .map(spec => {
+      let unavailableReason: string | undefined
+      if (tier < spec.minTier) unavailableReason = `Tier ${spec.minTier} 以上の都市で建てられます`
+      else if (spec.requiredTags && !spec.requiredTags.some(tag => tags.includes(tag))) unavailableReason = `港湾都市で建てられます`
+      else if (gold < spec.gold) unavailableReason = '金が足りません'
+      return {
+        ...spec,
+        turns: production > 0 ? Math.ceil(spec.supplies / production) : null,
+        unavailableReason,
+      }
+    })
+}
 
 const buildings = (slots: number, built: string[], construction?: { id: string; invested: number; turnsLeft: number | null }): CityBuildingsView => ({
   slots,

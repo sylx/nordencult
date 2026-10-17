@@ -35,6 +35,7 @@ export default function WindowFrameEntry() {
   const [surface, setSurface] = useState(true)
   const [showTarget, setShowTarget] = useState(false)
   const [content, setContent] = useState('sample')
+  const [title, setTitle] = useState('フルーエンの内政')
   const [log, add] = useLog()
   const style = {
     width: fullSize ? '100%' : values.width,
@@ -61,12 +62,13 @@ export default function WindowFrameEntry() {
     setSurface(true)
     setShowTarget(false)
     setContent('sample')
+    setTitle('フルーエンの内政')
     add('初期値に戻しました')
   }
 
   return <Workbench variant="screen" stageClassName={`window-frame-playground backdrop-${backdrop}`}
     stage={<div className="demo-window-frame-placement">
-      {open ? <WindowFrame aria-label="閉じるボタン付きウィンドウのプレビュー" style={style}
+      {open ? <WindowFrame title={title || undefined} aria-label="閉じるボタン付きウィンドウのプレビュー" style={style}
         className={`demo-window-frame-preview ${showTarget ? 'show-close-target' : ''}`}
         onClose={() => { setOpen(false); add('閉じる') }}>
         {content !== 'empty' && <div className="demo-window-frame-copy">
@@ -83,6 +85,8 @@ export default function WindowFrameEntry() {
       <h2>ウィンドウ（閉じるボタン付き）</h2>
       <p>値を変えると左のプレビューに反映されます。枠のサイズを変えると閉じる位置も追従します。</p>
       <button className="reset-button" onClick={reset}>初期値に戻す</button>
+      <label htmlFor="frame-title">ウィンドウタイトル（空欄で非表示）</label>
+      <input id="frame-title" type="text" value={title} onChange={event => setTitle(event.target.value)} />
       <label className="checkbox"><input type="checkbox" checked={fullSize} onChange={event => setFullSize(event.target.checked)} />プレビューいっぱいに表示</label>
       <label htmlFor="frame-backdrop">透過確認の背景</label>
       <select id="frame-backdrop" value={backdrop} onChange={event => setBackdrop(event.target.value)}>

@@ -41,6 +41,8 @@ export interface ConstructionView {
   required: number
   /** Turns until it is completed; null: never at the current 生産 */
   turnsLeft?: number | null
+  /** Paused: produced supplies go to the city's stockpile instead of this construction */
+  paused?: boolean
 }
 
 /** A building the city could start: its costs, and why it cannot now */

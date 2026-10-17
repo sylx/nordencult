@@ -43,7 +43,7 @@ export const CATALOG: CatalogGroup[] = [
       { id: 'map-pick', label: '地図で選ぶ', name: 'MapPickScreen', Component: MapPickEntry,
         description: '地図上で都市などを選ぶステップ。案内の帯と「やめる」だけを出し、候補の強調と選択は呼び出し側の地図が行う' },
       { id: 'domestic', label: '内政', name: 'DomesticScreen', Component: DomesticEntry,
-        description: '閉じるボタンを組み込んだ共通の WindowFrame を画面いっぱいに表示。暗い羊皮紙と左上の空の枠（中身はこれから）' },
+        description: '都市の内政ウィンドウ。左上の施設スロット（確認付き削除・建設の中断/取消・+で追加）と右側の建設候補一覧' },
       { id: 'invasion', label: '侵攻', name: 'InvasionScreen', Component: InvasionEntry,
         description: '出撃する騎士の選択と、騎士ごとの兵科・兵数。兵数の合計は出発都市の兵数まで' },
     ],
