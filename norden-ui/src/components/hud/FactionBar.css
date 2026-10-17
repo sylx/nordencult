@@ -1,6 +1,6 @@
-/* The fixed-aspect orb overlaps a separate ribbon that can grow in either axis. */
+/* The round orb and the ribbon's end ornaments keep their own aspect ratios. */
 .norden-faction-bar {
-  --faction-bar-height: 56px;
+  --faction-bar-height: 68px;
   --faction-orb-size: 88px;
   position: relative;
   isolation: isolate;
@@ -18,21 +18,30 @@
 }
 .norden-faction-bar-ribbon {
   position: relative;
+  flex: 1;
   min-width: 0;
   margin-left: calc(var(--faction-orb-size) * .75);
-  padding: 0 24px 0 calc(var(--faction-orb-size) * .25 + 8px);
+  padding: 0 
+  calc(max(var(--faction-bar-height), 52px) * 313 / 333 + 8px)
+   0 
+  15px;
 }
-.norden-faction-bar-ribbon::before {
-  content: '';
+.norden-faction-bar-decoration {
   position: absolute;
-  /* Collapse the source's transparent margins into the outer 8px slices. */
-  inset: -6px 0;
+  inset: 0;
   z-index: -1;
-  border: solid transparent;
-  border-width: 8px 24px;
-  border-image: url('../../assets/ui/hud/faction-ribbon.png') 34% 10% 30% 10% fill / 8px 24px / 0 stretch;
+  display: flex;
+  align-items: stretch;
   pointer-events: none;
+  left: -15px;
 }
+.norden-faction-bar-cap { display: block; flex: none; height: 100%; width: auto; overflow: hidden; }
+.norden-faction-bar-cap.is-left { aspect-ratio: 102 / 333; }
+.norden-faction-bar-cap.is-right { aspect-ratio: 313 / 333;
+    right: 34px;
+    position: relative;
+ }
+.norden-faction-bar-middle { display: block; flex: 1; min-width: 0; width: 0; height: 100%; overflow: hidden; }
 .norden-faction-bar-content {
   box-sizing: border-box;
   display: flex;
@@ -76,8 +85,8 @@
 .norden-faction-bar-orb:focus-visible { outline: 2px solid #f4d987; outline-offset: -10px; }
 .norden-faction-bar-emblem {
   position: absolute;
-  left: 48%;
-  top: 48%;
+  left: 50%;
+  top: 50%;
   translate: -50% -50%;
   width: 42%;
   height: 46%;
@@ -104,7 +113,7 @@
   display: grid;
   grid-template: 'icon label' auto 'icon value' auto / auto auto;
   align-items: center;
-  column-gap: 6px;
+  column-gap: 10px;
   padding: 0 12px;
   white-space: nowrap;
   border-right: 1px solid #715737;

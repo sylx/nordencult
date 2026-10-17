@@ -31,9 +31,8 @@ test('navigation does not drag the bar, and its decorative image decodes', async
   const initial = await bar.boundingBox()
   await page.getByRole('button', { name: '次の都市', exact: true }).click()
   expect(await bar.boundingBox()).toEqual(initial)
-  const imageWidth = await bar.locator('.norden-faction-bar-ribbon').evaluate(async element => {
-    const source = getComputedStyle(element, '::before').borderImageSource
-    const url = source.match(/^url\(["']?(.*?)["']?\)$/)?.[1]
+  const imageWidth = await bar.locator('.norden-faction-bar-cap.is-right image').evaluate(async element => {
+    const url = element.getAttribute('href')
     if (!url) return 0
     const image = new Image()
     image.src = url
@@ -43,6 +42,33 @@ test('navigation does not drag the bar, and its decorative image decodes', async
   expect(imageWidth).toBeGreaterThan(0)
   await page.getByLabel('球をドラッグして移動する').uncheck()
   await expect(page.getByRole('button', { name: 'カルタ書院のバーを移動' })).toBeDisabled()
+})
+
+test('only the middle stretches when ribbon width changes, while both caps retain their proportions', async ({ page }) => {
+  await page.goto('/#faction-bar')
+  const bar = page.getByRole('group', { name: '勢力', exact: true })
+  const left = bar.locator('.norden-faction-bar-cap.is-left')
+  const right = bar.locator('.norden-faction-bar-cap.is-right')
+  await page.getByLabel('内容に幅を合わせる').uncheck()
+  for (const height of [56, 120]) {
+    await page.getByLabel('バー部分の高さ（px）').fill(String(height))
+    let firstMiddleWidth: number | undefined
+    for (const width of [500, 640, 800]) {
+      await page.getByLabel('バー全体の幅（px）').fill(String(width))
+      await expect(bar).toHaveCSS('width', `${width}px`)
+      const leftBounds = (await left.boundingBox())!
+      const rightBounds = (await right.boundingBox())!
+      expect(leftBounds.height).toBe(height)
+      expect(rightBounds.height).toBe(height)
+      expect(leftBounds.width / leftBounds.height).toBeCloseTo(102 / 333, 2)
+      expect(rightBounds.width / rightBounds.height).toBeCloseTo(313 / 333, 2)
+      const middle = (await bar.locator('.norden-faction-bar-middle').boundingBox())!
+      expect(leftBounds.x + leftBounds.width).toBeCloseTo(middle.x, 1)
+      expect(middle.x + middle.width).toBeCloseTo(rightBounds.x, 1)
+      if (firstMiddleWidth !== undefined) expect(middle.width).toBeGreaterThan(firstMiddleWidth)
+      else firstMiddleWidth = middle.width
+    }
+  }
 })
 
 test('ribbon height changes independently of the round orb and retains vertical content padding', async ({ page }) => {

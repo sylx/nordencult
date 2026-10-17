@@ -20,6 +20,8 @@ export default function FactionBarEntry() {
   const [backdrop, setBackdrop] = useState('dark')
   const [barHeight, setBarHeight] = useState(56)
   const [orbSize, setOrbSize] = useState(88)
+  const [fitContent, setFitContent] = useState(true)
+  const [barWidth, setBarWidth] = useState(720)
   const step = (delta: number) => {
     const next = (city + delta + cities.length) % cities.length
     setCity(next)
@@ -29,17 +31,23 @@ export default function FactionBarEntry() {
     stageClassName={`backdrop-${backdrop}`}
     stage={<div className="demo-top-left">
       <FactionBar faction={FACTIONS[factionId]} movable={movable} position={position} onPositionChange={setPosition}
-        style={{ '--faction-bar-height': `${barHeight}px`, '--faction-orb-size': `${orbSize}px` } as CSSProperties}
+        style={{ width: fitContent ? 'max-content' : barWidth, '--faction-bar-height': `${barHeight}px`, '--faction-orb-size': `${orbSize}px` } as CSSProperties}
         summary={withSummary ? { gold, goldForecast: forecast, production, troops } : undefined}
         cityName={cities[city]!} cityPosition={{ index: city, count: cities.length }} onPrevCity={() => step(-1)} onNextCity={() => step(1)} />
     </div>}
     controls={<>
       <h2>勢力の情報</h2>
       <p>左端の球をドラッグするとバー全体が動きます。球にフォーカスして矢印キーでも移動できます。Shiftで1pxずつ微調整、Homeで元の位置に戻ります。</p>
-      <label htmlFor="faction-bar-height">バー部分の高さ（px）</label>
-      <input id="faction-bar-height" type="number" min={52} max={160} value={barHeight} onChange={event => {
+      <label className="checkbox"><input type="checkbox" checked={fitContent} onChange={event => setFitContent(event.target.checked)} />内容に幅を合わせる</label>
+      <label htmlFor="faction-bar-width">バー全体の幅（px）</label>
+      <input id="faction-bar-width" type="number" min={240} max={1600} disabled={fitContent} value={barWidth} onChange={event => {
         const value = event.target.valueAsNumber
-        if (Number.isFinite(value)) setBarHeight(Math.max(52, Math.min(160, value)))
+        if (Number.isFinite(value)) setBarWidth(Math.max(240, Math.min(1600, value)))
+      }} />
+      <label htmlFor="faction-bar-height">バー部分の高さ（px）</label>
+      <input id="faction-bar-height" type="number" min={68} max={160} value={barHeight} onChange={event => {
+        const value = event.target.valueAsNumber
+        if (Number.isFinite(value)) setBarHeight(Math.max(68, Math.min(160, value)))
       }} />
       <label htmlFor="faction-orb-size">球の装飾サイズ（px）</label>
       <input id="faction-orb-size" type="number" min={64} max={128} value={orbSize} onChange={event => {

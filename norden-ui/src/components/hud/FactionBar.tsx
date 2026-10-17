@@ -3,6 +3,7 @@ import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'reac
 import iconGold from '../../assets/ui/icons/icon-gold.png'
 import iconProduction from '../../assets/ui/icons/icon-production.png'
 import iconTroops from '../../assets/ui/icons/icon-military.png'
+import ribbon from '../../assets/ui/hud/faction-ribbon.png'
 import type { FactionSummaryView, FactionView } from '../../screens/types'
 import './FactionBar.css'
 
@@ -27,6 +28,21 @@ export interface FactionBarProps {
 }
 
 const signed = (value: number) => `${value >= 0 ? '+' : '−'}${Math.abs(value).toLocaleString()}`
+
+/** Viewports into the supplied PNG: fixed-aspect caps and a stretchable plain middle. */
+function RibbonDecoration() {
+  return <div className="norden-faction-bar-decoration" aria-hidden="true">
+    <svg className="norden-faction-bar-cap is-left" viewBox="72 218 102 333" preserveAspectRatio="xMinYMid meet" focusable="false">
+      <image href={ribbon} width="1376" height="768" />
+    </svg>
+    <svg className="norden-faction-bar-middle" viewBox="174 218 850 333" preserveAspectRatio="none" focusable="false">
+      <image href={ribbon} width="1376" height="768" />
+    </svg>
+    <svg className="norden-faction-bar-cap is-right" viewBox="1024 218 313 333" preserveAspectRatio="xMaxYMid meet" focusable="false">
+      <image href={ribbon} width="1376" height="768" />
+    </svg>
+  </div>
+}
 
 function Stat({ label, icon, value, title, children }: { label: string; icon: string; value: number; title?: string; children?: ReactNode }) {
   return (
@@ -98,6 +114,7 @@ export default function FactionBar({ faction, summary, cityName, onPrevCity, onN
         <span className="norden-faction-bar-glass" aria-hidden="true" />
       </button>
       <div className="norden-faction-bar-ribbon">
+        <RibbonDecoration />
         <div className="norden-faction-bar-content">
           {summary && <>
             <Stat label="金" icon={iconGold} value={summary.gold}

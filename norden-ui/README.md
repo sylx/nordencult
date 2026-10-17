@@ -176,6 +176,8 @@ DateBarは`phaseLabel`・`factionName`・`dateLabel`を個別に渡します。�
 
 FactionBar の `--faction-bar-height` はバー部分の最小高さ（既定56px）、`--faction-orb-size` は球の装飾サイズ（既定88px）です。球は常に正方形の領域に描画し、バーの高さから独立しています。内容は上下10pxの余白を持ちます。カタログで両方のサイズを個別に変更できます。
 
+バーは左端の金具・中央の帯・右端の彫刻を分けて表示します。左右の装飾は画像の比率を保ち、幅の変更は中央だけに反映します。`style.width` で全体の幅を指定でき、カタログでは「内容に幅を合わせる」と指定幅を切り替えて確認できます。
+
 FactionBar は専用の球体と彫刻の画像で枠を描画します（[素材と生成プロンプト](docs/faction-bar-assets.md)）。カタログ `#faction-bar` で勢力の切り替え・ドラッグ・位置のリセット・透過を確認できます。都市コマンド画面には `playerFaction` でプレイヤーの勢力を渡します。Banner は `ThinFrame`（`windowSkins.thin` と同じ画像）を使います。ボタンの伸縮、Cardの利用例、騎士画像のプレビュー、生成プロンプトは [UIパーツの装飾と画像](docs/parts-assets.md) を参照してください。カタログ `#parts` ではルートの人物素材を直接参照でき、画像URL・ローカル画像ファイル、名前・能力値を変更できます。
 
 旧実装（`nordencult-old/src/ui/components/`）から `CommandToolbar` と `DateBar` を移植しました。HUDのフレーム・背景画像は `src/assets/ui/hud/`、アイコンは `src/assets/ui/icons/` です。ResourceBar・PlayerEmblem・MinimapWindow は未移植です。
