@@ -287,7 +287,7 @@ describe('assignments', () => {
   it('refuses assignments breaking the rules', () => {
     const state = createInitialState('carta')
     expect(assignmentProblem(state, FLUEN, '015', 'governor')).toBeNull()
-    expect(assignmentProblem(state, FLUEN, '029', 'governor')).toBe('すでに代官です')
+    expect(assignmentProblem(state, FLUEN, '029', 'governor')).toBe('すでに領主です')
     expect(assignmentProblem(state, FLUEN, '013', 'commerce')).not.toBeNull() // アンバリア's knight
     expect(assignmentProblem(state, AMBARIA, '013', 'commerce')).toBe('自勢力の都市ではありません')
     expect(assignmentProblem(endFactionTurn(state), FLUEN, '015', 'commerce')).toBe('自勢力の都市ではありません')

@@ -80,7 +80,7 @@ export function soldiersLeft(state: GameState, cityId: CityId): number {
   return (state.cities[cityId]?.troops ?? 0) - sent.reduce((sum, u) => sum + u.soldiers, 0)
 }
 
-/** The governor (代官) of a city: its lord */
+/** The governor (領主) of a city: its lord */
 export const governorOf = (state: GameState, cityId: CityId): CharacterId | undefined =>
   state.cities[cityId]?.assignments.governor
 

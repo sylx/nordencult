@@ -70,7 +70,7 @@ export type FundedRole = Exclude<OfficerRole, 'training'>
  * the governor (the lord) holds no officer role
  */
 export interface CityAssignments {
-  /** 代官: the lord of the city */
+  /** 領主: the lord of the city */
   governor?: CharacterId
   /** The officers of each role, OFFICERS_PER_ROLE at most */
   officers: Partial<Record<OfficerRole, readonly CharacterId[]>>

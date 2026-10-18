@@ -46,7 +46,7 @@ const PHASE_LABELS = { strategy: '戦略フェーズ', march: '行軍フェー�
 const PLACE_TYPES = new Map(PLACES.map((p) => [p.id, p.type]))
 
 const ASSIGNMENT_LABELS: Readonly<Record<AssignmentRole, string>> = {
-  governor: '代官', commerce: '商業担当官', production: '生産担当官', training: '訓練担当官', recruitment: '募兵担当官',
+  governor: '領主', commerce: '商業担当官', production: '生産担当官', training: '訓練担当官', recruitment: '募兵担当官',
 }
 
 
@@ -180,7 +180,7 @@ export function domesticStats(game: GameState, cityId: string): CityStatView[] {
     return {
       label, value, max, base,
       boosts: [
-        ...(fromGovernor ? [{ label: '代官', value: fromGovernor, details: governor ? [governor.name] : [] }] : []),
+        ...(fromGovernor ? [{ label: '領主', value: fromGovernor, details: governor ? [governor.name] : [] }] : []),
         { label: '施設', value: value - base - fromGovernor, source: 'building' as const, details: details(kind) },
       ],
       ...(affairs && { notes: [affairs.spend[1] > 0 ? `担当官: 基礎 ${range(affairs.gain)}/ターン` : '担当官: 予算なし'] }),

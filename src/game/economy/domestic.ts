@@ -64,7 +64,7 @@ export function assignmentProblem(state: GameState, cityId: CityId, characterId:
   const character = state.characters[characterId]
   if (character?.cityId !== cityId || character.factionId !== ownerOf(state, cityId)) return `${characterId} はこの都市の騎士ではありません`
   if (orderOf(state, characterId)) return '出撃予約中です'
-  if (assignmentOf(state, characterId) === role) return role === 'governor' ? 'すでに代官です' : `すでに${OFFICER_LABELS[role]}担当官です`
+  if (assignmentOf(state, characterId) === role) return role === 'governor' ? 'すでに領主です' : `すでに${OFFICER_LABELS[role]}担当官です`
   if (role === 'governor') return null
   const assignments = state.cities[cityId].assignments
   if (assignments.governor === characterId) return '領主は担当官になれません'
