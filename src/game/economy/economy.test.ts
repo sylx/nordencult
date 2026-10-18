@@ -7,7 +7,7 @@ import {
   cityOutput, commandRank, connectedByOwnRoads, constructionProblem, constructionTurns, createInitialState, endFactionTurn, GameRuleError,
   governorBonus, governorOf, maxAffairsBudget, maxRecruit, MAX_MORALE, mixMorale, officerAbility, officerPower, officerTraining, recruit,
   recruitCost, recruitLeft, recruitProblem, runEconomy, setAffairsBudget, slotsOf, setOfficers, soldiersLeft, startConstruction, startNextBattle,
-  tierOf, transport, transportProblem, unassign,
+  tierOf, transport, transportProblem, turnsToNextTier, unassign,
   type CityState, type GameState,
 } from '..'
 
@@ -52,14 +52,21 @@ describe('city output', () => {
     expect([1, 2, 3].map((t) => slotsOf(t as 1 | 2 | 3))).toEqual([BALANCE.TIER_SLOTS[1], BALANCE.TIER_SLOTS[2], BALANCE.TIER_SLOTS[3]])
   })
 
+  it('counts the turns until the next tier at a growth, none at the top tier or without growth', () => {
+    const [tier2, tier3] = BALANCE.TIER_POPULATION
+    expect(turnsToNextTier(tier2 - 1000, 300)).toBe(4)
+    expect(turnsToNextTier(tier2, 300)).toBe(Math.ceil((tier3 - tier2) / 300))
+    expect(turnsToNextTier(tier3, 300)).toBeNull()
+    expect(turnsToNextTier(tier2 - 1000, 0)).toBeNull()
+  })
+
   it('gives a governor bonuses from their abilities, none at ABILITY_BASE or below', () => {
     const marcus = CHARACTER_MAP['029'] // 政治 96・知力 90・魅力 89
     expect(governorBonus('029')).toEqual({
       market: scale(marcus.politics) * BALANCE.GOVERNOR_MAX_BONUS,
       production: scale((marcus.politics + marcus.intelligence) / 2) * BALANCE.GOVERNOR_MAX_BONUS,
-      growth: scale(marcus.charm) * BALANCE.GOVERNOR_MAX_BONUS,
     })
-    expect(governorBonus(undefined)).toEqual({ market: 0, production: 0, growth: 0 })
+    expect(governorBonus(undefined)).toEqual({ market: 0, production: 0 })
     // ミレイ (013) has 政治 19: no 商業 bonus, nothing below zero
     expect(governorBonus('013').market).toBe(0)
   })
@@ -240,18 +247,54 @@ describe('economy run', () => {
     expect(next.affairsBudget.recruitment).toBe(500 - BALANCE.AFFAIRS_BUDGET_MIN)
   })
 
-  it('grows the population, slower in a larger city, and the tier with it', () => {
-    const state = createInitialState('carta')
-    const small = cityOutput(withCity(state, FLUEN, { population: 6000 }), FLUEN).growth
-    const large = cityOutput(withCity(state, FLUEN, { population: 30000 }), FLUEN).growth
-    expect(small / 6000).toBeGreaterThan(large / 30000)
+  it('grows the population by the base 商業・生産, the buildings standing and the lord\'s 政治・魅力', () => {
+    const state = withCity(createInitialState('carta'), FLUEN, { buildings: ['market', 'granary'], construction: null })
+    const city = state.cities[FLUEN]
+    const lord = CHARACTER_MAP[city.assignments.governor!]
+    const pull = city.market * BALANCE.POP_GROWTH_COEF_MARKET + city.production * BALANCE.POP_GROWTH_COEF_PRODUCTION
+      + 2 * BALANCE.POP_GROWTH_FACILITY_BASE
+    const boost = 1 + (lord.politics + lord.charm) / BALANCE.POP_GROWTH_GOVERNOR_DIVISOR
+    // 倉庫 adds 人口の伸び +20%
+    expect(cityOutput(state, FLUEN).growth).toBe(Math.floor(pull * boost * 1.2))
+    expect(cityOutput(withCity(state, FLUEN, { assignments: { officers: {} } }), FLUEN).growth).toBe(Math.floor(pull * 1.2))
+    // The population does not slow the growth
+    expect(cityOutput(withCity(state, FLUEN, { population: 40000 }), FLUEN).growth).toBe(cityOutput(state, FLUEN).growth)
+  })
 
+  it('grows the population after the officers raised 商業・生産', () => {
+    let state = withCity(createInitialState('carta'), FLUEN, { construction: null })
+    state = setAffairsBudget(setOfficers(state, FLUEN, 'commerce', ['015']), FLUEN, 'commerce', 300)
+    const city = state.cities[FLUEN]
+    const gain = cityOutput(state, FLUEN).affairs.commerce!.gain[0]
+    const next = runEconomy(state, 2, () => 0).cities[FLUEN]
+    expect(next.market).toBe(city.market + gain)
+    const lord = CHARACTER_MAP[city.assignments.governor!]
+    const pull = next.market * BALANCE.POP_GROWTH_COEF_MARKET + city.production * BALANCE.POP_GROWTH_COEF_PRODUCTION
+      + city.buildings.length * BALANCE.POP_GROWTH_FACILITY_BASE
+    expect(next.population).toBe(city.population + Math.floor(pull * (1 + (lord.politics + lord.charm) / BALANCE.POP_GROWTH_GOVERNOR_DIVISOR)))
+    expect(next.population).toBeGreaterThan(city.population + cityOutput(state, FLUEN).growth)
+  })
+
+  it('raises the tier and the building slots as the population reaches them', () => {
+    const state = createInitialState('carta')
     const [, tier3] = BALANCE.TIER_POPULATION
     const next = runEconomy(withCity(state, FLUEN, { population: tier3 - 1 }), 2)
     expect(next.cities[FLUEN].population).toBe(tier3 - 1 + cityOutput(withCity(state, FLUEN, { population: tier3 - 1 }), FLUEN).growth)
     expect(next.lastEconomy!.cities[FLUEN].events).toContainEqual({ kind: 'tierUp', tier: 3 })
     expect(next.lastEconomy!.cities[FLUEN].after.tier).toBe(3)
     expect(cityOutput(next, FLUEN).slots).toBe(BALANCE.TIER_SLOTS[3])
+  })
+
+  it('keeps FIXED_SLOTS in a 聖地・要塞 whatever its population, and does not raise its tier', () => {
+    const state = createInitialState('carta')
+    const fortress = 'P024' // ガルドハイム, 要塞
+    const [tier2, tier3] = BALANCE.TIER_POPULATION
+    expect(cityOutput(withCity(state, fortress, { population: tier2 - 1 }), fortress).slots).toBe(BALANCE.FIXED_SLOTS)
+    expect(cityOutput(withCity(state, fortress, { population: tier3 }), fortress).slots).toBe(BALANCE.FIXED_SLOTS)
+    const next = runEconomy(withCity(state, fortress, { population: tier3 - 1 }), 2)
+    expect(next.cities[fortress].population).toBeGreaterThanOrEqual(tier3)
+    expect(next.lastEconomy!.cities[fortress].events).not.toContainEqual(expect.objectContaining({ kind: 'tierUp' }))
+    expect(cityOutput(state, FLUEN).fixedScale).toBe(false)
   })
 
   it('lets every city grow, the CPU factions\' too', () => {

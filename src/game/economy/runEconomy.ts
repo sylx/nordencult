@@ -5,10 +5,10 @@ import type {
 } from '../types'
 import { CITY_IDS, FACTION_IDS } from '../world'
 import { AFFAIRS_BUDGET_MAX, AFFAIRS_BUDGET_MIN, SALARY } from './balance'
-import { affairsGain, FUNDED_ROLES, officerTraining, outputOf, tierOf } from './output'
+import { affairsGain, FUNDED_ROLES, officerTraining, outputOf, populationGrowth, tierOf } from './output'
 
-function snapshot(city: CityState): CitySnapshot {
-  const { tier, market, production } = outputOf(city)
+function snapshot(city: CityState, cityId: CityId): CitySnapshot {
+  const { tier, market, production } = outputOf(city, cityId)
   const { population, storedSupplies, troops, troopMorale, construction } = city
   return { population, tier, market, production, storedSupplies, troops, troopMorale, construction }
 }
@@ -19,7 +19,7 @@ function snapshot(city: CityState): CitySnapshot {
  */
 export function treasuryForecast(state: GameState, factionId: FactionId): FactionEconomy {
   const income = CITY_IDS.filter((id) => state.cityOwners[id] === factionId)
-    .reduce((sum, id) => sum + outputOf(state.cities[id]).income, 0)
+    .reduce((sum, id) => sum + outputOf(state.cities[id], id).income, 0)
   const knights = Object.values(state.characters).filter((c) => c.factionId === factionId).length
   const before = state.gold[factionId] ?? 0
   const salary = Math.min(before + income, knights * SALARY)
@@ -30,8 +30,8 @@ export function treasuryForecast(state: GameState, factionId: FactionId): Factio
  * The officers' work: each funded role with officers spends a random AFFAIRS_BUDGET_MIN..MAX of its budget
  * (what is left at most; a role with no budget left does nothing), the 訓練 officers train for nothing
  */
-function runAffairs(city: CityState, random: () => number) {
-  const output = outputOf(city)
+function runAffairs(city: CityState, cityId: CityId, random: () => number) {
+  const output = outputOf(city, cityId)
   const affairs: Partial<Record<OfficerRole, AffairsResult>> = {}
   const affairsBudget = { ...city.affairsBudget }
   for (const role of FUNDED_ROLES) {
@@ -50,9 +50,11 @@ function runAffairs(city: CityState, random: () => number) {
  * A city's turn: its officers at work, supplies into its construction (or its store),
  * its soldiers trained and recruited, its population grown
  */
-function growCity(city: CityState, random: () => number): { city: CityState; events: EconomyEvent[]; affairs: CityEconomy['affairs'] } {
-  const output = outputOf(city)
-  const { affairs, affairsBudget } = runAffairs(city, random)
+function growCity(
+  city: CityState, cityId: CityId, random: () => number,
+): { city: CityState; events: EconomyEvent[]; affairs: CityEconomy['affairs'] } {
+  const output = outputOf(city, cityId)
+  const { affairs, affairsBudget } = runAffairs(city, cityId, random)
   const recruits = affairs.recruitment?.gain ?? 0
   const events: EconomyEvent[] = []
   let { storedSupplies, construction, buildings } = city
@@ -74,17 +76,21 @@ function growCity(city: CityState, random: () => number): { city: CityState; eve
   } else {
     storedSupplies += output.production
   }
-  const population = city.population + output.growth
-  if (tierOf(population) > output.tier) events.push({ kind: 'tierUp', tier: tierOf(population) })
+  // Raised now, the base counts for the effective values from the next run (for the population at once)
+  const market = city.market + (affairs.commerce?.gain ?? 0)
+  const production = city.production + (affairs.production?.gain ?? 0)
+  // People are drawn by the 商業・生産 the officers have just raised and the buildings standing now
+  const population = city.population + populationGrowth({ market, production, buildings, assignments: city.assignments }).total
+  // A 聖地・要塞 does not grow in scale
+  if (!output.fixedScale && tierOf(population) > output.tier) events.push({ kind: 'tierUp', tier: tierOf(population) })
   // The soldiers train, then the recruits join them at the recruits' morale
   const trained = Math.min(MAX_MORALE, city.troopMorale + output.training)
   return {
     city: {
       ...city,
       population,
-      // Raised now, the base counts from the next run
-      market: city.market + (affairs.commerce?.gain ?? 0),
-      production: city.production + (affairs.production?.gain ?? 0),
+      market,
+      production,
       storedSupplies,
       troops: city.troops + recruits,
       troopMorale: mixMorale(city.troops, trained, recruits, output.recruitMorale),
@@ -107,8 +113,9 @@ function growCity(city: CityState, random: () => number): { city: CityState; eve
  *    or, with nothing being built, into its store,
  * 4. its soldiers train (by themselves, and by its 訓練 officers and buildings), and its 募兵 officers
  *    spend gold of their budget on soldiers, who join at the recruits' morale,
- * 5. its population grows, and its tier with it.
- * The bonuses and the base values are those before the run (a building completed or a base raised now counts from the next).
+ * 5. its population grows by its base 商業・生産 (as the officers raised them), its buildings (with one completed now)
+ *    and its lord, and its tier and building slots with it (tierOf, slotsOf; a 聖地・要塞 keeps FIXED_SLOTS).
+ * Otherwise the bonuses and the base values are those before the run (a building completed or a base raised now counts from the next).
  * `turn` is the turn starting; `random` rolls the gold the officers spend.
  * The report (lastEconomy) keeps each city's numbers before and after, and what its officers did.
  */
@@ -124,9 +131,9 @@ export function runEconomy(state: GameState, turn: number, random: () => number 
   const reports: Record<CityId, CityEconomy> = {}
   for (const id of CITY_IDS) {
     const before = state.cities[id]
-    const { city, events, affairs } = growCity(before, random)
+    const { city, events, affairs } = growCity(before, id, random)
     cities[id] = city
-    reports[id] = { before: snapshot(before), after: snapshot(city), affairs, events }
+    reports[id] = { before: snapshot(before, id), after: snapshot(city, id), affairs, events }
   }
 
   const report: EconomyReport = { turn, factions, cities: reports }

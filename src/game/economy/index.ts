@@ -7,7 +7,8 @@ export {
   transportProblem, unassign, withoutAssignee, type Cargo,
 } from './domestic'
 export {
-  affairsGain, buildingBonus, cityOutput, FUNDED_ROLES, governorBonus, OFFICER_WEIGHTS, officerAbility, officerPower, officerTraining, slotsOf, tierOf,
-  type AffairsForecast, type BuildingBonus, type CityOutput, type GovernorBonus, type OfficerPower,
+  affairsGain, buildingBonus, cityOutput, FUNDED_ROLES, governorBonus, OFFICER_WEIGHTS, officerAbility, officerPower, officerTraining, populationGrowth,
+  hasFixedScale, slotsOf, tierOf, turnsToNextTier,
+  type AffairsForecast, type BuildingBonus, type CityOutput, type GovernorBonus, type OfficerPower, type PopulationGrowth,
 } from './output'
 export { runEconomy, treasuryForecast } from './runEconomy'

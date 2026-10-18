@@ -15,7 +15,7 @@ import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import {
   UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, mapSeason,
-  officerEffects, officersView, phaseLabel, turnView, unitPower,
+  mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
 
@@ -67,6 +67,8 @@ export default function StrategyScene() {
     { screen: 'cityCommand', params: { cityId: returnCity ?? citiesOf(game, game.playerFaction)[0] ?? 'P012' } })
   const { top, popTo } = nav
   const playerTurn = isPlayerTurn(game)
+  // The cities' pictures grow with their tiers, and their emblems follow their owners
+  const placedCities = useMemo(() => mapCities(game), [game])
   const targets = useMemo(() => (top.screen === 'pickTarget' ? openInvasionTargets(game, top.params.from) : []), [game, top])
   const battle = game.march?.current ?? null
   const playerCities = citiesOf(game, game.playerFaction)
@@ -215,7 +217,7 @@ export default function StrategyScene() {
   return (
     <div className={`strategy-scene${ready ? '' : ' strategy-scene--loading'}`}>
       <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false}
-        cityOwners={game.cityOwners} season={mapSeason(game.turn)} />
+        cities={placedCities} season={mapSeason(game.turn)} />
       <ScreenHost nav={nav} overlays={['domestic']} screens={{
         cityCommand: ({ cityId }) => {
           const index = playerCities.indexOf(cityId)
@@ -250,6 +252,7 @@ export default function StrategyScene() {
             city={cityView(game, cityId)}
             buildOptions={buildOptions(game, cityId)}
             gold={game.gold[game.playerFaction]}
+            populationGrowth={populationGrowthView(game, cityId)}
             stats={domesticStats(game, cityId)}
             onBuild={(buildingId) => update((s) => startConstruction(s, cityId, buildingId))}
             onDemolish={(buildingId) => update((s) => demolishBuilding(s, cityId, buildingId))}

@@ -4,6 +4,7 @@
     "name": "灰都 アシュダール",
     "nameEn": "Ashdal",
     "type": "pope_city",
+    "image": "temple",
     "tags": [
       "遺跡",
       "聖地",
@@ -367,6 +368,7 @@
       "中東",
       "騎士団"
     ],
+    "image": "fortress1",
     "population": 9000,
     "market": 160,
     "production": 640,
@@ -386,6 +388,7 @@
       "中央北",
       "岩山"
     ],
+    "image": "fortress1",
     "population": 7000,
     "market": 140,
     "production": 560,
@@ -447,6 +450,7 @@
       "北中央",
       "禁忌"
     ],
+    "image": "fortress2",
     "population": 3000,
     "market": 80,
     "production": 140,

@@ -2,12 +2,12 @@ import { createElement } from 'react'
 import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import type {
-  BuildOptionView, BuildingView, CityStatView, CityView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, FactionSummaryView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView,
+  BuildOptionView, BuildingView, CityStatView, CityView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, FactionSummaryView, FactionView, InvasionAssignment, KnightView, PopulationGrowthView, TurnView, UnitTypeView,
 } from 'norden-ui'
-import { PLACES, type MapSeason, type PlaceType } from 'norden-strategy'
+import type { MapCity, MapSeason, PlaceType } from 'norden-strategy'
 import buildingSheet from '../../assets/buildings.webp'
 import { CharacterImage } from '../../components/CharacterImage'
-import { BUILDING_LIST, BUILDING_MAP, describeEffect, type BuildingEffectKind } from '../../data/buildings'
+import { BUILDING_LIST, BUILDING_MAP, describeEffect, type BuildingEffectKind, type CityTier } from '../../data/buildings'
 import buildingSprite from '../../data/buildingSprite.json'
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { FACTION_MAP, factionEmblem } from '../../data/faction'
@@ -16,7 +16,7 @@ import { UNIT_TYPES } from '../../data/unitTypes'
 import {
   assignmentOf, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
   FUNDED_ROLES, governorOf, indirectMaxSoldiers, officerTraining,
-  MAX_MORALE, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, treasuryForecast, unitTypesOf, type AssignmentRole, type GameState,
+  MAX_MORALE, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, tierOf, treasuryForecast, turnsToNextTier, unitTypesOf, type AssignmentRole, type GameState,
   type Season,
 } from '../../game'
 
@@ -43,7 +43,21 @@ const SCALE_LABELS: Readonly<Record<PlaceType, string>> = {
 
 const PHASE_LABELS = { strategy: '戦略フェーズ', march: '行軍フェーズ' } as const
 
-const PLACE_TYPES = new Map(PLACES.map((p) => [p.id, p.type]))
+/** The pictures of the tiers on the map: 小さな町, 大きな街, 大都市 */
+const TIER_PLACE_TYPES: Readonly<Record<CityTier, PlaceType>> = { 1: 'town', 2: 'city', 3: 'metropolice' }
+
+/** A city's picture on the map (and its scale): its fixed one (聖地・要塞), or by its tier now */
+export function placeTypeOf(game: GameState, id: string): PlaceType {
+  const state = game.cities[id]
+  return CITY_MAP[id]?.image ?? (state ? TIER_PLACE_TYPES[tierOf(state.population)] : 'town')
+}
+
+/** The cities as the map draws them: names, pictures (growing with their tiers) and factions */
+export function mapCities(game: GameState): MapCity[] {
+  return Object.keys(game.cities).map((id) => ({
+    id, name: CITY_MAP[id]?.name ?? id, type: placeTypeOf(game, id), belongTo: ownerOf(game, id),
+  }))
+}
 
 const ASSIGNMENT_LABELS: Readonly<Record<AssignmentRole, string>> = {
   governor: '領主', commerce: '商業担当官', production: '生産担当官', training: '訓練担当官', recruitment: '募兵担当官',
@@ -117,7 +131,6 @@ export function cityView(game: GameState, id: string): CityView {
   const city = CITY_MAP[id]
   const faction = factionView(ownerOf(game, id))
   if (!city) return { id, name: id, faction }
-  const type = PLACE_TYPES.get(id) ?? 'town'
   const knights = charactersIn(game, id)
   const lord = CHARACTER_MAP[governorOf(game, id) ?? '']
   const state = game.cities[id]
@@ -127,9 +140,10 @@ export function cityView(game: GameState, id: string): CityView {
     name: city.name,
     faction,
     typeLabel: CITY_TYPE_LABELS[city.type] ?? city.type,
-    scaleLabel: SCALE_LABELS[type],
+    scaleLabel: SCALE_LABELS[placeTypeOf(game, id)],
     population: state.population,
-    tier: output.tier,
+    // A 聖地・要塞 keeps its scale whatever its tier
+    tier: output.fixedScale ? undefined : output.tier,
     special: city.special,
     // height: auto keeps the 2:3 figure; the window crops it from the top
     lord: lord && {
@@ -198,6 +212,27 @@ export function domesticStats(game: GameState, cityId: string): CityStatView[] {
       boosts: [{ label: '施設', value: output.recruitMorale - BALANCE.RECRUIT_MORALE, source: 'building', details: details('recruitMorale') }],
     },
   ]
+}
+
+/**
+ * The city's population growth next turn at its base 商業・生産 now (the officers' raise this turn adds to it),
+ * the turns until its next tier at that growth (none for a 聖地・要塞), and how the growth is made up
+ */
+export function populationGrowthView(game: GameState, cityId: string): PopulationGrowthView {
+  const { tier, fixedScale, populationGrowth: growth } = cityOutput(game, cityId)
+  const city = game.cities[cityId]
+  const lord = CHARACTER_MAP[governorOf(game, cityId) ?? '']
+  const fixed = (value: number) => Math.round(value).toLocaleString()
+  return {
+    perTurn: growth.total,
+    ...(!fixedScale && tier < 3 && { nextTier: { tier: tier + 1, turns: turnsToNextTier(city.population, growth.total) } }),
+    details: [
+      `経済 +${fixed(growth.economy)}（商業 ${city.market}×${BALANCE.POP_GROWTH_COEF_MARKET} + 生産 ${city.production}×${BALANCE.POP_GROWTH_COEF_PRODUCTION}）`,
+      `施設 +${fixed(growth.facilities)}（${city.buildings.length}件×${BALANCE.POP_GROWTH_FACILITY_BASE}）`,
+      lord ? `領主 ×${growth.governor.toFixed(2)}（${lord.name}: 政治 ${lord.politics} + 魅力 ${lord.charm}）` : '領主 ×1.00（不在）',
+      ...(growth.buildingPct ? [`人口の伸び +${Math.round(growth.buildingPct * 100)}%（施設の効果）`] : []),
+    ],
+  }
 }
 
 /** Buildings the city could start (not standing or being built), with why each cannot be started now and whether it is locked */

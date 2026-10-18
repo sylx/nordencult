@@ -1,24 +1,27 @@
 import { BUILDING_MAP, type BuildingEffectKind, type CityTier } from '../../data/buildings'
 import { CHARACTER_MAP } from '../../data/character'
+import { CITY_MAP } from '../../data/city'
 import type { CharacterId, CityAssignments, CityId, CityState, FundedRole, GameState, OfficerRole } from '../types'
 import {
-  ABILITY_BASE, AFFAIRS_BUDGET_MAX, AFFAIRS_BUDGET_MIN, GOLD_PER_MARKET, GOVERNOR_MAX_BONUS, GROWTH_COEF_COMMERCE, GROWTH_COEF_PRODUCTION,
-  GROWTH_COEF_TRAINING, GROWTH_MARKET, GROWTH_MAX, GROWTH_RATE, GROWTH_SLOWDOWN_POPULATION, NATURAL_TRAINING,
-  RECRUIT_MORALE, RECRUIT_PER_PRODUCTION, TIER_POPULATION, TIER_SLOTS,
+  ABILITY_BASE, AFFAIRS_BUDGET_MAX, AFFAIRS_BUDGET_MIN, CITY_POPULATION_TIER_2, CITY_POPULATION_TIER_3, FIXED_SLOTS, GOLD_PER_MARKET, GOVERNOR_MAX_BONUS,
+  GROWTH_COEF_COMMERCE, GROWTH_COEF_PRODUCTION, GROWTH_COEF_TRAINING, NATURAL_TRAINING, POP_GROWTH_COEF_MARKET, POP_GROWTH_COEF_PRODUCTION,
+  POP_GROWTH_FACILITY_BASE, POP_GROWTH_GOVERNOR_DIVISOR, RECRUIT_MORALE, RECRUIT_PER_PRODUCTION, TIER_SLOTS,
 } from './balance'
 
 /** What a city puts out in a turn, shared by the economy run and the screens' forecasts */
 
 export const tierOf = (population: number): CityTier =>
-  population >= TIER_POPULATION[1] ? 3 : population >= TIER_POPULATION[0] ? 2 : 1
+  population >= CITY_POPULATION_TIER_3 ? 3 : population >= CITY_POPULATION_TIER_2 ? 2 : 1
 
 export const slotsOf = (tier: CityTier): number => TIER_SLOTS[tier]
+
+/** Whether the city has a fixed picture (聖地・要塞): its scale and FIXED_SLOTS building slots do not follow its tier */
+export const hasFixedScale = (cityId: CityId): boolean => Boolean(CITY_MAP[cityId]?.image)
 
 /** Bonuses as fractions (0.1 = +10%) */
 export interface GovernorBonus {
   market: number
   production: number
-  growth: number
 }
 
 /** Each officer role's power (X): the sum of its officers' weighted abilities, 0 without officers */
@@ -44,12 +47,45 @@ const abilityScale = (value: number) => Math.max(0, (value - ABILITY_BASE) / (10
 
 export function governorBonus(characterId: CharacterId | undefined): GovernorBonus {
   const character = characterId ? CHARACTER_MAP[characterId] : undefined
-  if (!character) return { market: 0, production: 0, growth: 0 }
+  if (!character) return { market: 0, production: 0 }
   return {
     market: abilityScale(character.politics) * GOVERNOR_MAX_BONUS,
     production: abilityScale((character.politics + character.intelligence) / 2) * GOVERNOR_MAX_BONUS,
-    growth: abilityScale(character.charm) * GOVERNOR_MAX_BONUS,
   }
+}
+
+/** How a city's population growth is made up */
+export interface PopulationGrowth {
+  /** 経済: base 商業 × POP_GROWTH_COEF_MARKET + base 生産 × POP_GROWTH_COEF_PRODUCTION */
+  economy: number
+  /** 施設: the buildings standing × POP_GROWTH_FACILITY_BASE */
+  facilities: number
+  /** 領主: 1 + (政治 + 魅力) / POP_GROWTH_GOVERNOR_DIVISOR, 1 without a lord */
+  governor: number
+  /** The buildings' 人口の伸び as a fraction */
+  buildingPct: number
+  /** Population gained: floor((economy + facilities) × governor × (1 + buildingPct)) */
+  total: number
+}
+
+/** The population a city of these base 商業・生産, buildings and lord gains in a turn */
+export function populationGrowth(city: Pick<CityState, 'market' | 'production' | 'buildings' | 'assignments'>): PopulationGrowth {
+  const lord = city.assignments.governor ? CHARACTER_MAP[city.assignments.governor] : undefined
+  const economy = city.market * POP_GROWTH_COEF_MARKET + city.production * POP_GROWTH_COEF_PRODUCTION
+  const facilities = city.buildings.length * POP_GROWTH_FACILITY_BASE
+  const governor = lord ? 1 + (lord.politics + lord.charm) / POP_GROWTH_GOVERNOR_DIVISOR : 1
+  const buildingPct = buildingBonus(city.buildings).growthPct
+  return { economy, facilities, governor, buildingPct, total: Math.floor((economy + facilities) * governor * (1 + buildingPct)) }
+}
+
+/**
+ * Turns until a city of this population reaches its next tier, gaining `growth` a turn:
+ * null at the top tier or when it does not grow
+ */
+export function turnsToNextTier(population: number, growth: number): number | null {
+  const next = tierOf(population) === 1 ? CITY_POPULATION_TIER_2 : tierOf(population) === 2 ? CITY_POPULATION_TIER_3 : null
+  if (next === null || growth <= 0) return null
+  return Math.ceil((next - population) / growth)
 }
 
 /** A knight's weighted ability for a role, e.g. (政治×2 + 知力) / 3 for 商業 */
@@ -100,7 +136,10 @@ export function buildingBonus(buildings: readonly string[]): BuildingBonus {
 }
 
 export interface CityOutput {
+  /** From the population (a city of fixed scale has one too, but its slots do not follow it) */
   tier: CityTier
+  /** A 聖地・要塞 (hasFixedScale): FIXED_SLOTS slots whatever its tier */
+  fixedScale: boolean
   slots: number
   /** Base 商業・生産 (the city data's at the start, raised by the officers since) */
   baseMarket: number
@@ -115,8 +154,9 @@ export interface CityOutput {
   buildings: BuildingBonus
   /** Gold the city adds to its faction's treasury a turn */
   income: number
-  /** Population it gains next turn */
+  /** Population it gains next turn at its base 商業・生産 now (the officers' raise this turn adds to it), and how */
   growth: number
+  populationGrowth: PopulationGrowth
   /** Morale its soldiers gain next turn, by themselves and by its 訓練 officers (none without soldiers) */
   training: number
   /** Soldiers it can recruit in a turn (for gold) */
@@ -127,10 +167,10 @@ export interface CityOutput {
 
 /** What a city in the state puts out (the economy run applies it at the start of the next turn) */
 export function cityOutput(state: GameState, cityId: CityId): CityOutput {
-  return outputOf(state.cities[cityId])
+  return outputOf(state.cities[cityId], cityId)
 }
 
-export function outputOf(city: CityState): CityOutput {
+export function outputOf(city: CityState, cityId: CityId): CityOutput {
   const { market: baseMarket, production: baseProduction } = city
   const tier = tierOf(city.population)
   const governor = governorBonus(city.assignments.governor)
@@ -146,12 +186,12 @@ export function outputOf(city: CityState): CityOutput {
     const gain = (spent: number) => affairsGain(role, officers[role], spent, buildings.recruitPct)
     affairs[role] = { spend, gain: [gain(spend[0]), gain(spend[1])] }
   }
-  const growth = Math.min(GROWTH_MAX, Math.round(
-    city.population * GROWTH_RATE * (market / GROWTH_MARKET) / (1 + city.population / GROWTH_SLOWDOWN_POPULATION)
-    * (1 + governor.growth + buildings.growthPct)))
+  const growth = populationGrowth(city)
+  const fixedScale = hasFixedScale(cityId)
   return {
     tier,
-    slots: slotsOf(tier),
+    fixedScale,
+    slots: fixedScale ? FIXED_SLOTS : slotsOf(tier),
     baseMarket,
     baseProduction,
     market,
@@ -161,7 +201,8 @@ export function outputOf(city: CityState): CityOutput {
     affairs,
     buildings,
     income: Math.floor(market * GOLD_PER_MARKET),
-    growth,
+    growth: growth.total,
+    populationGrowth: growth,
     training: city.troops > 0 ? Math.round((NATURAL_TRAINING + officerTraining(officers.training)) * (1 + buildings.trainingPct)) : 0,
     recruitCap: Math.floor(production * RECRUIT_PER_PRODUCTION * (1 + buildings.recruitPct)),
     recruitMorale: RECRUIT_MORALE + buildings.recruitMorale,
