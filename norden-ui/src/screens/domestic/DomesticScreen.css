@@ -922,10 +922,16 @@
 
 /* The gold set aside for a funded role: a compact slider on the dark parchment */
 .norden-domestic-officer-budget.norden-quantity {
-  grid-template-columns: 28px minmax(40px, 1fr) 28px auto;
-  grid-template-areas: 'label label label label' 'minus range plus value';
+  /* The slider takes the whole width between − and +; the number goes below it */
+  grid-template-columns: 28px minmax(0, 1fr) 28px;
+  grid-template-areas: 'label label label' 'minus range plus' 'value value value';
   column-gap: 4px;
+  width: 100%;
   color: #f6e7c5;
+}
+
+.norden-domestic-officer-budget .norden-quantity-value {
+  justify-self: end;
 }
 
 .norden-domestic-officer-budget .norden-quantity-label,
