@@ -3,11 +3,11 @@ import {
   BattleScreen, lineBarks, SIDE_TEAM, type BarkSource, type BattleCutInTexts, type BattleFactions,
   type RetreatDestinations, type RetreatReport, type UnitStatus, type WipeoutReport,
 } from '@norden/battle-runtime'
-import { FACTION_MAP } from 'norden-strategy'
 import { FactionLabel } from '../../components/FactionLabel'
 import { KnightList } from '../../components/KnightList'
 import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
+import { factionName } from '../../data/faction'
 import { pickVoiceLine } from '../../data/voiceLines'
 import { UNIT_TYPE_MAP } from '../../data/unitTypes'
 import {
@@ -19,9 +19,6 @@ import type { SceneProps } from '../types'
 import { loadBattleMap, type BattleMap } from './battleMap'
 import { battleTroops } from './battleTroops'
 import './BattleScene.css'
-
-/** Name of a faction (null / undefined: neutral) */
-const factionName = (id: string | null | undefined) => (id ? FACTION_MAP[id]?.name ?? id : '中立')
 
 /** The side the player's faction fights on; null when the battle is between others */
 function playerSideOf(game: GameState, battle: Battle): BattleSide | null {

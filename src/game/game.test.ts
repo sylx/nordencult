@@ -6,6 +6,7 @@ import {
   resolveBattle, retreatCities, seasonOf, soldiersLeft, startNextBattle, turnOrder, type ArmyUnit,
   type BattleRetreat, type BattleWipeout, type GameState,
 } from '.'
+import { FACTION_LIST } from '../data/faction'
 
 // The demo of M001: カルタ書院 invades アンバリア (P004, レオニス帝国) from フルーエン (P012)
 const FLUEN = 'P012'
@@ -35,6 +36,11 @@ describe('setup', () => {
     expect(state.cityOwners[AMBARIA]).toBe('leonis')
     expect(charactersIn(state, FLUEN)).toEqual(['015', '016', '027', '029'])
     expect(governorOf(state, FLUEN)).toBe('029')
+  })
+
+  it('starts each faction with the gold of its data', () => {
+    const { gold } = createInitialState('carta')
+    for (const f of FACTION_LIST) expect(gold[f.id]).toBe(f.gold ?? BALANCE.INITIAL_GOLD)
   })
 
   it('leaves mercenaries without a faction unhired', () => {

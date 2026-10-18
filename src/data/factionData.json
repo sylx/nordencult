@@ -1,0 +1,58 @@
+[
+  {
+    "id": "valhardt",
+    "name": "ヴァルハルト家",
+    "emblem": 5,
+    "patriarchLabel": "当主",
+    "color": "#3d5fa8"
+  },
+  {
+    "id": "nordis",
+    "name": "ノルディス家",
+    "emblem": 3,
+    "patriarchLabel": "当主",
+    "color": "#b0342c"
+  },
+  {
+    "id": "leonis",
+    "name": "レオニス帝国",
+    "emblem": 6,
+    "patriarchLabel": "皇帝",
+    "color": "#d0a326"
+  },
+  {
+    "id": "carta",
+    "name": "カルタ書院",
+    "emblem": 7,
+    "patriarchLabel": "総帥",
+    "color": "#4f8a63"
+  },
+  {
+    "id": "aqua",
+    "name": "アクア商会",
+    "emblem": 4,
+    "patriarchLabel": "会頭",
+    "color": "#2f93ad"
+  },
+  {
+    "id": "rosalia",
+    "name": "ロザリア家",
+    "emblem": 1,
+    "patriarchLabel": "当主",
+    "color": "#b24c80"
+  },
+  {
+    "id": "taurus",
+    "name": "タウルス自由都市連合",
+    "emblem": 2,
+    "patriarchLabel": "議長",
+    "color": "#8a6238"
+  },
+  {
+    "id": "sede",
+    "name": "法王府",
+    "emblem": 9,
+    "patriarchLabel": "法王",
+    "color": "#e6dfc8"
+  }
+]

@@ -7,7 +7,7 @@ import type { PersonalityTag } from '../../data/characterVoice'
  * not break the tests.
  */
 
-/** Gold in each faction's treasury at the start */
+/** Gold in a faction's treasury at the start when its data does not say */
 export const INITIAL_GOLD = 500
 
 /** Gold a turn per point of effective 商業 */

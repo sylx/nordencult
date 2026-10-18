@@ -1,5 +1,6 @@
-import { FACTION_LIST, ROAD_LINKS } from 'norden-strategy/data'
+import { ROAD_LINKS } from 'norden-strategy/data'
 import { CITY_LIST } from '../data/city'
+import { FACTION_LIST } from '../data/faction'
 import type { CityId, FactionId } from './types'
 
 /** The static world the game is played on: cities, factions and the roads between the cities */

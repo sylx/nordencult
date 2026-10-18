@@ -4,12 +4,13 @@ import type { UnitType } from '@norden/map-runtime/core/units'
 import type {
   BuildOptionView, BuildingView, CityStatView, CityView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, FactionSummaryView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView,
 } from 'norden-ui'
-import { FACTION_MAP, PLACES, emblemUrl, type MapSeason, type PlaceType } from 'norden-strategy'
+import { PLACES, type MapSeason, type PlaceType } from 'norden-strategy'
 import buildingSheet from '../../assets/buildings.webp'
 import { CharacterImage } from '../../components/CharacterImage'
 import { BUILDING_LIST, BUILDING_MAP, describeEffect, type BuildingEffectKind } from '../../data/buildings'
 import buildingSprite from '../../data/buildingSprite.json'
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
+import { FACTION_MAP, factionEmblem } from '../../data/faction'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
@@ -74,7 +75,7 @@ export const cityName = (id: string) => CITY_MAP[id]?.name ?? id
 /** undefined: neutral */
 export function factionView(factionId: string | null | undefined): FactionView | undefined {
   const faction = factionId ? FACTION_MAP[factionId] : undefined
-  return faction && { name: faction.name, emblem: emblemUrl(faction.id) }
+  return faction && { name: faction.name, emblem: factionEmblem(faction.id) }
 }
 
 export function knightView(game: GameState, id: string): KnightView {

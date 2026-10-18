@@ -1,9 +1,10 @@
 import { CHARACTER_MAP, CHARACTER_START } from '../data/character'
 import { CITY_LIST, type City } from '../data/city'
+import { FACTION_LIST } from '../data/faction'
 import { INITIAL_GOLD, INITIAL_MORALE, INITIAL_SUPPLIES_PER_PRODUCTION, INITIAL_TROOPS_PER_PRODUCTION } from './economy/balance'
 import { turnOrder } from './queries'
 import type { CharacterId, CharacterState, CityState, FactionId, GameState } from './types'
-import { FACTION_IDS, isFactionId } from './world'
+import { isFactionId } from './world'
 
 /** The faction the player leads unless the URL says otherwise */
 export const DEFAULT_PLAYER_FACTION: FactionId = 'carta'
@@ -56,7 +57,7 @@ export function createInitialState(playerFaction: FactionId = DEFAULT_PLAYER_FAC
     cityOwners,
     characters,
     cities: Object.fromEntries(CITY_LIST.map((city) => [city.id, initialCity(city, lords.get(city.id))])),
-    gold: Object.fromEntries(FACTION_IDS.map((id) => [id, INITIAL_GOLD])),
+    gold: Object.fromEntries(FACTION_LIST.map((f) => [f.id, f.gold ?? INITIAL_GOLD])),
     lastEconomy: null,
     orders: [],
     march: null,

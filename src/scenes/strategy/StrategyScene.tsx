@@ -3,8 +3,8 @@ import {
   Banner, CITY_COMMAND_GROUPS, CUTIN_TEMPLATES, CityCommandScreen, CutInLayer, DomesticScreen, FactionMark, InvasionScreen,
   MapPickScreen, ScreenHost, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
 } from 'norden-ui'
-import { FACTION_MAP, MapView, type CityHighlight, type RoadHighlight, type StrategyMap } from 'norden-strategy'
-import { factionColor } from '../../data/factionColors'
+import { MapView, type CityHighlight, type RoadHighlight, type StrategyMap } from 'norden-strategy'
+import { FACTION_MAP, factionColor } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   MAX_UNITS, addOrder, assign, cancelConstruction, cancelOrder, charactersIn, citiesOf, demolishBuilding, domesticProblem, endFactionTurn,
