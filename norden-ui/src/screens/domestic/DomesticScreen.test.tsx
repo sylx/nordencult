@@ -168,6 +168,7 @@ describe('DomesticScreen', () => {
               { label: '施設', value: 22, source: 'building', details: ['市場: 商業 +5%'] },
             ],
           },
+          { label: '練度', value: 72, max: 100, notes: ['訓練 +3/ターン'] },
           { label: '新兵の練度', value: 20, max: 100, base: 20, boosts: [{ label: '施設', value: 0, source: 'building' }] },
         ]}
         onClose={vi.fn()}
@@ -197,6 +198,12 @@ describe('DomesticScreen', () => {
     expect(screen.getByRole('tooltip')).toBeInTheDocument()
     await userEvent.click(screen.getByText('フルーエンの施設'))
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+
+    // 練度 has no boosts: only its notes
+    await userEvent.click(within(status).getByRole('button', { name: '練度の内訳' }))
+    const moraleTip = screen.getByRole('tooltip')
+    expect(within(moraleTip).getByText('訓練 +3/ターン')).toBeInTheDocument()
+    expect(within(moraleTip).queryByText('基礎')).not.toBeInTheDocument()
 
     const morale = within(status).getByRole('button', { name: '新兵の練度の内訳' })
     await userEvent.click(morale)

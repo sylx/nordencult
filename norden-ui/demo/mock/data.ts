@@ -169,7 +169,7 @@ function effectOn(building: BuildingView, label: string): { value: number; perce
 
 /**
  * The domestic screen's bars: 商業・生産 with the buildings' bonus worked out from their effects on
- * the base (what is left of the city's bonus going to the governor), and 新兵の練度
+ * the base (what is left of the city's bonus going to the governor), the soldiers' 練度 and 新兵の練度
  */
 export function domesticStatsFor(city: CityView): CityStatView[] {
   const built = city.buildings?.built ?? []
@@ -197,8 +197,10 @@ export function domesticStatsFor(city: CityView): CityStatView[] {
     }
   }
   const morale = buildingBoost('新兵の練度', RECRUIT_MORALE)
+  const training = buildingBoost('訓練', 0)
   return [
     ...(city.stats ?? []).map(boosted),
+    { label: '練度', kind: 'morale', value: city.troopMorale ?? 0, max: 100, notes: training.details.length > 0 ? training.details : undefined },
     { label: '新兵の練度', kind: 'morale', value: RECRUIT_MORALE + morale.value, max: 100, base: RECRUIT_MORALE, boosts: [morale] },
   ]
 }

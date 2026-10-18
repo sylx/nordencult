@@ -22,6 +22,8 @@ export interface CityStatView {
   base?: number
   /** What the bonuses add, drawn stacked on the base at the end of the bar (they are part of `value`) */
   boosts?: readonly StatBoostView[]
+  /** Further lines for its tooltip, e.g. 訓練 +3/ターン */
+  notes?: readonly string[]
 }
 
 /** A share of a stat added by one source, e.g. the buildings' +48 of 商業 */

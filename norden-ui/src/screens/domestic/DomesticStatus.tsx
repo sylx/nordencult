@@ -4,10 +4,11 @@ import iconAgriculture from '../../assets/ui/icons/icon-agriculture.svg'
 import iconCommerce from '../../assets/ui/icons/icon-commerce.png'
 import iconProduction from '../../assets/ui/icons/icon-production.png'
 import iconMorale from '../../assets/ui/icons/icon-military.png'
+import iconRecruit from '../../assets/ui/icons/icon_people.webp'
 import type { CityStatView } from '../types'
 
 export interface DomesticStatusProps {
-  /** 商業・生産・新兵の練度 and the like, with the boosts stacked on their bars */
+  /** 商業・生産・練度・新兵の練度 and the like, with the boosts stacked on their bars */
   stats: readonly CityStatView[]
   population?: number
   supplies?: number
@@ -16,6 +17,9 @@ export interface DomesticStatusProps {
 
 const statKinds = { 農業: 'agriculture', 商業: 'commerce', 生産: 'production', 練度: 'morale', 新兵の練度: 'morale' } as const
 const statIcons = { agriculture: iconAgriculture, commerce: iconCommerce, production: iconProduction, morale: iconMorale }
+
+/** Pictures for labels sharing a kind with another (新兵の練度 beside 練度) */
+const labelIcons: Readonly<Record<string, string>> = { 新兵の練度: iconRecruit }
 
 const statKind = (stat: CityStatView) => stat.kind ?? statKinds[stat.label as keyof typeof statKinds] ?? 'commerce'
 const signed = (value: number) => `${value >= 0 ? '+' : ''}${value.toLocaleString()}`
@@ -75,7 +79,7 @@ export default function DomesticStatus({ stats, population, supplies, gold }: Do
                 onMouseLeave={() => setHovered(current => (current === stat.label ? null : current))}
               >
                 <span className="norden-domestic-stat-label">
-                  <img src={statIcons[statKind(stat)]} alt="" />
+                  <img src={labelIcons[stat.label] ?? statIcons[statKind(stat)]} alt="" />
                   {stat.label}
                 </span>
                 <button
@@ -94,8 +98,9 @@ export default function DomesticStatus({ stats, population, supplies, gold }: Do
                     segments={boosts.map(boost => ({ value: boost.value, kind: boost.source === 'building' ? 'building' : 'other' }))}
                   />
                 </button>
+                {/* Stats without boosts (e.g. 練度, which grows by training) leave the column empty */}
                 <span className={`norden-domestic-stat-boost ${buildingBoost ? '' : 'is-none'}`}>
-                  施設 {signed(buildingBoost)}
+                  {stat.boosts && `施設 ${signed(buildingBoost)}`}
                 </span>
                 {isOpen && (
                   <div id={tipId} role="tooltip" className="norden-domestic-stat-tip">
@@ -103,7 +108,7 @@ export default function DomesticStatus({ stats, population, supplies, gold }: Do
                       {stat.label} <b>{stat.value.toLocaleString()}</b>
                       <span> / {stat.max.toLocaleString()}</span>
                     </strong>
-                    <ul className="norden-domestic-stat-tip-rows">
+                    {stat.boosts && <ul className="norden-domestic-stat-tip-rows">
                       <li>
                         <span>基礎</span>
                         <b>{base.toLocaleString()}</b>
@@ -119,8 +124,13 @@ export default function DomesticStatus({ stats, population, supplies, gold }: Do
                           )}
                         </li>
                       ))}
-                    </ul>
-                    {boosts.length === 0 && <p className="norden-domestic-stat-tip-none">ブーストはありません</p>}
+                    </ul>}
+                    {stat.boosts && boosts.length === 0 && <p className="norden-domestic-stat-tip-none">ブーストはありません</p>}
+                    {stat.notes && stat.notes.length > 0 && (
+                      <ul className="norden-domestic-stat-tip-notes">
+                        {stat.notes.map(note => <li key={note}>{note}</li>)}
+                      </ul>
+                    )}
                   </div>
                 )}
               </li>

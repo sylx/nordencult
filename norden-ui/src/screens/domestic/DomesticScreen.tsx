@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { BuildingImage, ConstructionProgress } from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
-import ThinFrame from '../../components/parts/ThinFrame'
+import SectionFrame from '../../components/parts/SectionFrame'
 import ConfirmDialog from '../../components/window/ConfirmDialog'
 import WindowFrame from '../../components/window/WindowFrame'
 import type { BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView } from '../types'
@@ -19,7 +19,7 @@ export interface DomesticScreenProps {
   buildOptions?: readonly BuildOptionView[]
   /** Faction treasury gold (shown alongside the city's population and stockpiled supplies) */
   gold?: number
-  /** Bars at the top (e.g. 商業・生産・新兵の練度) with the buildings' boosts stacked on them; city.stats when omitted */
+  /** Bars at the top (e.g. 商業・生産・練度・新兵の練度) with the buildings' boosts stacked on them; city.stats when omitted */
   stats?: readonly CityStatView[]
   /** Start constructing a building in the active empty slot, or an upgrade over the building it replaces */
   onBuild?: (buildingId: string) => void
@@ -135,12 +135,12 @@ export default function DomesticScreen({
         <div className="norden-domestic-layout">
           <div className="norden-domestic-left">
             <div className="norden-domestic-status-frame">
-              <ThinFrame />
+              <SectionFrame />
               <DomesticStatus stats={stats} population={city.population} supplies={city.supplies} gold={gold} />
             </div>
 
             <section className="norden-domestic-frame" data-testid="domestic-frame" aria-label="都市の施設">
-              <ThinFrame />
+              <SectionFrame />
               <header className="norden-domestic-frame-header">
                 <h2 className="norden-domestic-frame-title">
                   {city.name}の施設
@@ -236,7 +236,7 @@ export default function DomesticScreen({
 
           {showBuildPanel && (
             <aside className="norden-domestic-build-panel" aria-label={panelTitle}>
-              <ThinFrame />
+              <SectionFrame />
               <header className="norden-domestic-build-header">
                 <h3 className="norden-domestic-build-title">{panelTitle}</h3>
                 <button
