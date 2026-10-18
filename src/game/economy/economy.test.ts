@@ -136,11 +136,12 @@ describe('economy run', () => {
     const state = createInitialState('carta')
     const income = ['P012', 'P026'].reduce((sum, id) => sum + cityOutput(state, id).income, 0)
     const knights = Object.values(state.characters).filter((c) => c.factionId === 'carta').length
+    const gold = state.gold.carta
     const next = runEconomy(state, 2)
     expect(next.lastEconomy!.factions.carta).toEqual({
-      income, salary: knights * BALANCE.SALARY, before: BALANCE.INITIAL_GOLD, after: BALANCE.INITIAL_GOLD + income - knights * BALANCE.SALARY,
+      income, salary: knights * BALANCE.SALARY, before: gold, after: gold + income - knights * BALANCE.SALARY,
     })
-    expect(next.gold.carta).toBe(BALANCE.INITIAL_GOLD + income - knights * BALANCE.SALARY)
+    expect(next.gold.carta).toBe(gold + income - knights * BALANCE.SALARY)
   })
 
   it('pays salaries down to 0, not below', () => {
@@ -316,17 +317,19 @@ describe('assignments', () => {
 
 describe('budgets', () => {
   it('moves gold between the treasury and a role\'s budget', () => {
-    let state = setAffairsBudget(createInitialState('carta'), FLUEN, 'commerce', 300)
+    const start = createInitialState('carta')
+    let state = setAffairsBudget(start, FLUEN, 'commerce', 300)
     expect(state.cities[FLUEN].affairsBudget.commerce).toBe(300)
-    expect(state.gold.carta).toBe(BALANCE.INITIAL_GOLD - 300)
+    expect(state.gold.carta).toBe(start.gold.carta - 300)
     state = setAffairsBudget(state, FLUEN, 'commerce', 100)
-    expect(state.gold.carta).toBe(BALANCE.INITIAL_GOLD - 100)
+    expect(state.gold.carta).toBe(start.gold.carta - 100)
   })
 
   it('limits a budget to AFFAIRS_BUDGET_LIMIT and to what the treasury can add', () => {
-    const state = createInitialState('carta')
-    expect(maxAffairsBudget(state, FLUEN, 'commerce')).toBe(Math.min(BALANCE.AFFAIRS_BUDGET_LIMIT, BALANCE.INITIAL_GOLD))
-    expect(affairsBudgetProblem(state, FLUEN, 'commerce', BALANCE.INITIAL_GOLD + 10)).toBe('金が足りません')
+    const initial = createInitialState('carta')
+    const state = { ...initial, gold: { ...initial.gold, carta: 500 } }
+    expect(maxAffairsBudget(state, FLUEN, 'commerce')).toBe(500)
+    expect(affairsBudgetProblem(state, FLUEN, 'commerce', 510)).toBe('金が足りません')
     const rich = { ...state, gold: { ...state.gold, carta: 100000 } }
     expect(maxAffairsBudget(rich, FLUEN, 'commerce')).toBe(BALANCE.AFFAIRS_BUDGET_LIMIT)
     expect(affairsBudgetProblem(rich, FLUEN, 'commerce', BALANCE.AFFAIRS_BUDGET_LIMIT + 10)).toBe(`予算は${BALANCE.AFFAIRS_BUDGET_LIMIT}までです`)
@@ -338,8 +341,9 @@ describe('budgets', () => {
 
 describe('construction', () => {
   it('pays the gold and starts building', () => {
-    const state = startConstruction(createInitialState('carta'), FLUEN, 'market')
-    expect(state.gold.carta).toBe(BALANCE.INITIAL_GOLD - BUILDING_MAP.market.gold)
+    const start = createInitialState('carta')
+    const state = startConstruction(start, FLUEN, 'market')
+    expect(state.gold.carta).toBe(start.gold.carta - BUILDING_MAP.market.gold)
     expect(state.cities[FLUEN].construction).toEqual({ buildingId: 'market', requiredSupplies: BUILDING_MAP.market.supplies, investedSupplies: 0 })
     expect(constructionTurns(state, FLUEN)).toBe(Math.ceil(BUILDING_MAP.market.supplies / cityOutput(state, FLUEN).production))
   })
