@@ -17,33 +17,58 @@ interface CityDomesticState {
   lordId?: string
   officers: DomesticOfficersView
   budgets: DomesticBudgetsView
+  /** What the officers have raised the base 商業・生産 by */
+  raised: { market: number; production: number }
+  troops: number
+  troopMorale: number
 }
 
 const OFFICER_LABELS: Record<DomesticOfficerRole, string> = { commerce: '商業', production: '生産', training: '訓練', recruitment: '募兵' }
 
-/** Demo-only effects of the officers, after the game's rules: the roles' aptitudes summed, the gold rolled 80〜150 */
-function officerEffectsFor(officers: DomesticOfficersView, budgets: DomesticBudgetsView, knights: readonly KnightView[]) {
+// The game's rules of the officers (its balance.ts), for the demo
+const BUDGET_MIN = 80
+const BUDGET_MAX = 150
+const GROWTH_COEF = 0.033
+const TRAINING_COEF = 0.2
+const NATURAL_TRAINING = 1
+
+/** Each role's power: its officers' abilities weighed as the role weighs them, summed */
+function officerPowers(officers: DomesticOfficersView, knights: readonly KnightView[]): Record<DomesticOfficerRole, number> {
   const ability = (id: string, key: 'politics' | 'intelligence' | 'leadership' | 'strength' | 'charm') =>
     knights.find(knight => knight.id === id)?.abilities?.[key] ?? 0
   const power = (role: DomesticOfficerRole, weigh: (id: string) => number) => (officers[role] ?? []).reduce((sum, id) => sum + weigh(id), 0)
-  const powers: Record<DomesticOfficerRole, number> = {
+  return {
     commerce: power('commerce', id => (ability(id, 'politics') * 2 + ability(id, 'intelligence')) / 3),
     production: power('production', id => (ability(id, 'politics') * 2 + ability(id, 'intelligence')) / 3),
     training: power('training', id => (ability(id, 'strength') * 2 + ability(id, 'leadership')) / 3),
     recruitment: power('recruitment', id => (ability(id, 'charm') * 3 + ability(id, 'strength')) / 4),
   }
+}
+
+/** What a funded role's officers of this power raise spending this much gold */
+function affairsGain(role: DomesticFundedRole, power: number, spent: number) {
+  if (spent <= 0 || power <= 0) return 0
+  return role === 'recruitment' ? Math.floor(spent * power / 100) : Math.round(Math.max(1, spent * power / 100 * GROWTH_COEF))
+}
+
+const officerTraining = (power: number) => (power > 0 ? Math.round(Math.max(1, power * TRAINING_COEF)) : 0)
+
+const AFFAIRS_LABELS: Record<DomesticFundedRole, string> = { commerce: '商業', production: '生産', recruitment: '兵' }
+const FUNDED_ROLES: readonly DomesticFundedRole[] = ['commerce', 'production', 'recruitment']
+
+/** What each role's officers will do next turn, the gold rolled 80〜150 */
+function officerEffectsFor(officers: DomesticOfficersView, budgets: DomesticBudgetsView, knights: readonly KnightView[]) {
+  const powers = officerPowers(officers, knights)
   const effects: Partial<Record<DomesticOfficerRole, string>> = {}
-  const funded = (role: DomesticFundedRole, label: string, gain: (spent: number) => number) => {
-    if (!powers[role]) return
+  for (const role of FUNDED_ROLES) {
+    if (!powers[role]) continue
     const budget = budgets[role] ?? 0
-    const [low, high] = [Math.min(budget, 80), Math.min(budget, 150)]
-    effects[role] = budget > 0 ? `${label} +${gain(low)}〜${gain(high)}/ターン` : '予算なし'
+    const [low, high] = [Math.min(budget, BUDGET_MIN), Math.min(budget, BUDGET_MAX)]
+    effects[role] = budget > 0
+      ? `${AFFAIRS_LABELS[role]} +${affairsGain(role, powers[role], low)}〜${affairsGain(role, powers[role], high)}/ターン（金 ${low}〜${high}）`
+      : '予算なし'
   }
-  const growth = (power: number) => (spent: number) => Math.round(Math.max(1, spent * power / 100 * 0.033))
-  funded('commerce', '商業', growth(powers.commerce))
-  funded('production', '生産', growth(powers.production))
-  funded('recruitment', '兵', spent => Math.floor(spent * powers.recruitment / 100))
-  if (powers.training) effects.training = `練度 +${Math.round(Math.max(1, powers.training * 0.2))}/ターン`
+  if (powers.training) effects.training = `練度 +${officerTraining(powers.training)}/ターン`
   return effects
 }
 
@@ -62,6 +87,9 @@ function createInitialDomesticState(): Record<string, CityDomesticState> {
       lordId: base.lord?.id,
       officers: {},
       budgets: {},
+      raised: { market: 0, production: 0 },
+      troops: base.troops ?? 0,
+      troopMorale: base.troopMorale ?? 0,
     }]
   }))
 }
@@ -72,9 +100,15 @@ export default function DomesticEntry() {
   const [gold, setGold] = useState(INITIAL_GOLD)
   const [states, setStates] = useState<Record<string, CityDomesticState>>(createInitialDomesticState)
 
-  const baseCity = cityView(cityId)
   const current = states[cityId]!
-  const production = baseCity.stats?.find(stat => stat.label === '生産')?.value ?? 100
+  // The base 商業・生産 raised by the officers (the effective values with them)
+  const raisedBy: Record<string, number> = { 商業: current.raised.market, 生産: current.raised.production }
+  const baseCity = cityView(cityId)
+  const stats = baseCity.stats?.map(stat => {
+    const raised = raisedBy[stat.label] ?? 0
+    return { ...stat, value: stat.value + raised, ...(stat.base !== undefined && { base: stat.base + raised }) }
+  })
+  const production = stats?.find(stat => stat.label === '生産')?.value ?? 100
 
   const turnsFor = (invested: number, required: number) =>
     production > 0 ? Math.max(0, Math.ceil((required - invested) / production)) : null
@@ -87,6 +121,9 @@ export default function DomesticEntry() {
 
   const city: CityView = {
     ...baseCity,
+    stats,
+    troops: current.troops,
+    troopMorale: current.troopMorale,
     lord: current.lordId ? lordView(current.lordId) : undefined,
     knights,
     supplies: current.supplies,
@@ -150,30 +187,53 @@ export default function DomesticEntry() {
     add(`${city.name}: 「${name}」の建設を${paused ? '中断（生産物資は備蓄へ）' : '再開'}`)
   }
 
+  /** A turn of the city: its officers at work (as the game's economy run), then its 生産 into the construction or the store */
   const advanceTurn = () => {
+    const lines: string[] = []
+    const powers = officerPowers(current.officers, knights)
+    const budgets = { ...current.budgets }
+    const gains: Record<DomesticFundedRole, number> = { commerce: 0, production: 0, recruitment: 0 }
+    for (const role of FUNDED_ROLES) {
+      const budget = budgets[role] ?? 0
+      if (!powers[role] || budget <= 0) continue
+      const spent = Math.min(budget, BUDGET_MIN + Math.floor(Math.random() * (BUDGET_MAX - BUDGET_MIN + 1)))
+      budgets[role] = budget - spent
+      gains[role] = affairsGain(role, powers[role], spent)
+      lines.push(`${OFFICER_LABELS[role]}担当官: 金 ${spent} を使い${AFFAIRS_LABELS[role]} +${gains[role]}（予算の残り ${budgets[role]}）`)
+    }
+    // The soldiers train, then the recruits join at the recruits' morale
+    const training = current.troops > 0 ? NATURAL_TRAINING + officerTraining(powers.training) : 0
+    const trained = Math.min(100, current.troopMorale + training)
+    const recruitMorale = domesticStatsFor(city).find(stat => stat.label === '新兵の練度')?.value ?? 20
+    const troops = current.troops + gains.recruitment
+    const troopMorale = troops > 0 ? Math.round((current.troops * trained + gains.recruitment * recruitMorale) / troops) : trained
+    if (training > 0) lines.push(`訓練: 練度 +${trained - current.troopMorale}`)
+    if (gains.recruitment > 0) lines.push(`募兵: 兵 ${current.troops} → ${troops}、練度 ${trained} → ${troopMorale}`)
+
+    const patch: Partial<CityDomesticState> = {
+      budgets,
+      raised: { market: current.raised.market + gains.commerce, production: current.raised.production + gains.production },
+      troops,
+      troopMorale,
+    }
+    // This turn's 生産 is the one before the officers raised it, as in the game
     if (current.construction && !current.construction.paused) {
       const nextInvested = current.construction.invested + production
       if (nextInvested >= current.construction.required) {
         const surplus = nextInvested - current.construction.required
         const finished = current.construction.building
-        updateCity({
-          built: withCompleted(current.built, finished),
-          construction: null,
-          supplies: current.supplies + surplus,
-        })
-        add(`${city.name}: 「${finished.name}」が完成！（余剰物資 +${surplus}）`)
+        Object.assign(patch, { built: withCompleted(current.built, finished), construction: null, supplies: current.supplies + surplus })
+        lines.push(`「${finished.name}」が完成！（余剰物資 +${surplus}）`)
       } else {
-        updateCity({
-          construction: { ...current.construction, invested: nextInvested },
-        })
-        add(`${city.name}: 建設進捗 +${production}（${nextInvested} / ${current.construction.required}）`)
+        patch.construction = { ...current.construction, invested: nextInvested }
+        lines.push(`建設進捗 +${production}（${nextInvested} / ${current.construction.required}）`)
       }
     } else {
-      updateCity({
-        supplies: current.supplies + production,
-      })
-      add(`${city.name}: 備蓄物資 +${production}（計 ${current.supplies + production}）`)
+      patch.supplies = current.supplies + production
+      lines.push(`備蓄物資 +${production}（計 ${current.supplies + production}）`)
     }
+    updateCity(patch)
+    for (const line of lines) add(`${city.name}: ${line}`)
   }
 
   const handleChangeLord = (knightId: string) => {
@@ -225,8 +285,6 @@ export default function DomesticEntry() {
     </>}
     controls={<>
       <h2>内政画面</h2>
-      <p>最上段に都市の現状（商業・生産・新兵の練度のグラフと人口・物資・金）。グラフの縞模様の部分が施設によるブーストで、マウスオーバーかクリックで内訳を表示します。その下に都市の施設スロット、空きスロットの「+」から右側に追加可能な施設一覧を開いて建設できます。建設済み施設に上位の施設があれば「アップグレード」から右側にアップグレード先を開いて改築でき、完成すると同じスロットで置き換わります（スロットは増えません）。「削除」で確認ダイアログ付きで取り壊せます。その都市でまだ建てられない施設（必要な都市の特性・遺物・元の施設が無いもの）は一覧に出しません。</p>
-      <p>最上段の左に領主の顔と「交代」。交代を押すと右側に領地の騎士一覧（政治・魅力）が開き、任命で領主を替えます。最下段の内政担当官は商業・生産（政治2・知力1）・訓練（武力2・統率1）・募兵（魅力3・武力1）にそれぞれ2人まで任命でき、枠を押すと右側に適性の高い順で騎士一覧が開きます（領主とほかの役職の担当官は選べず、担当官を領主にするとその役職から外れます）。商業・生産・募兵はスライダで予算（1000まで）を割り当て、担当官が毎ターン 80〜150 ずつ使って基礎値や兵数を上げます。訓練は金を使いません。効果の数値はゲームと同じ式のデモ用の計算です（ターンを進めても予算は減りません）。</p>
       <label htmlFor="domestic-city">都市</label>
       <select id="domestic-city" value={cityId} onChange={event => setCityId(event.target.value)}>
         {playerCities.map(id => <option key={id} value={id}>{CITY_MAP[id]?.name}</option>)}
@@ -244,14 +302,19 @@ export default function DomesticEntry() {
         }}
       />
       <button type="button" className="reset-button" onClick={advanceTurn}>
-        1ターン進める（生産 +{production}）
+        1ターン進める（内政処理）
       </button>
       <button type="button" className="reset-button" onClick={reset}>
         初期状態に戻す
       </button>
       <dl className="demo-readout">
+        <div><dt>商業</dt><dd>{stats?.find(stat => stat.label === '商業')?.value ?? '—'}（担当官 +{current.raised.market}）</dd></div>
+        <div><dt>生産</dt><dd>{production}（担当官 +{current.raised.production}）</dd></div>
+        <div><dt>兵数</dt><dd>{current.troops.toLocaleString()}</dd></div>
+        <div><dt>練度</dt><dd>{current.troopMorale}</dd></div>
         <div><dt>備蓄物資</dt><dd>{current.supplies.toLocaleString()}</dd></div>
         <div><dt>金</dt><dd>{gold.toLocaleString()}</dd></div>
+        <div><dt>予算</dt><dd>商業 {current.budgets.commerce ?? 0}・生産 {current.budgets.production ?? 0}・募兵 {current.budgets.recruitment ?? 0}</dd></div>
         <div><dt>施設数</dt><dd>{current.built.length} / {current.slots}</dd></div>
       </dl>
       <Log entries={log} />
