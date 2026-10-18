@@ -219,6 +219,21 @@
   font-size: 12px;
 }
 
+.norden-domestic-stat-tip-notes {
+  margin: 0;
+  padding: 0;
+  color: #4a351c;
+  font-size: 12px;
+  line-height: 1.5;
+  list-style: none;
+}
+
+.norden-domestic-stat-tip-rows + .norden-domestic-stat-tip-notes {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid #b38d5260;
+}
+
 .norden-domestic-stat-tip-none {
   margin: 4px 0 0;
   color: #8a7050;

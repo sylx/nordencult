@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ButtonProps } from '../../src'
-import { Banner, Button, Card, ChoiceGroup, FactionMark, InfoWindow, KnightCard, QuantityInput, ThinFrameWithTitle } from '../../src'
+import { Banner, Button, Card, ChoiceGroup, FactionMark, InfoWindow, KnightCard, QuantityInput, SectionFrame, ThinFrameWithTitle } from '../../src'
 import { repositoryCharacters, RepositoryPortrait } from '../repositoryCharacters'
 import { FACTIONS, KNIGHTS, UNIT_TYPES } from '../mock/data'
 import { Log, useLog, Workbench } from '../Workbench'
@@ -64,6 +64,11 @@ export default function PartsEntry() {
         <ThinFrameWithTitle title="地形" style={{ width: 220 }}>
           <div className="demo-thin-titled">平地<small>（3, 5）</small><br />移動 行動力 1</div>
         </ThinFrameWithTitle>
+        <div style={{ position: 'relative', isolation: 'isolate', width: 220, padding: '14px 18px', color: '#f3ead7', fontFamily: 'serif' }}>
+          <SectionFrame />
+          <strong style={{ display: 'block', fontSize: 14, color: '#f6e7c5', marginBottom: 4 }}>SectionFrame</strong>
+          <span style={{ fontSize: 12, color: '#cbb282' }}>革の上に箔押ししたセクション区切り枠</span>
+        </div>
       </div>
     </>}
     controls={<>

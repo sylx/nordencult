@@ -68,6 +68,26 @@
   border-image: var(--norden-frame) var(--norden-frame-slice) / 22px / 0 stretch;
 }
 
+/* Section divider frame: gold foil stamped onto dark leather texture */
+.norden-section-frame {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.norden-section-frame-surface {
+  position: absolute;
+  inset: 4px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.14);
+}
+.norden-section-frame-border {
+  position: absolute;
+  inset: 0;
+  border: var(--norden-section-frame-width, 22px) solid transparent;
+  border-image: url('../../assets/ui/skins/section-frame.png') 22% / var(--norden-section-frame-width, 22px) / 0 stretch;
+}
+
 .norden-banner {
   display: inline-flex;
   align-items: center;
