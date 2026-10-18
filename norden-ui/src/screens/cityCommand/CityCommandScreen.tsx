@@ -30,6 +30,8 @@ export interface CityCommandScreenProps {
   /** Position of the city among the player's cities */
   cityPosition?: { index: number; count: number }
   commandState?: Partial<Record<CityCommandId, CommandState>>
+  /** The command whose screen is open over this one (e.g. 内政), shown pressed and never disabled, so it can close that screen */
+  activeCommand?: CityCommandId
   onCommand: (id: CityCommandId) => void
   onEndTurn: () => void
   endTurnDisabled?: boolean
@@ -51,12 +53,15 @@ export function turnText(turn: TurnView) {
 
 /** City command screen: the faction bar with ◀ ▶ between cities and the city window (left), turn bar (top right) and the action toolbar (bottom) */
 export default function CityCommandScreen({
-  city, turn, faction, playerFaction, onPrevCity, onNextCity, cityPosition, commandState = {}, onCommand, onEndTurn, endTurnDisabled = false,
+  city, turn, faction, playerFaction, onPrevCity, onNextCity, cityPosition, commandState = {}, activeCommand, onCommand, onEndTurn, endTurnDisabled = false,
   onSelectNeighbour, turnMenu, windowPosition = { x: 56, y: 96 }, skin, children,
 }: CityCommandScreenProps) {
-  const command = (id: CityCommandId, label: string): ToolbarCommand => ({
-    id, label, disabled: commandState[id]?.disabled, title: commandState[id]?.reason, onClick: () => onCommand(id),
-  })
+  const command = (id: CityCommandId, label: string): ToolbarCommand => {
+    const active = activeCommand === id
+    return {
+      id, label, active, disabled: !active && commandState[id]?.disabled, title: active ? undefined : commandState[id]?.reason, onClick: () => onCommand(id),
+    }
+  }
   const commands: ToolbarCommand[] = [
     ...CITY_COMMAND_GROUPS.map(group => {
       const icon = <img src={group.icon} alt="" />

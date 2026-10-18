@@ -18,7 +18,7 @@ type StrategyScreens = {
 interface Order { id: number; from: string; to: string; draft: InvasionDraft }
 
 const COMMAND_LABELS: Record<CityCommandId, string> = {
-  build: '建設', assign: '割当', move: '移動', invade: '侵攻', recruit: '募兵', transport: '輸送', quest: '探索', tree: 'ツリー', buy: '購入', sell: '売却',
+  domestic: '内政', move: '移動', invade: '侵攻', recruit: '募兵', transport: '輸送', quest: '探索', tree: 'ツリー', buy: '購入', sell: '売却',
 }
 
 const name = (id: string) => CITY_MAP[id]?.name ?? id
@@ -87,7 +87,7 @@ export default function StrategyFlowEntry() {
     stage={<>
       <MockMap selected={selected} onSelect={selectCity}
         candidates={top.screen === 'pickTarget' ? openTargets(top.params.from) : undefined} routes={routes} />
-      <ScreenHost nav={nav} screens={{
+      <ScreenHost nav={nav} overlays={['domestic']} screens={{
         cityCommand: ({ cityId }) => {
           const index = playerCities.indexOf(cityId)
           const problem = invadeProblem(cityId)
@@ -97,9 +97,13 @@ export default function StrategyFlowEntry() {
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
               onPrevCity={() => step(cityId, -1)} onNextCity={() => step(cityId, 1)}
               commandState={{ invade: problem ? { disabled: true, reason: problem } : undefined }}
+              activeCommand={top.screen === 'domestic' ? 'domestic' : undefined}
               onCommand={id => {
-                if (id === 'invade') nav.push('pickTarget', { from: cityId })
-                else if (id === 'build') nav.push('domestic', { cityId })
+                // 内政 again closes the domestic window drawn over this screen; other commands close it first
+                const domesticOpen = top.screen === 'domestic'
+                nav.popTo('cityCommand')
+                if (id === 'domestic') { if (!domesticOpen) nav.push('domestic', { cityId }) }
+                else if (id === 'invade') nav.push('pickTarget', { from: cityId })
                 else add(`${COMMAND_LABELS[id]}（未実装）`)
               }}
               onEndTurn={() => {
@@ -144,7 +148,7 @@ export default function StrategyFlowEntry() {
     </>}
     controls={<>
       <h2>戦略画面のフロー</h2>
-      <p>「内政」→「建設」で内政画面を開きます。「軍事」→「侵攻」で地図の侵攻先が強調されます。選ぶと侵攻画面に進み、予約すると都市コマンドに戻ります。</p>
+      <p>「内政」で内政画面を開きます（下のツールバーは隠れず、もう一度「内政」を押すと閉じます）。「軍事」→「侵攻」で地図の侵攻先が強調されます。選ぶと侵攻画面に進み、予約すると都市コマンドに戻ります。</p>
       <dl className="demo-readout">
         <div><dt>画面スタック</dt><dd>{nav.stack.map(entry => entry.screen).join(' › ')}</dd></div>
         <div><dt>ターン</dt><dd>{turn}</dd></div>

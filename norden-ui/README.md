@@ -97,6 +97,7 @@ function StrategyUi() {
 
 `ScreenHost` は最上段の画面だけを配置先いっぱいのレイヤーに描きます。レイヤー自体はポインターを通すので、下の地図をクリックできます。
 pushのたびに `key` が変わり、同じ画面でも新しくマウントされます（侵攻画面を開き直すと選択が初期化される）。
+`overlays={['domestic']}` に挙げた画面は、下の画面に重ねて描きます。下の画面はマウントされたまま下端のツールバーだけを残し（`.norden-screen-bottom-center` 以外を隠す）、重ねた画面はその分（`--norden-screen-bottom-inset`）を空けます。内政画面を開いたまま都市コマンドのツールバーで閉じたり、ほかのコマンドに移ったりできます。
 Escで `pop()` します。サブコマンドの展開などEscを自分で使う部品は `event.preventDefault()` し、`ScreenHost` はその場合に戻りません。`escapeToPop={false}` で無効にできます。
 地図の強調など画面の外の処理は、ホストが `nav.top` を見て行います。
 
@@ -134,12 +135,12 @@ function BattleUi() {
 
 | 画面 | 構成 | 主なprops |
 | --- | --- | --- |
-| `CityCommandScreen` | 勢力の情報と都市の切り替え ◀ ▶（左上の `FactionBar`）、都市情報ウィンドウ（都市情報・騎士・街道タブ。都市情報は代官・人口と Tier、兵数・練度・物資（大きな数字で横に並べる）、商業と生産（実効値と基礎値）、施設スロット）、ターン情報（右上）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `faction: FactionSummaryView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `onSelectNeighbour`, `turnMenu`, `children`（ホストの追加HUD） |
+| `CityCommandScreen` | 勢力の情報と都市の切り替え ◀ ▶（左上の `FactionBar`）、都市情報ウィンドウ（都市情報・騎士・街道タブ。都市情報は代官・人口と Tier、兵数・練度・物資（大きな数字で横に並べる）、商業と生産（実効値と基礎値）、施設スロット）、ターン情報（右上）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `faction: FactionSummaryView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `activeCommand`（上に開いている画面のコマンド。押された状態で出す）, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `onSelectNeighbour`, `turnMenu`, `children`（ホストの追加HUD） |
 | `MapPickScreen` | 案内の帯と「やめる」 | `message`, `onCancel`, `cancelLabel` |
-| `DomesticScreen` | 都市の内政。画面いっぱいの暗い羊皮紙（`ThinFrame`）のウィンドウで、いまは左上の空の枠と「閉じる」だけ（建設・割当の中身はこれから） | `city: CityView`, `onClose`, `children` |
+| `DomesticScreen` | 都市の内政。画面いっぱいのウィンドウに、領主（顔と「交代」）と都市の現状、施設スロット、内政担当官（商業・生産・訓練・募兵に2人まで）を並べ、右側に建設できる施設や任命する騎士の一覧を開く。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `city: CityView`, `buildOptions`, `gold`, `stats`, `knights`, `officers`, `officerEffects`, `onBuild` などの施設の操作, `onChangeLord`, `onAssignOfficers`, `onClose` |
 | `InvasionScreen` | 出撃する騎士の選択ウィンドウ、軍団編成（部隊ごとの兵科と兵数）のウィンドウ、編成した部隊の図（タイトルなしのウィンドウ）、合計兵数と「やめる / 予約」 | `from` / `to: CityView`, `defenders`, `knights: KnightView[]`, `unitTypes`, `indirectUnitTypes`, `maxUnits`, `soldierPool`, `morale`, `unitPower`, `soldierStep`, `skin`（既定は thin）, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
 
-アクションツールバーのコマンドは `CITY_COMMAND_GROUPS` に定義しています。内政（建設・割当）、軍事（移動・侵攻・募兵・輸送）、研究、商人（購入・売却）と、最後にターン終了です。
+アクションツールバーのコマンドは `CITY_COMMAND_GROUPS` に定義しています。内政、軍事（移動・侵攻・募兵・輸送）、研究、商人（購入・売却）と、最後にターン終了です。
 分類を押すと上にサブコマンドが開きます。`commandState={{ invade: { disabled: true, reason: '出撃できる騎士がいません' } }}` で無効にし、理由をツールチップに出します。
 
 侵攻画面は軍団を編成します。まず左の一覧で軍団長（侵攻を率いる騎士）を選び、続けてほかの騎士を加えます。部隊は間接指揮部隊も含めて `maxUnits`（既定6）までです。

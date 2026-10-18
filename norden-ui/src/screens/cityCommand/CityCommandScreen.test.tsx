@@ -37,10 +37,17 @@ describe('CityCommandScreen', () => {
     await userEvent.click(within(toolbar).getByRole('button', { name: /軍事/ }))
     await userEvent.click(screen.getByRole('button', { name: '侵攻' }))
     expect(onCommand).toHaveBeenLastCalledWith('invade')
-    await userEvent.click(within(toolbar).getByRole('button', { name: /研究/ }))
-    expect(onCommand).toHaveBeenLastCalledWith('research')
+    await userEvent.click(within(toolbar).getByRole('button', { name: /内政/ }))
+    expect(onCommand).toHaveBeenLastCalledWith('domestic')
     await userEvent.click(within(toolbar).getByRole('button', { name: /ターン終了/ }))
     expect(onEndTurn).toHaveBeenCalledOnce()
+  })
+
+  it('shows the command whose screen is open as pressed and enabled', () => {
+    // It stays usable to close its screen, even if it could not be opened now
+    setup({ activeCommand: 'domestic', commandState: { domestic: { disabled: true, reason: '手番ではありません' } } })
+    expect(screen.getByRole('button', { name: /内政/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /内政/ })).toBeEnabled()
   })
 
   it('disables commands with the reason as tooltip', async () => {

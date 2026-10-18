@@ -22,7 +22,7 @@ export default function CommandToolbarEntry() {
   const group = (id: string, label: string, src: string, children: ToolbarCommand[]): ToolbarCommand =>
     withChildren ? { id, label, icon: icon(src), children } : leaf(id, label, { icon: icon(src) })
   const commands: ToolbarCommand[] = [
-    group('domestic', '内政', iconDomestic, [leaf('build', '建設'), leaf('assign', '割当')]),
+    leaf('domestic', '内政', { icon: icon(iconDomestic) }),
     group('military', '軍事', iconMilitary, [
       leaf('move', '移動'),
       leaf('invade', '侵攻', disableInvade ? { disabled: true, title: '出撃できる騎士がいません' } : {}),

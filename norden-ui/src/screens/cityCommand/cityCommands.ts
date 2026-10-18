@@ -4,7 +4,7 @@ import iconResearch from '../../assets/ui/icons/icon-knowledge.png'
 import iconMerchant from '../../assets/ui/icons/icon-gold.png'
 
 export type CityCommandId =
-  | 'build' | 'assign'
+  | 'domestic'
   | 'move' | 'invade' | 'recruit' | 'transport'
   | 'quest' | 'tree'
   | 'buy' | 'sell'
@@ -19,7 +19,7 @@ export interface CityCommandGroup {
 
 /** The action toolbar of the city command screen, left to right. ターン終了 is added after these */
 export const CITY_COMMAND_GROUPS: readonly CityCommandGroup[] = [
-  { id: 'domestic', label: '内政', icon: iconDomestic, commands: [{ id: 'build', label: '建設' }, { id: 'assign', label: '割当' }] },
+  { id: 'domestic', label: '内政', icon: iconDomestic },
   {
     id: 'military', label: '軍事', icon: iconMilitary,
     commands: [{ id: 'move', label: '移動' }, { id: 'invade', label: '侵攻' }, { id: 'recruit', label: '募兵' }, { id: 'transport', label: '輸送' }],
