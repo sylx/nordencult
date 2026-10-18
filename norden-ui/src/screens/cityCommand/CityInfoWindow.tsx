@@ -62,7 +62,7 @@ function CityInfo({ city }: { city: CityView }) {
         </header>
         <div className="norden-city-info-body">
           <dl className="norden-city-info-facts">
-            {city.lord && <div><dt>代官</dt><dd>{city.lord.name}</dd></div>}
+            {city.lord && <div><dt>領主</dt><dd>{city.lord.name}</dd></div>}
             {city.population !== undefined && <div><dt>人口</dt><dd>
               {city.population.toLocaleString()}
               {city.tier !== undefined && <span className="norden-city-info-tier">Tier {city.tier}</span>}

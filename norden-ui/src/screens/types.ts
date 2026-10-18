@@ -28,7 +28,7 @@ export interface CityStatView {
 
 /** A share of a stat added by one source, e.g. the buildings' +48 of 商業 */
 export interface StatBoostView {
-  /** e.g. 施設, 代官 */
+  /** e.g. 施設, 領主 */
   label: string
   value: number
   /** building: the buildings' share, set apart in the bar */
@@ -105,7 +105,7 @@ export type DomesticBudgetsView = Partial<Record<DomesticFundedRole, number>>
 /** Ids of the knights holding each domestic officer role */
 export type DomesticOfficersView = Partial<Record<DomesticOfficerRole, readonly string[]>>
 
-/** The knights holding the city's assignments (ids of its knights): its lord (代官) and its officers */
+/** The knights holding the city's assignments (ids of its knights): its lord (領主) and its officers */
 export interface CityAssignmentsView {
   governor?: string
   officers: DomesticOfficersView
@@ -132,7 +132,7 @@ export interface CityView {
   population?: number
   /** City tier (e.g. 2), which decides its building slots */
   tier?: number
-  /** The governor (代官, the city's lord): name and full character illustration (URL or host-rendered sprite). */
+  /** The governor (領主, the city's lord): name and full character illustration (URL or host-rendered sprite). */
   lord?: { id?: string; name: string; image?: ReactNode; imageSrc?: string }
   special?: string
   /** e.g. 商業・生産 */

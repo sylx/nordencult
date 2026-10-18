@@ -164,7 +164,7 @@ describe('DomesticScreen', () => {
           {
             label: '商業', value: 506, max: 720, base: 440,
             boosts: [
-              { label: '代官', value: 44 },
+              { label: '領主', value: 44 },
               { label: '施設', value: 22, source: 'building', details: ['市場: 商業 +5%'] },
             ],
           },

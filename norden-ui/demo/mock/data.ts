@@ -199,7 +199,7 @@ export function domesticStatsFor(city: CityView): CityStatView[] {
       ...stat,
       base,
       value: base + governor + buildings.value,
-      boosts: [...(governor ? [{ label: '代官', value: governor, details: city.lord ? [city.lord.name] : [] }] : []), buildings],
+      boosts: [...(governor ? [{ label: '領主', value: governor, details: city.lord ? [city.lord.name] : [] }] : []), buildings],
     }
   }
   const morale = buildingBoost('新兵の練度', RECRUIT_MORALE)
