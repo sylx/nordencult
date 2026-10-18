@@ -43,15 +43,20 @@ export const PERSONALITY_BONUSES: Partial<Record<PersonalityTag, { market?: numb
 
 /** Morale soldiers gain each turn by themselves */
 export const NATURAL_TRAINING = 1
+
+/** Knights holding one officer role at most */
+export const OFFICERS_PER_ROLE = 2
 /**
- * Morale the first military officer adds a turn: none up to ABILITY_BASE 統率,
- * rising to MILITARY_MAX_TRAINING at 100. Each officer after adds MILITARY_FALLOFF
- * of what the one before them would (the best first)
+ * What the first officer of a role adds: none up to ABILITY_BASE, rising linearly to these at 100.
+ * The second adds OFFICER_FALLOFF of what they would alone (the better first, whatever the order they were assigned in)
  */
-export const MILITARY_MAX_TRAINING = 2
-/** What the first military officer adds to the soldiers a turn can recruit, likewise from 魅力 */
-export const MILITARY_MAX_RECRUIT_BONUS = 0.25
-export const MILITARY_FALLOFF = 0.5
+/** 商業・生産 officers, by 政治 (fractions of the base) */
+export const OFFICER_MAX_BONUS = 0.15
+/** 訓練 officers, by 武力: morale a turn */
+export const OFFICER_MAX_TRAINING = 2
+/** 募兵 officers, by 魅力: share of the population drawn into soldiers a turn */
+export const OFFICER_MAX_RECRUIT_RATE = 0.01
+export const OFFICER_FALLOFF = 0.5
 
 /**
  * Population growth a turn: population × GROWTH_RATE × 実効商業 / GROWTH_MARKET,

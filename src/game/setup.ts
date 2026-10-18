@@ -25,7 +25,7 @@ function initialCity(city: City, governor: CharacterId | undefined): CityState {
     troopMorale: city.troopMorale ?? INITIAL_MORALE,
     buildings: city.buildings ?? [],
     construction: null,
-    assignments: { ...(governor && { governor }), military: [] },
+    assignments: { ...(governor && { governor }), officers: {} },
     recruited: 0,
   }
 }

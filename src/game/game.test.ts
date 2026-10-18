@@ -265,7 +265,7 @@ describe('battle results', () => {
     expect(state.characters['013']).toMatchObject({ cityId: VERSTA, factionId: 'leonis' })
     // The lord who left the city is no longer its lord
     expect(state.characters['046']).toEqual({ cityId: VERSTA, factionId: 'leonis' })
-    expect(state.cities[AMBARIA].assignments).toEqual({ military: [] })
+    expect(state.cities[AMBARIA].assignments).toEqual({ officers: {} })
     expect(state.lastBattle).toMatchObject({ winner: 'attacker', cityCaptured: true })
     expect(state.lastBattle?.moves).toEqual([
       { characterId: '015', kind: 'enter', from: FLUEN, to: AMBARIA },

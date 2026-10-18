@@ -55,15 +55,24 @@ export interface CityConstruction {
   paused?: boolean
 }
 
-/** Knights assigned to the work of their city. A knight holds one assignment at most, in the city they serve in */
+/**
+ * 内政担当官: 商業・生産 (by 政治) raise those, 訓練 (by 武力) trains the soldiers and
+ * 募兵 (by 魅力) draws soldiers from the population, in the economy run
+ */
+export type OfficerRole = 'commerce' | 'production' | 'training' | 'recruitment'
+
+/**
+ * Knights assigned to the work of their city. A knight holds one assignment at most, in the city they serve in;
+ * the governor (the lord) holds no officer role
+ */
 export interface CityAssignments {
   /** 代官: the lord of the city */
   governor?: CharacterId
-  /** 軍事担当 */
-  military: readonly CharacterId[]
+  /** The officers of each role, OFFICERS_PER_ROLE at most */
+  officers: Partial<Record<OfficerRole, readonly CharacterId[]>>
 }
 
-export type AssignmentRole = 'governor' | 'military'
+export type AssignmentRole = 'governor' | OfficerRole
 
 export interface CityState {
   population: number

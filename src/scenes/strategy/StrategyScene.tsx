@@ -7,14 +7,15 @@ import { FACTION_MAP, MapView, type CityHighlight, type RoadHighlight, type Stra
 import { factionColor } from '../../data/factionColors'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
-  MAX_UNITS, addOrder, cancelConstruction, cancelOrder, charactersIn, citiesOf, demolishBuilding, domesticProblem, endFactionTurn,
-  invadeFromProblem, isPlayerTurn, openInvasionTargets, orderProblem, pauseConstruction, soldiersLeft, startConstruction, startNextBattle,
+  MAX_UNITS, addOrder, assign, cancelConstruction, cancelOrder, charactersIn, citiesOf, demolishBuilding, domesticProblem, endFactionTurn,
+  invadeFromProblem, isPlayerTurn, openInvasionTargets, orderProblem, pauseConstruction, setOfficers, soldiersLeft, startConstruction, startNextBattle,
   useGame, type CityId, type FactionId, type InvasionOrder,
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import {
-  UNIT_TYPE_VIEWS, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, mapSeason, phaseLabel, turnView, unitPower,
+  UNIT_TYPE_VIEWS, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, mapSeason,
+  officerEffects, officersView, phaseLabel, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
 
@@ -39,7 +40,7 @@ type StrategyScreens = {
   pickTarget: { from: string }
   /** Choosing the knights, unit types and soldiers */
   invasion: { from: string; to: string }
-  /** The domestic screen of a city of the player's (building; assigning the knights joins it later) */
+  /** The domestic screen of a city of the player's (its lord, buildings and officers), drawn over the city command screen */
   domestic: { cityId: string }
 }
 
@@ -201,7 +202,7 @@ export default function StrategyScene() {
     const problem = playerTurn ? invadeFromProblem(game, cityId) : '手番ではありません'
     state.invade = problem ? { disabled: true, reason: problem } : {}
     const domestic = playerTurn ? domesticProblem(game, cityId) : '手番ではありません'
-    state.build = domestic ? { disabled: true, reason: domestic } : {}
+    state.domestic = domestic ? { disabled: true, reason: domestic } : {}
     return state
   }
 
@@ -215,7 +216,7 @@ export default function StrategyScene() {
     <div className={`strategy-scene${ready ? '' : ' strategy-scene--loading'}`}>
       <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false}
         cityOwners={game.cityOwners} season={mapSeason(game.turn)} />
-      <ScreenHost nav={nav} screens={{
+      <ScreenHost nav={nav} overlays={['domestic']} screens={{
         cityCommand: ({ cityId }) => {
           const index = playerCities.indexOf(cityId)
           return (
@@ -225,9 +226,13 @@ export default function StrategyScene() {
               onPrevCity={playerCities.length > 0 ? () => stepCity(cityId, -1) : undefined}
               onNextCity={playerCities.length > 0 ? () => stepCity(cityId, 1) : undefined}
               commandState={commandState(cityId)}
+              activeCommand={top.screen === 'domestic' ? 'domestic' : undefined}
               onCommand={(id) => {
+                // 内政 again closes the domestic window drawn over this screen; other commands close it first
+                const domesticOpen = top.screen === 'domestic'
+                popTo('cityCommand')
                 if (id === 'invade') nav.push('pickTarget', { from: cityId })
-                else if (id === 'build') nav.push('domestic', { cityId })
+                else if (id === 'domestic' && !domesticOpen) nav.push('domestic', { cityId })
               }}
               onEndTurn={endTurn} endTurnDisabled={!playerTurn}
               onSelectNeighbour={showCity}
@@ -250,6 +255,10 @@ export default function StrategyScene() {
             onDemolish={(buildingId) => update((s) => demolishBuilding(s, cityId, buildingId))}
             onCancelConstruction={() => update((s) => cancelConstruction(s, cityId))}
             onPauseConstruction={(paused) => update((s) => pauseConstruction(s, cityId, paused))}
+            officers={officersView(game, cityId)}
+            officerEffects={officerEffects(game, cityId)}
+            onChangeLord={(knightId) => update((s) => assign(s, cityId, knightId, 'governor'))}
+            onAssignOfficers={(role, knightIds) => update((s) => setOfficers(s, cityId, role, knightIds))}
             onClose={nav.pop}
           />
         ),

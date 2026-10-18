@@ -163,7 +163,7 @@ export function resolveBattle(
 
   if (winner === 'attacker') {
     cityOwners[cityId] = attacker.factionId
-    cities[cityId] = { ...cities[cityId], assignments: { military: [] } }
+    cities[cityId] = { ...cities[cityId], assignments: { officers: {} } }
     for (const id of attacker.knights) if (!left.has(id)) move(id, 'enter', cityId)
     const refuge = defender.factionId
       ? neighbours(cityId).find((id) => cityOwners[id] === defender.factionId)

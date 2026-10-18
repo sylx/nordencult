@@ -3,9 +3,9 @@ import { CITY_MAP } from '../../data/city'
 import { mixMorale } from '../army'
 import { GameRuleError } from '../errors'
 import { orderOf, ownerOf, soldiersLeft } from '../queries'
-import type { AssignmentRole, CharacterId, CityAssignments, CityId, CityState, FactionId, GameState } from '../types'
+import type { AssignmentRole, CharacterId, CityAssignments, CityId, CityState, FactionId, GameState, OfficerRole } from '../types'
 import { neighbours } from '../world'
-import { RECRUIT_GOLD } from './balance'
+import { OFFICERS_PER_ROLE, RECRUIT_GOLD } from './balance'
 import { cityOutput } from './output'
 
 /**
@@ -30,21 +30,31 @@ const check = (problem: string | null) => {
 
 // ── Assignments ──
 
+export const OFFICER_ROLES: readonly OfficerRole[] = ['commerce', 'production', 'training', 'recruitment']
+
+const OFFICER_LABELS: Readonly<Record<OfficerRole, string>> = { commerce: '商業', production: '生産', training: '訓練', recruitment: '募兵' }
+
+const officerRoleOf = (assignments: CityAssignments, characterId: CharacterId) =>
+  OFFICER_ROLES.find((role) => assignments.officers[role]?.includes(characterId))
+
 /** The assignment a knight holds in their city, or null */
 export function assignmentOf(state: GameState, characterId: CharacterId): AssignmentRole | null {
   const cityId = state.characters[characterId]?.cityId
   const assignments = cityId ? state.cities[cityId]?.assignments : undefined
-  if (assignments?.governor === characterId) return 'governor'
-  if (assignments?.military.includes(characterId)) return 'military'
-  return null
+  if (!assignments) return null
+  if (assignments.governor === characterId) return 'governor'
+  return officerRoleOf(assignments, characterId) ?? null
 }
 
 /** The assignments with a knight taken off theirs */
 export function withoutAssignee(assignments: CityAssignments, characterId: CharacterId): CityAssignments {
-  if (assignments.governor !== characterId && !assignments.military.includes(characterId)) return assignments
+  const role = officerRoleOf(assignments, characterId)
+  if (assignments.governor !== characterId && !role) return assignments
   return {
     ...(assignments.governor !== characterId && { governor: assignments.governor }),
-    military: assignments.military.filter((id) => id !== characterId),
+    officers: role
+      ? { ...assignments.officers, [role]: assignments.officers[role]!.filter((id) => id !== characterId) }
+      : assignments.officers,
   }
 }
 
@@ -54,7 +64,11 @@ export function assignmentProblem(state: GameState, cityId: CityId, characterId:
   const character = state.characters[characterId]
   if (character?.cityId !== cityId || character.factionId !== ownerOf(state, cityId)) return `${characterId} はこの都市の騎士ではありません`
   if (orderOf(state, characterId)) return '出撃予約中です'
-  if (assignmentOf(state, characterId) === role) return role === 'governor' ? 'すでに代官です' : 'すでに軍事担当です'
+  if (assignmentOf(state, characterId) === role) return role === 'governor' ? 'すでに代官です' : `すでに${OFFICER_LABELS[role]}担当官です`
+  if (role === 'governor') return null
+  const assignments = state.cities[cityId].assignments
+  if (assignments.governor === characterId) return '領主は担当官になれません'
+  if ((assignments.officers[role]?.length ?? 0) >= OFFICERS_PER_ROLE) return `${OFFICER_LABELS[role]}担当官は${OFFICERS_PER_ROLE}人までです`
   return null
 }
 
@@ -66,9 +80,21 @@ export function assign(state: GameState, cityId: CityId, characterId: CharacterI
   check(assignmentProblem(state, cityId, characterId, role))
   const rest = withoutAssignee(state.cities[cityId].assignments, characterId)
   const assignments: CityAssignments = role === 'governor'
-    ? { governor: characterId, military: rest.military }
-    : { ...rest, military: [...rest.military, characterId] }
+    ? { governor: characterId, officers: rest.officers }
+    : { ...rest, officers: { ...rest.officers, [role]: [...rest.officers[role] ?? [], characterId] } }
   return withCity(state, cityId, { assignments })
+}
+
+/**
+ * Sets the officers of a role to these knights (OFFICERS_PER_ROLE at most), in this order:
+ * those left out lose the role, those added are taken off the one they held
+ */
+export function setOfficers(state: GameState, cityId: CityId, role: OfficerRole, characterIds: readonly CharacterId[]): GameState {
+  check(commandProblem(state, cityId))
+  if (characterIds.length > OFFICERS_PER_ROLE) throw new GameRuleError(`${OFFICER_LABELS[role]}担当官は${OFFICERS_PER_ROLE}人までです`)
+  const assignments = state.cities[cityId].assignments
+  const cleared = withCity(state, cityId, { assignments: { ...assignments, officers: { ...assignments.officers, [role]: [] } } })
+  return characterIds.reduce((next, id) => assign(next, cityId, id, role), cleared)
 }
 
 /** Takes a knight of the city off their assignment (nothing changes if they hold none) */

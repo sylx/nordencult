@@ -2,7 +2,7 @@ import { createElement } from 'react'
 import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import type {
-  AssignmentRoleView, BuildOptionView, BuildingView, CityStatView, CityView, FactionSummaryView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView,
+  BuildOptionView, BuildingView, CityStatView, CityView, DomesticOfficerRole, DomesticOfficersView, FactionSummaryView, FactionView, InvasionAssignment, KnightView, TurnView, UnitTypeView,
 } from 'norden-ui'
 import { FACTION_MAP, PLACES, emblemUrl, type MapSeason, type PlaceType } from 'norden-strategy'
 import buildingSheet from '../../assets/buildings.webp'
@@ -13,8 +13,8 @@ import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
-  assignmentOf, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType, governorBonus,
-  governorOf, indirectMaxSoldiers, militaryBonus, type GovernorBonus, type MilitaryBonus,
+  assignmentOf, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
+  governorOf, indirectMaxSoldiers, OFFICER_ROLES,
   MAX_MORALE, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, treasuryForecast, unitTypesOf, type AssignmentRole, type GameState,
   type Season,
 } from '../../game'
@@ -44,7 +44,9 @@ const PHASE_LABELS = { strategy: '戦略フェーズ', march: '行軍フェー�
 
 const PLACE_TYPES = new Map(PLACES.map((p) => [p.id, p.type]))
 
-const ASSIGNMENT_LABELS: Readonly<Record<AssignmentRole, string>> = { governor: '代官', military: '軍事担当' }
+const ASSIGNMENT_LABELS: Readonly<Record<AssignmentRole, string>> = {
+  governor: '代官', commerce: '商業担当官', production: '生産担当官', training: '訓練担当官', recruitment: '募兵担当官',
+}
 
 
 export function buildingView(id: string): BuildingView {
@@ -94,6 +96,13 @@ export function knightView(game: GameState, id: string): KnightView {
       { label: '武力', value: character.strength },
       { label: '知力', value: character.intelligence },
     ],
+    abilities: {
+      leadership: character.leadership,
+      strength: character.strength,
+      intelligence: character.intelligence,
+      politics: character.politics,
+      charm: character.charm,
+    },
     maxSoldiers: maxSoldiers(id),
     defaultUnitType: defaultUnitType(id),
     unitTypes: unitTypesOf(id),
@@ -123,6 +132,7 @@ export function cityView(game: GameState, id: string): CityView {
     special: city.special,
     // height: auto keeps the 2:3 figure; the window crops it from the top
     lord: lord && {
+      id: lord.id,
       name: lord.name,
       image: createElement(CharacterImage, { character: lord, style: { height: 'auto' } }),
     },
@@ -151,30 +161,36 @@ export function cityView(game: GameState, id: string): CityView {
 }
 
 /**
- * The domestic screen's bars: 商業・生産 with the governor's and the buildings' shares
+ * The domestic screen's bars: 商業・生産 with the governor's, the officers' and the buildings' shares
  * stacked on the city's base, the soldiers' 練度 with its training, and the morale of new recruits with the buildings' share
  */
 export function domesticStats(game: GameState, cityId: string): CityStatView[] {
   const output = cityOutput(game, cityId)
   const buildings = game.cities[cityId].buildings
   const governor = CHARACTER_MAP[governorOf(game, cityId) ?? '']
+  const officers = game.cities[cityId].assignments.officers
+  const names = (ids: readonly string[] | undefined) => (ids ?? []).flatMap((id) => CHARACTER_MAP[id]?.name ?? [])
   // Each building's effects of the kind, e.g. 市場: 商業 +5%
   const details = (kind: BuildingEffectKind) => buildings.flatMap((id) => (BUILDING_MAP[id]?.effects ?? [])
     .filter((effect) => effect.kind === kind)
     .map((effect) => `${BUILDING_MAP[id].name}: ${describeEffect(effect)}`))
-  const boosted = (label: string, base: number, value: number, governorShare: number, kind: BuildingEffectKind, max: number): CityStatView => {
+  const boosted = (label: string, base: number, value: number, governorShare: number, officerShare: number, officerIds: readonly string[] | undefined,
+    kind: BuildingEffectKind, max: number): CityStatView => {
     const fromGovernor = Math.round(base * governorShare)
+    const fromOfficers = Math.round(base * officerShare)
     return {
       label, value, max, base,
       boosts: [
         ...(fromGovernor ? [{ label: '代官', value: fromGovernor, details: governor ? [governor.name] : [] }] : []),
-        { label: '施設', value: value - base - fromGovernor, source: 'building' as const, details: details(kind) },
+        ...(fromOfficers ? [{ label: '担当官', value: fromOfficers, details: names(officerIds) }] : []),
+        { label: '施設', value: value - base - fromGovernor - fromOfficers, source: 'building' as const, details: details(kind) },
       ],
     }
   }
   return [
-    boosted('商業', output.baseMarket, output.market, output.governor.market, 'marketPct', 720),
-    boosted('生産', output.baseProduction, output.production, output.governor.production, 'productionPct', 640),
+    boosted('商業', output.baseMarket, output.market, output.governor.market, output.officers.market, officers.commerce, 'marketPct', 720),
+    boosted('生産', output.baseProduction, output.production, output.governor.production, output.officers.production, officers.production,
+      'productionPct', 640),
     {
       label: '練度', kind: 'morale', value: game.cities[cityId].troopMorale, max: MAX_MORALE,
       notes: [output.training > 0 ? `訓練 +${output.training}/ターン` : '兵がいないため訓練なし', ...details('trainingPct')],
@@ -203,25 +219,22 @@ export function buildOptions(game: GameState, cityId: string): BuildOptionView[]
 
 const percent = (value: number) => `+${Math.round(value * 100)}%`
 
-/** A governor's bonuses as text, e.g. 商業 +12% (those of 0 left out) */
-export function governorLines(bonus: GovernorBonus): string[] {
-  return [['商業', bonus.market], ['生産', bonus.production], ['人口の伸び', bonus.growth]]
-    .flatMap(([label, value]) => (Number(value) > 0 ? [`${label} ${percent(Number(value))}`] : []))
+/** The city's domestic officers, for the domestic screen */
+export function officersView(game: GameState, cityId: string): DomesticOfficersView {
+  return game.cities[cityId].assignments.officers
 }
 
-/** The military officers' bonuses as text, e.g. 訓練 +1.6/ターン */
-export function militaryLines(bonus: MilitaryBonus): string[] {
-  return [
-    ...(bonus.training > 0 ? [`訓練 +${bonus.training.toFixed(1)}/ターン`] : []),
-    ...(bonus.recruit > 0 ? [`募兵 ${percent(bonus.recruit)}`] : []),
-  ]
-}
-
-/** The role's bonuses if the knight were given it (the military officers' together) */
-export function assignmentForecast(game: GameState, cityId: string, knightId: string, role: AssignmentRoleView): string[] {
-  if (role === 'governor') return governorLines(governorBonus(knightId))
-  const others = game.cities[cityId].assignments.military.filter((id) => id !== knightId)
-  return militaryLines(militaryBonus([...others, knightId]))
+/** What each role's officers bring, e.g. 商業 +12% or 兵 +80/ターン (roles without officers left out) */
+export function officerEffects(game: GameState, cityId: string): Partial<Record<DomesticOfficerRole, string>> {
+  const { officers } = game.cities[cityId].assignments
+  const output = cityOutput(game, cityId)
+  const effects: Record<DomesticOfficerRole, string> = {
+    commerce: `商業 ${percent(output.officers.market)}`,
+    production: `生産 ${percent(output.officers.production)}`,
+    training: `練度 +${output.officers.training.toFixed(1)}/ターン`,
+    recruitment: `兵 +${output.drafted}/ターン`,
+  }
+  return Object.fromEntries(OFFICER_ROLES.filter((role) => (officers[role]?.length ?? 0) > 0).map((role) => [role, effects[role]]))
 }
 
 /** e.g. 灰歴312年4月 春 */

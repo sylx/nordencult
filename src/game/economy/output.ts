@@ -1,11 +1,11 @@
 import { BUILDING_MAP, type BuildingEffectKind, type CityTier } from '../../data/buildings'
 import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
-import type { CharacterId, CityId, CityState, GameState } from '../types'
+import type { CharacterId, CityAssignments, CityId, CityState, GameState } from '../types'
 import {
   ABILITY_BASE, GOLD_PER_MARKET, GOVERNOR_MAX_BONUS, GROWTH_MARKET, GROWTH_MAX, GROWTH_RATE, GROWTH_SLOWDOWN_POPULATION,
-  MILITARY_FALLOFF, MILITARY_MAX_RECRUIT_BONUS, MILITARY_MAX_TRAINING, NATURAL_TRAINING, PERSONALITY_BONUSES, RECRUIT_MORALE,
-  RECRUIT_PER_PRODUCTION, TIER_POPULATION, TIER_SLOTS,
+  NATURAL_TRAINING, OFFICER_FALLOFF, OFFICER_MAX_BONUS, OFFICER_MAX_RECRUIT_RATE, OFFICER_MAX_TRAINING, PERSONALITY_BONUSES,
+  RECRUIT_MORALE, RECRUIT_PER_PRODUCTION, TIER_POPULATION, TIER_SLOTS,
 } from './balance'
 
 /** What a city puts out in a turn, shared by the economy run and the screens' forecasts */
@@ -22,11 +22,15 @@ export interface GovernorBonus {
   growth: number
 }
 
-export interface MilitaryBonus {
+/** What the officers add */
+export interface OfficerBonus {
+  /** 商業・生産 as fractions of the base */
+  market: number
+  production: number
   /** Morale added a turn */
   training: number
-  /** Soldiers a turn can recruit (a fraction) */
-  recruit: number
+  /** Share of the population drawn into soldiers a turn */
+  recruitRate: number
 }
 
 /** The buildings' effects summed; the percentages as fractions, recruitMorale as morale, tradeRoutes as routes (not used yet) */
@@ -52,15 +56,18 @@ export function governorBonus(characterId: CharacterId | undefined): GovernorBon
   return bonus
 }
 
-/** The best officer counts fully, each one after MILITARY_FALLOFF of the one before */
+/** The best officer counts fully, each one after OFFICER_FALLOFF of the one before */
 const diminishing = (values: number[]) =>
-  values.sort((a, b) => b - a).reduce((sum, value, i) => sum + value * MILITARY_FALLOFF ** i, 0)
+  values.sort((a, b) => b - a).reduce((sum, value, i) => sum + value * OFFICER_FALLOFF ** i, 0)
 
-export function militaryBonus(officers: readonly CharacterId[]): MilitaryBonus {
-  const characters = officers.flatMap((id) => CHARACTER_MAP[id] ?? [])
+export function officerBonus(officers: CityAssignments['officers']): OfficerBonus {
+  const scaled = (ids: readonly CharacterId[] | undefined, ability: 'politics' | 'strength' | 'charm', max: number) =>
+    diminishing((ids ?? []).flatMap((id) => CHARACTER_MAP[id] ?? []).map((c) => abilityScale(c[ability]) * max))
   return {
-    training: diminishing(characters.map((c) => abilityScale(c.leadership) * MILITARY_MAX_TRAINING)),
-    recruit: diminishing(characters.map((c) => abilityScale(c.charm) * MILITARY_MAX_RECRUIT_BONUS)),
+    market: scaled(officers.commerce, 'politics', OFFICER_MAX_BONUS),
+    production: scaled(officers.production, 'politics', OFFICER_MAX_BONUS),
+    training: scaled(officers.training, 'strength', OFFICER_MAX_TRAINING),
+    recruitRate: scaled(officers.recruitment, 'charm', OFFICER_MAX_RECRUIT_RATE),
   }
 }
 
@@ -81,11 +88,11 @@ export interface CityOutput {
   /** 商業・生産 of the city data */
   baseMarket: number
   baseProduction: number
-  /** Effective 商業・生産: the base with the governor's and the buildings' bonuses */
+  /** Effective 商業・生産: the base with the governor's, the officers' and the buildings' bonuses */
   market: number
   production: number
   governor: GovernorBonus
-  military: MilitaryBonus
+  officers: OfficerBonus
   buildings: BuildingBonus
   /** Gold the city adds to its faction's treasury a turn */
   income: number
@@ -93,7 +100,9 @@ export interface CityOutput {
   growth: number
   /** Morale its soldiers gain next turn (none without soldiers) */
   training: number
-  /** Soldiers it can recruit in a turn */
+  /** Soldiers its 募兵 officers draw from the population next turn */
+  drafted: number
+  /** Soldiers it can recruit in a turn (for gold) */
   recruitCap: number
   /** Morale of the soldiers it recruits */
   recruitMorale: number
@@ -110,10 +119,10 @@ export function outputOf(cityId: CityId, city: CityState): CityOutput {
   const baseProduction = data?.production ?? 0
   const tier = tierOf(city.population)
   const governor = governorBonus(city.assignments.governor)
-  const military = militaryBonus(city.assignments.military)
+  const officers = officerBonus(city.assignments.officers)
   const buildings = buildingBonus(city.buildings)
-  const market = Math.round(baseMarket * (1 + governor.market + buildings.marketPct))
-  const production = Math.round(baseProduction * (1 + governor.production + buildings.productionPct))
+  const market = Math.round(baseMarket * (1 + governor.market + officers.market + buildings.marketPct))
+  const production = Math.round(baseProduction * (1 + governor.production + officers.production + buildings.productionPct))
   const growth = Math.min(GROWTH_MAX, Math.round(
     city.population * GROWTH_RATE * (market / GROWTH_MARKET) / (1 + city.population / GROWTH_SLOWDOWN_POPULATION)
     * (1 + governor.growth + buildings.growthPct)))
@@ -125,12 +134,13 @@ export function outputOf(cityId: CityId, city: CityState): CityOutput {
     market,
     production,
     governor,
-    military,
+    officers,
     buildings,
     income: Math.floor(market * GOLD_PER_MARKET),
     growth,
-    training: city.troops > 0 ? Math.round((NATURAL_TRAINING + military.training) * (1 + buildings.trainingPct)) : 0,
-    recruitCap: Math.floor(production * RECRUIT_PER_PRODUCTION * (1 + military.recruit + buildings.recruitPct)),
+    training: city.troops > 0 ? Math.round((NATURAL_TRAINING + officers.training) * (1 + buildings.trainingPct)) : 0,
+    drafted: Math.floor(city.population * officers.recruitRate * (1 + buildings.recruitPct)),
+    recruitCap: Math.floor(production * RECRUIT_PER_PRODUCTION * (1 + buildings.recruitPct)),
     recruitMorale: RECRUIT_MORALE + buildings.recruitMorale,
   }
 }

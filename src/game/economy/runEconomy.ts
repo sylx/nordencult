@@ -1,5 +1,5 @@
 import { BUILDING_MAP } from '../../data/buildings'
-import { MAX_MORALE } from '../army'
+import { MAX_MORALE, mixMorale } from '../army'
 import type {
   CityEconomy, CityId, CitySnapshot, CityState, EconomyEvent, EconomyReport, FactionEconomy, FactionId, GameState,
 } from '../types'
@@ -26,7 +26,7 @@ export function treasuryForecast(state: GameState, factionId: FactionId): Factio
   return { income, salary, before, after: before + income - salary }
 }
 
-/** A city's turn: supplies into its construction (or its store), its soldiers trained, its population grown */
+/** A city's turn: supplies into its construction (or its store), its soldiers trained and drafted, its population grown */
 function growCity(cityId: CityId, city: CityState): { city: CityState; events: EconomyEvent[] } {
   const output = outputOf(cityId, city)
   const events: EconomyEvent[] = []
@@ -51,12 +51,15 @@ function growCity(cityId: CityId, city: CityState): { city: CityState; events: E
   }
   const population = city.population + output.growth
   if (tierOf(population) > output.tier) events.push({ kind: 'tierUp', tier: tierOf(population) })
+  // The soldiers train, then the drafted join them at the recruits' morale
+  const trained = Math.min(MAX_MORALE, city.troopMorale + output.training)
   return {
     city: {
       ...city,
       population,
       storedSupplies,
-      troopMorale: Math.min(MAX_MORALE, city.troopMorale + output.training),
+      troops: city.troops + output.drafted,
+      troopMorale: mixMorale(city.troops, trained, output.drafted, output.recruitMorale),
       buildings,
       construction,
       recruited: 0,
@@ -71,7 +74,8 @@ function growCity(cityId: CityId, city: CityState): { city: CityState; events: E
  * 1. each faction gains the gold of its cities' effective 商業 and pays its knights' salaries (down to 0, not below),
  * 2. each city's effective 生産 goes into its construction (the surplus of a completed building into its store)
  *    or, with nothing being built, into its store,
- * 3. its soldiers train (by themselves, and by its military officers and buildings),
+ * 3. its soldiers train (by themselves, and by its 訓練 officers and buildings), and its 募兵 officers
+ *    draw soldiers from its population, who join at the recruits' morale,
  * 4. its population grows, and its tier with it.
  * The governor's, officers' and buildings' bonuses are those before the run (a building completed now counts from the next).
  * `turn` is the turn starting; the report (lastEconomy) keeps each city's numbers before and after.

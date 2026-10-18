@@ -5,8 +5,8 @@ import { CITY_MAP } from '../../data/city'
 import {
   addOrder, assign, assignmentOf, assignmentProblem, BALANCE, buildingBonus, buildingLocked, cancelConstruction, cityOutput, commandRank,
   connectedByOwnRoads, constructionProblem, constructionTurns, createInitialState, endFactionTurn, GameRuleError, governorBonus,
-  governorOf, maxRecruit, MAX_MORALE, militaryBonus, recruit, recruitCost, recruitLeft, recruitProblem, runEconomy, slotsOf,
-  soldiersLeft, startConstruction, startNextBattle, tierOf, transport, transportProblem, unassign,
+  governorOf, maxRecruit, MAX_MORALE, mixMorale, officerBonus, recruit, recruitCost, recruitLeft, recruitProblem, runEconomy, slotsOf,
+  setOfficers, soldiersLeft, startConstruction, startNextBattle, tierOf, transport, transportProblem, unassign,
   type CityState, type GameState,
 } from '..'
 
@@ -63,13 +63,23 @@ describe('city output', () => {
     expect(governorBonus('013').market).toBe(0)
   })
 
-  it('counts the best military officer fully and halves each one after', () => {
-    const training = (id: string) => scale(CHARACTER_MAP[id].leadership) * BALANCE.MILITARY_MAX_TRAINING
-    // ルカ (027, 統率 89) leads over エルヴィン (016, 統率 78), in whatever order they were assigned
-    const expected = training('027') + training('016') * BALANCE.MILITARY_FALLOFF
-    expect(militaryBonus(['016', '027']).training).toBeCloseTo(expected)
-    expect(militaryBonus(['027', '016']).training).toBeCloseTo(expected)
-    expect(militaryBonus([])).toEqual({ training: 0, recruit: 0 })
+  it('counts the better officer of a role fully and halves the second', () => {
+    const training = (id: string) => scale(CHARACTER_MAP[id].strength) * BALANCE.OFFICER_MAX_TRAINING
+    const [better, worse] = ['016', '027'].sort((a, b) => CHARACTER_MAP[b].strength - CHARACTER_MAP[a].strength)
+    const expected = training(better!) + training(worse!) * BALANCE.OFFICER_FALLOFF
+    // In whatever order they were assigned
+    expect(officerBonus({ training: ['016', '027'] }).training).toBeCloseTo(expected)
+    expect(officerBonus({ training: ['027', '016'] }).training).toBeCloseTo(expected)
+    expect(officerBonus({})).toEqual({ market: 0, production: 0, training: 0, recruitRate: 0 })
+  })
+
+  it('weighs 商業・生産 officers by 政治 and 募兵 officers by 魅力', () => {
+    const marcus = CHARACTER_MAP['029']
+    expect(officerBonus({ commerce: ['029'], production: ['029'], recruitment: ['029'] })).toMatchObject({
+      market: scale(marcus.politics) * BALANCE.OFFICER_MAX_BONUS,
+      production: scale(marcus.politics) * BALANCE.OFFICER_MAX_BONUS,
+      recruitRate: scale(marcus.charm) * BALANCE.OFFICER_MAX_RECRUIT_RATE,
+    })
   })
 
   it('applies the governor and the buildings to 商業 and 生産', () => {
@@ -143,17 +153,36 @@ describe('economy run', () => {
     expect(cityOutput(state, FLUEN).production).toBeGreaterThan(production)
   })
 
-  it('trains the soldiers by themselves and by the military officers, up to MAX_MORALE', () => {
+  it('trains the soldiers by themselves and by the 訓練 officers, up to MAX_MORALE', () => {
     let state = createInitialState('carta')
     const morale = state.cities[FLUEN].troopMorale
     expect(runEconomy(state, 2).cities[FLUEN].troopMorale).toBe(morale + BALANCE.NATURAL_TRAINING)
-    state = assign(state, FLUEN, '027', 'military')
-    const training = Math.round(BALANCE.NATURAL_TRAINING + militaryBonus(['027']).training)
+    state = assign(state, FLUEN, '027', 'training')
+    const training = Math.round(BALANCE.NATURAL_TRAINING + officerBonus({ training: ['027'] }).training)
     expect(cityOutput(state, FLUEN).training).toBe(training)
     expect(runEconomy(state, 2).cities[FLUEN].troopMorale).toBe(morale + training)
     expect(runEconomy(withCity(state, FLUEN, { troopMorale: MAX_MORALE }), 2).cities[FLUEN].troopMorale).toBe(MAX_MORALE)
     // No soldiers, nothing to train
     expect(runEconomy(withCity(state, FLUEN, { troops: 0 }), 2).cities[FLUEN].troopMorale).toBe(morale)
+  })
+
+  it('raises 商業 by the 商業 officers', () => {
+    const state = createInitialState('carta')
+    const output = cityOutput(state, FLUEN)
+    const next = cityOutput(assign(state, FLUEN, '016', 'commerce'), FLUEN)
+    expect(next.market).toBe(Math.round(output.baseMarket * (1 + output.governor.market + officerBonus({ commerce: ['016'] }).market + output.buildings.marketPct)))
+  })
+
+  it('draws soldiers from the population by the 募兵 officers, joining at the recruits\' morale', () => {
+    const state = assign(createInitialState('carta'), FLUEN, '016', 'recruitment')
+    const city = state.cities[FLUEN]
+    const output = cityOutput(state, FLUEN)
+    expect(output.drafted).toBe(Math.floor(city.population * officerBonus({ recruitment: ['016'] }).recruitRate))
+    expect(output.drafted).toBeGreaterThan(0)
+    const next = runEconomy(state, 2).cities[FLUEN]
+    expect(next.troops).toBe(city.troops + output.drafted)
+    expect(next.troopMorale).toBe(mixMorale(city.troops, city.troopMorale + output.training, output.drafted, output.recruitMorale))
+    expect(cityOutput(createInitialState('carta'), FLUEN).drafted).toBe(0)
   })
 
   it('grows the population, slower in a larger city, and the tier with it', () => {
@@ -181,19 +210,19 @@ describe('economy run', () => {
 describe('assignments', () => {
   it('starts each city with its lord as the governor', () => {
     const state = createInitialState('carta')
-    expect(state.cities[FLUEN].assignments).toEqual({ governor: '029', military: [] })
+    expect(state.cities[FLUEN].assignments).toEqual({ governor: '029', officers: {} })
     expect(assignmentOf(state, '029')).toBe('governor')
     expect(assignmentOf(state, '015')).toBeNull()
   })
 
   it('assigns knights of the city, one assignment each', () => {
     let state = createInitialState('carta')
-    state = assign(state, FLUEN, '016', 'military')
-    state = assign(state, FLUEN, '027', 'military')
-    expect(state.cities[FLUEN].assignments.military).toEqual(['016', '027'])
-    // A new governor replaces the one before, and leaves the military
+    state = assign(state, FLUEN, '016', 'training')
+    state = assign(state, FLUEN, '027', 'training')
+    expect(state.cities[FLUEN].assignments.officers.training).toEqual(['016', '027'])
+    // A new governor replaces the one before, and leaves their officer role
     state = assign(state, FLUEN, '016', 'governor')
-    expect(state.cities[FLUEN].assignments).toEqual({ governor: '016', military: ['027'] })
+    expect(state.cities[FLUEN].assignments).toEqual({ governor: '016', officers: { training: ['027'] } })
     expect(assignmentOf(state, '029')).toBeNull()
     expect(commandRank(state, '016')).toBe(1)
     state = unassign(state, FLUEN, '016')
@@ -205,12 +234,29 @@ describe('assignments', () => {
     const state = createInitialState('carta')
     expect(assignmentProblem(state, FLUEN, '015', 'governor')).toBeNull()
     expect(assignmentProblem(state, FLUEN, '029', 'governor')).toBe('すでに代官です')
-    expect(assignmentProblem(state, FLUEN, '013', 'military')).not.toBeNull() // アンバリア's knight
-    expect(assignmentProblem(state, AMBARIA, '013', 'military')).toBe('自勢力の都市ではありません')
-    expect(assignmentProblem(endFactionTurn(state), FLUEN, '015', 'military')).toBe('自勢力の都市ではありません')
+    expect(assignmentProblem(state, FLUEN, '013', 'commerce')).not.toBeNull() // アンバリア's knight
+    expect(assignmentProblem(state, AMBARIA, '013', 'commerce')).toBe('自勢力の都市ではありません')
+    expect(assignmentProblem(endFactionTurn(state), FLUEN, '015', 'commerce')).toBe('自勢力の都市ではありません')
     const ordered = addOrder(state, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015'] })
-    expect(assignmentProblem(ordered, FLUEN, '015', 'military')).toBe('出撃予約中です')
-    expect(() => assign(ordered, FLUEN, '015', 'military')).toThrow(GameRuleError)
+    expect(assignmentProblem(ordered, FLUEN, '015', 'commerce')).toBe('出撃予約中です')
+    expect(() => assign(ordered, FLUEN, '015', 'commerce')).toThrow(GameRuleError)
+    // The lord serves as no officer, and a role takes two at most
+    expect(assignmentProblem(state, FLUEN, '029', 'commerce')).toBe('領主は担当官になれません')
+    const full = setOfficers(state, FLUEN, 'commerce', ['015', '016'])
+    expect(assignmentProblem(full, FLUEN, '027', 'commerce')).toBe(`商業担当官は${BALANCE.OFFICERS_PER_ROLE}人までです`)
+    expect(assignmentProblem(full, FLUEN, '015', 'commerce')).toBe('すでに商業担当官です')
+  })
+
+  it('sets the officers of a role at once', () => {
+    let state = createInitialState('carta')
+    state = setOfficers(state, FLUEN, 'commerce', ['015', '016'])
+    expect(state.cities[FLUEN].assignments.officers.commerce).toEqual(['015', '016'])
+    // Those left out lose the role; one taken from another role leaves it
+    state = setOfficers(state, FLUEN, 'production', ['016'])
+    state = setOfficers(state, FLUEN, 'commerce', ['015'])
+    expect(state.cities[FLUEN].assignments.officers).toEqual({ commerce: ['015'], production: ['016'] })
+    expect(() => setOfficers(state, FLUEN, 'training', ['015', '016', '027'])).toThrow(GameRuleError)
+    expect(() => setOfficers(state, FLUEN, 'training', ['029'])).toThrow('領主は担当官になれません')
   })
 })
 
