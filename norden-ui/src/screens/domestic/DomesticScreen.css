@@ -628,10 +628,11 @@
 .norden-domestic-build-costs {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 6px;
   color: #4a351c;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+  width: 50%;
 }
 
 .norden-domestic-build-reason {
