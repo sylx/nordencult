@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, useLayoutEffect, useRef, useState } from 'react'
 import './StatBar.css'
 
 export interface StatBarProps {
@@ -23,15 +23,41 @@ const palettes = {
   morale: ['#6b2420', '#c25a3c', '#f6c9a0'],
 } as const
 
+const height = 34
+/** The end caps (frame point, jewel) take this much on each side; only the track between them stretches */
+const capWidth = 14
+
+/** Tracks the svg's aspect ratio so the viewBox widens with it instead of the drawing being stretched */
+function useViewBoxWidth(fallback: number) {
+  const ref = useRef<SVGSVGElement>(null)
+  const [viewWidth, setViewWidth] = useState(fallback)
+  useLayoutEffect(() => {
+    const svg = ref.current
+    if (!svg || typeof ResizeObserver === 'undefined') return
+    const measure = () => {
+      const { width, height: h } = svg.getBoundingClientRect()
+      if (width > 0 && h > 0) setViewWidth(Math.max(capWidth * 2 + 20, Math.round(width / h * height * 10) / 10))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(svg)
+    return () => observer.disconnect()
+  }, [])
+  return [ref, viewWidth] as const
+}
+
 /** An engraved metal gauge with a jewel fill, inset track and ten divisions. */
 export default function StatBar({ label, value, max, tone = 'commerce', segments = [] }: StatBarProps) {
   const id = useId()
+  const [svgRef, viewWidth] = useViewBoxWidth(300)
+  const track = viewWidth - capWidth * 2
+  const end = viewWidth - capWidth
   const limit = Number.isFinite(max) && max > 0 ? max : 0
   const amount = Number.isFinite(value) ? value : 0
   const current = Math.max(0, Math.min(limit, amount))
-  const width = limit ? current / limit * 272 : 0
+  const width = limit ? current / limit * track : 0
   const [dark, mid, light] = palettes[tone]
-  const scale = limit ? 272 / limit : 0
+  const scale = limit ? track / limit : 0
   // The segments end at the value; the base fill runs up to where they start
   const stacked = segments.filter(segment => Number.isFinite(segment.value) && segment.value > 0)
   let start = amount - stacked.reduce((sum, segment) => sum + segment.value, 0)
@@ -41,7 +67,7 @@ export default function StatBar({ label, value, max, tone = 'commerce', segments
     return { kind: segment.kind ?? 'other', x, width: Math.max(0, 14 + Math.max(0, Math.min(limit, start)) * scale - x) }
   })
   return <span className={`norden-stat-bar is-${tone}`}>
-    <svg className="norden-stat-bar-graphic" viewBox="0 0 300 34" preserveAspectRatio="none"
+    <svg ref={svgRef} className="norden-stat-bar-graphic" viewBox={`0 0 ${viewWidth} ${height}`} preserveAspectRatio="none"
       role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={limit} aria-valuenow={current}
       aria-valuetext={`${amount} / ${limit}`}>
       <defs>
@@ -61,24 +87,24 @@ export default function StatBar({ label, value, max, tone = 'commerce', segments
         </pattern>
         <clipPath id={`${id}-clip`}><rect x="14" y="8" width={width} height="18" rx="2" /></clipPath>
       </defs>
-      <path d="M2 17 10 5h280l8 12-8 12H10Z" fill={`url(#${id}-metal)`} stroke="#654a2a" />
-      <path d="M10 7h280M10 27h280" stroke="#f7df9b" strokeOpacity=".7" />
-      <rect x="13" y="7" width="274" height="20" rx="3" fill="#382b22" stroke="#4c3925" />
-      <rect x="14" y="8" width="272" height="18" rx="2" fill="#181b1b" />
+      <path d={`M2 17 10 5H${end + 4}l8 12-8 12H10Z`} fill={`url(#${id}-metal)`} stroke="#654a2a" />
+      <path d={`M10 7H${end + 4}M10 27H${end + 4}`} stroke="#f7df9b" strokeOpacity=".7" />
+      <rect x="13" y="7" width={track + 2} height="20" rx="3" fill="#382b22" stroke="#4c3925" />
+      <rect x="14" y="8" width={track} height="18" rx="2" fill="#181b1b" />
       <g clipPath={`url(#${id}-clip)`}>
-        <rect x="14" y="8" width="272" height="18" fill={`url(#${id}-fill)`} />
-        <rect x="14" y="8" width="272" height="18" fill={`url(#${id}-engraving)`} />
+        <rect x="14" y="8" width={track} height="18" fill={`url(#${id}-fill)`} />
+        <rect x="14" y="8" width={track} height="18" fill={`url(#${id}-engraving)`} />
         {bands.map((band, index) => <g key={index} className={`norden-stat-bar-segment is-${band.kind}`}>
           <rect x={band.x} y="8" width={band.width} height="18" fill={band.kind === 'building' ? light : '#fff'}
             fillOpacity={band.kind === 'building' ? 0.35 : 0.18} />
           {band.kind === 'building' && <rect x={band.x} y="8" width={band.width} height="18" fill={`url(#${id}-boost)`} />}
           <path d={`M${band.x} 8v18`} stroke="#1a120a" strokeOpacity=".7" strokeWidth="1.5" />
         </g>)}
-        <path d="M14 9h272" stroke={light} strokeOpacity=".8" />
+        <path d={`M14 9h${track}`} stroke={light} strokeOpacity=".8" />
       </g>
       {Array.from({ length: 9 }, (_, index) => <path key={index}
-        d={`M${14 + (index + 1) * 27.2} 8v18`} stroke="#f5e7bd" strokeOpacity=".24" />)}
-      <path d="m6 17 4-4 4 4-4 4Zm280 0 4-4 4 4-4 4Z" fill="#f0d291" stroke="#7b5b31" />
+        d={`M${14 + (index + 1) * track / 10} 8v18`} stroke="#f5e7bd" strokeOpacity=".24" />)}
+      <path d={`m6 17 4-4 4 4-4 4ZM${end} 17l4-4 4 4-4 4Z`} fill="#f0d291" stroke="#7b5b31" />
     </svg>
     <span className="norden-stat-bar-value" aria-hidden="true">{amount.toLocaleString()}</span>
   </span>
