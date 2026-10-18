@@ -164,7 +164,9 @@ export default function DomesticOfficers({
                   className="norden-domestic-officer-budget"
                   label={`${spec.label}の予算`}
                   value={budget}
-                  max={Math.min(BUDGET_LIMIT, budget + Math.max(0, gold ?? Infinity))}
+                  // The scale stays at BUDGET_LIMIT so that the other sliders keep still as the treasury changes
+                  max={BUDGET_LIMIT}
+                  cap={budget + Math.max(0, gold ?? Infinity)}
                   step={10}
                   unit="金"
                   disabled={!onChangeBudget}

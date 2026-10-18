@@ -324,10 +324,13 @@ describe('DomesticScreen', () => {
     const officers = screen.getByRole('region', { name: '内政担当官' })
     const commerce = within(officers).getByRole('slider', { name: '商業の予算' })
     expect(commerce).toHaveValue('900')
-    // 1000 at most, whatever the treasury
+    // Every slider is scaled to 1000, whatever the treasury, so that moving one leaves the others still
     expect(commerce).toHaveAttribute('max', '1000')
-    expect(within(officers).getByRole('slider', { name: '生産の予算' })).toHaveAttribute('max', '300')
-    expect(within(officers).getByRole('slider', { name: '募兵の予算' })).toHaveAttribute('max', '500')
+    expect(within(officers).getByRole('slider', { name: '生産の予算' })).toHaveAttribute('max', '1000')
+    // What can be chosen is what the budget has and the treasury can add (and 1000 at most)
+    expect(within(officers).getByRole('spinbutton', { name: '商業の予算（数値）' })).toHaveAttribute('max', '1000')
+    expect(within(officers).getByRole('spinbutton', { name: '生産の予算（数値）' })).toHaveAttribute('max', '300')
+    expect(within(officers).getByRole('spinbutton', { name: '募兵の予算（数値）' })).toHaveAttribute('max', '500')
     // 訓練 spends no gold
     expect(within(officers).queryByRole('slider', { name: '訓練の予算' })).not.toBeInTheDocument()
 

@@ -40,6 +40,18 @@ describe('QuantityInput', () => {
     expect(screen.getByRole('button', { name: '兵数を増やす' })).toBeDisabled()
     expect(screen.getByRole('slider', { name: '兵数' })).toHaveAttribute('max', '120')
   })
+
+  it('keeps the scale up to max while clamping to the cap', async () => {
+    const onChange = vi.fn()
+    const { rerender } = render(<QuantityInput label="予算" value={290} max={1000} cap={300} step={50} onChange={onChange} />)
+    expect(screen.getByRole('slider', { name: '予算' })).toHaveAttribute('max', '1000')
+    await userEvent.click(screen.getByRole('button', { name: '予算を増やす' }))
+    expect(onChange).toHaveBeenLastCalledWith(300)
+    fireEvent.change(screen.getByRole('slider', { name: '予算' }), { target: { value: '800' } })
+    expect(onChange).toHaveBeenLastCalledWith(300)
+    rerender(<QuantityInput label="予算" value={300} max={1000} cap={300} onChange={onChange} />)
+    expect(screen.getByRole('button', { name: '予算を増やす' })).toBeDisabled()
+  })
 })
 
 describe('ThinFrameWithTitle', () => {
