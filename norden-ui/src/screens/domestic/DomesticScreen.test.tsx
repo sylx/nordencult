@@ -211,9 +211,9 @@ describe('DomesticScreen', () => {
   })
 
   const knights = [
-    { id: 'k1', name: 'マルクス', abilities: { politics: 96, charm: 89, strength: 40 } },
-    { id: 'k2', name: 'エルネスト', abilities: { politics: 38, charm: 72, strength: 86 } },
-    { id: 'k3', name: 'リディア', abilities: { politics: 55, charm: 64, strength: 74 } },
+    { id: 'k1', name: 'マルクス', abilities: { politics: 96, intelligence: 90, charm: 89, strength: 40, leadership: 50 } },
+    { id: 'k2', name: 'エルネスト', abilities: { politics: 38, intelligence: 40, charm: 72, strength: 86, leadership: 70 } },
+    { id: 'k3', name: 'リディア', abilities: { politics: 55, intelligence: 60, charm: 64, strength: 74, leadership: 60 } },
   ]
 
   it('shows the lord and replaces them with a knight of the city, listing 政治 and 魅力', async () => {
@@ -259,7 +259,7 @@ describe('DomesticScreen', () => {
     expect(within(lord).getByText('訓練担当官から外れます')).toBeInTheDocument()
   })
 
-  it('appoints up to two officers to a role, showing the ability it weighs', async () => {
+  it('appoints up to two officers to a role, showing the abilities it weighs and the aptitude', async () => {
     const onAssignOfficers = vi.fn()
     const { rerender } = render(
       <DomesticScreen
@@ -274,11 +274,17 @@ describe('DomesticScreen', () => {
     const commerce = within(officers).getByRole('listitem', { name: '商業担当官' })
     expect(within(commerce).getByText('マルクス')).toBeInTheDocument()
     expect(within(commerce).getByText('商業 +10%')).toBeInTheDocument()
+    // (政治 96 × 2 + 知力 90) / 3
+    expect(within(commerce).getByText('94')).toBeInTheDocument()
+    expect(within(commerce).getByText('政治2・知力1')).toBeInTheDocument()
 
-    // 訓練 weighs 武力: its list shows it, the ablest first, and the 商業 officer cannot be picked
+    // 訓練 weighs 武力 2 : 統率 1: its list shows them, the ablest first, and the 商業 officer cannot be picked
     await userEvent.click(within(officers).getByRole('listitem', { name: '訓練担当官' }).querySelector('button')!)
     const training = screen.getByRole('complementary', { name: '訓練担当官の任命' })
     expect(within(training).getAllByText('武力')).toHaveLength(3)
+    expect(within(training).getAllByText('統率')).toHaveLength(3)
+    // (武力 86 × 2 + 統率 70) / 3
+    expect(within(training).getByText('81')).toBeInTheDocument()
     const boxes = within(training).getAllByRole('checkbox')
     expect(boxes.map(box => box.getAttribute('aria-label'))).toEqual(['エルネスト', 'リディア', 'マルクス'])
     expect(within(training).getByRole('checkbox', { name: 'マルクス' })).toBeDisabled()
@@ -302,5 +308,32 @@ describe('DomesticScreen', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'エルネストを訓練担当官から外す' }))
     expect(onAssignOfficers).toHaveBeenLastCalledWith('training', ['k3'])
+  })
+
+  it('sets aside gold for the 商業・生産・募兵 officers with sliders, as far as the treasury allows', async () => {
+    const onChangeBudget = vi.fn()
+    render(
+      <DomesticScreen
+        city={{ id: 'P012', name: 'フルーエン', knights }}
+        gold={300}
+        budgets={{ commerce: 900, recruitment: 200 }}
+        onChangeBudget={onChangeBudget}
+        onClose={vi.fn()}
+      />,
+    )
+    const officers = screen.getByRole('region', { name: '内政担当官' })
+    const commerce = within(officers).getByRole('slider', { name: '商業の予算' })
+    expect(commerce).toHaveValue('900')
+    // 1000 at most, whatever the treasury
+    expect(commerce).toHaveAttribute('max', '1000')
+    expect(within(officers).getByRole('slider', { name: '生産の予算' })).toHaveAttribute('max', '300')
+    expect(within(officers).getByRole('slider', { name: '募兵の予算' })).toHaveAttribute('max', '500')
+    // 訓練 spends no gold
+    expect(within(officers).queryByRole('slider', { name: '訓練の予算' })).not.toBeInTheDocument()
+
+    await userEvent.click(within(officers).getByRole('button', { name: '募兵の予算を増やす' }))
+    expect(onChangeBudget).toHaveBeenLastCalledWith('recruitment', 210)
+    await userEvent.click(within(officers).getByRole('button', { name: '商業の予算を減らす' }))
+    expect(onChangeBudget).toHaveBeenLastCalledWith('commerce', 890)
   })
 })

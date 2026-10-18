@@ -920,6 +920,37 @@
   font-weight: 500;
 }
 
+/* The gold set aside for a funded role: a compact slider on the dark parchment */
+.norden-domestic-officer-budget.norden-quantity {
+  grid-template-columns: 28px minmax(40px, 1fr) 28px auto;
+  grid-template-areas: 'label label label label' 'minus range plus value';
+  column-gap: 4px;
+  color: #f6e7c5;
+}
+
+.norden-domestic-officer-budget .norden-quantity-label,
+.norden-domestic-officer-budget .norden-quantity-unit {
+  color: #cbb282;
+  font-size: 11px;
+}
+
+.norden-domestic-officer-budget .norden-quantity-step.norden-button {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  font-size: 16px;
+}
+
+.norden-domestic-officer-budget .norden-quantity-value input {
+  width: 3.6em;
+  color: #3b2a16;
+  background: #fff6dcde;
+}
+
+.norden-domestic-officer-budget .norden-quantity-max {
+  display: none;
+}
+
 /* Knight lists in the right-hand panel (lord, officers) */
 .norden-domestic-build-note {
   margin-left: 10px;

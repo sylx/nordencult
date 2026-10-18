@@ -6,9 +6,10 @@ import KnightCard from '../../components/parts/KnightCard'
 import ConfirmDialog from '../../components/window/ConfirmDialog'
 import WindowFrame from '../../components/window/WindowFrame'
 import type {
-  BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView, DomesticOfficerRole, DomesticOfficersView, KnightView,
+  BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole,
+  DomesticOfficersView, KnightView,
 } from '../types'
-import DomesticOfficers, { ABILITY_LABELS, KnightFace, OFFICER_ROLES, OFFICERS_PER_ROLE, knightAbility } from './DomesticOfficers'
+import DomesticOfficers, { ABILITY_LABELS, KnightFace, OFFICER_ROLES, OFFICERS_PER_ROLE, knightAbility, roleAptitude, weightsLabel } from './DomesticOfficers'
 import DomesticStatus from './DomesticStatus'
 import '../screens.css'
 import './DomesticScreen.css'
@@ -37,8 +38,12 @@ export interface DomesticScreenProps {
   knights?: readonly KnightView[]
   /** The knights holding each domestic officer role (up to two each) */
   officers?: DomesticOfficersView
-  /** What each role's officers bring, e.g. 商業 +12% or 練度 +3/ターン */
+  /** What each role's officers bring, e.g. 商業 +4〜7/ターン or 練度 +15/ターン */
   officerEffects?: Partial<Record<DomesticOfficerRole, string>>
+  /** Gold set aside for the 商業・生産・募兵 officers to spend (the slider's most is BUDGET_LIMIT, or what `gold` allows) */
+  budgets?: DomesticBudgetsView
+  /** Set the gold set aside for a funded role (the host moves the difference from or back to the treasury) */
+  onChangeBudget?: (role: DomesticFundedRole, amount: number) => void
   /** Make another of the city's knights its lord (the lord holds no officer role, so the host drops them from `officers`) */
   onChangeLord?: (knightId: string) => void
   /** Set the knights holding an officer role (the whole list, up to two) */
@@ -78,6 +83,8 @@ export default function DomesticScreen({
   knights = city.knights ?? [],
   officers = {},
   officerEffects,
+  budgets,
+  onChangeBudget,
   onChangeLord,
   onAssignOfficers,
   onClose,
@@ -325,6 +332,9 @@ export default function DomesticScreen({
               knights={knights}
               officers={officers}
               effects={officerEffects}
+              budgets={budgets}
+              gold={gold}
+              onChangeBudget={onChangeBudget}
               selectedRole={panel?.kind === 'officers' ? panel.role : undefined}
               onSelectRole={role => togglePanel({ kind: 'officers', role })}
               onDismiss={(role, knightId) => assignOfficer(role, knightId, false)}
@@ -383,11 +393,10 @@ export default function DomesticScreen({
           )}
 
           {officerSpec && (() => {
-            const abilityLabel = ABILITY_LABELS[officerSpec.ability]
             const assigned = officers[officerSpec.role] ?? []
             const isFull = assigned.length >= OFFICERS_PER_ROLE
-            // The ablest first, as only the one ability counts for the role
-            const candidates = [...knights].sort((a, b) => (knightAbility(b, officerSpec.ability) ?? -1) - (knightAbility(a, officerSpec.ability) ?? -1))
+            // The ablest first, by the abilities the role weighs
+            const candidates = [...knights].sort((a, b) => (roleAptitude(b, officerSpec) ?? -1) - (roleAptitude(a, officerSpec) ?? -1))
             return (
               <aside className="norden-domestic-build-panel" aria-label={`${officerSpec.label}担当官の任命`}>
                 <SectionFrame />
@@ -397,7 +406,7 @@ export default function DomesticScreen({
                   `${Math.min(assigned.length, OFFICERS_PER_ROLE)} / ${OFFICERS_PER_ROLE}`,
                 )}
                 <p className="norden-domestic-build-desc norden-domestic-panel-desc">
-                  {officerSpec.description}（{OFFICERS_PER_ROLE}人まで）
+                  {officerSpec.description}（適性は{weightsLabel(officerSpec)}の比。{OFFICERS_PER_ROLE}人までで、2人の適性は合算）
                 </p>
                 {candidates.length === 0 ? (
                   <p className="norden-domestic-empty">領地に騎士がいません。</p>
@@ -418,7 +427,10 @@ export default function DomesticScreen({
                             compact
                             knight={{
                               ...knight,
-                              stats: [{ label: abilityLabel, value: knightAbility(knight, officerSpec.ability) ?? '—' }],
+                              stats: [
+                                ...officerSpec.weights.map(([ability]) => ({ label: ABILITY_LABELS[ability], value: knightAbility(knight, ability) ?? '—' })),
+                                { label: '適性', value: roleAptitude(knight, officerSpec) ?? '—' },
+                              ],
                             }}
                             selection={{
                               selected,

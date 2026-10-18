@@ -91,10 +91,16 @@ export interface BuildOptionView extends BuildingView {
 
 /**
  * A city's domestic officers (内政担当官), up to two for each role:
- * 商業・生産 (by 政治) raise those stats, 訓練 (by 武力) the soldiers' 練度 and 募兵 (by 魅力) the soldiers
- * drawn from the population in the domestic phase
+ * 商業・生産 (by 政治 2 : 知力 1) spend the city's budget raising the base of those stats, 訓練 (by 武力 2 : 統率 1)
+ * raises the soldiers' 練度 for nothing and 募兵 (by 魅力 3 : 武力 1) spends the budget on soldiers, each turn
  */
 export type DomesticOfficerRole = 'commerce' | 'production' | 'training' | 'recruitment'
+
+/** The officer roles spending gold set aside for them */
+export type DomesticFundedRole = Exclude<DomesticOfficerRole, 'training'>
+
+/** Gold the city has set aside for each funded role */
+export type DomesticBudgetsView = Partial<Record<DomesticFundedRole, number>>
 
 /** Ids of the knights holding each domestic officer role */
 export type DomesticOfficersView = Partial<Record<DomesticOfficerRole, readonly string[]>>
