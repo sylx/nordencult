@@ -68,7 +68,7 @@ const panelKey = (panel: SidePanel) =>
 /**
  * Domestic screen: full-screen window with the city's lord (face, and a button to replace them) and its state
  * (stats with their boosts, population, supplies, gold) at the top-left, its building slots (their pictures shown whole)
- * below, its domestic officers below them, and a panel on the right (30-40%) of the buildings to add or upgrade to,
+ * below, its domestic officers below them, and a panel on the right (350px) of the buildings to add or upgrade to,
  * or of the knights to pick as lord or officers.
  */
 export default function DomesticScreen({

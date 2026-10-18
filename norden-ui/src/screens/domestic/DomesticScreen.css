@@ -1,4 +1,4 @@
-/* Full-screen ornamental window: the lord and the city's state, its building slots and its officers on the left, and a right 30-40% panel */
+/* Full-screen ornamental window: the lord and the city's state, its building slots and its officers on the left, and a right 350px panel */
 .norden-domestic-window {
   position: absolute;
   /* Over the city command screen, its toolbar stays uncovered below the window */
@@ -484,15 +484,13 @@
   font-size: 12px;
 }
 
-/* Right 30-40% buildable facilities panel */
+/* Right panel (350px): the buildings to add or upgrade to, or the knights to pick */
 .norden-domestic-build-panel {
   position: relative;
   isolation: isolate;
   box-sizing: border-box;
-  flex: 0 0 36%;
-  width: 36%;
-  min-width: 300px;
-  max-width: 40%;
+  flex: 0 0 350px;
+  width: 350px;
   display: flex;
   flex-direction: column;
   gap: 12px;
