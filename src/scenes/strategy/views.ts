@@ -152,7 +152,7 @@ export function cityView(game: GameState, id: string): CityView {
 
 /**
  * The domestic screen's bars: 商業・生産 with the governor's and the buildings' shares
- * stacked on the city's base, and the morale of new recruits with the buildings' share
+ * stacked on the city's base, the soldiers' 練度 with its training, and the morale of new recruits with the buildings' share
  */
 export function domesticStats(game: GameState, cityId: string): CityStatView[] {
   const output = cityOutput(game, cityId)
@@ -175,6 +175,10 @@ export function domesticStats(game: GameState, cityId: string): CityStatView[] {
   return [
     boosted('商業', output.baseMarket, output.market, output.governor.market, 'marketPct', 720),
     boosted('生産', output.baseProduction, output.production, output.governor.production, 'productionPct', 640),
+    {
+      label: '練度', kind: 'morale', value: game.cities[cityId].troopMorale, max: MAX_MORALE,
+      notes: [output.training > 0 ? `訓練 +${output.training}/ターン` : '兵がいないため訓練なし', ...details('trainingPct')],
+    },
     {
       label: '新兵の練度', kind: 'morale', value: output.recruitMorale, max: MAX_MORALE, base: BALANCE.RECRUIT_MORALE,
       boosts: [{ label: '施設', value: output.recruitMorale - BALANCE.RECRUIT_MORALE, source: 'building', details: details('recruitMorale') }],
