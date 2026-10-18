@@ -3,9 +3,9 @@ import { CITY_MAP } from '../../data/city'
 import { mixMorale } from '../army'
 import { GameRuleError } from '../errors'
 import { orderOf, ownerOf, soldiersLeft } from '../queries'
-import type { AssignmentRole, CharacterId, CityAssignments, CityId, CityState, FactionId, GameState, OfficerRole } from '../types'
+import type { AssignmentRole, CharacterId, CityAssignments, CityId, CityState, FactionId, FundedRole, GameState, OfficerRole } from '../types'
 import { neighbours } from '../world'
-import { OFFICERS_PER_ROLE, RECRUIT_GOLD } from './balance'
+import { AFFAIRS_BUDGET_LIMIT, OFFICERS_PER_ROLE, RECRUIT_GOLD } from './balance'
 import { cityOutput } from './output'
 
 /**
@@ -102,6 +102,36 @@ export function unassign(state: GameState, cityId: CityId, characterId: Characte
   check(commandProblem(state, cityId))
   const assignments = withoutAssignee(state.cities[cityId].assignments, characterId)
   return assignments === state.cities[cityId].assignments ? state : withCity(state, cityId, { assignments })
+}
+
+// ── Budgets of the officers ──
+
+/** The most gold the city's role can have set aside now: AFFAIRS_BUDGET_LIMIT, or what it has and the treasury can add */
+export function maxAffairsBudget(state: GameState, cityId: CityId, role: FundedRole): number {
+  const budget = state.cities[cityId]?.affairsBudget[role] ?? 0
+  return Math.min(AFFAIRS_BUDGET_LIMIT, budget + Math.max(0, state.gold[ownerOf(state, cityId) ?? ''] ?? 0))
+}
+
+export function affairsBudgetProblem(state: GameState, cityId: CityId, role: FundedRole, amount: number): string | null {
+  const problem = commandProblem(state, cityId)
+  if (problem) return problem
+  if (!Number.isInteger(amount) || amount < 0) return '金額が正しくありません'
+  if (amount > AFFAIRS_BUDGET_LIMIT) return `予算は${AFFAIRS_BUDGET_LIMIT}までです`
+  if (amount > maxAffairsBudget(state, cityId, role)) return '金が足りません'
+  return null
+}
+
+/**
+ * Sets the gold the city sets aside for a role's officers to spend, moving the difference between
+ * the treasury and the budget (lowering it gives the gold back)
+ */
+export function setAffairsBudget(state: GameState, cityId: CityId, role: FundedRole, amount: number): GameState {
+  check(affairsBudgetProblem(state, cityId, role, amount))
+  const city = state.cities[cityId]
+  const factionId = state.activeFaction!
+  const added = amount - (city.affairsBudget[role] ?? 0)
+  const next = withCity(state, cityId, { affairsBudget: { ...city.affairsBudget, [role]: amount } })
+  return { ...next, gold: { ...state.gold, [factionId]: state.gold[factionId] - added } }
 }
 
 // ── Construction ──

@@ -46,17 +46,22 @@ export const NATURAL_TRAINING = 1
 
 /** Knights holding one officer role at most */
 export const OFFICERS_PER_ROLE = 2
+
 /**
- * What the first officer of a role adds: none up to ABILITY_BASE, rising linearly to these at 100.
- * The second adds OFFICER_FALLOFF of what they would alone (the better first, whatever the order they were assigned in)
+ * 内政担当官. A role's power X is the sum of its officers' weighted abilities
+ * (商業・生産: (政治×2 + 知力) / 3, 訓練: (武力×2 + 統率) / 3, 募兵: (魅力×3 + 武力) / 4).
+ * Each turn the 商業・生産・募兵 officers spend a random AFFAIRS_BUDGET_MIN..MAX of their budget (what is left of it at most):
+ * - 商業・生産: base + max(1, spent × X/100 × GROWTH_COEF_*)
+ * - 募兵: soldiers + spent × X/100 (joining at the recruits' morale)
+ * - 訓練 (no gold): 練度 + max(1, X × GROWTH_COEF_TRAINING)
  */
-/** 商業・生産 officers, by 政治 (fractions of the base) */
-export const OFFICER_MAX_BONUS = 0.15
-/** 訓練 officers, by 武力: morale a turn */
-export const OFFICER_MAX_TRAINING = 2
-/** 募兵 officers, by 魅力: share of the population drawn into soldiers a turn */
-export const OFFICER_MAX_RECRUIT_RATE = 0.01
-export const OFFICER_FALLOFF = 0.5
+export const AFFAIRS_BUDGET_MIN = 80
+export const AFFAIRS_BUDGET_MAX = 150
+/** Gold a city can set aside for each role */
+export const AFFAIRS_BUDGET_LIMIT = 1000
+export const GROWTH_COEF_COMMERCE = 0.033
+export const GROWTH_COEF_PRODUCTION = 0.033
+export const GROWTH_COEF_TRAINING = 0.2
 
 /**
  * Population growth a turn: population × GROWTH_RATE × 実効商業 / GROWTH_MARKET,

@@ -20,12 +20,15 @@ export function readPlayerFaction(search: string): FactionId {
 function initialCity(city: City, governor: CharacterId | undefined): CityState {
   return {
     population: city.population,
+    market: city.market,
+    production: city.production,
     storedSupplies: city.storedSupplies ?? city.production * INITIAL_SUPPLIES_PER_PRODUCTION,
     troops: city.troops ?? city.production * INITIAL_TROOPS_PER_PRODUCTION,
     troopMorale: city.troopMorale ?? INITIAL_MORALE,
     buildings: city.buildings ?? [],
     construction: null,
     assignments: { ...(governor && { governor }), officers: {} },
+    affairsBudget: {},
     recruited: 0,
   }
 }

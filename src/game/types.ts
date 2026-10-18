@@ -56,10 +56,14 @@ export interface CityConstruction {
 }
 
 /**
- * 内政担当官: 商業・生産 (by 政治) raise those, 訓練 (by 武力) trains the soldiers and
- * 募兵 (by 魅力) draws soldiers from the population, in the economy run
+ * 内政担当官, at work in the economy run: 商業・生産 (by 政治 2 : 知力 1) spend gold of the city's budget
+ * raising its base 商業・生産, 訓練 (by 武力 2 : 統率 1) trains its soldiers for nothing and
+ * 募兵 (by 魅力 3 : 武力 1) spends gold of the budget on new soldiers
  */
 export type OfficerRole = 'commerce' | 'production' | 'training' | 'recruitment'
+
+/** The officer roles spending gold, each from its own budget of the city */
+export type FundedRole = Exclude<OfficerRole, 'training'>
 
 /**
  * Knights assigned to the work of their city. A knight holds one assignment at most, in the city they serve in;
@@ -76,6 +80,9 @@ export type AssignmentRole = 'governor' | OfficerRole
 
 export interface CityState {
   population: number
+  /** Base 商業・生産 (before the governor's and the buildings' bonuses), raised by the 商業・生産 officers */
+  market: number
+  production: number
   storedSupplies: number
   troops: number
   /** Morale of the soldiers (0..MAX_MORALE), which every unit setting out from the city has */
@@ -84,6 +91,11 @@ export interface CityState {
   buildings: readonly string[]
   construction: CityConstruction | null
   assignments: CityAssignments
+  /**
+   * Gold set aside for each funded role (AFFAIRS_BUDGET_LIMIT at most), taken from the treasury when set aside
+   * and spent by the role's officers turn by turn; none when omitted
+   */
+  affairsBudget: Partial<Record<FundedRole, number>>
   /** Soldiers recruited this turn (a turn's recruiting is limited) */
   recruited: number
 }
@@ -114,9 +126,17 @@ export interface FactionEconomy {
   after: number
 }
 
+/** What a role's officers did in an economy run: the gold they spent and what it raised (商業・生産, soldiers, 練度) */
+export interface AffairsResult {
+  spent: number
+  gain: number
+}
+
 export interface CityEconomy {
   before: CitySnapshot
   after: CitySnapshot
+  /** The roles whose officers were at work */
+  affairs: Partial<Record<OfficerRole, AffairsResult>>
   /** Buildings completed, the city growing a tier */
   events: readonly EconomyEvent[]
 }

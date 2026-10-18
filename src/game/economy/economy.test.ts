@@ -3,10 +3,11 @@ import { BUILDING_MAP } from '../../data/buildings'
 import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import {
-  addOrder, assign, assignmentOf, assignmentProblem, BALANCE, buildingBonus, buildingLocked, cancelConstruction, cityOutput, commandRank,
-  connectedByOwnRoads, constructionProblem, constructionTurns, createInitialState, endFactionTurn, GameRuleError, governorBonus,
-  governorOf, maxRecruit, MAX_MORALE, mixMorale, officerBonus, recruit, recruitCost, recruitLeft, recruitProblem, runEconomy, slotsOf,
-  setOfficers, soldiersLeft, startConstruction, startNextBattle, tierOf, transport, transportProblem, unassign,
+  addOrder, affairsBudgetProblem, affairsGain, assign, assignmentOf, assignmentProblem, BALANCE, buildingBonus, buildingLocked, cancelConstruction,
+  cityOutput, commandRank, connectedByOwnRoads, constructionProblem, constructionTurns, createInitialState, endFactionTurn, GameRuleError,
+  governorBonus, governorOf, maxAffairsBudget, maxRecruit, MAX_MORALE, mixMorale, officerAbility, officerPower, officerTraining, recruit,
+  recruitCost, recruitLeft, recruitProblem, runEconomy, setAffairsBudget, slotsOf, setOfficers, soldiersLeft, startConstruction, startNextBattle,
+  tierOf, transport, transportProblem, unassign,
   type CityState, type GameState,
 } from '..'
 
@@ -63,26 +64,45 @@ describe('city output', () => {
     expect(governorBonus('013').market).toBe(0)
   })
 
-  it('counts the better officer of a role fully and halves the second', () => {
-    const training = (id: string) => scale(CHARACTER_MAP[id].strength) * BALANCE.OFFICER_MAX_TRAINING
-    const [better, worse] = ['016', '027'].sort((a, b) => CHARACTER_MAP[b].strength - CHARACTER_MAP[a].strength)
-    const expected = training(better!) + training(worse!) * BALANCE.OFFICER_FALLOFF
-    // In whatever order they were assigned
-    expect(officerBonus({ training: ['016', '027'] }).training).toBeCloseTo(expected)
-    expect(officerBonus({ training: ['027', '016'] }).training).toBeCloseTo(expected)
-    expect(officerBonus({})).toEqual({ market: 0, production: 0, training: 0, recruitRate: 0 })
+  it('sums the officers\' abilities, weighed as each role weighs them, into the role\'s power', () => {
+    const c = (id: string) => CHARACTER_MAP[id]
+    expect(officerAbility('029', 'commerce')).toBeCloseTo((c('029').politics * 2 + c('029').intelligence) / 3)
+    expect(officerAbility('029', 'production')).toBeCloseTo((c('029').politics * 2 + c('029').intelligence) / 3)
+    expect(officerAbility('027', 'training')).toBeCloseTo((c('027').strength * 2 + c('027').leadership) / 3)
+    expect(officerAbility('016', 'recruitment')).toBeCloseTo((c('016').charm * 3 + c('016').strength) / 4)
+    expect(officerPower({ training: ['016', '027'] }).training).toBeCloseTo(officerAbility('016', 'training') + officerAbility('027', 'training'))
+    expect(officerPower({})).toEqual({ commerce: 0, production: 0, training: 0, recruitment: 0 })
   })
 
-  it('weighs 商業・生産 officers by 政治 and 募兵 officers by 魅力', () => {
-    const marcus = CHARACTER_MAP['029']
-    expect(officerBonus({ commerce: ['029'], production: ['029'], recruitment: ['029'] })).toMatchObject({
-      market: scale(marcus.politics) * BALANCE.OFFICER_MAX_BONUS,
-      production: scale(marcus.politics) * BALANCE.OFFICER_MAX_BONUS,
-      recruitRate: scale(marcus.charm) * BALANCE.OFFICER_MAX_RECRUIT_RATE,
+  it('raises the base by the gold spent and the power, by 1 at least, and trains by the power', () => {
+    expect(affairsGain('commerce', 150, 100)).toBe(Math.round(100 * 1.5 * BALANCE.GROWTH_COEF_COMMERCE))
+    expect(affairsGain('production', 150, 100)).toBe(Math.round(100 * 1.5 * BALANCE.GROWTH_COEF_PRODUCTION))
+    expect(affairsGain('commerce', 10, 10)).toBe(1)
+    expect(affairsGain('commerce', 150, 0)).toBe(0)
+    expect(affairsGain('recruitment', 150, 100)).toBe(150)
+    expect(affairsGain('recruitment', 150, 100, 0.5)).toBe(225)
+    expect(officerTraining(150)).toBeCloseTo(150 * BALANCE.GROWTH_COEF_TRAINING)
+    expect(officerTraining(1)).toBe(1)
+    expect(officerTraining(0)).toBe(0)
+  })
+
+  it('forecasts what the funded officers do next turn from what is left of their budget', () => {
+    let state = assign(createInitialState('carta'), FLUEN, '016', 'commerce')
+    const power = officerAbility('016', 'commerce')
+    // No budget: they spend nothing
+    expect(cityOutput(state, FLUEN).affairs.commerce).toEqual({ spend: [0, 0], gain: [0, 0] })
+    state = setAffairsBudget(state, FLUEN, 'commerce', 400)
+    const { AFFAIRS_BUDGET_MIN: min, AFFAIRS_BUDGET_MAX: max } = BALANCE
+    expect(cityOutput(state, FLUEN).affairs.commerce).toEqual({
+      spend: [min, max], gain: [affairsGain('commerce', power, min), affairsGain('commerce', power, max)],
     })
+    state = setAffairsBudget(state, FLUEN, 'commerce', min + 10)
+    expect(cityOutput(state, FLUEN).affairs.commerce?.spend).toEqual([min, min + 10])
+    // Roles without officers are left out
+    expect(cityOutput(state, FLUEN).affairs.production).toBeUndefined()
   })
 
-  it('applies the governor and the buildings to 商業 and 生産', () => {
+  it('applies the governor and the buildings to 商業 and 生産, not the officers', () => {
     let state = createInitialState('carta')
     const city = CITY_MAP[FLUEN]
     const governor = governorBonus('029')
@@ -96,6 +116,7 @@ describe('city output', () => {
     state = withCity(state, FLUEN, { buildings: ['market'] })
     expect(buildingBonus(['market']).marketPct).toBeCloseTo((market as { value: number }).value / 100)
     expect(cityOutput(state, FLUEN).market).toBe(Math.round(city.market * (1 + governor.market + buildingBonus(['market']).marketPct)))
+    expect(cityOutput(assign(state, FLUEN, '016', 'commerce'), FLUEN).market).toBe(cityOutput(state, FLUEN).market)
   })
 })
 
@@ -158,7 +179,7 @@ describe('economy run', () => {
     const morale = state.cities[FLUEN].troopMorale
     expect(runEconomy(state, 2).cities[FLUEN].troopMorale).toBe(morale + BALANCE.NATURAL_TRAINING)
     state = assign(state, FLUEN, '027', 'training')
-    const training = Math.round(BALANCE.NATURAL_TRAINING + officerBonus({ training: ['027'] }).training)
+    const training = Math.round(BALANCE.NATURAL_TRAINING + officerTraining(officerAbility('027', 'training')))
     expect(cityOutput(state, FLUEN).training).toBe(training)
     expect(runEconomy(state, 2).cities[FLUEN].troopMorale).toBe(morale + training)
     expect(runEconomy(withCity(state, FLUEN, { troopMorale: MAX_MORALE }), 2).cities[FLUEN].troopMorale).toBe(MAX_MORALE)
@@ -166,23 +187,56 @@ describe('economy run', () => {
     expect(runEconomy(withCity(state, FLUEN, { troops: 0 }), 2).cities[FLUEN].troopMorale).toBe(morale)
   })
 
-  it('raises 商業 by the 商業 officers', () => {
-    const state = createInitialState('carta')
-    const output = cityOutput(state, FLUEN)
-    const next = cityOutput(assign(state, FLUEN, '016', 'commerce'), FLUEN)
-    expect(next.market).toBe(Math.round(output.baseMarket * (1 + output.governor.market + officerBonus({ commerce: ['016'] }).market + output.buildings.marketPct)))
+  it('raises the base 商業 and 生産 by the officers spending gold of their budget, rolled for each role', () => {
+    let state = createInitialState('carta')
+    state = assign(assign(state, FLUEN, '016', 'commerce'), FLUEN, '027', 'production')
+    state = setAffairsBudget(setAffairsBudget(state, FLUEN, 'commerce', 200), FLUEN, 'production', 200)
+    const gold = state.gold.carta
+    const { AFFAIRS_BUDGET_MIN: min, AFFAIRS_BUDGET_MAX: max } = BALANCE
+    // The first roll (商業) is the least, the second (生産) the most
+    const rolls = [0, 0.9999]
+    const next = runEconomy(state, 2, () => rolls.shift()!)
+    const commerce = affairsGain('commerce', officerAbility('016', 'commerce'), min)
+    const production = affairsGain('production', officerAbility('027', 'production'), max)
+    expect(next.cities[FLUEN]).toMatchObject({
+      market: state.cities[FLUEN].market + commerce,
+      production: state.cities[FLUEN].production + production,
+      affairsBudget: { commerce: 200 - min, production: 200 - max },
+    })
+    expect(next.lastEconomy!.cities[FLUEN].affairs).toMatchObject({ commerce: { spent: min, gain: commerce }, production: { spent: max, gain: production } })
+    // The budget was taken from the treasury when set aside
+    expect(next.gold.carta - gold).toBe(next.lastEconomy!.factions.carta.income - next.lastEconomy!.factions.carta.salary)
+    // The raised base counts from the next run
+    expect(next.lastEconomy!.cities[FLUEN].after.market).toBe(cityOutput(next, FLUEN).market)
   })
 
-  it('draws soldiers from the population by the 募兵 officers, joining at the recruits\' morale', () => {
-    const state = assign(createInitialState('carta'), FLUEN, '016', 'recruitment')
+  it('spends what is left of a budget at most, and nothing without officers or budget', () => {
+    let state = assign(createInitialState('carta'), FLUEN, '016', 'commerce')
+    state = setAffairsBudget(state, FLUEN, 'commerce', 30)
+    const next = runEconomy(state, 2, () => 0.9999)
+    expect(next.cities[FLUEN].affairsBudget.commerce).toBe(0)
+    expect(next.lastEconomy!.cities[FLUEN].affairs.commerce?.spent).toBe(30)
+    // Used up: nothing more
+    const after = runEconomy(next, 3)
+    expect(after.cities[FLUEN].market).toBe(next.cities[FLUEN].market)
+    expect(after.lastEconomy!.cities[FLUEN].affairs.commerce).toBeUndefined()
+    // A budget with no officer stays
+    const idle = setAffairsBudget(createInitialState('carta'), FLUEN, 'production', 200)
+    expect(runEconomy(idle, 2).cities[FLUEN]).toMatchObject({ production: idle.cities[FLUEN].production, affairsBudget: { production: 200 } })
+  })
+
+  it('recruits soldiers by the 募兵 officers spending their budget, joining at the recruits\' morale', () => {
+    let state = assign(createInitialState('carta'), FLUEN, '016', 'recruitment')
+    state = setAffairsBudget(state, FLUEN, 'recruitment', 500)
     const city = state.cities[FLUEN]
     const output = cityOutput(state, FLUEN)
-    expect(output.drafted).toBe(Math.floor(city.population * officerBonus({ recruitment: ['016'] }).recruitRate))
-    expect(output.drafted).toBeGreaterThan(0)
-    const next = runEconomy(state, 2).cities[FLUEN]
-    expect(next.troops).toBe(city.troops + output.drafted)
-    expect(next.troopMorale).toBe(mixMorale(city.troops, city.troopMorale + output.training, output.drafted, output.recruitMorale))
-    expect(cityOutput(createInitialState('carta'), FLUEN).drafted).toBe(0)
+    const soldiers = affairsGain('recruitment', officerAbility('016', 'recruitment'), BALANCE.AFFAIRS_BUDGET_MIN)
+    expect(soldiers).toBeGreaterThan(0)
+    expect(output.affairs.recruitment?.gain[0]).toBe(soldiers)
+    const next = runEconomy(state, 2, () => 0).cities[FLUEN]
+    expect(next.troops).toBe(city.troops + soldiers)
+    expect(next.troopMorale).toBe(mixMorale(city.troops, city.troopMorale + output.training, soldiers, output.recruitMorale))
+    expect(next.affairsBudget.recruitment).toBe(500 - BALANCE.AFFAIRS_BUDGET_MIN)
   })
 
   it('grows the population, slower in a larger city, and the tier with it', () => {
@@ -257,6 +311,28 @@ describe('assignments', () => {
     expect(state.cities[FLUEN].assignments.officers).toEqual({ commerce: ['015'], production: ['016'] })
     expect(() => setOfficers(state, FLUEN, 'training', ['015', '016', '027'])).toThrow(GameRuleError)
     expect(() => setOfficers(state, FLUEN, 'training', ['029'])).toThrow('領主は担当官になれません')
+  })
+})
+
+describe('budgets', () => {
+  it('moves gold between the treasury and a role\'s budget', () => {
+    let state = setAffairsBudget(createInitialState('carta'), FLUEN, 'commerce', 300)
+    expect(state.cities[FLUEN].affairsBudget.commerce).toBe(300)
+    expect(state.gold.carta).toBe(BALANCE.INITIAL_GOLD - 300)
+    state = setAffairsBudget(state, FLUEN, 'commerce', 100)
+    expect(state.gold.carta).toBe(BALANCE.INITIAL_GOLD - 100)
+  })
+
+  it('limits a budget to AFFAIRS_BUDGET_LIMIT and to what the treasury can add', () => {
+    const state = createInitialState('carta')
+    expect(maxAffairsBudget(state, FLUEN, 'commerce')).toBe(Math.min(BALANCE.AFFAIRS_BUDGET_LIMIT, BALANCE.INITIAL_GOLD))
+    expect(affairsBudgetProblem(state, FLUEN, 'commerce', BALANCE.INITIAL_GOLD + 10)).toBe('金が足りません')
+    const rich = { ...state, gold: { ...state.gold, carta: 100000 } }
+    expect(maxAffairsBudget(rich, FLUEN, 'commerce')).toBe(BALANCE.AFFAIRS_BUDGET_LIMIT)
+    expect(affairsBudgetProblem(rich, FLUEN, 'commerce', BALANCE.AFFAIRS_BUDGET_LIMIT + 10)).toBe(`予算は${BALANCE.AFFAIRS_BUDGET_LIMIT}までです`)
+    expect(affairsBudgetProblem(state, FLUEN, 'commerce', -10)).toBe('金額が正しくありません')
+    expect(affairsBudgetProblem(state, AMBARIA, 'commerce', 100)).toBe('自勢力の都市ではありません')
+    expect(() => setAffairsBudget(state, FLUEN, 'recruitment', 600)).toThrow(GameRuleError)
   })
 })
 

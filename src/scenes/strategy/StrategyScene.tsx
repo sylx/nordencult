@@ -8,13 +8,13 @@ import { factionColor } from '../../data/factionColors'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   MAX_UNITS, addOrder, assign, cancelConstruction, cancelOrder, charactersIn, citiesOf, demolishBuilding, domesticProblem, endFactionTurn,
-  invadeFromProblem, isPlayerTurn, openInvasionTargets, orderProblem, pauseConstruction, setOfficers, soldiersLeft, startConstruction, startNextBattle,
+  invadeFromProblem, isPlayerTurn, openInvasionTargets, orderProblem, pauseConstruction, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle,
   useGame, type CityId, type FactionId, type InvasionOrder,
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import {
-  UNIT_TYPE_VIEWS, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, mapSeason,
+  UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, mapSeason,
   officerEffects, officersView, phaseLabel, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
@@ -257,6 +257,8 @@ export default function StrategyScene() {
             onPauseConstruction={(paused) => update((s) => pauseConstruction(s, cityId, paused))}
             officers={officersView(game, cityId)}
             officerEffects={officerEffects(game, cityId)}
+            budgets={budgetsView(game, cityId)}
+            onChangeBudget={(role, amount) => update((s) => setAffairsBudget(s, cityId, role, amount))}
             onChangeLord={(knightId) => update((s) => assign(s, cityId, knightId, 'governor'))}
             onAssignOfficers={(role, knightIds) => update((s) => setOfficers(s, cityId, role, knightIds))}
             onClose={nav.pop}
