@@ -4,7 +4,7 @@ import type {
   BuildingView, CityView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, KnightView,
 } from '../../src'
 import {
-  BUILDINGS, CITIES, CITY_MAP, FACTION_SUMMARY, buildOptionsFor, cityView, domesticStatsFor, knightsIn, lordView, playerCities, withCompleted,
+  BUILDINGS, CITIES, CITY_MAP, buildOptionsFor, cityView, domesticStatsFor, knightsIn, lordView, playerCities, withCompleted,
 } from '../mock/data'
 import MockMap from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
@@ -47,6 +47,9 @@ function officerEffectsFor(officers: DomesticOfficersView, budgets: DomesticBudg
   return effects
 }
 
+/** The treasury the demo starts with: enough to try the officers' budgets (1000 at most each) */
+const INITIAL_GOLD = 2000
+
 function createInitialDomesticState(): Record<string, CityDomesticState> {
   return Object.fromEntries(CITIES.map(city => {
     const base = cityView(city.id)
@@ -66,7 +69,7 @@ function createInitialDomesticState(): Record<string, CityDomesticState> {
 export default function DomesticEntry() {
   const [log, add] = useLog()
   const [cityId, setCityId] = useState(playerCities[0]!)
-  const [gold, setGold] = useState(FACTION_SUMMARY.gold)
+  const [gold, setGold] = useState(INITIAL_GOLD)
   const [states, setStates] = useState<Record<string, CityDomesticState>>(createInitialDomesticState)
 
   const baseCity = cityView(cityId)
@@ -194,7 +197,7 @@ export default function DomesticEntry() {
 
   const reset = () => {
     setStates(createInitialDomesticState())
-    setGold(FACTION_SUMMARY.gold)
+    setGold(INITIAL_GOLD)
     add('初期状態に戻しました')
   }
 
