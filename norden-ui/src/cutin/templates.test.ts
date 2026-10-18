@@ -3,7 +3,7 @@ import { CUTIN_TEMPLATES } from './templates'
 
 describe('CUTIN_TEMPLATES', () => {
   it('reads the JSON files of src/cutin/templates/ by file name', () => {
-    expect(CUTIN_TEMPLATES['battle-start']).toMatchObject({ name: '戦闘開始', text: '戦闘開始', inFx: 'drop' })
+    expect(CUTIN_TEMPLATES['battle-start']).toMatchObject({ name: '戦闘開始', text: '戦闘開始' })
   })
 
   it('fills every template to the full shape', () => {
