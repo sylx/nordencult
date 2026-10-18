@@ -156,9 +156,7 @@
     "nameEn": "Solna",
     "type": "farm_city",
     "tags": [
-      "農地",
-      "中央",
-      "河川"
+      "鉱山"
     ],
     "population": 12000,
     "market": 240,
@@ -232,7 +230,7 @@
     "tags": [
       "農地",
       "中央",
-      "学術"
+      "鉱山"
     ],
     "population": 10000,
     "market": 260,
@@ -261,8 +259,7 @@
     "type": "trade_city",
     "tags": [
       "交差路",
-      "北東",
-      "大市場"
+      "鉱山"
     ],
     "population": 14000,
     "market": 560,
@@ -306,9 +303,8 @@
     "nameEn": "Radun",
     "type": "military_city",
     "tags": [
-      "要害",
       "北方",
-      "関所"
+      "鉱山"
     ],
     "population": 7000,
     "market": 160,
