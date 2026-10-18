@@ -1,5 +1,4 @@
 import type { CityTier } from '../../data/buildings'
-import type { PersonalityTag } from '../../data/characterVoice'
 
 /**
  * The numbers of the economy, all provisional: tune them by playing a few turns
@@ -32,14 +31,7 @@ export const TIER_SLOTS: Readonly<Record<CityTier, number>> = { 1: 2, 2: 4, 3: 6
  * linearly to GOVERNOR_MAX_BONUS at 100 (商業: 政治, 生産: 政治と知力の平均, 成長: 魅力)
  */
 export const ABILITY_BASE = 50
-export const GOVERNOR_MAX_BONUS = 0.25
-
-/** Bonuses (fractions) a governor's personality adds */
-export const PERSONALITY_BONUSES: Partial<Record<PersonalityTag, { market?: number; production?: number; growth?: number }>> = {
-  pragmatic: { market: 0.05 },
-  strict: { production: 0.05 },
-  generous: { growth: 0.1 },
-}
+export const GOVERNOR_MAX_BONUS = 0.125
 
 /** Morale soldiers gain each turn by themselves */
 export const NATURAL_TRAINING = 1

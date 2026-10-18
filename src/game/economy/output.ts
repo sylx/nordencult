@@ -3,7 +3,7 @@ import { CHARACTER_MAP } from '../../data/character'
 import type { CharacterId, CityAssignments, CityId, CityState, FundedRole, GameState, OfficerRole } from '../types'
 import {
   ABILITY_BASE, AFFAIRS_BUDGET_MAX, AFFAIRS_BUDGET_MIN, GOLD_PER_MARKET, GOVERNOR_MAX_BONUS, GROWTH_COEF_COMMERCE, GROWTH_COEF_PRODUCTION,
-  GROWTH_COEF_TRAINING, GROWTH_MARKET, GROWTH_MAX, GROWTH_RATE, GROWTH_SLOWDOWN_POPULATION, NATURAL_TRAINING, PERSONALITY_BONUSES,
+  GROWTH_COEF_TRAINING, GROWTH_MARKET, GROWTH_MAX, GROWTH_RATE, GROWTH_SLOWDOWN_POPULATION, NATURAL_TRAINING,
   RECRUIT_MORALE, RECRUIT_PER_PRODUCTION, TIER_POPULATION, TIER_SLOTS,
 } from './balance'
 
@@ -45,18 +45,11 @@ const abilityScale = (value: number) => Math.max(0, (value - ABILITY_BASE) / (10
 export function governorBonus(characterId: CharacterId | undefined): GovernorBonus {
   const character = characterId ? CHARACTER_MAP[characterId] : undefined
   if (!character) return { market: 0, production: 0, growth: 0 }
-  const bonus = {
+  return {
     market: abilityScale(character.politics) * GOVERNOR_MAX_BONUS,
     production: abilityScale((character.politics + character.intelligence) / 2) * GOVERNOR_MAX_BONUS,
     growth: abilityScale(character.charm) * GOVERNOR_MAX_BONUS,
   }
-  for (const tag of character.personality ?? []) {
-    const extra = PERSONALITY_BONUSES[tag]
-    bonus.market += extra?.market ?? 0
-    bonus.production += extra?.production ?? 0
-    bonus.growth += extra?.growth ?? 0
-  }
-  return bonus
 }
 
 /** A knight's weighted ability for a role, e.g. (政治×2 + 知力) / 3 for 商業 */
