@@ -7,6 +7,7 @@
   align-items: center;
   gap: 3px;
   width: 100%;
+  min-width: 0;
   height: 100%;
   padding: 4px 4px 6px;
   color: #3b2a16;
@@ -25,14 +26,15 @@ button.norden-building-slot:hover { background: #fffaea; }
 .norden-building-slot.is-empty { justify-content: center; min-height: 92px; color: #a08463; background: transparent; border: 1px dashed #b38d5280; box-shadow: none; font-size: 12px; }
 .norden-building-slot-name { font-size: 12px; font-weight: 700; line-height: 1.2; }
 .norden-building-slot-badge { position: absolute; top: 2px; left: 2px; padding: 1px 4px; color: #fff4d8; background: #7a4f17; border-radius: 2px; font-size: 10px; }
-.norden-building-slot .norden-construction-progress-text { font-size: 10px; }
+/* In a narrow slot the progress keeps to its width: the turns left wrap below the supplies */
+.norden-building-slot .norden-construction-progress-text { font-size: 10px; white-space: normal; }
 
 .norden-building-image { display: block; width: 56px; height: 56px; object-fit: cover; border-radius: 3px; }
 .norden-building-image.is-sprite { display: flex; align-items: center; overflow: hidden; }
 .norden-building-image-cell { display: block; flex: none; width: 100%; background-repeat: no-repeat; }
 .norden-building-image.is-placeholder { display: flex; align-items: center; justify-content: center; color: #f6ead0; background: linear-gradient(#9b7a4c, #6d5232); font-size: 24px; font-weight: 700; }
 
-.norden-construction-progress { display: grid; gap: 2px; width: 100%; }
+.norden-construction-progress { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; box-sizing: border-box; width: 100%; min-width: 0; }
 .norden-construction-progress-bar { display: block; height: 6px; overflow: hidden; background: #3a2b1d; border: 1px solid #7b5b31; border-radius: 3px; }
 .norden-construction-progress-bar > span { display: block; height: 100%; background: linear-gradient(#f0d291, #b98a3a); transition: width .6s ease; }
 .norden-construction-progress-text { color: #6b5132; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
