@@ -89,14 +89,6 @@ export interface BuildOptionView extends BuildingView {
   locked?: boolean
 }
 
-/** The knights holding the city's assignments (ids of its knights) */
-export interface CityAssignmentsView {
-  governor?: string
-  military: readonly string[]
-}
-
-export type AssignmentRoleView = 'governor' | 'military'
-
 /**
  * A city's domestic officers (内政担当官), up to two for each role:
  * 商業・生産 (by 政治) raise those stats, 訓練 (by 武力) the soldiers' 練度 and 募兵 (by 魅力) the soldiers
@@ -106,6 +98,14 @@ export type DomesticOfficerRole = 'commerce' | 'production' | 'training' | 'recr
 
 /** Ids of the knights holding each domestic officer role */
 export type DomesticOfficersView = Partial<Record<DomesticOfficerRole, readonly string[]>>
+
+/** The knights holding the city's assignments (ids of its knights): its lord (代官) and its officers */
+export interface CityAssignmentsView {
+  governor?: string
+  officers: DomesticOfficersView
+}
+
+export type AssignmentRoleView = 'governor' | DomesticOfficerRole
 
 /** A city's building slots: those built (in slot order), the one being built and the empty ones up to `slots` */
 export interface CityBuildingsView {
