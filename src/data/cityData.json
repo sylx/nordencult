@@ -215,13 +215,18 @@
     "type": "trade_city",
     "tags": [
       "交差路",
-      "中西",
-      "大市場"
+      "中西"
     ],
-    "population": 20000,
+    "population": 33600,
     "market": 720,
     "production": 280,
-    "belongTo": "leonis"
+    "belongTo": "leonis",
+    "buildings": [
+      "grand_market",
+      "trading_post",
+      "guild",
+      "prison"
+    ]
   },
   {
     "id": "P015",
@@ -363,12 +368,12 @@
     "name": "ガルドハイム",
     "nameEn": "Gardheim",
     "type": "military_city",
+    "image": "fortress1",
     "tags": [
       "要害",
       "中東",
       "騎士団"
     ],
-    "image": "fortress1",
     "population": 9000,
     "market": 160,
     "production": 640,
@@ -383,12 +388,12 @@
     "name": "ヴェサンタ",
     "nameEn": "Vesanta",
     "type": "military_city",
+    "image": "fortress1",
     "tags": [
       "要害",
       "中央北",
       "岩山"
     ],
-    "image": "fortress1",
     "population": 7000,
     "market": 140,
     "production": 560,
@@ -445,12 +450,12 @@
     "name": "ヘクサリア",
     "nameEn": "Hexalia",
     "type": "ruin_city",
+    "image": "fortress2",
     "tags": [
       "魔法",
       "北中央",
       "禁忌"
     ],
-    "image": "fortress2",
     "population": 3000,
     "market": 80,
     "production": 140,
