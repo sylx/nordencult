@@ -5,12 +5,16 @@ import iconCommerce from '../../assets/ui/icons/icon-commerce.png'
 import iconProduction from '../../assets/ui/icons/icon-production.png'
 import iconMorale from '../../assets/ui/icons/icon-military.png'
 import iconRecruit from '../../assets/ui/icons/icon_people.webp'
-import type { CityStatView } from '../types'
+import type { CityStatView, PopulationGrowthView } from '../types'
 
 export interface DomesticStatusProps {
   /** 商業・生産・練度・新兵の練度 and the like, with the boosts stacked on their bars */
   stats: readonly CityStatView[]
   population?: number
+  /** The population's growth next turn and the turns until the next tier, shown under it */
+  populationGrowth?: PopulationGrowthView
+  /** The city's tier, shown when it is the top one (no next tier in populationGrowth) */
+  tier?: number
   supplies?: number
   gold?: number
 }
@@ -24,12 +28,21 @@ const labelIcons: Readonly<Record<string, string>> = { 新兵の練度: iconRecr
 const statKind = (stat: CityStatView) => stat.kind ?? statKinds[stat.label as keyof typeof statKinds] ?? 'commerce'
 const signed = (value: number) => `${value >= 0 ? '+' : ''}${value.toLocaleString()}`
 
+/** e.g. +280/ターン and Tier 3 まで 約12ターン (or Tier 3（最大）) */
+function growthNotes(growth: PopulationGrowthView, tier?: number): string[] {
+  const next = growth.nextTier
+  const toNext = next
+    ? `Tier ${next.tier} まで ${next.turns === null ? '伸びなし' : `約${next.turns.toLocaleString()}ターン`}`
+    : tier !== undefined ? `Tier ${tier}（最大）` : undefined
+  return [`${signed(growth.perTurn)}/ターン`, ...(toNext ? [toNext] : [])]
+}
+
 /**
  * The city as it stands, at the top of the domestic screen: its stats as bars with the
  * buildings' (and other) boosts stacked on the base, each broken down in a tooltip on hover
- * or click, and its population, supplies and gold in large figures
+ * or click, and its population (with its growth and the turns until the next tier), supplies and gold in large figures
  */
-export default function DomesticStatus({ stats, population, supplies, gold }: DomesticStatusProps) {
+export default function DomesticStatus({ stats, population, populationGrowth, tier, supplies, gold }: DomesticStatusProps) {
   const id = useId()
   const ref = useRef<HTMLElement>(null)
   const [hovered, setHovered] = useState<string | null>(null)
@@ -54,11 +67,17 @@ export default function DomesticStatus({ stats, population, supplies, gold }: Do
     }
   }, [pinned])
 
-  const figures = [
-    { label: '人口', value: population },
+  const figures: { label: string; value?: number; notes?: string[]; title?: string }[] = [
+    {
+      label: '人口',
+      value: population,
+      notes: populationGrowth && growthNotes(populationGrowth, tier),
+      title: populationGrowth?.details && ['次のターンの人口の伸び（見込み）', ...populationGrowth.details].join('\n'),
+    },
     { label: '備蓄物資', value: supplies },
     { label: '金', value: gold },
-  ].filter((figure): figure is { label: string; value: number } => figure.value !== undefined)
+  ]
+  const shown = figures.filter((figure): figure is typeof figure & { value: number } => figure.value !== undefined)
 
   return (
     <section ref={ref} className="norden-domestic-status" aria-label="都市の現状">
@@ -139,12 +158,13 @@ export default function DomesticStatus({ stats, population, supplies, gold }: Do
         </ul>
       )}
 
-      {figures.length > 0 && (
+      {shown.length > 0 && (
         <dl className="norden-domestic-figures">
-          {figures.map(figure => (
-            <div key={figure.label}>
+          {shown.map(figure => (
+            <div key={figure.label} title={figure.title}>
               <dt>{figure.label}</dt>
               <dd>{figure.value.toLocaleString()}</dd>
+              {figure.notes?.map(note => <dd key={note} className="norden-domestic-figure-note">{note}</dd>)}
             </div>
           ))}
         </dl>

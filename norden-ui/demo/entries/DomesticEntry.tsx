@@ -4,7 +4,7 @@ import type {
   BuildingView, CityView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, KnightView,
 } from '../../src'
 import {
-  BUILDINGS, CITIES, CITY_MAP, buildOptionsFor, cityView, domesticStatsFor, knightsIn, lordView, playerCities, withCompleted,
+  BUILDINGS, CITIES, CITY_MAP, buildOptionsFor, cityView, domesticStatsFor, knightsIn, lordView, playerCities, populationGrowthFor, withCompleted,
 } from '../mock/data'
 import MockMap from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
@@ -269,6 +269,7 @@ export default function DomesticEntry() {
         city={city}
         buildOptions={options}
         gold={gold}
+        populationGrowth={populationGrowthFor(city)}
         stats={domesticStatsFor(city)}
         onBuild={handleBuild}
         onDemolish={handleDemolish}

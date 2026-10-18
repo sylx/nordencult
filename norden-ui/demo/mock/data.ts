@@ -1,4 +1,4 @@
-import type { BuildOptionView, BuildingView, CityBuildingsView, CityStatView, CityView, FactionSummaryView, FactionView, KnightView, TurnView, UnitTypeView } from '../../src'
+import type { BuildOptionView, BuildingView, CityBuildingsView, CityStatView, CityView, FactionSummaryView, FactionView, KnightView, PopulationGrowthView, TurnView, UnitTypeView } from '../../src'
 import { createElement } from 'react'
 import { repositoryBuildings, type BuildingSpec } from '../repositoryBuildings'
 import { repositoryCharacters, RepositoryCharacterArt, RepositoryPortrait } from '../repositoryCharacters'
@@ -209,6 +209,25 @@ export function domesticStatsFor(city: CityView): CityStatView[] {
     { label: '練度', kind: 'morale', value: city.troopMorale ?? 0, max: 100, notes: training.details.length > 0 ? training.details : undefined },
     { label: '新兵の練度', kind: 'morale', value: RECRUIT_MORALE + morale.value, max: 100, base: RECRUIT_MORALE, boosts: [morale] },
   ]
+}
+
+/**
+ * A rough population growth in the game's shape: (商業 × 0.5 + 生産 × 0.2 + 施設 × 50) × a lord's boost,
+ * and the turns until the next tier (at 10000 and 30000) at that growth
+ */
+export function populationGrowthFor(city: CityView): PopulationGrowthView {
+  const base = (label: string) => city.stats?.find(stat => stat.label === label)?.base ?? 0
+  const built = city.buildings?.built.length ?? 0
+  const economy = base('商業') * 0.5 + base('生産') * 0.2
+  const boost = city.lord ? 1.15 : 1
+  const perTurn = Math.floor((economy + built * 50) * boost)
+  const population = city.population ?? 0
+  const next = population < 10000 ? { tier: 2, at: 10000 } : population < 30000 ? { tier: 3, at: 30000 } : undefined
+  return {
+    perTurn,
+    ...(next && { nextTier: { tier: next.tier, turns: perTurn > 0 ? Math.ceil((next.at - population) / perTurn) : null } }),
+    details: [`経済 +${Math.round(economy)}`, `施設 +${built * 50}（${built}件×50）`, `領主 ×${boost.toFixed(2)}`],
+  }
 }
 
 /** Ids missing from the buildings in use are left out */

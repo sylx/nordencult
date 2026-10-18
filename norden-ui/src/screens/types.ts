@@ -26,6 +26,16 @@ export interface CityStatView {
   notes?: readonly string[]
 }
 
+/** A city's population growth next turn (a forecast), for the domestic screen */
+export interface PopulationGrowthView {
+  /** Population it gains a turn */
+  perTurn: number
+  /** The next tier and the turns until it at this growth (null: it does not grow); omitted at the top tier */
+  nextTier?: { tier: number; turns: number | null }
+  /** How the growth is made up, for its tooltip, e.g. 経済 +164 */
+  details?: readonly string[]
+}
+
 /** A share of a stat added by one source, e.g. the buildings' +48 of 商業 */
 export interface StatBoostView {
   /** e.g. 施設, 領主 */

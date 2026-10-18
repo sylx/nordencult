@@ -278,6 +278,21 @@
   text-shadow: 0 2px 3px #0008;
 }
 
+/* Under a figure: e.g. the population's growth a turn and the turns until the next tier */
+.norden-domestic-figures dd.norden-domestic-figure-note {
+  color: #d9c393;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-shadow: none;
+}
+
+.norden-domestic-figures dd.norden-domestic-figure-note:nth-of-type(2) {
+  margin-top: 2px;
+  color: #b7e08c;
+}
+
 /* Building slots row: filled from left to right; each card shows its building's picture whole */
 .norden-domestic-slots {
   display: grid;

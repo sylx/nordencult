@@ -7,7 +7,7 @@ import ConfirmDialog from '../../components/window/ConfirmDialog'
 import WindowFrame from '../../components/window/WindowFrame'
 import type {
   BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole,
-  DomesticOfficersView, KnightView,
+  DomesticOfficersView, KnightView, PopulationGrowthView,
 } from '../types'
 import DomesticOfficers, { ABILITY_LABELS, KnightFace, OFFICER_ROLES, OFFICERS_PER_ROLE, knightAbility, roleAptitude, weightsLabel } from './DomesticOfficers'
 import DomesticStatus from './DomesticStatus'
@@ -24,6 +24,8 @@ export interface DomesticScreenProps {
   buildOptions?: readonly BuildOptionView[]
   /** Faction treasury gold (shown alongside the city's population and stockpiled supplies) */
   gold?: number
+  /** The population's growth next turn and the turns until the next tier (a forecast), shown under the population */
+  populationGrowth?: PopulationGrowthView
   /** Bars at the top (e.g. 商業・生産・練度・新兵の練度) with the buildings' boosts stacked on them; city.stats when omitted */
   stats?: readonly CityStatView[]
   /** Start constructing a building in the active empty slot, or an upgrade over the building it replaces */
@@ -75,6 +77,7 @@ export default function DomesticScreen({
   city,
   buildOptions = [],
   gold,
+  populationGrowth,
   stats = city.stats ?? [],
   onBuild,
   onDemolish,
@@ -233,7 +236,14 @@ export default function DomesticScreen({
                     </Button>
                   </div>
                 </section>
-                <DomesticStatus stats={stats} population={city.population} supplies={city.supplies} gold={gold} />
+                <DomesticStatus
+                  stats={stats}
+                  population={city.population}
+                  populationGrowth={populationGrowth}
+                  tier={city.tier}
+                  supplies={city.supplies}
+                  gold={gold}
+                />
               </div>
             </div>
 
