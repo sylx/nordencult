@@ -375,7 +375,10 @@
     "market": 160,
     "production": 640,
     "special": "誓約騎士団の本拠地",
-    "belongTo": "leonis"
+    "belongTo": "leonis",
+    "buildings": [
+      "cannon"
+    ]
   },
   {
     "id": "P025",
