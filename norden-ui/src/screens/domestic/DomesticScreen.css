@@ -545,10 +545,14 @@
   scrollbar-color: #94703b #211b14;
 }
 
+/* A tall picture on the left; the name, effects and text beside it, the costs and the button below them */
 .norden-domestic-build-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-areas: 'image info' 'image footer';
+  grid-template-rows: 1fr auto;
+  column-gap: 12px;
+  row-gap: 8px;
   padding: 10px 12px;
   color: #362615;
   background: #fff6dcde;
@@ -562,14 +566,26 @@
 }
 
 .norden-domestic-build-image {
-  flex: none;
-  width: 60px;
-  height: 60px;
+  grid-area: image;
+  align-self: stretch;
+  width: 72px;
+  height: auto;
+  min-height: 108px;
   border-radius: 4px;
 }
 
+/* The picture fills the tall frame, its sides cut off */
+.norden-domestic-build-image.is-sprite {
+  justify-content: center;
+}
+
+.norden-domestic-build-image .norden-building-image-cell {
+  width: auto;
+  height: 100%;
+}
+
 .norden-domestic-build-info {
-  flex: 1;
+  grid-area: info;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -599,6 +615,14 @@
   color: #5b4428;
   font-size: 12px;
   line-height: 1.4;
+}
+
+.norden-domestic-build-footer {
+  grid-area: footer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .norden-domestic-build-costs {

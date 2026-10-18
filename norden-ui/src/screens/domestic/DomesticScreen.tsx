@@ -472,6 +472,12 @@ export default function DomesticScreen({
                         {option.description && (
                           <p className="norden-domestic-build-desc">{option.description}</p>
                         )}
+                        {option.unavailableReason && (
+                          <span className="norden-domestic-build-reason">{option.unavailableReason}</span>
+                        )}
+                      </div>
+                      {/* The costs and the button below the text, leaving the text the whole width */}
+                      <div className="norden-domestic-build-footer">
                         <div className="norden-domestic-build-costs">
                           <span>物資 <b>{option.supplies.toLocaleString()}</b></span>
                           <span>金 <b>{option.gold.toLocaleString()}</b></span>
@@ -479,23 +485,20 @@ export default function DomesticScreen({
                             <span>{option.turns === null ? '完成見込みなし' : `約${option.turns}ターン`}</span>
                           )}
                         </div>
-                        {option.unavailableReason && (
-                          <span className="norden-domestic-build-reason">{option.unavailableReason}</span>
-                        )}
+                        <Button
+                          size="small"
+                          variant="primary"
+                          disabled={Boolean(option.unavailableReason)}
+                          title={option.unavailableReason}
+                          aria-label={upgradeBase ? `${option.name}にアップグレード` : `${option.name}を建設`}
+                          onClick={() => {
+                            setPanel(null)
+                            onBuild?.(option.id)
+                          }}
+                        >
+                          {upgradeBase ? 'アップグレード' : '建設'}
+                        </Button>
                       </div>
-                      <Button
-                        size="small"
-                        variant="primary"
-                        disabled={Boolean(option.unavailableReason)}
-                        title={option.unavailableReason}
-                        aria-label={upgradeBase ? `${option.name}にアップグレード` : `${option.name}を建設`}
-                        onClick={() => {
-                          setPanel(null)
-                          onBuild?.(option.id)
-                        }}
-                      >
-                        {upgradeBase ? 'アップグレード' : '建設'}
-                      </Button>
                     </li>
                   ))}
                 </ul>
