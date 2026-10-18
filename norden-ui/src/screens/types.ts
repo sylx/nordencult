@@ -97,6 +97,16 @@ export interface CityAssignmentsView {
 
 export type AssignmentRoleView = 'governor' | 'military'
 
+/**
+ * A city's domestic officers (内政担当官), up to two for each role:
+ * 商業・生産 (by 政治) raise those stats, 訓練 (by 武力) the soldiers' 練度 and 募兵 (by 魅力) the soldiers
+ * drawn from the population in the domestic phase
+ */
+export type DomesticOfficerRole = 'commerce' | 'production' | 'training' | 'recruitment'
+
+/** Ids of the knights holding each domestic officer role */
+export type DomesticOfficersView = Partial<Record<DomesticOfficerRole, readonly string[]>>
+
 /** A city's building slots: those built (in slot order), the one being built and the empty ones up to `slots` */
 export interface CityBuildingsView {
   slots: number
@@ -117,7 +127,7 @@ export interface CityView {
   /** City tier (e.g. 2), which decides its building slots */
   tier?: number
   /** The governor (代官, the city's lord): name and full character illustration (URL or host-rendered sprite). */
-  lord?: { name: string; image?: ReactNode; imageSrc?: string }
+  lord?: { id?: string; name: string; image?: ReactNode; imageSrc?: string }
   special?: string
   /** e.g. 商業・生産 */
   stats?: readonly CityStatView[]
@@ -140,8 +150,19 @@ export interface NeighbourView {
   faction?: FactionView
 }
 
+/** A knight's abilities (0-100); the domestic screen weighs its lord and officers by them */
+export interface KnightAbilitiesView {
+  leadership?: number
+  strength?: number
+  intelligence?: number
+  politics?: number
+  charm?: number
+}
+
 export interface KnightView extends KnightCardData {
   id: string
+  /** Abilities beyond the card's stats (e.g. 政治・魅力); the stats of the same label are used when omitted */
+  abilities?: KnightAbilitiesView
   /** Most soldiers they can lead */
   maxSoldiers?: number
   /** Unit type chosen first when they are picked for an army */

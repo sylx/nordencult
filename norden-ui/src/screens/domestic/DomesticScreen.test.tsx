@@ -196,7 +196,7 @@ describe('DomesticScreen', () => {
     await userEvent.click(commerce)
     await userEvent.unhover(commerce)
     expect(screen.getByRole('tooltip')).toBeInTheDocument()
-    await userEvent.click(screen.getByText('フルーエンの施設'))
+    await userEvent.click(screen.getByTestId('domestic-frame'))
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
 
     // 練度 has no boosts: only its notes
@@ -208,5 +208,99 @@ describe('DomesticScreen', () => {
     const morale = within(status).getByRole('button', { name: '新兵の練度の内訳' })
     await userEvent.click(morale)
     expect(within(screen.getByRole('tooltip')).getByText('ブーストはありません')).toBeInTheDocument()
+  })
+
+  const knights = [
+    { id: 'k1', name: 'マルクス', abilities: { politics: 96, charm: 89, strength: 40 } },
+    { id: 'k2', name: 'エルネスト', abilities: { politics: 38, charm: 72, strength: 86 } },
+    { id: 'k3', name: 'リディア', abilities: { politics: 55, charm: 64, strength: 74 } },
+  ]
+
+  it('shows the lord and replaces them with a knight of the city, listing 政治 and 魅力', async () => {
+    const onChangeLord = vi.fn()
+    render(
+      <DomesticScreen
+        city={{ id: 'P012', name: 'フルーエン', lord: { id: 'k1', name: 'マルクス' }, knights }}
+        onChangeLord={onChangeLord}
+        onClose={vi.fn()}
+      />,
+    )
+    const lord = screen.getByRole('region', { name: '領主' })
+    expect(within(lord).getByText('マルクス')).toBeInTheDocument()
+
+    await userEvent.click(within(lord).getByRole('button', { name: '領主を交代' }))
+    const panel = screen.getByRole('complementary', { name: '領主の交代' })
+    expect(within(panel).getByText('現領主')).toBeInTheDocument()
+    expect(within(panel).getAllByText('政治')).toHaveLength(3)
+    expect(within(panel).getAllByText('魅力')).toHaveLength(3)
+    expect(within(panel).getByText('72')).toBeInTheDocument()
+
+    await userEvent.click(within(panel).getByRole('button', { name: 'エルネストを領主にする' }))
+    expect(onChangeLord).toHaveBeenCalledWith('k2')
+    expect(screen.queryByRole('complementary', { name: '領主の交代' })).not.toBeInTheDocument()
+  })
+
+  it('does not let the lord serve as an officer', async () => {
+    render(
+      <DomesticScreen
+        city={{ id: 'P012', name: 'フルーエン', lord: { id: 'k1', name: 'マルクス' }, knights }}
+        officers={{ training: ['k2'] }}
+        onClose={vi.fn()}
+      />,
+    )
+    await userEvent.click(screen.getAllByRole('button', { name: '商業担当官を任命' })[0]!)
+    const commerce = screen.getByRole('complementary', { name: '商業担当官の任命' })
+    expect(within(commerce).getByRole('checkbox', { name: 'マルクス' })).toBeDisabled()
+    expect(within(commerce).getByText('領主')).toBeInTheDocument()
+
+    // An officer made lord leaves their role
+    await userEvent.click(screen.getByRole('button', { name: '領主を交代' }))
+    const lord = screen.getByRole('complementary', { name: '領主の交代' })
+    expect(within(lord).getByText('訓練担当官から外れます')).toBeInTheDocument()
+  })
+
+  it('appoints up to two officers to a role, showing the ability it weighs', async () => {
+    const onAssignOfficers = vi.fn()
+    const { rerender } = render(
+      <DomesticScreen
+        city={{ id: 'P012', name: 'フルーエン', knights }}
+        officers={{ commerce: ['k1'] }}
+        officerEffects={{ commerce: '商業 +10%' }}
+        onAssignOfficers={onAssignOfficers}
+        onClose={vi.fn()}
+      />,
+    )
+    const officers = screen.getByRole('region', { name: '内政担当官' })
+    const commerce = within(officers).getByRole('listitem', { name: '商業担当官' })
+    expect(within(commerce).getByText('マルクス')).toBeInTheDocument()
+    expect(within(commerce).getByText('商業 +10%')).toBeInTheDocument()
+
+    // 訓練 weighs 武力: its list shows it, the ablest first, and the 商業 officer cannot be picked
+    await userEvent.click(within(officers).getByRole('listitem', { name: '訓練担当官' }).querySelector('button')!)
+    const training = screen.getByRole('complementary', { name: '訓練担当官の任命' })
+    expect(within(training).getAllByText('武力')).toHaveLength(3)
+    const boxes = within(training).getAllByRole('checkbox')
+    expect(boxes.map(box => box.getAttribute('aria-label'))).toEqual(['エルネスト', 'リディア', 'マルクス'])
+    expect(within(training).getByRole('checkbox', { name: 'マルクス' })).toBeDisabled()
+    expect(within(training).getByText('商業担当官')).toBeInTheDocument()
+    await userEvent.click(within(training).getByRole('checkbox', { name: 'エルネスト' }))
+    expect(onAssignOfficers).toHaveBeenLastCalledWith('training', ['k2'])
+
+    // With two officers the role is full
+    rerender(
+      <DomesticScreen
+        city={{ id: 'P012', name: 'フルーエン', knights }}
+        officers={{ training: ['k2', 'k3'] }}
+        onAssignOfficers={onAssignOfficers}
+        onClose={vi.fn()}
+      />,
+    )
+    const full = screen.getByRole('complementary', { name: '訓練担当官の任命' })
+    expect(within(full).getByRole('checkbox', { name: 'マルクス' })).toBeDisabled()
+    await userEvent.click(within(full).getByRole('checkbox', { name: 'リディア' }))
+    expect(onAssignOfficers).toHaveBeenLastCalledWith('training', ['k2'])
+
+    await userEvent.click(screen.getByRole('button', { name: 'エルネストを訓練担当官から外す' }))
+    expect(onAssignOfficers).toHaveBeenLastCalledWith('training', ['k3'])
   })
 })

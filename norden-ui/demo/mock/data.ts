@@ -28,6 +28,11 @@ const characterFor = (id: string) => repositoryCharacters.find(character => char
 // The game's rule: anyone can lead 歩兵, and each class one more unit type
 const classUnitTypes: Record<string, string[]> = { 騎士: ['infantry', 'cavalry'], 狩人: ['infantry', 'archer'], 魔法使い: ['infantry', 'mage'] }
 
+// 政治・魅力, which the domestic screen weighs its lord and officers by
+const domesticAbilities: Record<string, [politics: number, charm: number]> = {
+  k1: [96, 89], k2: [38, 72], k3: [55, 64], k4: [70, 81], k5: [48, 66], k6: [84, 58], k7: [30, 52], k8: [62, 70], k9: [74, 90],
+}
+
 const knight = (id: string, name: string, cityId: string, subtitle: string, leadership: number, strength: number, intelligence: number,
   defaultUnitType?: string): MockKnight => {
   const character = characterFor(id)
@@ -38,6 +43,7 @@ const knight = (id: string, name: string, cityId: string, subtitle: string, lead
     indirectSoldiers: Math.floor(leadership * 5 / 2),
     portrait: character ? createElement(RepositoryPortrait, { character }) : undefined,
     stats: [{ label: '統率', value: leadership }, { label: '武力', value: strength }, { label: '知力', value: intelligence }],
+    abilities: { leadership, strength, intelligence, politics: domesticAbilities[id]?.[0], charm: domesticAbilities[id]?.[1] },
   }
 }
 
@@ -264,16 +270,22 @@ export const playerCities = CITIES.filter(city => city.owner === PLAYER).map(cit
 /** Cities of other factions linked to `from` */
 export const invasionTargets = (from: string) => neighboursOf(from).filter(id => CITY_MAP[id]?.owner !== PLAYER)
 
+/** A knight as a city's lord: name and full character illustration */
+export function lordView(knightId: string): CityView['lord'] {
+  const lord = KNIGHTS.find(item => item.id === knightId)
+  const character = characterFor(knightId)
+  return lord && { id: lord.id, name: lord.name, image: character ? createElement(RepositoryCharacterArt, { character }) : undefined }
+}
+
 /** The view type the screens draw */
 export function cityView(id: string, knights: readonly KnightView[] = knightsIn(id)): CityView {
   const { owner, at: _at, soldiers, ...city } = CITY_MAP[id]!
   const lord = knightsIn(id)[0]
-  const character = lord ? characterFor(lord.id) : undefined
   return {
     ...city,
     troops: soldiers,
     troopMorale: city.troopMorale ?? MORALE,
-    lord: lord ? { name: lord.name, image: character ? createElement(RepositoryCharacterArt, { character }) : undefined } : undefined,
+    lord: lord ? lordView(lord.id) : undefined,
     faction: owner ? FACTIONS[owner] : undefined,
     knights,
     neighbours: neighboursOf(id).map(other => ({ id: other, name: CITY_MAP[other]!.name, faction: CITY_MAP[other]!.owner ? FACTIONS[CITY_MAP[other]!.owner!] : undefined })),

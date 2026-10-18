@@ -2,9 +2,13 @@ import { useState, type ReactNode } from 'react'
 import { BuildingImage, ConstructionProgress } from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
 import SectionFrame from '../../components/parts/SectionFrame'
+import KnightCard from '../../components/parts/KnightCard'
 import ConfirmDialog from '../../components/window/ConfirmDialog'
 import WindowFrame from '../../components/window/WindowFrame'
-import type { BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView } from '../types'
+import type {
+  BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView, DomesticOfficerRole, DomesticOfficersView, KnightView,
+} from '../types'
+import DomesticOfficers, { ABILITY_LABELS, KnightFace, OFFICER_ROLES, OFFICERS_PER_ROLE, knightAbility } from './DomesticOfficers'
 import DomesticStatus from './DomesticStatus'
 import '../screens.css'
 import './DomesticScreen.css'
@@ -29,17 +33,38 @@ export interface DomesticScreenProps {
   onCancelConstruction?: () => void
   /** Pause or resume the current construction (when paused, produced supplies go to stored supplies) */
   onPauseConstruction?: (paused: boolean) => void
+  /** The city's knights, from whom its lord and officers are chosen; city.knights when omitted */
+  knights?: readonly KnightView[]
+  /** The knights holding each domestic officer role (up to two each) */
+  officers?: DomesticOfficersView
+  /** What each role's officers bring, e.g. 商業 +12% or 練度 +3/ターン */
+  officerEffects?: Partial<Record<DomesticOfficerRole, string>>
+  /** Make another of the city's knights its lord (the lord holds no officer role, so the host drops them from `officers`) */
+  onChangeLord?: (knightId: string) => void
+  /** Set the knights holding an officer role (the whole list, up to two) */
+  onAssignOfficers?: (role: DomesticOfficerRole, knightIds: readonly string[]) => void
   onClose: () => void
   children?: ReactNode
 }
 
-/** What the right-hand panel lists: buildings for the empty slot, or the upgrades of a standing building */
-type BuildPanel = { kind: 'add' } | { kind: 'upgrade'; building: BuildingView }
+/**
+ * What the right-hand panel lists: buildings for the empty slot, the upgrades of a standing building,
+ * the knights who could become lord, or those who could hold an officer role
+ */
+type SidePanel =
+  | { kind: 'add' }
+  | { kind: 'upgrade'; building: BuildingView }
+  | { kind: 'lord' }
+  | { kind: 'officers'; role: DomesticOfficerRole }
+
+const panelKey = (panel: SidePanel) =>
+  panel.kind === 'upgrade' ? `upgrade:${panel.building.id}` : panel.kind === 'officers' ? `officers:${panel.role}` : panel.kind
 
 /**
- * Domestic screen: full-screen window with the city's state (stats with their boosts, population, supplies, gold)
- * at the top-left, its building slots (their pictures shown whole) below,
- * open space below for knight assignments, and a panel on the right (30-40%) of the buildings to add or upgrade to.
+ * Domestic screen: full-screen window with the city's lord (face, and a button to replace them) and its state
+ * (stats with their boosts, population, supplies, gold) at the top-left, its building slots (their pictures shown whole)
+ * below, its domestic officers below them, and a panel on the right (30-40%) of the buildings to add or upgrade to,
+ * or of the knights to pick as lord or officers.
  */
 export default function DomesticScreen({
   city,
@@ -50,10 +75,15 @@ export default function DomesticScreen({
   onDemolish,
   onCancelConstruction,
   onPauseConstruction,
+  knights = city.knights ?? [],
+  officers = {},
+  officerEffects,
+  onChangeLord,
+  onAssignOfficers,
   onClose,
   children,
 }: DomesticScreenProps) {
-  const [panel, setPanel] = useState<BuildPanel | null>(null)
+  const [panel, setPanel] = useState<SidePanel | null>(null)
   const [demolishTarget, setDemolishTarget] = useState<BuildingView | null>(null)
 
   const slots = city.buildings?.slots ?? 0
@@ -74,15 +104,42 @@ export default function DomesticScreen({
   const upgradesOf = (buildingId: string) => visibleOptions.filter(option => option.upgradeFrom === buildingId)
 
   const upgradeBase = panel?.kind === 'upgrade' && built.some(building => building.id === panel.building.id) ? panel.building : null
-  const showBuildPanel = panel?.kind === 'add' ? canAdd : Boolean(upgradeBase) && !construction
+  const showBuildPanel = panel?.kind === 'add' ? canAdd : panel?.kind === 'upgrade' && Boolean(upgradeBase) && !construction
   const panelOptions = upgradeBase ? upgradesOf(upgradeBase.id) : addOptions
   const panelTitle = upgradeBase ? `${upgradeBase.name}のアップグレード` : '追加できる施設'
 
-  const togglePanel = (next: BuildPanel) => setPanel(current => {
-    if (!current || current.kind !== next.kind) return next
-    if (current.kind === 'upgrade' && next.kind === 'upgrade' && current.building.id !== next.building.id) return next
-    return null
-  })
+  const togglePanel = (next: SidePanel) => setPanel(current => (current && panelKey(current) === panelKey(next) ? null : next))
+
+  // The lord is matched to their knight by id, or by name when the city gives none
+  const lord = city.lord
+  const lordKnight = lord && (knights.find(knight => knight.id === lord.id) ?? knights.find(knight => !lord.id && knight.name === lord.name))
+  const lordCandidates = knights.filter(knight => knight.id !== lordKnight?.id)
+  const showLordPanel = panel?.kind === 'lord'
+  const officerSpec = panel?.kind === 'officers' ? OFFICER_ROLES.find(spec => spec.role === panel.role) : undefined
+  const roleOf = (knightId: string) => OFFICER_ROLES.find(spec => officers[spec.role]?.includes(knightId))
+
+  const assignOfficer = (role: DomesticOfficerRole, knightId: string, assign: boolean) => {
+    const current = officers[role] ?? []
+    const next = assign ? [...current.filter(id => id !== knightId), knightId] : current.filter(id => id !== knightId)
+    onAssignOfficers?.(role, next.slice(0, OFFICERS_PER_ROLE))
+  }
+
+  const renderPanelHeader = (title: string, closeLabel: string, note?: ReactNode) => (
+    <header className="norden-domestic-build-header">
+      <h3 className="norden-domestic-build-title">
+        {title}
+        {note && <span className="norden-domestic-build-note">{note}</span>}
+      </h3>
+      <button
+        type="button"
+        className="norden-domestic-build-close"
+        aria-label={closeLabel}
+        onClick={() => setPanel(null)}
+      >
+        ×
+      </button>
+    </header>
+  )
 
   const renderConstruction = (current: ConstructionView, upgradedFrom?: BuildingView) => (
     <div className={`norden-domestic-slot is-building ${current.paused ? 'is-paused' : ''}`}>
@@ -136,14 +193,48 @@ export default function DomesticScreen({
           <div className="norden-domestic-left">
             <div className="norden-domestic-status-frame">
               <SectionFrame />
-              <DomesticStatus stats={stats} population={city.population} supplies={city.supplies} gold={gold} />
+              <div className="norden-domestic-status-row">
+                <section className={`norden-domestic-lord ${showLordPanel ? 'is-selected' : ''}`} aria-label="領主">
+                  <span className="norden-domestic-lord-face">
+                    <KnightFace
+                      knight={lordKnight}
+                      fallback={lord?.imageSrc ? <img src={lord.imageSrc} alt="" /> : lord?.image ?? (
+                        <span className="norden-knight-initial">{lord?.name.slice(0, 1) ?? '－'}</span>
+                      )}
+                    />
+                  </span>
+                  <div className="norden-domestic-lord-info">
+                    <span className="norden-domestic-lord-label">領主</span>
+                    <strong className="norden-domestic-lord-name">{lord?.name ?? '不在'}</strong>
+                    {lordKnight && (
+                      <span className="norden-domestic-lord-abilities">
+                        {(['politics', 'charm'] as const).map(ability => (
+                          <span key={ability}>{ABILITY_LABELS[ability]} <b>{knightAbility(lordKnight, ability) ?? '—'}</b></span>
+                        ))}
+                      </span>
+                    )}
+                    <Button
+                      size="small"
+                      variant="primary"
+                      aria-label="領主を交代"
+                      aria-pressed={showLordPanel}
+                      disabled={lordCandidates.length === 0}
+                      title={lordCandidates.length === 0 ? '交代できる騎士がいません' : '領地の騎士から新しい領主を選びます'}
+                      onClick={() => togglePanel({ kind: 'lord' })}
+                    >
+                      交代
+                    </Button>
+                  </div>
+                </section>
+                <DomesticStatus stats={stats} population={city.population} supplies={city.supplies} gold={gold} />
+              </div>
             </div>
 
             <section className="norden-domestic-frame" data-testid="domestic-frame" aria-label="都市の施設">
               <SectionFrame />
               <header className="norden-domestic-frame-header">
                 <h2 className="norden-domestic-frame-title">
-                  {city.name}の施設
+                  施設
                   <span className="norden-domestic-slot-count">{built.length} / {slots}</span>
                 </h2>
               </header>
@@ -230,24 +321,125 @@ export default function DomesticScreen({
               </ul>
             </section>
 
-            {/* Lower area intentionally kept open for future knight domestic assignment slots */}
-            <div className="norden-domestic-assignment-space" aria-hidden="true" />
+            <DomesticOfficers
+              knights={knights}
+              officers={officers}
+              effects={officerEffects}
+              selectedRole={panel?.kind === 'officers' ? panel.role : undefined}
+              onSelectRole={role => togglePanel({ kind: 'officers', role })}
+              onDismiss={(role, knightId) => assignOfficer(role, knightId, false)}
+            />
           </div>
+
+          {showLordPanel && (
+            <aside className="norden-domestic-build-panel" aria-label="領主の交代">
+              <SectionFrame />
+              {renderPanelHeader('領主の交代', '騎士一覧を閉じる')}
+              {knights.length === 0 ? (
+                <p className="norden-domestic-empty">領地に騎士がいません。</p>
+              ) : (
+                <ul className="norden-domestic-build-list norden-domestic-knight-list">
+                  {knights.map(knight => {
+                    const isLord = knight.id === lordKnight?.id
+                    return (
+                      <li key={knight.id}>
+                        <KnightCard
+                          compact
+                          current={isLord}
+                          className={knight.unavailableReason && !isLord ? 'is-disabled' : ''}
+                          knight={{
+                            ...knight,
+                            stats: (['politics', 'charm'] as const).map(ability => ({
+                              label: ABILITY_LABELS[ability],
+                              value: knightAbility(knight, ability) ?? '—',
+                            })),
+                          }}
+                          aside={isLord ? <span className="norden-domestic-knight-badge">現領主</span> : (
+                            <span className="norden-domestic-knight-pick">
+                              {knight.unavailableReason
+                                ? <span>{knight.unavailableReason}</span>
+                                : roleOf(knight.id) && <span>{roleOf(knight.id)!.label}担当官から外れます</span>}
+                              <Button
+                                size="small"
+                                variant="primary"
+                                aria-label={`${knight.name}を領主にする`}
+                                disabled={Boolean(knight.unavailableReason)}
+                                onClick={() => {
+                                  setPanel(null)
+                                  onChangeLord?.(knight.id)
+                                }}
+                              >
+                                任命
+                              </Button>
+                            </span>
+                          )}
+                        />
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </aside>
+          )}
+
+          {officerSpec && (() => {
+            const abilityLabel = ABILITY_LABELS[officerSpec.ability]
+            const assigned = officers[officerSpec.role] ?? []
+            const isFull = assigned.length >= OFFICERS_PER_ROLE
+            // The ablest first, as only the one ability counts for the role
+            const candidates = [...knights].sort((a, b) => (knightAbility(b, officerSpec.ability) ?? -1) - (knightAbility(a, officerSpec.ability) ?? -1))
+            return (
+              <aside className="norden-domestic-build-panel" aria-label={`${officerSpec.label}担当官の任命`}>
+                <SectionFrame />
+                {renderPanelHeader(
+                  `${officerSpec.label}担当官の任命`,
+                  '騎士一覧を閉じる',
+                  `${Math.min(assigned.length, OFFICERS_PER_ROLE)} / ${OFFICERS_PER_ROLE}`,
+                )}
+                <p className="norden-domestic-build-desc norden-domestic-panel-desc">
+                  {officerSpec.description}（{OFFICERS_PER_ROLE}人まで）
+                </p>
+                {candidates.length === 0 ? (
+                  <p className="norden-domestic-empty">領地に騎士がいません。</p>
+                ) : (
+                  <ul className="norden-domestic-build-list norden-domestic-knight-list">
+                    {candidates.map(knight => {
+                      const selected = assigned.includes(knight.id)
+                      const otherRole = selected ? undefined : roleOf(knight.id)
+                      // The lord governs the city and serves as no officer
+                      const reason = selected
+                        ? undefined
+                        : knight.id === lordKnight?.id ? '領主'
+                          : otherRole ? `${otherRole.label}担当官`
+                            : knight.unavailableReason ?? (isFull ? `${OFFICERS_PER_ROLE}人まで` : undefined)
+                      return (
+                        <li key={knight.id}>
+                          <KnightCard
+                            compact
+                            knight={{
+                              ...knight,
+                              stats: [{ label: abilityLabel, value: knightAbility(knight, officerSpec.ability) ?? '—' }],
+                            }}
+                            selection={{
+                              selected,
+                              disabled: Boolean(reason),
+                              onToggle: () => assignOfficer(officerSpec.role, knight.id, !selected),
+                            }}
+                            aside={reason && <span className="norden-domestic-knight-reason">{reason}</span>}
+                          />
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+              </aside>
+            )
+          })()}
 
           {showBuildPanel && (
             <aside className="norden-domestic-build-panel" aria-label={panelTitle}>
               <SectionFrame />
-              <header className="norden-domestic-build-header">
-                <h3 className="norden-domestic-build-title">{panelTitle}</h3>
-                <button
-                  type="button"
-                  className="norden-domestic-build-close"
-                  aria-label="施設一覧を閉じる"
-                  onClick={() => setPanel(null)}
-                >
-                  ×
-                </button>
-              </header>
+              {renderPanelHeader(panelTitle, '施設一覧を閉じる')}
               {panelOptions.length === 0 ? (
                 <p className="norden-domestic-empty">{upgradeBase ? 'アップグレード先はありません。' : '追加できる施設はありません。'}</p>
               ) : (

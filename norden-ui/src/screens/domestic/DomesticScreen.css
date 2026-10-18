@@ -1,4 +1,4 @@
-/* Full-screen ornamental window with top-left building slots, open bottom space for knight assignments, and right 30-40% build panel */
+/* Full-screen ornamental window: the lord and the city's state, its building slots and its officers on the left, and a right 30-40% panel */
 .norden-domestic-window {
   position: absolute;
   inset: 0;
@@ -483,12 +483,6 @@
   font-size: 12px;
 }
 
-/* Open space below construction slots for future knight domestic assignments */
-.norden-domestic-assignment-space {
-  flex: 1 1 auto;
-  min-height: 180px;
-}
-
 /* Right 30-40% buildable facilities panel */
 .norden-domestic-build-panel {
   position: relative;
@@ -638,4 +632,326 @@
     width: 100%;
     max-width: 100%;
   }
+}
+
+/* Top row: the lord beside the city's state */
+.norden-domestic-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 24px;
+}
+
+.norden-domestic-status-row > .norden-domestic-status {
+  flex: 1 1 520px;
+  min-width: 0;
+}
+
+.norden-domestic-lord {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 8px 8px;
+  background: rgb(255 243 204 / 0.06);
+  border: 1px solid #b38d5260;
+  border-radius: 6px;
+}
+
+.norden-domestic-lord.is-selected {
+  border-color: #f3ce82;
+  box-shadow: 0 0 0 2px #c9963c80;
+}
+
+.norden-domestic-lord-face {
+  display: grid;
+  flex: none;
+  width: 92px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 2px solid #b38d52;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px #0008;
+  background: #2a1d10;
+}
+
+.norden-domestic-lord-face > * {
+  width: 100%;
+  height: 100%;
+}
+
+.norden-domestic-lord-face > img {
+  display: block;
+  object-fit: cover;
+  object-position: top;
+}
+
+.norden-domestic-lord-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 8em;
+}
+
+.norden-domestic-lord-label {
+  color: #bfa575;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.norden-domestic-lord-name {
+  color: #fff3d1;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.norden-domestic-lord-abilities {
+  display: flex;
+  gap: 10px;
+  color: #cbb282;
+  font-size: 12px;
+}
+
+.norden-domestic-lord-abilities b {
+  color: #fff3d1;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.norden-domestic-lord-info .norden-button.is-small {
+  min-height: 28px;
+  margin-top: 2px;
+  padding: 3px 14px;
+  font-size: 12px;
+}
+
+/* Third row: the domestic officers, two posts for each role */
+.norden-domestic-officer-roles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.norden-domestic-officer-role {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px 12px;
+  background: rgb(255 243 204 / 0.06);
+  border: 1px solid #b38d5260;
+  border-radius: 6px;
+}
+
+.norden-domestic-officer-role.is-selected {
+  border-color: #f3ce82;
+  box-shadow: 0 0 0 2px #c9963c80;
+}
+
+.norden-domestic-officer-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.norden-domestic-officer-title {
+  color: #f6e7c5;
+  font-size: 16px;
+}
+
+.norden-domestic-officer-ability {
+  padding: 0 6px;
+  color: #3b2a16;
+  background: #d9b672;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.norden-domestic-officer-desc {
+  margin: 0;
+  color: #cbb282;
+  font-size: 11px;
+  line-height: 1.4;
+  min-height: 2.0rem;
+}
+
+.norden-domestic-officer-posts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.norden-domestic-officer-posts > li {
+  position: relative;
+  display: flex;
+}
+
+.norden-domestic-officer-post {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  min-height: 128px;
+  padding: 6px 4px;
+  color: #3b2a16;
+  background: #fff6dcde;
+  border: 1px solid #b38d52;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 2px #fff9e666, 0 2px 4px #0005;
+  font: inherit;
+  cursor: pointer;
+}
+
+.norden-domestic-officer-post:focus-visible,
+.norden-domestic-officer-dismiss:focus-visible {
+  outline: 2px solid #ffe0a1;
+  outline-offset: 1px;
+}
+
+.norden-domestic-officer-post.is-empty {
+  justify-content: center;
+  color: #f3dfb4;
+  background: rgb(255 243 204 / 0.08);
+  border: 2px dashed #d4ad68;
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.norden-domestic-officer-post.is-empty:hover {
+  background: rgb(255 243 204 / 0.16);
+  border-color: #f0cf8e;
+}
+
+.norden-domestic-officer-post.is-filled:hover {
+  background: #fffaeaf0;
+}
+
+.norden-domestic-officer-plus {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.norden-domestic-officer-face {
+  display: grid;
+  width: 64px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 3px;
+}
+
+.norden-domestic-officer-face > * {
+  width: 100%;
+  height: 100%;
+}
+
+.norden-domestic-officer-face > img {
+  display: block;
+  object-fit: cover;
+}
+
+.norden-domestic-officer-name {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.norden-domestic-officer-value {
+  color: #6a5030;
+  font-size: 11px;
+}
+
+.norden-domestic-officer-value b {
+  color: #3b2a16;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.norden-domestic-officer-dismiss {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  color: #f9e6dc;
+  background: #7b2d26;
+  border: 1px solid #b6594c;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.norden-domestic-officer-dismiss:hover {
+  background: #96372f;
+}
+
+.norden-domestic-officer-effect {
+  min-height: 1.4em;
+  color: #b9e08f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.norden-domestic-officer-effect.is-none {
+  color: #8f7b5c;
+  font-weight: 500;
+}
+
+/* Knight lists in the right-hand panel (lord, officers) */
+.norden-domestic-build-note {
+  margin-left: 10px;
+  color: #cbb282;
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.norden-domestic-panel-desc {
+  color: #cbb282;
+}
+
+.norden-domestic-knight-list .norden-knight-card {
+  min-height: 0;
+}
+
+.norden-domestic-knight-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.norden-domestic-knight-badge {
+  padding: 2px 8px;
+  color: #fff4d8;
+  background: #7a4f17;
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+.norden-domestic-knight-reason {
+  color: #8b2f25;
+  font-weight: 700;
 }
