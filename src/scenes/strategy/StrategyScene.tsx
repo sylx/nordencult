@@ -4,6 +4,7 @@ import {
   MapPickScreen, ScreenHost, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
 } from 'norden-ui'
 import { MapView, type CityHighlight, type RoadHighlight, type StrategyMap } from 'norden-strategy'
+import { CHARACTER_MAP } from '../../data/character'
 import { FACTION_MAP, factionColor } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
@@ -224,6 +225,7 @@ export default function StrategyScene() {
           return (
             <CityCommandScreen city={cityView(game, cityId)} turn={turnView(game)} faction={factionSummary(game)}
               playerFaction={factionView(game.playerFaction)}
+              knightOf={(id) => CHARACTER_MAP[id] ? knightView(game, id) : undefined}
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
               onPrevCity={playerCities.length > 0 ? () => stepCity(cityId, -1) : undefined}
               onNextCity={playerCities.length > 0 ? () => stepCity(cityId, 1) : undefined}

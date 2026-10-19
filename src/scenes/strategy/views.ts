@@ -101,6 +101,11 @@ export function knightView(game: GameState, id: string): KnightView {
     id,
     name: character.name,
     portrait: createElement(CharacterImage, { character, mode: 'face' }),
+    // height: auto keeps the 2:3 figure; the profile crops it from the top
+    image: createElement(CharacterImage, { character, style: { height: 'auto' } }),
+    faction: factionView(game.characters[id]?.factionId) ?? null,
+    location: game.characters[id]?.cityId ? cityName(game.characters[id].cityId) : undefined,
+    biography: character.biography,
     subtitle: [
       CHARACTER_TYPE_LABELS[character.type],
       ...(assignment ? [ASSIGNMENT_LABELS[assignment]] : []),
