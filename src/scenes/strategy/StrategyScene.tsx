@@ -216,7 +216,7 @@ export default function StrategyScene() {
 
   return (
     <div className={`strategy-scene${ready ? '' : ' strategy-scene--loading'}`}>
-      <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false}
+      <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false} showStats={false}
         cities={placedCities} season={mapSeason(game.turn)} />
       <ScreenHost nav={nav} overlays={['domestic']} screens={{
         cityCommand: ({ cityId }) => {

@@ -127,6 +127,9 @@ export function knightView(game: GameState, id: string): KnightView {
   }
 }
 
+/** Full length of the 商業・生産 bars, the same for every city (a value past it fills the bar) */
+const OUTPUT_BAR_MAX = 1000
+
 export function cityView(game: GameState, id: string): CityView {
   const city = CITY_MAP[id]
   const faction = factionView(ownerOf(game, id))
@@ -152,8 +155,8 @@ export function cityView(game: GameState, id: string): CityView {
       image: createElement(CharacterImage, { character: lord, style: { height: 'auto' } }),
     },
     stats: [
-      { label: '商業', value: output.market, max: 720, base: output.baseMarket },
-      { label: '生産', value: output.production, max: 640, base: output.baseProduction },
+      { label: '商業', value: output.market, max: OUTPUT_BAR_MAX },
+      { label: '生産', value: output.production, max: OUTPUT_BAR_MAX },
     ],
     troops: state.troops,
     troopMorale: state.troopMorale,
@@ -201,8 +204,8 @@ export function domesticStats(game: GameState, cityId: string): CityStatView[] {
     }
   }
   return [
-    boosted('商業', output.baseMarket, output.market, output.governor.market, 'commerce', 'marketPct', 720),
-    boosted('生産', output.baseProduction, output.production, output.governor.production, 'production', 'productionPct', 640),
+    boosted('商業', output.baseMarket, output.market, output.governor.market, 'commerce', 'marketPct', OUTPUT_BAR_MAX),
+    boosted('生産', output.baseProduction, output.production, output.governor.production, 'production', 'productionPct', OUTPUT_BAR_MAX),
     {
       label: '練度', kind: 'morale', value: game.cities[cityId].troopMorale, max: MAX_MORALE,
       notes: [output.training > 0 ? `訓練 +${output.training}/ターン` : '兵がいないため訓練なし', ...details('trainingPct')],
