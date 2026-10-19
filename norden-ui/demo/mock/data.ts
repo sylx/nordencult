@@ -50,10 +50,9 @@ const knight = (id: string, name: string, cityId: string, subtitle: string, lead
   defaultUnitType?: string): MockKnight => {
   const character = characterFor(id)
   return {
-    id, name, cityId, subtitle, defaultUnitType, maxSoldiers: leadership * 5,
+    id, name, cityId, subtitle, defaultUnitType,
     unitTypes: classUnitTypes[subtitle.split(' / ')[0] ?? ''] ?? ['infantry'],
     commandRank: subtitle.includes('領主') ? 1 : undefined,
-    indirectSoldiers: Math.floor(leadership * 5 / 2),
     portrait: character ? createElement(RepositoryPortrait, { character }) : undefined,
     image: character ? createElement(RepositoryCharacterArt, { character }) : undefined,
     ...profiles[id],

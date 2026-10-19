@@ -22,7 +22,7 @@ export default function InvasionEntry() {
     stage={<>
       <MockMap routes={[{ from: 'P012', to: 'P004', color: '#ff6a3d' }]} />
       <InvasionScreen key={`${instance}-${pool}`} from={cityView('P012')} to={cityView('P004')} defenders={knightsIn('P004').length}
-        knights={knights} unitTypes={UNIT_TYPES} indirectUnitTypes={INDIRECT_UNIT_TYPES} soldierPool={pool} morale={MORALE} unitPower={mockUnitPower}
+        knights={knights} unitTypes={UNIT_TYPES} indirectUnitTypes={INDIRECT_UNIT_TYPES} maxSoldiers={1000} soldierPool={pool} morale={MORALE} unitPower={mockUnitPower}
         validate={limit ? draft => (draft.units.length > 2 ? '一度に出撃できるのは2部隊までです' : null) : undefined}
         onConfirm={draft => add(`予約: ${describe(draft)}`)} onCancel={() => add('やめる')} />
     </>}

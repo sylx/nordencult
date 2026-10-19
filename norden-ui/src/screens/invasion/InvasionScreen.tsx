@@ -39,6 +39,8 @@ export interface InvasionScreenProps {
   maxUnits?: number
   /** Soldiers available in the starting city, shared by the whole army */
   soldierPool: number
+  /** Most soldiers of each unit, the indirect ones included. Omitted: soldierPool */
+  maxSoldiers?: number
   /** Morale of the starting city's soldiers (0..100), which every unit has. Omitted: not shown */
   morale?: number
   /** The host's basic attack and defense of a unit led by its knight (or indirectly by `commander`). Omitted: not shown */
@@ -59,6 +61,13 @@ type Slot = InvasionAssignment & { key: string }
 
 const total = (units: readonly InvasionAssignment[]) => units.reduce((sum, item) => sum + item.soldiers, 0)
 
+/** The pool shared out evenly in steps, cap at most in each unit; the steps left over go to the first units */
+function evenShares(count: number, pool: number, cap: number, step: number): number[] {
+  const steps = Math.min(Math.floor(pool / step), Math.floor(cap / step) * count)
+  const base = Math.floor(steps / count)
+  return Array.from({ length: count }, (_, index) => (base + (index < steps % count ? 1 : 0)) * step)
+}
+
 /** The problem of the army that the screen itself knows about */
 function draftProblem(units: readonly InvasionAssignment[]) {
   if (units.length === 0) return '軍団長を選んでください'
@@ -73,14 +82,12 @@ function draftProblem(units: readonly InvasionAssignment[]) {
  * While there is room, the commander can also lead units without a knight (indirectUnitTypes).
  */
 export default function InvasionScreen({
-  from, to, defenders, knights, unitTypes, indirectUnitTypes, maxUnits = 6, soldierPool, morale, unitPower, soldierStep = 10, validate,
+  from, to, defenders, knights, unitTypes, indirectUnitTypes, maxUnits = 6, soldierPool, maxSoldiers = soldierPool, morale, unitPower, soldierStep = 10, validate,
   onConfirm, onCancel, confirmLabel = '予約', children,
 }: InvasionScreenProps) {
   const [units, setUnits] = useState<readonly Slot[]>([])
   const serial = useRef(0)
   const knightMap = new Map(knights.map(knight => [knight.id, knight]))
-  const capOf = (knight: KnightView | undefined) => knight?.maxSoldiers ?? soldierPool
-  const indirectCapOf = (knight: KnightView | undefined) => knight?.indirectSoldiers ?? capOf(knight)
   const rankOf = (id: string | null) => (id === null ? 0 : knightMap.get(id)?.commandRank ?? 0)
   const unitTypesOf = (knight: KnightView) =>
     knight.unitTypes ? unitTypes.filter(type => knight.unitTypes!.includes(type.id)) : unitTypes
@@ -94,15 +101,13 @@ export default function InvasionScreen({
   const draft: InvasionDraft = { commander: commander?.id ?? null, units: units.map(({ key: _, ...unit }) => unit) }
   const problem = draftProblem(units) ?? validate?.(draft) ?? null
 
-  /** Puts the commander first (a knight of a higher rank takes over) and fits the indirect units to them */
+  /** Puts the commander first (a knight of a higher rank takes over) */
   const arrange = (next: readonly Slot[]): readonly Slot[] => {
     const led = next.filter(item => item.knightId !== null)
     if (led.length === 0) return []
     const top = led.reduce((best, item) => (rankOf(item.knightId) > rankOf(best.knightId) ? item : best))
     const current = next[0]!.knightId !== null && rankOf(next[0]!.knightId) >= rankOf(top.knightId) ? next[0]! : top
-    const cap = indirectCapOf(knightMap.get(current.knightId!))
     return [current, ...next.filter(item => item !== current)]
-      .map(item => (item.knightId === null && item.soldiers > cap ? { ...item, soldiers: cap } : item))
   }
   const update = (change: (current: readonly Slot[]) => readonly Slot[]) => setUnits(current => arrange(change(current)))
 
@@ -110,17 +115,21 @@ export default function InvasionScreen({
     const choices = unitTypesOf(knight)
     const unitType = knight.defaultUnitType && choices.some(type => type.id === knight.defaultUnitType)
       ? knight.defaultUnitType : choices[0]?.id ?? ''
-    const soldiers = Math.min(capOf(knight), Math.max(0, soldierPool - total(current)))
+    const soldiers = Math.min(maxSoldiers, Math.max(0, soldierPool - total(current)))
     return [...current, { key: knight.id, knightId: knight.id, unitType, soldiers }]
   })
   const addIndirect = () => update(current => {
-    const soldiers = Math.min(indirectCapOf(commander), Math.max(0, soldierPool - total(current)))
+    const soldiers = Math.min(maxSoldiers, Math.max(0, soldierPool - total(current)))
     return [...current, { key: `indirect-${serial.current++}`, knightId: null, unitType: indirectChoices[0]?.id ?? '', soldiers }]
   })
   const remove = (key: string) => update(current => current.filter(item => item.key !== key))
   const lead = (key: string) => update(current => [...current.filter(item => item.key === key), ...current.filter(item => item.key !== key)])
   const change = (key: string, patch: Partial<InvasionAssignment>) =>
     update(current => current.map(item => (item.key === key ? { ...item, ...patch } : item)))
+  const shareEvenly = () => update(current => {
+    const shares = evenShares(current.length, soldierPool, maxSoldiers, soldierStep)
+    return current.map((item, index) => ({ ...item, soldiers: shares[index]! }))
+  })
 
   const fullReason = `${maxUnits}部隊までです`
   // Only a knight of the commander's rank can take over from them
@@ -176,7 +185,7 @@ export default function InvasionScreen({
                         <KnightCard knight={knight} compact current={units.some(item => item.knightId === knight.id)}
                           className={knight.unavailableReason ? 'is-disabled' : ''}
                           aside={<span className="norden-invasion-pick">
-                            <span>{knight.unavailableReason ?? (knight.maxSoldiers !== undefined ? `率兵 ${knight.maxSoldiers}` : '')}</span>
+                            <span>{knight.unavailableReason ?? ''}</span>
                             {pickAction(knight)}
                           </span>} />
                       </li>
@@ -189,7 +198,10 @@ export default function InvasionScreen({
               <SectionFrame />
               <header className="norden-window-section-header">
                 <h2 className="norden-window-section-title">軍団編成</h2>
-                {commander && <span className="norden-window-section-count">部隊 {units.length} / {maxUnits}</span>}
+                {commander && <span className="norden-invasion-army-tools">
+                  <span className="norden-window-section-count">部隊 {units.length} / {maxUnits}</span>
+                  <Button size="small" onClick={shareEvenly}>兵を均等に分ける</Button>
+                </span>}
               </header>
               {!commander
                 ? <p className="norden-window-section-empty norden-invasion-empty">左の一覧から軍団長を選んでください。<br />軍団長がこの侵攻を率います。</p>
@@ -208,7 +220,7 @@ export default function InvasionScreen({
                             options={indirectChoices.map(type => ({ value: type.id, label: type.name, icon: type.icon, title: type.description }))}
                             onChange={unitType => change(item.key, { unitType })} />
                           <QuantityInput label={`${name}の兵数`} unit="人" step={soldierStep} value={item.soldiers}
-                            max={Math.min(indirectCapOf(commander), item.soldiers + remaining)}
+                            max={Math.min(maxSoldiers, item.soldiers + remaining)}
                             onChange={soldiers => change(item.key, { soldiers })} />
                         </section>
                       )
@@ -230,7 +242,7 @@ export default function InvasionScreen({
                           options={unitTypesOf(knight).map(type => ({ value: type.id, label: type.name, icon: type.icon, title: type.description }))}
                           onChange={unitType => change(item.key, { unitType })} />
                         <QuantityInput label={`${knight.name}の兵数`} unit="人" step={soldierStep} value={item.soldiers}
-                          max={Math.min(capOf(knight), item.soldiers + remaining)}
+                          max={Math.min(maxSoldiers, item.soldiers + remaining)}
                           onChange={soldiers => change(item.key, { soldiers })} />
                       </section>
                     )
@@ -278,7 +290,7 @@ export default function InvasionScreen({
                         <span className="norden-invasion-slot-gauge">
                           <span>兵数</span>
                           <StatBar label={`${name}の兵数`} value={item.soldiers}
-                            max={item.knightId === null ? indirectCapOf(commander) : capOf(leader)} tone="production" />
+                            max={maxSoldiers} tone="production" />
                         </span>
                         {morale !== undefined && (
                           <span className="norden-invasion-slot-gauge">

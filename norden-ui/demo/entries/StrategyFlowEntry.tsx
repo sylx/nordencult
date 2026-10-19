@@ -135,7 +135,7 @@ export default function StrategyFlowEntry() {
         },
         invasion: ({ from, to }) => (
           <InvasionScreen from={cityView(from)} to={cityView(to)} defenders={knightsIn(to).length}
-            knights={knightsOf(from)} unitTypes={UNIT_TYPES} indirectUnitTypes={INDIRECT_UNIT_TYPES} soldierPool={soldiersLeft(from)} morale={MORALE} unitPower={mockUnitPower}
+            knights={knightsOf(from)} unitTypes={UNIT_TYPES} indirectUnitTypes={INDIRECT_UNIT_TYPES} maxSoldiers={1000} soldierPool={soldiersLeft(from)} morale={MORALE} unitPower={mockUnitPower}
             onCancel={nav.pop}
             onConfirm={draft => {
               setOrders(current => [...current, { id: (current.at(-1)?.id ?? 0) + 1, from, to, draft }])

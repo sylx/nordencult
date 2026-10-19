@@ -201,16 +201,12 @@ export interface KnightView extends KnightCardData {
   location?: string
   /** 略歴. 名前（001） names another knight: only the name is shown, as a link to their profile */
   biography?: string
-  /** Most soldiers they can lead */
-  maxSoldiers?: number
   /** Unit type chosen first when they are picked for an army */
   defaultUnitType?: string
   /** Ids of the unit types they can lead; all of them when omitted */
   unitTypes?: readonly string[]
   /** Knights with a rank must be the commander when they join an army; the highest rank leads (e.g. 君主 2, 領主 1) */
   commandRank?: number
-  /** Most soldiers of each unit they lead indirectly as the commander; maxSoldiers when omitted */
-  indirectSoldiers?: number
   /** Why they cannot be picked (they are shown but cannot be selected) */
   unavailableReason?: string
 }

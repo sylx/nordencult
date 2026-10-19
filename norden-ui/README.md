@@ -138,17 +138,17 @@ function BattleUi() {
 | `CityCommandScreen` | 勢力の情報と都市の切り替え ◀ ▶（左上の `FactionBar`）、都市情報ウィンドウ（都市情報・騎士・街道タブ。都市情報は領主・人口と Tier、兵数・練度・物資（大きな数字で横に並べる）、商業と生産（実効値と基礎値）、施設スロット）、ターン情報（右上）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `faction: FactionSummaryView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `activeCommand`（上に開いている画面のコマンド。押された状態で出す）, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `onSelectNeighbour`, `turnMenu`, `children`（ホストの追加HUD） |
 | `MapPickScreen` | 案内の帯と「やめる」 | `message`, `onCancel`, `cancelLabel` |
 | `DomesticScreen` | 都市の内政。画面いっぱいのウィンドウに、領主（顔と「交代」）と都市の現状（人口の下に1ターンの伸びと次の Tier までのターン数の見込み）、施設スロット、内政担当官（商業・生産・訓練・募兵に2人まで）を並べ、右側に建設できる施設や任命する騎士の一覧を開く。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `city: CityView`, `buildOptions`, `gold`, `populationGrowth`, `stats`, `knights`, `officers`, `officerEffects`, `onBuild` などの施設の操作, `onChangeLord`, `onAssignOfficers`, `onClose` |
-| `InvasionScreen` | 侵攻。画面いっぱいのウィンドウに、出撃する騎士の一覧、軍団編成（部隊ごとの兵科と兵数）、編成した部隊の図を横に並べ、その下に合計兵数と「やめる / 予約」。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `from` / `to: CityView`, `defenders`, `knights: KnightView[]`, `unitTypes`, `indirectUnitTypes`, `maxUnits`, `soldierPool`, `morale`, `unitPower`, `soldierStep`, `validate(draft)`, `onConfirm(draft)`, `onCancel`（閉じるボタンも同じ） |
+| `InvasionScreen` | 侵攻。画面いっぱいのウィンドウに、出撃する騎士の一覧、軍団編成（部隊ごとの兵科と兵数）、編成した部隊の図を横に並べ、その下に合計兵数と「やめる / 予約」。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `from` / `to: CityView`, `defenders`, `knights: KnightView[]`, `unitTypes`, `indirectUnitTypes`, `maxUnits`, `soldierPool`, `maxSoldiers`, `morale`, `unitPower`, `soldierStep`, `validate(draft)`, `onConfirm(draft)`, `onCancel`（閉じるボタンも同じ） |
 
 アクションツールバーのコマンドは `CITY_COMMAND_GROUPS` に定義しています。内政、軍事（移動・侵攻・輸送）、研究、商人（購入・売却）と、最後にターン終了です。
 分類を押すと上にサブコマンドが開きます。`commandState={{ invade: { disabled: true, reason: '出撃できる騎士がいません' } }}` で無効にし、理由をツールチップに出します。
 
 侵攻画面は軍団を編成します。まず左の一覧で軍団長（侵攻を率いる騎士）を選び、続けてほかの騎士を加えます。部隊は間接指揮部隊も含めて `maxUnits`（既定6）までです。
 軍団長は編成済みの騎士の「軍団長にする」で付け替えられます。ただし `commandRank` を持つ騎士（領主・君主など）が加わると、いちばん高い騎士が軍団長になり、ほかの騎士には付け替えられません。軍団長が外れると、残った騎士のうち `commandRank` がいちばん高い騎士（同じなら先に加えた騎士）が軍団長になります。
-`indirectUnitTypes` を渡すと、騎士がいない部隊（間接指揮部隊）を軍団長の下に編成できます。兵科は `indirectUnitTypes` の中から選び、兵数の上限は軍団長の `indirectSoldiers`（無ければ `maxSoldiers`）です。騎士が1人もいなくなると間接指揮部隊も外れます。
-騎士の部隊の兵科は騎士の `unitTypes`（率いられる兵科の id。無ければ全兵科）に含まれるものだけを選べます。騎士を加えると、`defaultUnitType`（選べる兵科に無ければ選べる兵科の先頭）と、騎士の上限（`maxSoldiers`）と残りの兵数の小さい方で部隊に加わります。
-兵数の合計は `soldierPool` を超えません。軍団長がいない、兵数0の部隊がある、`validate` が理由を返した、のどれかに当たると「予約」を押せません。`onConfirm` には `{ commander, units }` を渡します。`units` は軍団長の部隊が先頭の `{ knightId, unitType, soldiers }[]` で、間接指揮部隊の `knightId` は `null` です。
-編成した部隊は右端のタイトルなしのウィンドウに、軍団長の部隊から順に縦に並べて図示します。兵科の画像（`UnitTypeView.image`。戦闘画面のユニット画像など右向きの絵）と左上に丸く切り抜いた騎士の顔（間接指揮部隊は軍団長の顔）、兵数のゲージ（上限は率いる騎士の率兵）、士気のゲージ（`morale`。出発都市の兵の士気で全部隊に共通。省略すると出さない）、右側に基本攻撃力・基本防御力（`unitPower(unit, commander)` がホストの計算で返す値。省略すると出さない）を出し、残りの枠は「空き」と出します。
+`indirectUnitTypes` を渡すと、騎士がいない部隊（間接指揮部隊）を軍団長の下に編成できます。兵科は `indirectUnitTypes` の中から選びます。騎士が1人もいなくなると間接指揮部隊も外れます。
+騎士の部隊の兵科は騎士の `unitTypes`（率いられる兵科の id。無ければ全兵科）に含まれるものだけを選べます。騎士を加えると、`defaultUnitType`（選べる兵科に無ければ選べる兵科の先頭）と、1部隊の上限（`maxSoldiers`。騎士の部隊も間接指揮部隊も共通、省略すると `soldierPool`）と残りの兵数の小さい方で部隊に加わります。
+兵数の合計は `soldierPool` を超えません。軍団編成の見出しの「兵を均等に分ける」は、`soldierPool` を `soldierStep` 刻みで全部隊に均等に配り直します（1部隊 `maxSoldiers` まで。割り切れない分は軍団長の部隊から順に1刻みずつ足します）。軍団長がいない、兵数0の部隊がある、`validate` が理由を返した、のどれかに当たると「予約」を押せません。`onConfirm` には `{ commander, units }` を渡します。`units` は軍団長の部隊が先頭の `{ knightId, unitType, soldiers }[]` で、間接指揮部隊の `knightId` は `null` です。
+編成した部隊は右端のタイトルなしのウィンドウに、軍団長の部隊から順に縦に並べて図示します。兵科の画像（`UnitTypeView.image`。戦闘画面のユニット画像など右向きの絵）と左上に丸く切り抜いた騎士の顔（間接指揮部隊は軍団長の顔）、兵数のゲージ（上限は `maxSoldiers`）、士気のゲージ（`morale`。出発都市の兵の士気で全部隊に共通。省略すると出さない）、右側に基本攻撃力・基本防御力（`unitPower(unit, commander)` がホストの計算で返す値。省略すると出さない）を出し、残りの枠は「空き」と出します。
 `unavailableReason` を持つ騎士は一覧に出ますが選べません。
 
 騎士の顔は `KnightView.portrait`（ReactNode）または `portraitSrc`（画像URL）で渡します。両方指定した場合は `portraitSrc` を優先します。省略すると頭文字を表示します。紋章は `FactionView.emblem`（画像URL）です。
