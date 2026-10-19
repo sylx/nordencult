@@ -6,6 +6,7 @@
    - 最上位を `<div className="norden-screen norden-<name>">` にし、`../screens.css` を読み込む。レイヤーは配置先いっぱいに広がり、ポインターを通す
    - HUDの部品は配置用の領域に置く: `norden-screen-top-left` / `-top-center` / `-top-right` / `-bottom-center` / `-bottom-right`（案内の帯は `-top-center norden-screen-banner`）。領域の子だけがポインターを受ける
    - ウィンドウは `InfoWindow` の `x` / `y` で置き、初期位置をpropsで変えられるようにする
+   - 画面いっぱいの1枚のウィンドウを区画に分ける画面（内政・侵攻）は、`WindowFrame` に `norden-window-screen` を付け、中を `norden-window-screen-layout`（横並び）にする。区画は `norden-window-section` で、先頭に `SectionFrame` を置き、見出しは `norden-window-section-header` / `-title` / `-count`、空の案内は `-empty`、それだけでスクロールする部分は `norden-window-scroll`（どれも `screens.css`）
    - ホストが追加のHUDを重ねられるよう `children` を受けて最後に描く
 2. 表示用のデータが新しければ `src/screens/types.ts` にview型を足す。ゲームの用語（ID・名前・画像URL・表示用の数値）だけを持たせ、規則の判定はホストに任せる（例: 侵攻画面の `validate`、都市コマンドの `commandState`）
 3. `src/index.ts` から画面とpropsの型を公開する
@@ -22,12 +23,12 @@ type StrategyScreens = {
   cityCommand: { cityId: string }
   pickTarget: { from: string }
   invasion: { from: string; to: string }
-  recruit: { cityId: string }   // 追加した画面
+  transport: { cityId: string }   // 追加した画面
 }
 
-// 都市コマンドの「募兵」で開き、終わったら戻る
-onCommand={(id) => id === 'recruit' && nav.push('recruit', { cityId })}
-recruit: ({ cityId }) => <RecruitScreen /* … */ onDone={nav.pop} />
+// 都市コマンドの「輸送」で開き、終わったら戻る
+onCommand={(id) => id === 'transport' && nav.push('transport', { cityId })}
+transport: ({ cityId }) => <TransportScreen /* … */ onDone={nav.pop} />
 ```
 
 - 1段戻るのは `nav.pop()`（Escでも同じ）。何段か積んだ後に元の画面へ戻るのは `nav.popTo('cityCommand')`

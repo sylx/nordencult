@@ -113,7 +113,7 @@ describe('InvasionScreen', () => {
     expect(button('リディアを加える')).toBeDisabled()
     expect(button('リディアを加える')).toHaveAttribute('title', '2部隊までです')
     expect(button('＋ 間接指揮部隊（歩兵・弓兵）')).toBeDisabled()
-    expect(document.querySelector('.norden-invasion-count')).toHaveTextContent('部隊 2 / 2')
+    expect(within(screen.getByRole('region', { name: '軍団編成' })).getByText('部隊 2 / 2')).toBeInTheDocument()
     await userEvent.click(button('間接指揮部隊1を外す'))
     expect(button('リディアを加える')).toBeEnabled()
   })

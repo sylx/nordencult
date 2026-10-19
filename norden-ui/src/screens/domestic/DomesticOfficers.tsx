@@ -89,10 +89,10 @@ export default function DomesticOfficers({
   knights, officers, effects, budgets = {}, gold, onChangeBudget, selectedRole, onSelectRole, onDismiss,
 }: DomesticOfficersProps) {
   return (
-    <section className="norden-domestic-frame norden-domestic-officers" aria-label="内政担当官">
+    <section className="norden-window-section norden-domestic-officers" aria-label="内政担当官">
       <SectionFrame />
-      <header className="norden-domestic-frame-header">
-        <h2 className="norden-domestic-frame-title">内政担当官</h2>
+      <header className="norden-window-section-header">
+        <h2 className="norden-window-section-title">内政担当官</h2>
       </header>
       <ul className="norden-domestic-officer-roles">
         {OFFICER_ROLES.map(spec => {

@@ -167,13 +167,13 @@
   width: fit-content;
   max-width: 100%;
   box-sizing: border-box;
-  padding: 5px;
+  padding: 4px;
   border: 1px solid #947347;
   border-radius: 6px;
   background: #3a2b1c url('../../assets/ui/hud/dark-texture.png') repeat;
   box-shadow: inset 0 2px 4px #120c0780, 0 1px #fff8;
 }
-.norden-choice { gap: 7px; min-width: 92px; padding: 8px 14px; }
+.norden-choice { --norden-button-corner: 16px; gap: 7px; min-width: 92px; min-height: 40px; padding: 4px 14px; }
 .norden-choice[aria-checked='false'] { color: #fff2d6; }
 /* Reversing the bevel lighting makes the dark ivory sit inside the shared housing. */
 .norden-choice[aria-checked='false']::before {

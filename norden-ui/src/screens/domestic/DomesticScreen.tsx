@@ -194,13 +194,13 @@ export default function DomesticScreen({
   return (
     <div className="norden-screen norden-domestic">
       <WindowFrame
-        className="norden-domestic-window"
+        className="norden-window-screen"
         title={`${city.name}の内政`}
         aria-label={`${city.name}の内政`}
         onClose={onClose}
       >
-        <div className="norden-domestic-layout">
-          <div className="norden-domestic-left">
+        <div className="norden-window-screen-layout">
+          <div className="norden-domestic-left norden-window-scroll">
             <div className="norden-domestic-status-frame">
               <SectionFrame />
               <div className="norden-domestic-status-row">
@@ -247,12 +247,12 @@ export default function DomesticScreen({
               </div>
             </div>
 
-            <section className="norden-domestic-frame" data-testid="domestic-frame" aria-label="都市の施設">
+            <section className="norden-window-section" data-testid="domestic-frame" aria-label="都市の施設">
               <SectionFrame />
-              <header className="norden-domestic-frame-header">
-                <h2 className="norden-domestic-frame-title">
+              <header className="norden-window-section-header">
+                <h2 className="norden-window-section-title">
                   施設
-                  <span className="norden-domestic-slot-count">{built.length} / {slots}</span>
+                  <span className="norden-window-section-count">{built.length} / {slots}</span>
                 </h2>
               </header>
 
@@ -352,13 +352,13 @@ export default function DomesticScreen({
           </div>
 
           {showLordPanel && (
-            <aside className="norden-domestic-build-panel" aria-label="領主の交代">
+            <aside className="norden-window-section norden-domestic-build-panel" aria-label="領主の交代">
               <SectionFrame />
               {renderPanelHeader('領主の交代', '騎士一覧を閉じる')}
               {knights.length === 0 ? (
-                <p className="norden-domestic-empty">領地に騎士がいません。</p>
+                <p className="norden-window-section-empty">領地に騎士がいません。</p>
               ) : (
-                <ul className="norden-domestic-build-list norden-domestic-knight-list">
+                <ul className="norden-domestic-build-list norden-window-scroll norden-domestic-knight-list">
                   {knights.map(knight => {
                     const isLord = knight.id === lordKnight?.id
                     return (
@@ -408,7 +408,7 @@ export default function DomesticScreen({
             // The ablest first, by the abilities the role weighs
             const candidates = [...knights].sort((a, b) => (roleAptitude(b, officerSpec) ?? -1) - (roleAptitude(a, officerSpec) ?? -1))
             return (
-              <aside className="norden-domestic-build-panel" aria-label={`${officerSpec.label}担当官の任命`}>
+              <aside className="norden-window-section norden-domestic-build-panel" aria-label={`${officerSpec.label}担当官の任命`}>
                 <SectionFrame />
                 {renderPanelHeader(
                   `${officerSpec.label}担当官の任命`,
@@ -419,9 +419,9 @@ export default function DomesticScreen({
                   {officerSpec.description}（適性は{weightsLabel(officerSpec)}の比。{OFFICERS_PER_ROLE}人までで、2人の適性は合算）
                 </p>
                 {candidates.length === 0 ? (
-                  <p className="norden-domestic-empty">領地に騎士がいません。</p>
+                  <p className="norden-window-section-empty">領地に騎士がいません。</p>
                 ) : (
-                  <ul className="norden-domestic-build-list norden-domestic-knight-list">
+                  <ul className="norden-domestic-build-list norden-window-scroll norden-domestic-knight-list">
                     {candidates.map(knight => {
                       const selected = assigned.includes(knight.id)
                       const otherRole = selected ? undefined : roleOf(knight.id)
@@ -459,13 +459,13 @@ export default function DomesticScreen({
           })()}
 
           {showBuildPanel && (
-            <aside className="norden-domestic-build-panel" aria-label={panelTitle}>
+            <aside className="norden-window-section norden-domestic-build-panel" aria-label={panelTitle}>
               <SectionFrame />
               {renderPanelHeader(panelTitle, '施設一覧を閉じる')}
               {panelOptions.length === 0 ? (
-                <p className="norden-domestic-empty">{upgradeBase ? 'アップグレード先はありません。' : '追加できる施設はありません。'}</p>
+                <p className="norden-window-section-empty">{upgradeBase ? 'アップグレード先はありません。' : '追加できる施設はありません。'}</p>
               ) : (
-                <ul className="norden-domestic-build-list">
+                <ul className="norden-domestic-build-list norden-window-scroll">
                   {panelOptions.map(option => (
                     <li
                       key={option.id}

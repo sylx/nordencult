@@ -26,7 +26,7 @@ export default function CommandToolbarEntry() {
     group('military', '軍事', iconMilitary, [
       leaf('move', '移動'),
       leaf('invade', '侵攻', disableInvade ? { disabled: true, title: '出撃できる騎士がいません' } : {}),
-      leaf('recruit', '募兵'), leaf('transport', '輸送'),
+      leaf('transport', '輸送'),
     ]),
     leaf('research', '研究', { icon: icon(iconResearch) }),
     group('merchant', '商人', iconMerchant, [leaf('buy', '購入'), leaf('sell', '売却')]),

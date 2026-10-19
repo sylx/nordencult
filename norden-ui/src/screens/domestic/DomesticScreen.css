@@ -1,70 +1,10 @@
-/* Full-screen ornamental window: the lord and the city's state, its building slots and its officers on the left, and a right 350px panel */
-.norden-domestic-window {
-  position: absolute;
-  /* Over the city command screen, its toolbar stays uncovered below the window */
-  inset: 0 0 var(--norden-screen-bottom-inset, 0);
-  animation: norden-domestic-enter 240ms ease-out both;
-}
-
-@keyframes norden-domestic-enter { from { opacity: 0; translate: 0 12px; scale: .985; } to { opacity: 1; translate: 0 0; scale: 1; } }
-@media (prefers-reduced-motion: reduce) {
-  .norden-domestic-window { animation: none; }
-}
-
-.norden-domestic-layout {
-  display: flex;
-  align-items: stretch;
-  gap: 20px;
-  height: 100%;
-  min-height: 0;
-}
-
+/* The lord and the city's state, its building slots and its officers on the left, and a right 350px panel (layout from screens.css) */
 .norden-domestic-left {
   flex: 1 1 62%;
   display: flex;
   flex-direction: column;
   gap: 16px;
   min-width: 0;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #94703b #211b14;
-}
-
-.norden-domestic-frame {
-  position: relative;
-  isolation: isolate;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 18px 22px 20px;
-  max-width: 100%;
-}
-
-.norden-domestic-frame-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.norden-domestic-frame-title {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin: 0;
-  color: #f6e7c5;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.norden-domestic-slot-count {
-  color: #cbb282;
-  font-size: 14px;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
 }
 
 /* Top row: the city's state */
@@ -507,14 +447,8 @@
 
 /* Right panel (350px): the buildings to add or upgrade to, or the knights to pick */
 .norden-domestic-build-panel {
-  position: relative;
-  isolation: isolate;
-  box-sizing: border-box;
   flex: 0 0 350px;
   width: 350px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
   padding: 18px 20px;
   min-height: 0;
 }
@@ -560,10 +494,6 @@
   margin: 0;
   padding: 0 4px 0 0;
   list-style: none;
-  overflow-y: auto;
-  min-height: 0;
-  scrollbar-width: thin;
-  scrollbar-color: #94703b #211b14;
 }
 
 /* A tall picture on the left; the name, effects and text beside it, the costs and the button below them */
@@ -662,14 +592,8 @@
   font-weight: 700;
 }
 
-.norden-domestic-empty {
-  margin: 0;
-  color: #cbb282;
-  font-size: 14px;
-}
-
 @media (max-width: 900px) {
-  .norden-domestic-layout {
+  .norden-domestic .norden-window-screen-layout {
     flex-direction: column;
   }
   .norden-domestic-build-panel {
