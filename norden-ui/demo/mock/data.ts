@@ -69,8 +69,8 @@ export interface MockCity extends Omit<CityView, 'knights' | 'neighbours' | 'fac
 
 /** 商業・生産 (with the base before bonuses) */
 const stats = (market: number, production: number, base?: { market: number; production: number }) => [
-  { label: '商業', value: market, max: 720, base: base?.market },
-  { label: '生産', value: production, max: 640, base: base?.production },
+  { label: '商業', value: market, max: 1000, base: base?.market },
+  { label: '生産', value: production, max: 1000, base: base?.production },
 ]
 
 export type MockBuildingSpec = BuildingSpec

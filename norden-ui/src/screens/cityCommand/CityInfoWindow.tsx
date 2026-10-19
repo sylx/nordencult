@@ -4,6 +4,8 @@ import KnightCard from '../../components/parts/KnightCard'
 import FactionMark from '../../components/parts/FactionMark'
 import StatBar from '../../components/parts/StatBar'
 import BuildingSlots from '../../components/parts/BuildingSlots'
+import Button from '../../components/parts/Button'
+import { ABILITY_LABELS, knightAbility } from '../domestic/DomesticOfficers'
 import iconAgriculture from '../../assets/ui/icons/icon-agriculture.svg'
 import iconCommerce from '../../assets/ui/icons/icon-commerce.png'
 import iconProduction from '../../assets/ui/icons/icon-production.png'
@@ -14,7 +16,7 @@ import iconSupplies from '../../assets/ui/icons/icon-supplies.png'
 import iconCity from '../../assets/ui/icons/icon_home.webp'
 import iconKnights from '../../assets/ui/icons/icon_people.webp'
 import iconRoads from '../../assets/ui/icons/icon_stat.webp'
-import type { CityStatView, CityView, NeighbourView } from '../types'
+import type { CityStatView, CityView, KnightView, NeighbourView } from '../types'
 import './CityInfoWindow.css'
 
 export interface CityInfoWindowProps extends Omit<InfoWindowWithTabsProps, 'tabs' | 'title'> {
@@ -35,11 +37,7 @@ export function createCityInfoTabs(city: CityView, onSelectNeighbour?: (cityId: 
     { id: 'city', name: '都市情報', icon: iconCity, content: <CityInfo city={city} /> },
     {
       id: 'knights', name: '騎士', icon: iconKnights,
-      content: <div className="norden-city-knights">
-        {city.knights?.length
-          ? city.knights.map(knight => <KnightCard key={knight.id} knight={knight} />)
-          : <p className="norden-city-empty">この都市に所属する騎士はいません。</p>}
-      </div>,
+      content: <CityKnights city={city} />,
     },
     { id: 'roads', name: '街道', icon: iconRoads, content: <Neighbours ids={city.neighbours ?? []} onSelect={onSelectNeighbour} /> },
   ]
@@ -86,9 +84,6 @@ function CityInfo({ city }: { city: CityView }) {
               <dt><img src={statIcons[statKind(stat)]} alt="" /><span>{stat.label}</span></dt>
               <dd>
                 <StatBar label={stat.label} value={stat.value} max={stat.max} tone={statKind(stat)} />
-                {stat.base !== undefined && stat.base !== stat.value && (
-                  <span className="norden-city-info-stat-base">基礎 {stat.base.toLocaleString()}</span>
-                )}
               </dd>
             </div>
           ))}
@@ -105,6 +100,39 @@ function CityInfo({ city }: { city: CityView }) {
           {city.tags.map(tag => <li key={tag}>{tag}</li>)}
         </ul>
       )}
+    </div>
+  )
+}
+
+const ABILITIES = ['leadership', 'strength', 'intelligence', 'politics', 'charm'] as const
+
+/** The city's knights with all their abilities, its lord first */
+function CityKnights({ city }: { city: CityView }) {
+  const knights = city.knights ?? []
+  if (knights.length === 0) return <p className="norden-city-empty">この都市に所属する騎士はいません。</p>
+  // The lord is matched to their knight by id, or by name when the city gives none
+  const lord = city.lord
+  const isLord = (knight: KnightView) => lord !== undefined && (lord.id ? knight.id === lord.id : knight.name === lord.name)
+  const ordered = [...knights.filter(isLord), ...knights.filter(knight => !isLord(knight))]
+  return (
+    <div className="norden-city-knights">
+      {ordered.map(knight => {
+        const lordCard = isLord(knight)
+        return (
+          <KnightCard
+            key={knight.id}
+            current={lordCard}
+            knight={{
+              ...knight,
+              stats: ABILITIES.map(ability => ({ label: ABILITY_LABELS[ability], value: knightAbility(knight, ability) ?? '—' })),
+            }}
+            aside={<span className="norden-city-knight-aside">
+              {lordCard && <span className="norden-city-knight-badge">領主</span>}
+              <Button size="small" aria-label={`${knight.name}の詳細`}>詳細</Button>
+            </span>}
+          />
+        )
+      })}
     </div>
   )
 }

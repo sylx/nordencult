@@ -62,7 +62,7 @@ describe('CityCommandScreen', () => {
     setup({
       city: {
         ...city, tier: 2, scaleLabel: '大きな街', troops: 1100, troopMorale: 72, supplies: 440,
-        stats: [{ label: '商業', value: 506, max: 720, base: 440 }],
+        stats: [{ label: '商業', value: 506, max: 1000, base: 440 }],
         buildings: {
           slots: 4, built: [{ id: 'market', name: '市場' }],
           construction: { building: { id: 'workshop', name: '工房' }, invested: 260, required: 400, turnsLeft: 1 },
@@ -75,7 +75,7 @@ describe('CityCommandScreen', () => {
     expect(screen.getByText('兵数').closest('dt')?.nextElementSibling).toHaveTextContent('1,100')
     expect(screen.getByText('練度').closest('dt')?.nextElementSibling).toHaveTextContent('72')
     expect(screen.getByText('物資').closest('dt')?.nextElementSibling).toHaveTextContent('440')
-    expect(screen.getByText('基礎 440')).toBeInTheDocument()
+    expect(screen.queryByText(/基礎/)).not.toBeInTheDocument()
     const slots = screen.getByRole('list', { name: '施設 1 / 4' })
     expect(within(slots).getByText('市場')).toBeInTheDocument()
     expect(within(slots).getByText('建設中')).toBeInTheDocument()
@@ -85,6 +85,26 @@ describe('CityCommandScreen', () => {
     const faction = screen.getByRole('group', { name: '勢力' })
     expect(within(faction).getByRole('group', { name: '金' })).toHaveTextContent('620（+110）')
     expect(within(screen.getByRole('group', { name: 'ターン情報' })).queryByText('620')).not.toBeInTheDocument()
+  })
+
+  it('lists the knights with all their abilities, the lord first', async () => {
+    setup({
+      city: {
+        ...city,
+        lord: { id: 'k2', name: 'ギルベルト' },
+        knights: [
+          { id: 'k1', name: 'エルネスト' },
+          { id: 'k2', name: 'ギルベルト', abilities: { leadership: 80, strength: 70, intelligence: 60, politics: 50, charm: 40 } },
+        ],
+      },
+    })
+    await userEvent.click(screen.getByRole('tab', { name: '騎士' }))
+    const details = screen.getAllByRole('button', { name: /の詳細$/ })
+    expect(details.map(button => button.getAttribute('aria-label'))).toEqual(['ギルベルトの詳細', 'エルネストの詳細'])
+    const lordCard = details[0]!.closest('.norden-knight-card') as HTMLElement
+    for (const [label, value] of [['統率', '80'], ['武力', '70'], ['知力', '60'], ['政治', '50'], ['魅力', '40']] as const) {
+      expect(within(lordCard).getByText(label).nextElementSibling).toHaveTextContent(value)
+    }
   })
 
   it('lists knights and neighbours in the tabs', async () => {
