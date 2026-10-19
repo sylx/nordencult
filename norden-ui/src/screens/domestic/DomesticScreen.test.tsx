@@ -155,7 +155,7 @@ describe('DomesticScreen', () => {
     expect(screen.getAllByLabelText('空きスロット')).toHaveLength(1)
   })
 
-  it('shows the population\'s growth a turn and the turns until the next tier under it', () => {
+  it('shows population growth and the next city scale by name', () => {
     const { rerender } = render(
       <DomesticScreen
         city={{ id: 'P012', name: 'フルーエン', population: 11000, tier: 2 }}
@@ -165,17 +165,17 @@ describe('DomesticScreen', () => {
     )
     const status = screen.getByRole('region', { name: '都市の現状' })
     expect(within(status).getByText('+280/ターン')).toBeInTheDocument()
-    expect(within(status).getByText('Tier 3 まで 約12ターン')).toBeInTheDocument()
+    expect(within(status).getByText('大都市 まで 約12ターン')).toBeInTheDocument()
     expect(within(status).getByText('11,000').parentElement).toHaveAttribute('title', expect.stringContaining('経済 +164'))
 
     rerender(
       <DomesticScreen city={{ id: 'P012', name: 'フルーエン', population: 31000, tier: 3 }} populationGrowth={{ perTurn: 300 }} onClose={vi.fn()} />,
     )
-    expect(within(status).getByText('Tier 3（最大）')).toBeInTheDocument()
+    expect(within(status).getByText('大都市（最大）')).toBeInTheDocument()
     rerender(
       <DomesticScreen city={{ id: 'P012', name: 'フルーエン', population: 900, tier: 1 }} populationGrowth={{ perTurn: 0, nextTier: { tier: 2, turns: null } }} onClose={vi.fn()} />,
     )
-    expect(within(status).getByText('Tier 2 まで 伸びなし')).toBeInTheDocument()
+    expect(within(status).getByText('大きな街 まで 伸びなし')).toBeInTheDocument()
   })
 
   it('shows the city state at the top with the boosts broken down on hover and click', async () => {

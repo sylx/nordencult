@@ -13,7 +13,7 @@ export interface DomesticStatusProps {
   population?: number
   /** The population's growth next turn and the turns until the next tier, shown under it */
   populationGrowth?: PopulationGrowthView
-  /** The city's tier, shown when it is the top one (no next tier in populationGrowth) */
+  /** The city's tier, used to name its scale when it is the top one (no next tier in populationGrowth) */
   tier?: number
   supplies?: number
   gold?: number
@@ -28,12 +28,15 @@ const labelIcons: Readonly<Record<string, string>> = { 新兵の練度: iconRecr
 const statKind = (stat: CityStatView) => stat.kind ?? statKinds[stat.label as keyof typeof statKinds] ?? 'commerce'
 const signed = (value: number) => `${value >= 0 ? '+' : ''}${value.toLocaleString()}`
 
-/** e.g. +280/ターン and Tier 3 まで 約12ターン (or Tier 3（最大）) */
+const scaleLabels: Readonly<Record<number, string>> = { 1: '小さな町', 2: '大きな街', 3: '大都市' }
+
+/** e.g. +280/ターン and 大都市 まで 約12ターン (or 大都市（最大）) */
 function growthNotes(growth: PopulationGrowthView, tier?: number): string[] {
   const next = growth.nextTier
-  const toNext = next
-    ? `Tier ${next.tier} まで ${next.turns === null ? '伸びなし' : `約${next.turns.toLocaleString()}ターン`}`
-    : tier !== undefined ? `Tier ${tier}（最大）` : undefined
+  const scale = next ? scaleLabels[next.tier] : tier !== undefined ? scaleLabels[tier] : undefined
+  const toNext = scale && (next
+    ? `${scale} まで ${next.turns === null ? '伸びなし' : `約${next.turns.toLocaleString()}ターン`}`
+    : `${scale}（最大）`)
   return [`${signed(growth.perTurn)}/ターン`, ...(toNext ? [toNext] : [])]
 }
 

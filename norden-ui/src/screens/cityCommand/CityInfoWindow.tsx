@@ -8,6 +8,9 @@ import iconAgriculture from '../../assets/ui/icons/icon-agriculture.svg'
 import iconCommerce from '../../assets/ui/icons/icon-commerce.png'
 import iconProduction from '../../assets/ui/icons/icon-production.png'
 import iconMorale from '../../assets/ui/icons/icon-military.png'
+import iconTroops from '../../assets/ui/icons/icon-troops.png'
+import iconTraining from '../../assets/ui/icons/icon-training.png'
+import iconSupplies from '../../assets/ui/icons/icon-supplies.png'
 import iconCity from '../../assets/ui/icons/icon_home.webp'
 import iconKnights from '../../assets/ui/icons/icon_people.webp'
 import iconRoads from '../../assets/ui/icons/icon_stat.webp'
@@ -21,7 +24,7 @@ export interface CityInfoWindowProps extends Omit<InfoWindowWithTabsProps, 'tabs
 }
 
 /** A city's information, knights and roads in a tabbed window; past its maximum size the panels scroll */
-export default function CityInfoWindow({ city, onSelectNeighbour, maxWidth = 544, maxHeight = 633, ...windowProps }: CityInfoWindowProps) {
+export default function CityInfoWindow({ city, onSelectNeighbour, maxWidth = 544, maxHeight = 760, ...windowProps }: CityInfoWindowProps) {
   return <InfoWindowWithTabs {...windowProps} maxWidth={maxWidth} maxHeight={maxHeight} title={`${city.faction?.name ?? ''} ${city.name}`.trim()}
     tabs={createCityInfoTabs(city, onSelectNeighbour)} />
 }
@@ -63,10 +66,7 @@ function CityInfo({ city }: { city: CityView }) {
         <div className="norden-city-info-body">
           <dl className="norden-city-info-facts">
             {city.lord && <div><dt>領主</dt><dd>{city.lord.name}</dd></div>}
-            {city.population !== undefined && <div><dt>人口</dt><dd>
-              {city.population.toLocaleString()}
-              {city.tier !== undefined && <span className="norden-city-info-tier">Tier {city.tier}</span>}
-            </dd></div>}
+            {city.population !== undefined && <div><dt>人口</dt><dd>{city.population.toLocaleString()}</dd></div>}
             {city.scaleLabel && <div><dt>規模</dt><dd>{city.scaleLabel}</dd></div>}
             {city.special && <div><dt>特殊</dt><dd>{city.special}</dd></div>}
             <div><dt>騎士</dt><dd>{city.knights?.length ?? 0}人</dd></div>
@@ -77,8 +77,8 @@ function CityInfo({ city }: { city: CityView }) {
             {city.lord.imageSrc ? <img src={city.lord.imageSrc} alt="" /> : city.lord.image}
           </div>
         )}
-        <CityResources city={city} />
       </div>
+      <CityResources city={city} />
       {city.stats && city.stats.length > 0 && (
         <dl className="norden-city-info-stats">
           {city.stats.map(stat => (
@@ -112,16 +112,16 @@ function CityInfo({ city }: { city: CityView }) {
 /** 兵数・練度・物資 side by side, as large numbers */
 function CityResources({ city }: { city: CityView }) {
   const items = [
-    { label: '兵数', value: city.troops },
-    { label: '練度', value: city.troopMorale },
-    { label: '物資', value: city.supplies },
-  ].filter((item): item is { label: string; value: number } => item.value !== undefined)
+    { label: '兵数', icon: iconTroops, value: city.troops },
+    { label: '練度', icon: iconTraining, value: city.troopMorale },
+    { label: '物資', icon: iconSupplies, value: city.supplies },
+  ].filter((item): item is { label: string; icon: string; value: number } => item.value !== undefined)
   if (items.length === 0) return null
   return (
     <dl className="norden-city-info-resources">
       {items.map(item => (
         <div key={item.label}>
-          <dt>{item.label}</dt>
+          <dt><img src={item.icon} alt="" /><span>{item.label}</span></dt>
           <dd>{item.value.toLocaleString()}</dd>
         </div>
       ))}

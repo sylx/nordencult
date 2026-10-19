@@ -1,11 +1,11 @@
-.norden-city-info { display: grid; gap: 14px; width: 460px; max-width: 100%; color: #2a1a0a; }
-.norden-city-info-overview { position: relative; display: grid; gap: 14px; }
+.norden-city-info { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; width: 460px; max-width: 100%; color: #2a1a0a; }
+.norden-city-info-overview { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 .norden-city-info-overview.has-lord { min-height: 326px; padding-right: 53%; align-content: start; }
 .norden-city-info-header { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid #8a705040; }
 .norden-city-info-emblem { width: 44px; height: 44px; object-fit: contain; flex-shrink: 0; }
 .norden-city-info-name { margin: 0; font-size: 24px; font-weight: 700; line-height: 1.3; }
 .norden-city-info-sub { font-size: 13px; color: #80613c; }
-.norden-city-info-body { display: grid; gap: 10px; position:relative; min-height: 200px; }
+.norden-city-info-body { display: grid; gap: 10px; position: relative; }
 .norden-city-info-facts { display: grid; gap: 6px; margin: 0; font-size: 15px;height: min-content; }
 .norden-city-info-facts div { display: flex; gap: 12px; }
 .norden-city-info-facts dt { width: 32px; flex-shrink: 0; padding-top: 2px; font-size: 12px; font-weight: 600; color: #80613c; }
@@ -46,20 +46,26 @@ button.norden-city-roads-row:hover { background: rgb(255 255 255 / 0.65); }
 .norden-city-knights .norden-knight-face { width: 92px; }
 @media (max-width: 560px) {
   .norden-city-info-overview.has-lord { padding-right: 0; min-height: 0; }
-  .norden-city-info-lord { position: relative; top: auto; right: auto; justify-self: center; order: -1; height: 300px; width: 220px; }
+  .norden-city-info-lord { position: relative; top: auto; right: auto; justify-self: center; order: -1; height: 300px; width: 220px; max-width: 100%; }
   .norden-city-info-stat { gap: 6px; }
   .norden-city-info-stat dt { gap: 4px; font-size: 12px; }
   .norden-city-info-stat dt img { width: 30px; height: 30px; }
 }
 
-.norden-city-info-resources { position: absolute; bottom: 0; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; padding: 0 4px; }
-.norden-city-info-resources div { display: grid; justify-items: center; gap: 2px; padding: 2px 0; }
+.norden-city-info-resources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; padding: 8px 4px; border-block: 1px solid #ab88534d; background: #fff9e673; }
+.norden-city-info-resources div { display: grid; min-width: 0; justify-items: center; align-content: start; gap: 4px; padding: 2px 0; }
 .norden-city-info-resources div + div { border-left: 1px solid #8a705040; }
-.norden-city-info-resources dt { color: #80613c; font-size: 12px; font-weight: 600; }
+.norden-city-info-resources dt { display: flex; align-items: center; gap: 6px; color: #80613c; font-size: 12px; font-weight: 600; }
+.norden-city-info-resources dt img { width: 36px; height: 36px; object-fit: contain; filter: drop-shadow(0 2px 1px #38251030); }
 .norden-city-info-resources dd { margin: 0; color: #3b2a16; font-family: Georgia, 'Times New Roman', serif; font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.norden-city-info-tier { margin-left: 8px; padding: 1px 6px; color: #fff4d8; background: #8a6430; border-radius: 3px; font-size: 11px; font-weight: 700; vertical-align: 2px; }
 .norden-city-info-stat dd { display: flex; align-items: center; gap: 8px; }
 .norden-city-info-stat-base { flex-shrink: 0; color: #8a7050; font-size: 11px; white-space: nowrap; }
 .norden-city-info-buildings { display: grid; gap: 6px; padding: 0 4px; }
 .norden-city-info-buildings h3 { margin: 0; color: #614a2c; font-size: 14px; font-weight: 700; }
 .norden-city-info-buildings h3 span { margin-left: 6px; color: #8a7050; font-size: 12px; font-weight: 600; }
+
+@media (max-width: 560px) {
+  .norden-city-info-resources dt { flex-direction: column; gap: 2px; }
+  .norden-city-info-resources dd { font-size: 22px; }
+  .norden-city-info-stat dd { flex-wrap: wrap; }
+}

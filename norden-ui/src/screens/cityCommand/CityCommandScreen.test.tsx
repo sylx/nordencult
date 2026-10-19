@@ -58,10 +58,10 @@ describe('CityCommandScreen', () => {
     expect(screen.getByRole('button', { name: /ターン終了/ })).toBeDisabled()
   })
 
-  it('shows the city\'s economy: tier, soldiers, supplies, effective stats and building slots', () => {
+  it('shows the city\'s economy: scale, soldiers, supplies, effective stats and building slots', () => {
     setup({
       city: {
-        ...city, tier: 2, troops: 1100, troopMorale: 72, supplies: 440,
+        ...city, tier: 2, scaleLabel: '大きな街', troops: 1100, troopMorale: 72, supplies: 440,
         stats: [{ label: '商業', value: 506, max: 720, base: 440 }],
         buildings: {
           slots: 4, built: [{ id: 'market', name: '市場' }],
@@ -70,10 +70,11 @@ describe('CityCommandScreen', () => {
       },
       faction: { gold: 620, goldForecast: 110, production: 820, troops: 4500 },
     })
-    expect(screen.getByText('Tier 2')).toBeInTheDocument()
-    expect(screen.getByText('兵数').nextSibling).toHaveTextContent('1,100')
-    expect(screen.getByText('練度').nextSibling).toHaveTextContent('72')
-    expect(screen.getByText('物資').nextSibling).toHaveTextContent('440')
+    expect(screen.queryByText(/Tier/)).not.toBeInTheDocument()
+    expect(screen.getByText('大きな街')).toBeInTheDocument()
+    expect(screen.getByText('兵数').closest('dt')?.nextElementSibling).toHaveTextContent('1,100')
+    expect(screen.getByText('練度').closest('dt')?.nextElementSibling).toHaveTextContent('72')
+    expect(screen.getByText('物資').closest('dt')?.nextElementSibling).toHaveTextContent('440')
     expect(screen.getByText('基礎 440')).toBeInTheDocument()
     const slots = screen.getByRole('list', { name: '施設 1 / 4' })
     expect(within(slots).getByText('市場')).toBeInTheDocument()

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 test('city information uses graphic meters and icon tabs, and previews real character art', async ({ page }, testInfo) => {
   await page.goto('/#city-command')
-  for (const name of ['農業', '商業', '生産']) {
+  for (const name of ['商業', '生産']) {
     await expect(page.getByRole('meter', { name })).toBeVisible()
   }
   const tabs = page.getByRole('tab')
@@ -11,7 +11,7 @@ test('city information uses graphic meters and icon tabs, and previews real char
     await expect(tab).toHaveText('')
     await expect(tab.locator('img')).toBeVisible()
   }
-  await expect(page.getByRole('list', { name: '特徴' }).getByText('港')).toHaveCSS('font-size', '16px')
+  await expect(page.getByRole('list', { name: '特徴' }).getByText('港湾')).toHaveCSS('font-size', '16px')
 
   const lordChoice = page.getByLabel('領主画像')
   if (await lordChoice.locator('option').count() > 2) {
@@ -38,7 +38,7 @@ test('city information uses graphic meters and icon tabs, and previews real char
     expect(windowBounds.width).toBeGreaterThan(480)
     // CityInfoWindow's maximum size; the 都市情報 panel scrolls past it
     expect(windowBounds.width).toBeLessThanOrEqual(544 + 1)
-    expect(windowBounds.height).toBeLessThanOrEqual(633 + 1)
+    expect(windowBounds.height).toBeLessThanOrEqual(760 + 1)
     expect(windowBounds.x + windowBounds.width).toBeLessThanOrEqual(stageBounds.x + stageBounds.width)
     expect((await tabs.first().boundingBox())!.x).toBeGreaterThanOrEqual(stageBounds.x)
     await page.screenshot({ path: testInfo.outputPath(`city-${skin}.png`), fullPage: true })
