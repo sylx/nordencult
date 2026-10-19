@@ -1,6 +1,7 @@
 import { CHARACTER_MAP, CHARACTER_START } from '../data/character'
 import { CITY_LIST, type City } from '../data/city'
 import { FACTION_LIST } from '../data/faction'
+import { cityRecord } from './economy/cityLog'
 import { INITIAL_GOLD, INITIAL_MORALE, INITIAL_SUPPLIES_PER_PRODUCTION, INITIAL_TROOPS_PER_PRODUCTION } from './economy/balance'
 import { turnOrder } from './queries'
 import type { CharacterId, CharacterState, CityState, FactionId, GameState } from './types'
@@ -49,6 +50,7 @@ export function createInitialState(playerFaction: FactionId = DEFAULT_PLAYER_FAC
     // The lord of a city starts as its governor
     if (factionId && start.isLord && !lords.has(start.cityId)) lords.set(start.cityId, start.id)
   }
+  const cities = Object.fromEntries(CITY_LIST.map((city) => [city.id, initialCity(city, lords.get(city.id))]))
   const state: GameState = {
     turn: 1,
     phase: 'strategy',
@@ -56,9 +58,10 @@ export function createInitialState(playerFaction: FactionId = DEFAULT_PLAYER_FAC
     playerFaction,
     cityOwners,
     characters,
-    cities: Object.fromEntries(CITY_LIST.map((city) => [city.id, initialCity(city, lords.get(city.id))])),
+    cities,
     gold: Object.fromEntries(FACTION_LIST.map((f) => [f.id, f.gold ?? INITIAL_GOLD])),
     lastEconomy: null,
+    cityHistory: Object.fromEntries(Object.entries(cities).map(([id, city]) => [id, [cityRecord(city, id, 1)]])),
     orders: [],
     march: null,
     lastBattle: null,

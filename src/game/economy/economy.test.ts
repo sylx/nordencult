@@ -218,6 +218,31 @@ describe('economy run', () => {
     expect(next.lastEconomy!.cities[FLUEN].after.market).toBe(cityOutput(next, FLUEN).market)
   })
 
+  it('records each city\'s 人口・商業・生産 every turn, with the formulas the run used', () => {
+    let state = assign(createInitialState('carta'), FLUEN, '016', 'commerce')
+    state = setAffairsBudget(state, FLUEN, 'commerce', 200)
+    expect(state.cityHistory[FLUEN]).toEqual([expect.objectContaining({
+      turn: 1, population: state.cities[FLUEN].population, market: cityOutput(state, FLUEN).market, log: [],
+    })])
+    const next = runEconomy(state, 2, () => 0)
+    const [, record] = next.cityHistory[FLUEN]
+    expect(record).toMatchObject({
+      turn: 2, population: next.cities[FLUEN].population, market: cityOutput(next, FLUEN).market,
+      production: cityOutput(next, FLUEN).production, baseMarket: next.cities[FLUEN].market, baseProduction: next.cities[FLUEN].production,
+    })
+    const line = (stat: string) => record.log.find((l) => l.stat === stat)!
+    const { spent, gain } = next.lastEconomy!.cities[FLUEN].affairs.commerce!
+    expect(line('baseMarket')).toMatchObject({ before: state.cities[FLUEN].market, after: state.cities[FLUEN].market + gain })
+    expect(line('baseMarket').formula).toContain(`金 ${spent}`)
+    expect(line('baseMarket').formula).toMatch(new RegExp(`→ ${gain}$`))
+    expect(line('baseProduction').formula).toBe('担当官なし')
+    const population = line('population')
+    expect(population).toMatchObject({ before: state.cities[FLUEN].population, after: next.cities[FLUEN].population })
+    expect(population.formula).toMatch(new RegExp(`= ${(population.after - population.before).toLocaleString('ja-JP')}$`))
+    expect(line('market')).toMatchObject({ before: cityOutput(state, FLUEN).market, after: cityOutput(next, FLUEN).market })
+    expect(runEconomy(next, 3).cityHistory[FLUEN].map((r) => r.turn)).toEqual([1, 2, 3])
+  })
+
   it('spends what is left of a budget at most, and nothing without officers or budget', () => {
     let state = assign(createInitialState('carta'), FLUEN, '016', 'commerce')
     state = setAffairsBudget(state, FLUEN, 'commerce', 30)

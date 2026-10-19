@@ -237,7 +237,6 @@ export default function StrategyScene() {
                 else if (id === 'domestic' && !domesticOpen) nav.push('domestic', { cityId })
               }}
               onEndTurn={endTurn} endTurnDisabled={!playerTurn}
-              onSelectNeighbour={showCity}
               turnMenu={<p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(game.playerFaction)} /></p>}>
               <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))} onSelectCity={showCity} />
               {notice && <div className="norden-screen-top-center norden-screen-banner"><Banner>{notice}</Banner></div>}

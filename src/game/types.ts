@@ -28,6 +28,8 @@ export interface GameState {
   gold: Readonly<Record<FactionId, number>>
   /** What the latest economy run (at the start of the turn) did, for showing the cities grow; null on turn 1 */
   lastEconomy: EconomyReport | null
+  /** Each city's numbers at the start of every turn so far (oldest first), with how the economy run got there */
+  cityHistory: Readonly<Record<CityId, readonly CityRecord[]>>
   /** Invasions ordered this turn, in the order they were made */
   orders: readonly InvasionOrder[]
   /** The march phase: orders still to resolve and the battle being fought */
@@ -139,6 +141,32 @@ export interface CityEconomy {
   affairs: Partial<Record<OfficerRole, AffairsResult>>
   /** Buildings completed, the city growing a tier */
   events: readonly EconomyEvent[]
+}
+
+/** A city's numbers at the start of a turn, for following its growth turn by turn */
+export interface CityRecord {
+  turn: number
+  population: number
+  /** Effective 商業・生産 (with the governor's and the buildings' bonuses) */
+  market: number
+  production: number
+  /** Base 商業・生産 */
+  baseMarket: number
+  baseProduction: number
+  /** How the economy run at the start of the turn changed them (empty for turn 1) */
+  log: readonly CityLogLine[]
+}
+
+/** base*: the base values the officers raise; market・production: the effective values */
+export type CityLogStat = 'population' | 'baseMarket' | 'baseProduction' | 'market' | 'production'
+
+/** A number an economy run changed (or left), and the formula with the numbers it used */
+export interface CityLogLine {
+  stat: CityLogStat
+  before: number
+  after: number
+  /** e.g. max(1, 金 120 × 能力 85.3 / 100 × 0.033) = 3.38 → 3 */
+  formula: string
 }
 
 /** What an economy run did */

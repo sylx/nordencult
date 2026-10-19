@@ -1,10 +1,12 @@
 import { BUILDING_MAP } from '../../data/buildings'
 import { MAX_MORALE, mixMorale } from '../army'
 import type {
-  AffairsResult, CityEconomy, CityId, CitySnapshot, CityState, EconomyEvent, EconomyReport, FactionEconomy, FactionId, GameState, OfficerRole,
+  AffairsResult, CityEconomy, CityId, CityLogLine, CityRecord, CitySnapshot, CityState, EconomyEvent, EconomyReport, FactionEconomy, FactionId,
+  GameState, OfficerRole,
 } from '../types'
 import { CITY_IDS, FACTION_IDS } from '../world'
 import { AFFAIRS_BUDGET_MAX, AFFAIRS_BUDGET_MIN, SALARY } from './balance'
+import { cityRecord, explainCity } from './cityLog'
 import { affairsGain, FUNDED_ROLES, officerTraining, outputOf, populationGrowth, tierOf } from './output'
 
 function snapshot(city: CityState, cityId: CityId): CitySnapshot {
@@ -48,11 +50,11 @@ function runAffairs(city: CityState, cityId: CityId, random: () => number) {
 
 /**
  * A city's turn: its officers at work, supplies into its construction (or its store),
- * its soldiers trained and recruited, its population grown
+ * its soldiers trained and recruited, its population grown; `log` says how its 人口・商業・生産 were reached
  */
 function growCity(
   city: CityState, cityId: CityId, random: () => number,
-): { city: CityState; events: EconomyEvent[]; affairs: CityEconomy['affairs'] } {
+): { city: CityState; events: EconomyEvent[]; affairs: CityEconomy['affairs']; log: CityLogLine[] } {
   const output = outputOf(city, cityId)
   const { affairs, affairsBudget } = runAffairs(city, cityId, random)
   const recruits = affairs.recruitment?.gain ?? 0
@@ -80,28 +82,26 @@ function growCity(
   const market = city.market + (affairs.commerce?.gain ?? 0)
   const production = city.production + (affairs.production?.gain ?? 0)
   // People are drawn by the 商業・生産 the officers have just raised and the buildings standing now
-  const population = city.population + populationGrowth({ market, production, buildings, assignments: city.assignments }).total
+  const growth = populationGrowth({ market, production, buildings, assignments: city.assignments })
+  const population = city.population + growth.total
   // A 聖地・要塞 does not grow in scale
   if (!output.fixedScale && tierOf(population) > output.tier) events.push({ kind: 'tierUp', tier: tierOf(population) })
   // The soldiers train, then the recruits join them at the recruits' morale
   const trained = Math.min(MAX_MORALE, city.troopMorale + output.training)
-  return {
-    city: {
-      ...city,
-      population,
-      market,
-      production,
-      storedSupplies,
-      troops: city.troops + recruits,
-      troopMorale: mixMorale(city.troops, trained, recruits, output.recruitMorale),
-      buildings,
-      construction,
-      affairsBudget,
-      recruited: 0,
-    },
-    events,
-    affairs,
+  const grown: CityState = {
+    ...city,
+    population,
+    market,
+    production,
+    storedSupplies,
+    troops: city.troops + recruits,
+    troopMorale: mixMorale(city.troops, trained, recruits, output.recruitMorale),
+    buildings,
+    construction,
+    affairsBudget,
+    recruited: 0,
   }
+  return { city: grown, events, affairs, log: explainCity(cityId, city, grown, output, affairs, growth) }
 }
 
 /**
@@ -117,7 +117,8 @@ function growCity(
  *    and its lord, and its tier and building slots with it (tierOf, slotsOf; a 聖地・要塞 keeps FIXED_SLOTS).
  * Otherwise the bonuses and the base values are those before the run (a building completed or a base raised now counts from the next).
  * `turn` is the turn starting; `random` rolls the gold the officers spend.
- * The report (lastEconomy) keeps each city's numbers before and after, and what its officers did.
+ * The report (lastEconomy) keeps each city's numbers before and after, and what its officers did;
+ * cityHistory gains each city's numbers for the turn, with the formulas that reached them.
  */
 export function runEconomy(state: GameState, turn: number, random: () => number = Math.random): GameState {
   const factions: Record<FactionId, FactionEconomy> = {}
@@ -129,13 +130,15 @@ export function runEconomy(state: GameState, turn: number, random: () => number 
 
   const cities: Record<CityId, CityState> = {}
   const reports: Record<CityId, CityEconomy> = {}
+  const cityHistory: Record<CityId, readonly CityRecord[]> = { ...state.cityHistory }
   for (const id of CITY_IDS) {
     const before = state.cities[id]
-    const { city, events, affairs } = growCity(before, id, random)
+    const { city, events, affairs, log } = growCity(before, id, random)
     cities[id] = city
     reports[id] = { before: snapshot(before, id), after: snapshot(city, id), affairs, events }
+    cityHistory[id] = [...cityHistory[id] ?? [], cityRecord(city, id, turn, log)]
   }
 
   const report: EconomyReport = { turn, factions, cities: reports }
-  return { ...state, gold, cities, lastEconomy: report }
+  return { ...state, gold, cities, lastEconomy: report, cityHistory }
 }

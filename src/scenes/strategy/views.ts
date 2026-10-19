@@ -16,7 +16,7 @@ import { UNIT_TYPES } from '../../data/unitTypes'
 import {
   assignmentOf, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
   FUNDED_ROLES, governorOf, indirectMaxSoldiers, officerTraining,
-  MAX_MORALE, maxSoldiers, neighbours, orderOf, ownerOf, seasonOf, tierOf, treasuryForecast, turnsToNextTier, unitTypesOf, type AssignmentRole, type GameState,
+  MAX_MORALE, maxSoldiers, orderOf, ownerOf, seasonOf, tierOf, treasuryForecast, turnsToNextTier, unitTypesOf, type AssignmentRole, type CityLogStat, type GameState,
   type Season,
 } from '../../game'
 
@@ -127,6 +127,10 @@ export function knightView(game: GameState, id: string): KnightView {
   }
 }
 
+const CITY_LOG_LABELS: Readonly<Record<CityLogStat, string>> = {
+  population: '人口', baseMarket: '商業（基礎）', baseProduction: '生産（基礎）', market: '商業', production: '生産',
+}
+
 /** Full length of the 商業・生産 bars, the same for every city (a value past it fills the bar) */
 const OUTPUT_BAR_MAX = 1000
 
@@ -174,7 +178,10 @@ export function cityView(game: GameState, id: string): CityView {
     },
     tags: city.tags,
     knights: knights.map((knight) => knightView(game, knight)),
-    neighbours: neighbours(id).map((other) => ({ id: other, name: cityName(other), faction: factionView(ownerOf(game, other)) })),
+    history: (game.cityHistory[id] ?? []).map(({ turn, population, market, production, log }) => ({
+      turn, population, market, production,
+      log: log.map(({ stat, ...line }) => ({ ...line, label: CITY_LOG_LABELS[stat] })),
+    })),
   }
 }
 

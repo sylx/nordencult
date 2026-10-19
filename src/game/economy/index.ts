@@ -12,3 +12,4 @@ export {
   type AffairsForecast, type BuildingBonus, type CityOutput, type GovernorBonus, type OfficerPower, type PopulationGrowth,
 } from './output'
 export { runEconomy, treasuryForecast } from './runEconomy'
+export { cityRecord, explainCity } from './cityLog'
