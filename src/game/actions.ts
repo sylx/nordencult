@@ -1,4 +1,4 @@
-import { defaultUnitType, maxSoldiers } from './army'
+import { MAX_SOLDIERS, defaultUnitType } from './army'
 import { defenderArmy } from './defense'
 import { withoutAssignee } from './economy/domestic'
 import { runEconomy } from './economy/runEconomy'
@@ -82,8 +82,8 @@ function createBattle(state: GameState, order: InvasionOrder): Battle | null {
   const leader = leadingKnight(state, knights)!
   const commander = knights.includes(order.commander) && commandRank(state, order.commander) >= commandRank(state, leader)
     ? order.commander : leader
-  // An order without units (none chosen) sends each knight with their default unit type, as many soldiers as they lead
-  const units = (order.units ?? knights.map((id) => ({ knightId: id, unitType: defaultUnitType(id), soldiers: maxSoldiers(id) })))
+  // An order without units (none chosen) sends each knight with their default unit type, as many soldiers as a unit holds
+  const units = (order.units ?? knights.map((id) => ({ knightId: id, unitType: defaultUnitType(id), soldiers: MAX_SOLDIERS })))
     .filter((u) => u.knightId === null || knights.includes(u.knightId))
   const defender = ownerOf(state, to) ?? null
   const defenders = Object.keys(state.characters).sort()

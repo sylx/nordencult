@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   addOrder, availableKnights, BALANCE, cancelOrder, charactersIn, commandRank, createInitialState, dateOf, defenderArmy,
   endFactionTurn, GameRuleError, governorOf,
-  indirectMaxSoldiers, INITIAL_MORALE, invadeFromProblem, invasionTargets, maxSoldiers, neighbours, orderProblem, readPlayerFaction,
+  INITIAL_MORALE, invadeFromProblem, invasionTargets, MAX_SOLDIERS, neighbours, orderProblem, readPlayerFaction,
   resolveBattle, retreatCities, seasonOf, soldiersLeft, startNextBattle, turnOrder, type ArmyUnit,
   type BattleRetreat, type BattleWipeout, type GameState,
 } from '.'
@@ -174,8 +174,8 @@ describe('units', () => {
     expect(orderProblem(state, { ...draft, units: [{ ...units[0], unitType: 'cavalry' }, units[1]] })).not.toBeNull()
     expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], unitType: 'archer' }] })).not.toBeNull()
     expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], unitType: 'infantry' }] })).toBeNull()
-    expect(orderProblem(state, { ...draft, units: [{ ...units[0], soldiers: maxSoldiers('015') + 5 }, units[1]] }))
-      .not.toBeNull()
+    expect(orderProblem(state, { ...draft, units: [{ ...units[0], soldiers: MAX_SOLDIERS + 10 }, units[1]] }))
+      .toBe(`1部隊の兵数は${MAX_SOLDIERS}までです`)
     expect(orderProblem({ ...state, orders: [{ ...draft, id: 'x', to: 'P026', commander: '027', knights: ['027'], units: [
       { knightId: '027', unitType: 'infantry', soldiers: fluenTroops - 100 },
     ] }] }, draft)).toBe('出撃できる兵が足りません')
@@ -183,11 +183,9 @@ describe('units', () => {
 
   it('checks the units the commander leads indirectly', () => {
     const state = createInitialState('carta')
-    // クラリス leads 72 × 5 = 360 soldiers, so 180 in each indirect unit
-    expect(indirectMaxSoldiers('015')).toBe(180)
     expect(orderProblem(state, { ...draft, units: [units[0], indirect('archer', 180), units[1], indirect('infantry')] })).toBeNull()
     expect(orderProblem(state, { ...draft, units: [...units, indirect('cavalry')] })).toBe('間接指揮部隊は騎兵にできません')
-    expect(orderProblem(state, { ...draft, units: [...units, indirect('archer', 190)] })).toBe('間接指揮部隊の兵数が上限を超えています')
+    expect(orderProblem(state, { ...draft, units: [...units, indirect('archer', MAX_SOLDIERS + 10)] })).toBe(`1部隊の兵数は${MAX_SOLDIERS}までです`)
     expect(orderProblem(state, { ...draft, units: [...units, indirect('infantry', 0)] })).toBe('兵数が0の部隊があります')
   })
 
@@ -214,18 +212,18 @@ describe('units', () => {
   it('sends each knight with their default unit type when an order has no units', () => {
     const marching = startNextBattle(endStrategyPhase(invadeAmbaria(['015', '016'])))
     expect(marching.march?.current?.attacker.units).toEqual([
-      { knightId: '015', unitType: 'infantry', soldiers: maxSoldiers('015') },
-      { knightId: '016', unitType: 'cavalry', soldiers: maxSoldiers('016') },
+      { knightId: '015', unitType: 'infantry', soldiers: MAX_SOLDIERS },
+      { knightId: '016', unitType: 'cavalry', soldiers: MAX_SOLDIERS },
     ])
   })
 
   it('defends with a provisional army: the knights of the city, or a garrison without them', () => {
     const state = createInitialState('carta')
     const army = defenderArmy(state, AMBARIA, 'leonis', ['013'])
-    // 生産 × 5 soldiers shared out within the knight's maxSoldiers
+    // 生産 × 5 soldiers shared out, MAX_SOLDIERS at most in each unit
     expect(army).toEqual({
       factionId: 'leonis', knights: ['013'], commander: '013', morale: INITIAL_MORALE,
-      units: [{ knightId: '013', unitType: 'archer', soldiers: Math.min(maxSoldiers('013'), Math.floor(ambariaTroops / 10) * 10) }],
+      units: [{ knightId: '013', unitType: 'archer', soldiers: Math.min(MAX_SOLDIERS, Math.floor(ambariaTroops / 10) * 10) }],
     })
     // マルクス (029) is the head of カルタ書院: they lead the defence of フルーエン
     expect(defenderArmy(state, FLUEN, 'carta', ['015', '016', '029']).commander).toBe('029')

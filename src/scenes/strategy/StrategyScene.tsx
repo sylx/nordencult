@@ -8,7 +8,7 @@ import { CHARACTER_MAP } from '../../data/character'
 import { FACTION_MAP, factionColor } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
-  MAX_UNITS, addOrder, assign, cancelConstruction, cancelOrder, charactersIn, citiesOf, demolishBuilding, domesticProblem, endFactionTurn,
+  MAX_SOLDIERS, MAX_UNITS, addOrder, assign, cancelConstruction, cancelOrder, charactersIn, citiesOf, demolishBuilding, domesticProblem, endFactionTurn,
   invadeFromProblem, isPlayerTurn, openInvasionTargets, orderProblem, pauseConstruction, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle,
   useGame, type CityId, type FactionId, type InvasionOrder,
 } from '../../game'
@@ -271,7 +271,7 @@ export default function StrategyScene() {
         invasion: ({ from, to }) => (
           <InvasionScreen from={cityView(game, from)} to={cityView(game, to)} defenders={charactersIn(game, to).length}
             knights={charactersIn(game, from).map((id) => knightView(game, id))} unitTypes={UNIT_TYPE_VIEWS}
-            indirectUnitTypes={INDIRECT_UNIT_TYPES} maxUnits={MAX_UNITS} soldierPool={soldiersLeft(game, from)}
+            indirectUnitTypes={INDIRECT_UNIT_TYPES} maxUnits={MAX_UNITS} maxSoldiers={MAX_SOLDIERS} soldierPool={soldiersLeft(game, from)}
             morale={game.cities[from].troopMorale} unitPower={(unit, commander) => unitPower(game, from, unit, commander)}
             validate={(draft) => orderProblem(game, draftOrder(game.playerFaction, from, to, draft))}
             onCancel={nav.pop}

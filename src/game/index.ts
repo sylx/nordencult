@@ -2,7 +2,7 @@
 export * from './types'
 export * from './actions'
 export * from './queries'
-export { MAX_MORALE, MAX_UNITS, defaultUnitType, indirectMaxSoldiers, maxSoldiers, mixMorale, unitTypesOf } from './army'
+export { MAX_MORALE, MAX_SOLDIERS, MAX_UNITS, defaultUnitType, mixMorale, unitTypesOf } from './army'
 export * from './economy'
 export { INITIAL_MORALE } from './economy/balance'
 export { defenderArmy } from './defense'

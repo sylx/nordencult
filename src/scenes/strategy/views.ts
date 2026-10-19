@@ -15,8 +15,8 @@ import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
   assignmentOf, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
-  FUNDED_ROLES, governorOf, indirectMaxSoldiers, officerTraining,
-  MAX_MORALE, maxSoldiers, orderOf, ownerOf, seasonOf, tierOf, treasuryForecast, turnsToNextTier, unitTypesOf, type AssignmentRole, type CityLogStat, type GameState,
+  FUNDED_ROLES, governorOf, officerTraining,
+  MAX_MORALE, orderOf, ownerOf, seasonOf, tierOf, treasuryForecast, turnsToNextTier, unitTypesOf, type AssignmentRole, type CityLogStat, type GameState,
   type Season,
 } from '../../game'
 
@@ -123,11 +123,9 @@ export function knightView(game: GameState, id: string): KnightView {
       politics: character.politics,
       charm: character.charm,
     },
-    maxSoldiers: maxSoldiers(id),
     defaultUnitType: defaultUnitType(id),
     unitTypes: unitTypesOf(id),
     commandRank: commandRank(game, id),
-    indirectSoldiers: indirectMaxSoldiers(id),
     unavailableReason: order ? '侵攻予約中' : undefined,
   }
 }

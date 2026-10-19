@@ -1,6 +1,6 @@
 import { CHARACTER_MAP } from '../data/character'
 import { INDIRECT_UNIT_TYPES, UNIT_TYPE_MAP } from '../data/unitTypes'
-import { MAX_UNITS, indirectMaxSoldiers, maxSoldiers, unitTypesOf } from './army'
+import { MAX_SOLDIERS, MAX_UNITS, unitTypesOf } from './army'
 import type { ArmyUnit, Battle, BattleSide, CharacterId, CityId, FactionId, GameState, InvasionOrder } from './types'
 import { CITY_IDS, FACTION_IDS, areNeighbours, neighbours } from './world'
 
@@ -102,7 +102,7 @@ export function leadingKnight(state: GameState, knights: readonly CharacterId[])
 
 /** Why the units of an order are not allowed, or null */
 function unitsProblem(
-  state: GameState, from: CityId, commander: CharacterId, knights: readonly CharacterId[], units: readonly ArmyUnit[],
+  state: GameState, from: CityId, knights: readonly CharacterId[], units: readonly ArmyUnit[],
 ) {
   const led = units.filter((u) => u.knightId !== null)
   if (led.length !== knights.length || led.some((u, i) => u.knightId !== knights[i])) {
@@ -112,13 +112,12 @@ function unitsProblem(
   for (const u of units) {
     if (!UNIT_TYPE_MAP[u.unitType]) return `${u.unitType} は兵科ではありません`
     if (!Number.isInteger(u.soldiers) || u.soldiers <= 0) return '兵数が0の部隊があります'
+    if (u.soldiers > MAX_SOLDIERS) return `1部隊の兵数は${MAX_SOLDIERS}までです`
     if (u.knightId === null) {
       if (!INDIRECT_UNIT_TYPES.some((id) => id === u.unitType)) return `間接指揮部隊は${UNIT_TYPE_MAP[u.unitType].name}にできません`
-      if (u.soldiers > indirectMaxSoldiers(commander)) return '間接指揮部隊の兵数が上限を超えています'
       continue
     }
     if (!unitTypesOf(u.knightId).some((id) => id === u.unitType)) return `${u.knightId} は${UNIT_TYPE_MAP[u.unitType].name}を率いられません`
-    if (u.soldiers > maxSoldiers(u.knightId)) return `${u.knightId} の兵数が率兵の上限を超えています`
   }
   if (units.reduce((sum, u) => sum + u.soldiers, 0) > soldiersLeft(state, from)) return '出撃できる兵が足りません'
   return null
@@ -147,7 +146,7 @@ export function orderProblem(state: GameState, draft: Omit<InvasionOrder, 'id'>)
     return `${leader} が出撃するときは軍団長になります`
   }
   if (state.orders.some((o) => o.factionId === factionId && o.to === to)) return 'この目標にはすでに侵攻を予約しています'
-  return draft.units ? unitsProblem(state, from, commander, knights, draft.units) : null
+  return draft.units ? unitsProblem(state, from, knights, draft.units) : null
 }
 
 /** Targets still open from a city: its invasion targets not already ordered by the city's faction */
