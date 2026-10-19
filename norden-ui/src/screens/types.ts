@@ -192,6 +192,15 @@ export interface KnightView extends KnightCardData {
   id: string
   /** Abilities beyond the card's stats (e.g. 政治・魅力); the stats of the same label are used when omitted */
   abilities?: KnightAbilitiesView
+  /** Full character illustration for the profile (URL or host-rendered sprite); the face is shown when omitted */
+  image?: ReactNode
+  imageSrc?: string
+  /** 所属勢力 for the profile; null: 在野 (no faction), undefined: not shown */
+  faction?: FactionView | null
+  /** Where they are now, e.g. a city's name; not shown when omitted */
+  location?: string
+  /** 略歴. 名前（001） names another knight: only the name is shown, as a link to their profile */
+  biography?: string
   /** Most soldiers they can lead */
   maxSoldiers?: number
   /** Unit type chosen first when they are picked for an army */

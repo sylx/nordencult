@@ -20,6 +20,16 @@ function statTier(value: ReactNode, max = 100) {
   return ratio >= 0.9 ? 'exceptional' : ratio >= 0.75 ? 'high' : ratio >= 0.5 ? 'mid' : 'low'
 }
 
+/** A knight's stats as the card shows them: label over a large number, colored by how high it is */
+export function KnightStats({ stats, className = '' }: { stats: NonNullable<KnightCardData['stats']>; className?: string }) {
+  return <span className={`norden-knight-stats ${className}`}>
+    {stats.map(stat => <span key={stat.label} className={`norden-knight-stat is-${statTier(stat.value, stat.max)}`}>
+      <span className="norden-knight-stat-label">{stat.label}</span>
+      <b>{stat.value}</b>
+    </span>)}
+  </span>
+}
+
 export interface KnightCardProps {
   knight: KnightCardData
   /** Makes the card a checkbox */
@@ -42,14 +52,7 @@ export default function KnightCard({ knight, selection, current = false, aside, 
     <span className="norden-knight-info">
       <span className="norden-knight-name">{knight.name}</span>
       {knight.subtitle && <span className="norden-knight-subtitle">{knight.subtitle}</span>}
-      {knight.stats && knight.stats.length > 0 && (
-        <span className="norden-knight-stats">
-          {knight.stats.map(stat => <span key={stat.label} className={`norden-knight-stat is-${statTier(stat.value, stat.max)}`}>
-            <span className="norden-knight-stat-label">{stat.label}</span>
-            <b>{stat.value}</b>
-          </span>)}
-        </span>
-      )}
+      {knight.stats && knight.stats.length > 0 && <KnightStats stats={knight.stats} />}
     </span>
     {aside && <span className="norden-knight-aside">{aside}</span>}
   </>

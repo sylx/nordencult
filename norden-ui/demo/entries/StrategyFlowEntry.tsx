@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, CityCommandScreen, DomesticScreen, InvasionScreen, MapPickScreen, ScreenHost, useScreenStack } from '../../src'
 import type { CityCommandId, InvasionDraft, KnightView } from '../../src'
-import { CITY_MAP, FACTIONS, FACTION_SUMMARY, INDIRECT_UNIT_TYPES, MORALE, PLAYER, TURN, UNIT_TYPES, buildOptionsFor, cityView, invasionTargets, knightsIn, playerCities } from '../mock/data'
+import { CITY_MAP, FACTIONS, FACTION_SUMMARY, INDIRECT_UNIT_TYPES, MORALE, PLAYER, TURN, UNIT_TYPES, buildOptionsFor, cityView, invasionTargets, knightOf, knightsIn, playerCities } from '../mock/data'
 import MockMap from '../mock/MockMap'
 import { mockUnitPower } from '../mock/unitPower'
 import type { MapRoad } from '../mock/MockMap'
@@ -93,7 +93,7 @@ export default function StrategyFlowEntry() {
           const problem = invadeProblem(cityId)
           return (
             <CityCommandScreen city={cityView(cityId, knightsOf(cityId))} turn={{ ...TURN, turn }} faction={FACTION_SUMMARY}
-              playerFaction={FACTIONS[PLAYER]}
+              playerFaction={FACTIONS[PLAYER]} knightOf={knightOf}
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
               onPrevCity={() => step(cityId, -1)} onNextCity={() => step(cityId, 1)}
               commandState={{ invade: problem ? { disabled: true, reason: problem } : undefined }}

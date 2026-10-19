@@ -33,6 +33,19 @@ const domesticAbilities: Record<string, [politics: number, charm: number]> = {
   k1: [96, 89], k2: [38, 72], k3: [55, 64], k4: [70, 81], k5: [48, 66], k6: [84, 58], k7: [30, 52], k8: [62, 70], k9: [74, 90],
 }
 
+// 略歴, which names others by their character ids, as the game's data does
+const profiles: Record<string, Pick<KnightView, 'biography'>> = {
+  k1: { biography: 'カルタ書院の院長。書庫の鍵を自ら持ち歩き、夜更けまで写本に目を通す。エルネスト（016）の剣とリディア（011）の弓を信頼し、法王府のセラフィナ（001）とは今も書簡を交わしている。' },
+  k2: { biography: '傭兵崩れの騎士。食い詰めていたところをマルクス（029）に拾われた。幼なじみのミラ（015）には頭が上がらない。' },
+  k3: { biography: '北の森で育った狩人。グレゴール（017）とは古い因縁があり、その名を聞くと黙り込む。' },
+  k4: { biography: '灰座に仕える巫女魔法師。ルチア（003）に魔法の手ほどきをした。' },
+  k5: { biography: '辺境の砦を預かる領主。ハインツ（024）とは同じ年に叙任された。' },
+  k6: { biography: '書院の学者。エルネスト（016）のことを「放っておけない」と言う。' },
+  k7: { biography: '鉄の騎士と恐れられる。逃げたリディア（011）を今も追っている。' },
+  k8: { biography: 'オスカー（019）と並ぶ古参の騎士。' },
+  k9: { biography: 'セラフィナ（001）に魔法を学んだ。師を超えることだけを考えている。' },
+}
+
 const knight = (id: string, name: string, cityId: string, subtitle: string, leadership: number, strength: number, intelligence: number,
   defaultUnitType?: string): MockKnight => {
   const character = characterFor(id)
@@ -42,6 +55,8 @@ const knight = (id: string, name: string, cityId: string, subtitle: string, lead
     commandRank: subtitle.includes('領主') ? 1 : undefined,
     indirectSoldiers: Math.floor(leadership * 5 / 2),
     portrait: character ? createElement(RepositoryPortrait, { character }) : undefined,
+    image: character ? createElement(RepositoryCharacterArt, { character }) : undefined,
+    ...profiles[id],
     stats: [{ label: '統率', value: leadership }, { label: '武力', value: strength }, { label: '知力', value: intelligence }],
     abilities: { leadership, strength, intelligence, politics: domesticAbilities[id]?.[0], charm: domesticAbilities[id]?.[1] },
   }
@@ -58,6 +73,13 @@ export const KNIGHTS: MockKnight[] = [
   knight('k8', 'ハインツ・ヴォルフ', 'P006', '騎士 / 領主', 75, 79, 58),
   knight('k9', 'ルチア・ベルネ', 'P021', '魔法使い / 領主', 66, 15, 92),
 ]
+
+/** A knight by their id, or by the character id a 略歴 names them by */
+export function knightOf(id: string): KnightView | undefined {
+  const found = KNIGHTS.find(item => item.id === id || characterIds[item.id] === id)
+  const owner = found && CITY_MAP[found.cityId]?.owner
+  return found && { ...found, faction: owner ? FACTIONS[owner] : null, location: CITY_MAP[found.cityId]?.name }
+}
 
 export interface MockCity extends Omit<CityView, 'knights' | 'neighbours' | 'faction'> {
   owner?: string

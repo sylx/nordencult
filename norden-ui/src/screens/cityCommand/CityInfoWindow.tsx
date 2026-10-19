@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import InfoWindowWithTabs from '../../components/window/InfoWindowWithTabs'
 import type { InfoWindowWithTabsProps, TabInfo } from '../../components/window/InfoWindowWithTabs'
 import KnightCard from '../../components/parts/KnightCard'
@@ -5,6 +6,8 @@ import StatBar from '../../components/parts/StatBar'
 import BuildingSlots from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
 import { ABILITY_LABELS, knightAbility } from '../domestic/DomesticOfficers'
+import KnightProfileWindow from './KnightProfileWindow'
+import { useBrowseHistory } from '../../hooks/useBrowseHistory'
 import iconAgriculture from '../../assets/ui/icons/icon-agriculture.svg'
 import iconCommerce from '../../assets/ui/icons/icon-commerce.png'
 import iconProduction from '../../assets/ui/icons/icon-production.png'
@@ -20,21 +23,43 @@ import './CityInfoWindow.css'
 
 export interface CityInfoWindowProps extends Omit<InfoWindowWithTabsProps, 'tabs' | 'title'> {
   city: CityView
+  /** Finds any knight by id for the profile window (e.g. one a 略歴 names); only the city's knights are found when omitted */
+  knightOf?: (id: string) => KnightView | undefined
 }
 
-/** A city's information, knights and growth in a tabbed window; past its maximum size the panels scroll */
-export default function CityInfoWindow({ city, maxWidth = 544, maxHeight = 760, ...windowProps }: CityInfoWindowProps) {
-  return <InfoWindowWithTabs {...windowProps} maxWidth={maxWidth} maxHeight={maxHeight} title={`${city.faction?.name ?? ''} ${city.name}`.trim()}
-    tabs={createCityInfoTabs(city)} />
+/**
+ * A city's information, knights and growth in a tabbed window; past its maximum size the panels scroll.
+ * 詳細 on a knight opens their profile beside it, with back/forward through the knights opened since.
+ */
+export default function CityInfoWindow({ city, knightOf, maxWidth = 544, maxHeight = 760, ...windowProps }: CityInfoWindowProps) {
+  const profile = useBrowseHistory<string>()
+  const findKnight = (id: string) => knightOf?.(id) ?? city.knights?.find(knight => knight.id === id)
+  const knight = profile.current === undefined ? undefined : findKnight(profile.current)
+  return <>
+    <InfoWindowWithTabs {...windowProps} maxWidth={maxWidth} maxHeight={maxHeight} title={`${city.faction?.name ?? ''} ${city.name}`.trim()}
+      tabs={createCityInfoTabs(city, { onShowKnight: profile.show })} />
+    {knight && <KnightProfileWindow knight={knight} knightOf={findKnight} onSelectKnight={profile.show}
+      onBack={profile.back} onForward={profile.forward} backDisabled={!profile.canBack} forwardDisabled={!profile.canForward}
+      onClose={profile.close}
+      style={{
+        '--norden-knight-profile-x': `${(windowProps.x ?? 0) + maxWidth + 16}px`,
+        '--norden-knight-profile-y': `${windowProps.y ?? 0}px`,
+      } as CSSProperties} />}
+  </>
+}
+
+export interface CityInfoTabOptions {
+  /** 詳細 on a knight; the button is disabled when omitted */
+  onShowKnight?: (id: string) => void
 }
 
 /** Shared city panels for the game window and component catalog. */
-export function createCityInfoTabs(city: CityView): [TabInfo, TabInfo, TabInfo] {
+export function createCityInfoTabs(city: CityView, { onShowKnight }: CityInfoTabOptions = {}): [TabInfo, TabInfo, TabInfo] {
   return [
     { id: 'city', name: '都市情報', icon: iconCity, content: <CityInfo city={city} /> },
     {
       id: 'knights', name: '騎士', icon: iconKnights,
-      content: <CityKnights city={city} />,
+      content: <CityKnights city={city} onShowKnight={onShowKnight} />,
     },
     // For now the 推移 tab shows the domestic log; it will chart the city's growth
     { id: 'growth', name: '推移', icon: iconStat, content: <CityHistory history={city.history ?? []} /> },
@@ -105,7 +130,7 @@ function CityInfo({ city }: { city: CityView }) {
 const ABILITIES = ['leadership', 'strength', 'intelligence', 'politics', 'charm'] as const
 
 /** The city's knights with all their abilities, its lord first */
-function CityKnights({ city }: { city: CityView }) {
+function CityKnights({ city, onShowKnight }: { city: CityView; onShowKnight?: (id: string) => void }) {
   const knights = city.knights ?? []
   if (knights.length === 0) return <p className="norden-city-empty">この都市に所属する騎士はいません。</p>
   // The lord is matched to their knight by id, or by name when the city gives none
@@ -126,7 +151,8 @@ function CityKnights({ city }: { city: CityView }) {
             }}
             aside={<span className="norden-city-knight-aside">
               {lordCard && <span className="norden-city-knight-badge">領主</span>}
-              <Button size="small" aria-label={`${knight.name}の詳細`}>詳細</Button>
+              <Button size="small" aria-label={`${knight.name}の詳細`} disabled={!onShowKnight}
+                onClick={() => onShowKnight?.(knight.id)}>詳細</Button>
             </span>}
           />
         )
