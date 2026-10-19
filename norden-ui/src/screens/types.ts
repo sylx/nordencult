@@ -156,14 +156,27 @@ export interface CityView {
   buildings?: CityBuildingsView
   tags?: readonly string[]
   knights?: readonly KnightView[]
-  /** Cities linked by a road */
-  neighbours?: readonly NeighbourView[]
+  /** The city's numbers at the start of each turn so far, oldest first */
+  history?: readonly CityHistoryView[]
 }
 
-export interface NeighbourView {
-  id: string
-  name: string
-  faction?: FactionView
+/** A city's numbers at the start of a turn, for following its growth */
+export interface CityHistoryView {
+  turn: number
+  population: number
+  /** Effective 商業・生産 */
+  market: number
+  production: number
+  /** How the turn's economy run reached them (none for the first turn) */
+  log?: readonly CityLogLineView[]
+}
+
+/** A number the economy run changed (or left), e.g. 商業（基礎） 440 → 442, and the formula with the numbers it used */
+export interface CityLogLineView {
+  label: string
+  before: number
+  after: number
+  formula: string
 }
 
 /** A knight's abilities (0-100); the domestic screen weighs its lord and officers by them */

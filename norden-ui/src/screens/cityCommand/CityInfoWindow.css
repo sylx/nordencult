@@ -33,26 +33,18 @@
 .norden-city-knights { display: grid; gap: 8px; width: 460px; max-width: 100%; }
 .norden-city-empty { margin: 0; padding: 12px 0; color: #8a7050; }
 
-.norden-city-roads { display: grid; gap: 4px; width: 460px; max-width: 100%; margin: 0; padding: 0; list-style: none; }
-.norden-city-roads-row {
-  display: grid;
-  grid-template-columns: 28px 1fr auto;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 6px 8px;
-  color: #2a1a0a;
-  background: rgb(255 255 255 / 0.35);
-  border: 1px solid rgb(0 0 0 / 0.1);
-  border-radius: 4px;
-  font: inherit;
-  text-align: left;
-}
-button.norden-city-roads-row { cursor: pointer; }
-button.norden-city-roads-row:hover { background: rgb(255 255 255 / 0.65); }
-.norden-city-roads-row .norden-faction-mark { font-size: 17px; }
-.norden-city-roads-name { font-size: 15px; font-weight: 600; }
-.norden-city-roads-faction { font-size: 12px; color: #8a7050; }
+.norden-city-history { display: grid; gap: 10px; width: 460px; max-width: 100%; margin: 0; padding: 0; list-style: none; }
+.norden-city-history-turn { padding: 8px 10px; background: rgb(255 255 255 / 0.4); border: 1px solid #c9ad7a; border-radius: 4px; }
+.norden-city-history-turn header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; color: #6a5030; font-size: 12px; }
+.norden-city-history-turn h3 { margin: 0 auto 0 0; color: #3b2a16; font-size: 14px; }
+.norden-city-history-turn header b { color: #3b2a16; font-size: 14px; font-variant-numeric: tabular-nums; }
+.norden-city-history-turn dl { display: grid; gap: 6px; margin: 8px 0 0; }
+.norden-city-history-turn dt { display: flex; gap: 8px; color: #3b2a16; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.norden-city-history-turn dt span:first-child { min-width: 6.5em; }
+.norden-city-history-turn dt .is-up { color: #3e6743; }
+.norden-city-history-turn dt .is-down { color: #8b4336; }
+.norden-city-history-turn dd { margin: 2px 0 0; color: #78603f; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.norden-city-history-note { margin: 6px 0 0; color: #8a7050; font-size: 12px; }
 .norden-city-knights .norden-knight-face { width: 92px; }
 .norden-city-knight-aside { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .norden-city-knight-badge { padding: 2px 8px; color: #fff4d8; background: #7a4f17; border-radius: 3px; font-weight: 700; }

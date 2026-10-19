@@ -1,7 +1,6 @@
 import InfoWindowWithTabs from '../../components/window/InfoWindowWithTabs'
 import type { InfoWindowWithTabsProps, TabInfo } from '../../components/window/InfoWindowWithTabs'
 import KnightCard from '../../components/parts/KnightCard'
-import FactionMark from '../../components/parts/FactionMark'
 import StatBar from '../../components/parts/StatBar'
 import BuildingSlots from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
@@ -15,31 +14,30 @@ import iconTraining from '../../assets/ui/icons/icon-training.png'
 import iconSupplies from '../../assets/ui/icons/icon-supplies.png'
 import iconCity from '../../assets/ui/icons/icon_home.webp'
 import iconKnights from '../../assets/ui/icons/icon_people.webp'
-import iconRoads from '../../assets/ui/icons/icon_stat.webp'
-import type { CityStatView, CityView, KnightView, NeighbourView } from '../types'
+import iconStat from '../../assets/ui/icons/icon_stat.webp'
+import type { CityHistoryView, CityStatView, CityView, KnightView } from '../types'
 import './CityInfoWindow.css'
 
 export interface CityInfoWindowProps extends Omit<InfoWindowWithTabsProps, 'tabs' | 'title'> {
   city: CityView
-  /** Makes the cities on the 街道 tab buttons */
-  onSelectNeighbour?: (cityId: string) => void
 }
 
-/** A city's information, knights and roads in a tabbed window; past its maximum size the panels scroll */
-export default function CityInfoWindow({ city, onSelectNeighbour, maxWidth = 544, maxHeight = 760, ...windowProps }: CityInfoWindowProps) {
+/** A city's information, knights and growth in a tabbed window; past its maximum size the panels scroll */
+export default function CityInfoWindow({ city, maxWidth = 544, maxHeight = 760, ...windowProps }: CityInfoWindowProps) {
   return <InfoWindowWithTabs {...windowProps} maxWidth={maxWidth} maxHeight={maxHeight} title={`${city.faction?.name ?? ''} ${city.name}`.trim()}
-    tabs={createCityInfoTabs(city, onSelectNeighbour)} />
+    tabs={createCityInfoTabs(city)} />
 }
 
 /** Shared city panels for the game window and component catalog. */
-export function createCityInfoTabs(city: CityView, onSelectNeighbour?: (cityId: string) => void): [TabInfo, TabInfo, TabInfo] {
+export function createCityInfoTabs(city: CityView): [TabInfo, TabInfo, TabInfo] {
   return [
     { id: 'city', name: '都市情報', icon: iconCity, content: <CityInfo city={city} /> },
     {
       id: 'knights', name: '騎士', icon: iconKnights,
       content: <CityKnights city={city} />,
     },
-    { id: 'roads', name: '街道', icon: iconRoads, content: <Neighbours ids={city.neighbours ?? []} onSelect={onSelectNeighbour} /> },
+    // For now the 推移 tab shows the domestic log; it will chart the city's growth
+    { id: 'growth', name: '推移', icon: iconStat, content: <CityHistory history={city.history ?? []} /> },
   ]
 }
 
@@ -157,24 +155,40 @@ function CityResources({ city }: { city: CityView }) {
   )
 }
 
-function Neighbours({ ids, onSelect }: { ids: readonly NeighbourView[]; onSelect?: (id: string) => void }) {
-  if (ids.length === 0) return <p className="norden-city-empty">街道でつながる都市はありません。</p>
+/** Each turn's 人口・商業・生産, newest first, with the formulas of the economy run that reached them */
+function CityHistory({ history }: { history: readonly CityHistoryView[] }) {
+  if (history.length === 0) return <p className="norden-city-empty">記録はまだありません。</p>
   return (
-    <ul className="norden-city-roads">
-      {ids.map(neighbour => {
-        const body = <>
-          <FactionMark faction={neighbour.faction} emblemOnly />
-          <span className="norden-city-roads-name">{neighbour.name}</span>
-          <span className="norden-city-roads-faction">{neighbour.faction?.name ?? '中立'}</span>
-        </>
-        return (
-          <li key={neighbour.id}>
-            {onSelect
-              ? <button type="button" className="norden-city-roads-row" onClick={() => onSelect(neighbour.id)}>{body}</button>
-              : <div className="norden-city-roads-row">{body}</div>}
-          </li>
-        )
-      })}
-    </ul>
+    <ol className="norden-city-history" aria-label="内政ログ">
+      {[...history].reverse().map(record => (
+        <li key={record.turn} className="norden-city-history-turn">
+          <header>
+            <h3>第{record.turn}ターン</h3>
+            <span>人口 <b>{record.population.toLocaleString()}</b></span>
+            <span>商業 <b>{record.market.toLocaleString()}</b></span>
+            <span>生産 <b>{record.production.toLocaleString()}</b></span>
+          </header>
+          {record.log && record.log.length > 0 ? (
+            <dl>
+              {record.log.map(line => {
+                const delta = line.after - line.before
+                return (
+                  <div key={line.label}>
+                    <dt>
+                      <span>{line.label}</span>
+                      <span>{line.before.toLocaleString()} → {line.after.toLocaleString()}</span>
+                      <span className={delta > 0 ? 'is-up' : delta < 0 ? 'is-down' : ''}>
+                        {delta > 0 ? '+' : ''}{delta.toLocaleString()}
+                      </span>
+                    </dt>
+                    <dd>{line.formula}</dd>
+                  </div>
+                )
+              })}
+            </dl>
+          ) : <p className="norden-city-history-note">初期値</p>}
+        </li>
+      ))}
+    </ol>
   )
 }

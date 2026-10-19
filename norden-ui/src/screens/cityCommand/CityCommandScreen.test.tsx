@@ -7,11 +7,10 @@ import type { CityView } from '../types'
 const city: CityView = {
   id: 'P012', name: 'フルーエン', faction: { name: 'カルタ書院' }, population: 11000,
   knights: [{ id: 'k1', name: 'エルネスト' }],
-  neighbours: [{ id: 'P004', name: 'アンバリア', faction: { name: 'レオニス帝国' } }],
 }
 
 const setup = (props: Partial<Parameters<typeof CityCommandScreen>[0]> = {}) => {
-  const handlers = { onCommand: vi.fn(), onEndTurn: vi.fn(), onPrevCity: vi.fn(), onNextCity: vi.fn(), onSelectNeighbour: vi.fn() }
+  const handlers = { onCommand: vi.fn(), onEndTurn: vi.fn(), onPrevCity: vi.fn(), onNextCity: vi.fn() }
   render(<CityCommandScreen city={city} turn={{ turn: 3, phaseLabel: '戦略フェーズ', activeFaction: { name: 'カルタ書院' } }}
     {...handlers} {...props} />)
   return handlers
@@ -107,12 +106,26 @@ describe('CityCommandScreen', () => {
     }
   })
 
-  it('lists knights and neighbours in the tabs', async () => {
-    const { onSelectNeighbour } = setup()
-    await userEvent.click(screen.getByRole('tab', { name: '騎士' }))
-    expect(screen.getByText('エルネスト')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('tab', { name: '街道' }))
-    await userEvent.click(screen.getByRole('button', { name: /アンバリア/ }))
-    expect(onSelectNeighbour).toHaveBeenCalledWith('P004')
+  it('shows the domestic log of each turn, newest first, on the 推移 tab', async () => {
+    setup({
+      city: {
+        ...city,
+        history: [
+          { turn: 1, population: 11000, market: 480, production: 240 },
+          {
+            turn: 2, population: 11320, market: 483, production: 240,
+            log: [{ label: '人口', before: 11000, after: 11320, formula: 'floor((経済 300 + 施設 0) × 領主 1.0667 × (1 + 施設 0%)) = 320' }],
+          },
+        ],
+      },
+    })
+    expect(screen.queryByRole('tab', { name: '街道' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('tab', { name: '推移' }))
+    const turns = within(screen.getByRole('list', { name: '内政ログ' })).getAllByRole('listitem')
+    expect(turns.map(turn => turn.querySelector('h3')?.textContent)).toEqual(['第2ターン', '第1ターン'])
+    expect(turns[0]).toHaveTextContent('11,000 → 11,320')
+    expect(turns[0]).toHaveTextContent('+320')
+    expect(within(turns[0]!).getByText(/^floor\(\(経済 300/)).toBeInTheDocument()
+    expect(turns[1]).toHaveTextContent('初期値')
   })
 })

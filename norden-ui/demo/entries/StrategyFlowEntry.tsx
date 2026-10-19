@@ -110,8 +110,7 @@ export default function StrategyFlowEntry() {
                 add(`第${turn}ターン終了（予約 ${orders.length}件）`)
                 setOrders([])
                 setTurn(value => value + 1)
-              }}
-              onSelectNeighbour={id => nav.replace('cityCommand', { cityId: id })}>
+              }}>
               {orderPanel}
             </CityCommandScreen>
           )

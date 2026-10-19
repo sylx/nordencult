@@ -1,4 +1,4 @@
-import type { BuildOptionView, BuildingView, CityBuildingsView, CityStatView, CityView, FactionSummaryView, FactionView, KnightView, PopulationGrowthView, TurnView, UnitTypeView } from '../../src'
+import type { BuildOptionView, BuildingView, CityBuildingsView, CityHistoryView, CityStatView, CityView, FactionSummaryView, FactionView, KnightView, PopulationGrowthView, TurnView, UnitTypeView } from '../../src'
 import { createElement } from 'react'
 import { repositoryBuildings, type BuildingSpec } from '../repositoryBuildings'
 import { repositoryCharacters, RepositoryCharacterArt, RepositoryPortrait } from '../repositoryCharacters'
@@ -307,8 +307,27 @@ export function cityView(id: string, knights: readonly KnightView[] = knightsIn(
     lord: lord ? lordView(lord.id) : undefined,
     faction: owner ? FACTIONS[owner] : undefined,
     knights,
-    neighbours: neighboursOf(id).map(other => ({ id: other, name: CITY_MAP[other]!.name, faction: CITY_MAP[other]!.owner ? FACTIONS[CITY_MAP[other]!.owner!] : undefined })),
+    history: historyOf(city),
   }
+}
+
+/** Three turns of a city's growth ending at its numbers now, with the economy run's formulas (as the game writes them) */
+function historyOf(city: Pick<CityView, 'population' | 'stats'>): CityHistoryView[] {
+  const value = (label: string) => city.stats?.find(stat => stat.label === label)?.value ?? 0
+  const population = city.population ?? 0
+  const [market, production] = [value('商業'), value('生産')]
+  const grow = (turn: number, back: number): CityHistoryView => {
+    const [pop, before, gain] = [population - back * 320, market - back * 3, 3]
+    return {
+      turn, population: pop, market: before, production,
+      log: [
+        { label: '商業（基礎）', before: before - gain, after: before, formula: `担当官: max(1, 金 115 × 能力 85.33 / 100 × 0.033) = 3.24 → ${gain}` },
+        { label: '生産（基礎）', before: production, after: production, formula: '担当官なし' },
+        { label: '人口', before: pop - 320, after: pop, formula: `floor((経済 (商業 ${before} × 0.5 + 生産 ${production} × 0.2 = ${before * 0.5 + production * 0.2}) + 施設 (1 × 50 = 50)) × 領主 (1 + (政治 70 + 魅力 60) / 800 = 1.1625) × (1 + 施設 0%)) = 320` },
+      ],
+    }
+  }
+  return [{ turn: 1, population: population - 640, market: market - 6, production }, grow(2, 1), grow(3, 0)]
 }
 
 export const TURN: TurnView = {

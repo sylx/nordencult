@@ -35,7 +35,6 @@ export interface CityCommandScreenProps {
   onCommand: (id: CityCommandId) => void
   onEndTurn: () => void
   endTurnDisabled?: boolean
-  onSelectNeighbour?: (cityId: string) => void
   /** Contents of the settings menu on the turn bar */
   turnMenu?: ReactNode
   /** Initial position of the city window */
@@ -54,7 +53,7 @@ export function turnText(turn: TurnView) {
 /** City command screen: the faction bar with ◀ ▶ between cities and the city window (left), turn bar (top right) and the action toolbar (bottom) */
 export default function CityCommandScreen({
   city, turn, faction, playerFaction, onPrevCity, onNextCity, cityPosition, commandState = {}, activeCommand, onCommand, onEndTurn, endTurnDisabled = false,
-  onSelectNeighbour, turnMenu, windowPosition = { x: 56, y: 96 }, skin, children,
+  turnMenu, windowPosition = { x: 56, y: 96 }, skin, children,
 }: CityCommandScreenProps) {
   const command = (id: CityCommandId, label: string): ToolbarCommand => {
     const active = activeCommand === id
@@ -81,7 +80,7 @@ export default function CityCommandScreen({
         <DateBar phaseLabel={turn.phaseLabel} factionName={turn.activeFaction ? turn.activeFaction.name : turn.activeFaction}
           dateLabel={turn.dateLabel}>{turnMenu}</DateBar>
       </div>
-      <CityInfoWindow city={city} onSelectNeighbour={onSelectNeighbour} x={windowPosition.x} y={windowPosition.y} skin={skin}
+      <CityInfoWindow city={city} x={windowPosition.x} y={windowPosition.y} skin={skin}
         style={{ '--norden-city-window-x': `${windowPosition.x}px`, '--norden-city-window-y': `${windowPosition.y}px` } as CSSProperties} />
       <div className="norden-screen-bottom-center">
         <CommandToolbar commands={commands} aria-label="都市コマンド" movable={true} />
