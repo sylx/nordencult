@@ -16,7 +16,7 @@ import { UNIT_TYPES } from '../../data/unitTypes'
 import {
   assignmentOf, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
   FUNDED_ROLES, governorOf, officerTraining,
-  MAX_MORALE, orderOf, ownerOf, seasonOf, tierOf, treasuryForecast, turnsToNextTier, unitTypesOf, type AssignmentRole, type CityLogStat, type GameState,
+  MAX_MORALE, orderOf, ownerOf, seasonOf, tierOf, treasuryForecast, turnsToNextTier, unitAbilities, unitTypesOf, type AssignmentRole, type CityLogStat, type GameState,
   type Season,
 } from '../../game'
 
@@ -343,10 +343,10 @@ export const UNIT_TYPE_VIEWS: readonly UnitTypeView[] = UNIT_TYPES.map((type) =>
 
 /**
  * Basic attack and defense of a unit of an invasion from `from` (norden-battle's rules): its soldiers and unit type,
- * the city's morale, and its knight's 統率・武力 (知力 for mages), or the commander's for an indirect unit
+ * the city's morale, and its knight's 統率・武力 (知力 for mages), or half of the commander's for an indirect unit
  */
 export function unitPower(game: GameState, from: string, unit: InvasionAssignment, commander: string) {
-  const leader = CHARACTER_MAP[unit.knightId ?? commander]
+  const leader = unitAbilities(unit.knightId, commander)
   const type = unit.unitType as UnitType
   const power = {
     type,

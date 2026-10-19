@@ -3,9 +3,10 @@ import {
   addOrder, availableKnights, BALANCE, cancelOrder, charactersIn, commandRank, createInitialState, dateOf, defenderArmy,
   endFactionTurn, GameRuleError, governorOf,
   INITIAL_MORALE, invadeFromProblem, invasionTargets, MAX_SOLDIERS, neighbours, orderProblem, readPlayerFaction,
-  resolveBattle, retreatCities, seasonOf, soldiersLeft, startNextBattle, turnOrder, type ArmyUnit,
+  resolveBattle, retreatCities, seasonOf, soldiersLeft, startNextBattle, turnOrder, unitAbilities, type ArmyUnit,
   type BattleRetreat, type BattleWipeout, type GameState,
 } from '.'
+import { CHARACTER_MAP } from '../data/character'
 import { FACTION_LIST } from '../data/faction'
 
 // The demo of M001: カルタ書院 invades アンバリア (P004, レオニス帝国) from フルーエン (P012)
@@ -187,6 +188,16 @@ describe('units', () => {
     expect(orderProblem(state, { ...draft, units: [...units, indirect('cavalry')] })).toBe('間接指揮部隊は騎兵にできません')
     expect(orderProblem(state, { ...draft, units: [...units, indirect('archer', MAX_SOLDIERS + 10)] })).toBe(`1部隊の兵数は${MAX_SOLDIERS}までです`)
     expect(orderProblem(state, { ...draft, units: [...units, indirect('infantry', 0)] })).toBe('兵数が0の部隊があります')
+  })
+
+  it('leads the indirect units with half of the abilities of the commander', () => {
+    const { leadership, strength, intelligence } = CHARACTER_MAP['015']
+    expect(unitAbilities('015', '016')).toEqual({ leadership, strength, intelligence })
+    expect(unitAbilities(null, '015')).toEqual({
+      leadership: Math.floor(leadership / 2), strength: Math.floor(strength / 2), intelligence: Math.floor(intelligence / 2),
+    })
+    // the garrison nobody leads
+    expect(unitAbilities(null, null)).toBeUndefined()
   })
 
   it('allows 6 units at most', () => {

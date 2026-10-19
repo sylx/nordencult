@@ -20,6 +20,24 @@ export const MAX_SOLDIERS = 1000
 export const defaultUnitType = (characterId: CharacterId): UnitTypeId =>
   DEFAULT_UNIT_TYPES[CHARACTER_MAP[characterId]?.type ?? 'knight']
 
+/** A commander leads the units without a knight of their own with this share of their 統率・武力・知力 */
+export const INDIRECT_ABILITY_RATE = 0.5
+
+/**
+ * The 統率・武力・知力 a unit fights with: its knight's, or INDIRECT_ABILITY_RATE of the commander's
+ * for a unit they lead indirectly (so its attack and defense come from half of theirs). undefined: nobody leads it
+ */
+export function unitAbilities(knightId: CharacterId | null, commander: CharacterId | null) {
+  const leader = CHARACTER_MAP[knightId ?? commander ?? '']
+  if (!leader) return undefined
+  const rate = knightId === null ? INDIRECT_ABILITY_RATE : 1
+  return {
+    leadership: Math.floor(leader.leadership * rate),
+    strength: Math.floor(leader.strength * rate),
+    intelligence: Math.floor(leader.intelligence * rate),
+  }
+}
+
 /** The unit types a character can lead, by their type */
 export const unitTypesOf = (characterId: CharacterId): readonly UnitTypeId[] =>
   UNIT_TYPES_BY_CHARACTER_TYPE[CHARACTER_MAP[characterId]?.type ?? 'knight']
