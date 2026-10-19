@@ -9,10 +9,10 @@ import type { CityTier } from '../../data/buildings'
 /** Gold in a faction's treasury at the start when its data does not say */
 export const INITIAL_GOLD = 500
 
-/** Gold a turn per point of effective 商業 */
-export const GOLD_PER_MARKET = 0.2
-/** Gold each knight of a faction is paid a turn */
-export const SALARY = 5
+/** Gold a turn per point of effective 商業 (1: a city's income is its 商業) */
+export const GOLD_PER_MARKET = 1
+/** Gold each knight of a faction is paid a turn (none for now) */
+export const SALARY = 0
 
 /** Morale of a city's soldiers at the start when its data does not say */
 export const INITIAL_MORALE = 70
