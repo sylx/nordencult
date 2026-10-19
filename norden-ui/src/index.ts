@@ -1,6 +1,9 @@
 // Basic components: windows
 export { default as WindowFrame } from './components/window/WindowFrame'
 export type { WindowFrameProps } from './components/window/WindowFrame'
+export type { WindowFrameNavigation } from './components/window/WindowFrame'
+export { default as NavigationWindow } from './components/window/NavigationWindow'
+export type { NavigationWindowProps } from './components/window/NavigationWindow'
 export { default as ConfirmDialog } from './components/window/ConfirmDialog'
 export type { ConfirmDialogProps } from './components/window/ConfirmDialog'
 export { default as InfoWindow } from './components/window/InfoWindow'

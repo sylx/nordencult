@@ -15,6 +15,12 @@
   background: #95e0e81a;
 }
 .demo-window-frame-field { margin-top: 16px; }
+.demo-window-frame-preview.show-navigation-targets :is(.norden-window-frame-navigation-button, .norden-window-frame-close):not(:focus-visible) {
+  outline: 1px dashed #95e0e8;
+  outline-offset: 0;
+}
+.demo-navigation-position { color: #c2aa7c; font-size: 12px; letter-spacing: .12em; }
+.demo-window-frame-preview[data-background='parchment'] .demo-navigation-position { color: #71522e; }
 .demo-window-frame-field label { display: block; margin-bottom: 6px; font-size: 12px; color: #d2cbb8; }
 .demo-window-frame-field input:disabled { opacity: .4; }
 #frame-style { font: 11px/1.7 ui-monospace, monospace; }

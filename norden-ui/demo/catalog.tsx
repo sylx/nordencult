@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import InfoWindowEntry from './entries/InfoWindowEntry'
 import WindowFrameEntry from './entries/WindowFrameEntry'
+import NavigationWindowEntry from './entries/NavigationWindowEntry'
 import CommandToolbarEntry from './entries/CommandToolbarEntry'
 import DateBarEntry from './entries/DateBarEntry'
 import FactionBarEntry from './entries/FactionBarEntry'
@@ -62,6 +63,8 @@ export const CATALOG: CatalogGroup[] = [
         description: '羊皮紙と装飾枠のウィンドウ。タブ、スキン、自動サイズ、ドラッグ、リサイズ' },
       { id: 'window-frame', label: 'ウィンドウ（閉じるボタン付き）', name: 'WindowFrame', Component: WindowFrameEntry,
         description: '右上の彫刻に閉じる操作が組み込まれた装飾枠。寸法、装飾のサイズ、閉じる位置、内容の余白と透過を調整' },
+      { id: 'navigation-window', label: 'ウィンドウ（戻る・進むボタン付き）', name: 'NavigationWindow', Component: NavigationWindowEntry,
+        description: '左上の金の装飾に戻る・進む、右上に閉じるを組み込んだ汎用ウィンドウ。前後への移動・各ボタンの無効状態・サイズと透過を確認' },
       { id: 'command-toolbar', label: 'ツールバー', name: 'CommandToolbar', Component: CommandToolbarEntry,
         description: 'コマンドの並び。子を持つコマンドは押すと上にサブコマンドが開く' },
       { id: 'date-bar', label: 'ターン情報', name: 'DateBar', Component: DateBarEntry,

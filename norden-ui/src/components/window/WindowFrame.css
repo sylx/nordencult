@@ -38,6 +38,15 @@
   border: var(--norden-window-frame-size) solid transparent;
   border-image: url('../../assets/ui/skins/ornate-close-frame.png') 25% / var(--norden-window-frame-size) / 0 stretch;
 }
+.norden-window-frame[data-background='parchment'] {
+  color: #342515;
+}
+.norden-window-frame[data-background='parchment'] .norden-window-frame-surface {
+  background: #e9d8ae url('../../assets/ui/ui_paper_texture.webp') repeat;
+}
+.norden-window-frame[data-background='parchment'] .norden-window-frame-content {
+  scrollbar-color: #94703b #e9d8ae;
+}
 .norden-window-frame-title {
   position: absolute;
   top: var(--norden-window-title-y, 2px);
@@ -63,6 +72,9 @@
   border-inline-width: 30px;
   border-image: url('../../assets/ui/info_window_title_full.png') 0 8% fill / 0 30px / 0 stretch;
 }
+.norden-window-frame-title.is-draggable { pointer-events: auto; touch-action: none; cursor: grab; }
+.norden-window-frame.is-dragging .norden-window-frame-title { cursor: grabbing; }
+.norden-window-frame-title.is-draggable:focus-visible { outline: 2px solid #ffe0a1; outline-offset: -4px; }
 .norden-window-frame-title-text {
   min-width: 0;
   overflow: hidden;

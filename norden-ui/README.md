@@ -159,6 +159,7 @@ function BattleUi() {
 
 | 部品 | 主なprops | 振る舞い |
 | --- | --- | --- |
+| `NavigationWindow` | `title?`, `onClose`, `onBack?`, `onForward?`, `backDisabled?`, `forwardDisabled?`, `children`, `style` | `WindowFrame` の左上装飾に戻る・進むを埋め込んだ汎用ウィンドウ。各方向を独立して無効化可能。カタログ `#navigation-window` でプレビュー（[使い方・生成画像](docs/navigation-window.md)） |
 | `CommandToolbar` | `commands: { id, label, icon?, onClick?, disabled?, title?, active?, tone?, children? }[]`, `movable` | 子を持つコマンドは押すと上にサブコマンドの列を開く（再クリック・Esc・外側クリックで閉じる）。`tone: 'accent'` で強調。`movable` で左右の端をドラッグ・矢印キーで移動 |
 | `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `children?` | フェーズ・勢力のターン・年月・設定の順に表示。`children` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
 | `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `metal: 'gold' \| 'silver' \| 'none'`, `size`, `style` | 象牙の立体的なボタンに金／銀の四隅装飾、または装飾なし。生成画像を9分割で伸縮し、`style` で幅・高さを指定可能 |

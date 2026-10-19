@@ -1,0 +1,71 @@
+.norden-window-frame-with-navigation {
+  min-width: calc(var(--norden-window-frame-size) * 3.5);
+  --norden-window-content-top: max(54px, calc(var(--norden-window-frame-size) * .85));
+}
+.norden-window-frame-with-navigation .norden-window-frame-title {
+  left: calc(var(--norden-window-frame-size) * 2 + 4px);
+  right: var(--norden-window-frame-size);
+  transform: none;
+  justify-content: center;
+  box-sizing: border-box;
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  padding-inline: 16px;
+}
+.norden-window-frame-navigation {
+  position: absolute;
+  top: calc(var(--norden-window-frame-size) * -.015625);
+  left: 0;
+  z-index: 2;
+  width: calc(var(--norden-window-frame-size) * 2);
+  height: var(--norden-window-frame-size);
+  pointer-events: none;
+}
+.norden-window-frame-navigation-decoration {
+  position: absolute;
+  inset: 0;
+  background: url('../../assets/ui/skins/ornate-navigation-controls.png') center / contain no-repeat;
+}
+.norden-window-frame-navigation-button {
+  position: absolute;
+  top: 50%;
+  left: 30%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: calc(var(--norden-window-frame-size) * .6875);
+  height: calc(var(--norden-window-frame-size) * .6875);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #f2d69b;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.norden-window-frame-navigation-button.is-forward { left: 70%; }
+.norden-window-frame-navigation-button::before {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffe3a54d, #ffe3a500 72%);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.norden-window-frame-navigation-button svg {
+  position: relative;
+  width: calc(var(--norden-window-frame-size) * .28125);
+  height: calc(var(--norden-window-frame-size) * .28125);
+  filter: drop-shadow(0 1px 1px #100b05);
+}
+.norden-window-frame-navigation-button:hover:enabled { color: #fff3cc; }
+.norden-window-frame-navigation-button:hover:enabled::before { opacity: 1; }
+.norden-window-frame-navigation-button:active:enabled svg { transform: translateY(1px); }
+.norden-window-frame-navigation-button:focus-visible { outline: 2px solid #ffe0a1; outline-offset: -4px; }
+.norden-window-frame-navigation-button:disabled { color: #81745b; cursor: default; }
+.norden-window-frame-navigation-button:disabled::before { background: #100c0873; opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .norden-window-frame-navigation-button::before { transition: none; }
+}
