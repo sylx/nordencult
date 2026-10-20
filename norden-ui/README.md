@@ -25,7 +25,7 @@ http://localhost:5173 でカタログを開きます。左の一覧から項目�
 | 区分 | 項目 |
 | --- | --- |
 | 画面フロー | 戦略画面（`#strategy-flow`、既定）: 都市コマンド → 軍事 → 侵攻 → 地図で侵攻先を選ぶ → 侵攻画面 → 予約。Escで1段ずつ戻る |
-| 画面 | 都市コマンド（`#city-command`）、地図で選ぶ（`#map-pick`）、侵攻（`#invasion`） |
+| 画面 | 都市コマンド（`#city-command`）、地図で選ぶ（`#map-pick`）、侵攻（`#invasion`）、移動（`#move`） |
 | 基本部品 | ウィンドウ（`#info-window`）、ウィンドウ（閉じるボタン付き）（`#window-frame`）、ツールバー（`#command-toolbar`）、ターン情報（`#date-bar`）、UIパーツ（`#parts`） |
 | 演出 | カットインエディタ（`#cutin-editor`）: テンプレートを作り、JSONで書き出す。`src/cutin/templates/` のJSONを開いて直せる |
 
@@ -139,9 +139,12 @@ function BattleUi() {
 | `MapPickScreen` | 案内の帯と「やめる」 | `message`, `onCancel`, `cancelLabel` |
 | `DomesticScreen` | 都市の内政。画面いっぱいのウィンドウに、領主（顔と「交代」）と都市の現状（人口の下に1ターンの伸びと次の Tier までのターン数の見込み）、施設スロット、内政担当官（商業・生産・訓練・募兵に2人まで）を並べ、右側に建設できる施設や任命する騎士の一覧を開く。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `city: CityView`, `buildOptions`, `gold`, `populationGrowth`, `stats`, `knights`, `officers`, `officerEffects`, `onBuild` などの施設の操作, `onChangeLord`, `onAssignOfficers`, `onClose` |
 | `InvasionScreen` | 侵攻。画面いっぱいのウィンドウに、出撃する騎士の一覧、軍団編成（部隊ごとの兵科と兵数）、編成した部隊の図を横に並べ、その下に合計兵数と「やめる / 予約」。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `from` / `to: CityView`, `defenders`, `knights: KnightView[]`, `unitTypes`, `indirectUnitTypes`, `maxUnits`, `soldierPool`, `maxSoldiers`, `morale`, `unitPower`, `soldierStep`, `validate(draft)`, `onConfirm(draft)`, `onCancel`（閉じるボタンも同じ） |
+| `MoveScreen` | 移動。画面いっぱいのウィンドウに、移動する騎士の一覧（チェックボックスで複数選ぶ）と、移動の内容（経路・到着までの月数・単騎移動・兵数・物資）を横に並べ、その下に合計と「やめる / 予約」 | `from` / `to: CityView`, `route`（経路の都市名）, `months`, `soloMonths`, `knights`, `soldierPool`, `supplyPool`, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
 
 アクションツールバーのコマンドは `CITY_COMMAND_GROUPS` に定義しています。内政、軍事（移動・侵攻・輸送）、研究、商人（購入・売却）と、最後にターン終了です。
 分類を押すと上にサブコマンドが開きます。`commandState={{ invade: { disabled: true, reason: '出撃できる騎士がいません' } }}` で無効にし、理由をツールチップに出します。
+
+移動画面は騎士を1人以上選ぶと「予約」を押せます。「単騎移動」にすると兵数と物資が0になって変えられなくなり、到着までの月数が `soloMonths` に変わります。`onConfirm` には `{ knights, troops, supplies, solo }` を渡します（`knights` は一覧の順）。
 
 侵攻画面は軍団を編成します。まず左の一覧で軍団長（侵攻を率いる騎士）を選び、続けてほかの騎士を加えます。部隊は間接指揮部隊も含めて `maxUnits`（既定6）までです。
 軍団長は編成済みの騎士の「軍団長にする」で付け替えられます。ただし `commandRank` を持つ騎士（領主・君主など）が加わると、いちばん高い騎士が軍団長になり、ほかの騎士には付け替えられません。軍団長が外れると、残った騎士のうち `commandRank` がいちばん高い騎士（同じなら先に加えた騎士）が軍団長になります。

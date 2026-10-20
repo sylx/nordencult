@@ -72,6 +72,8 @@ export { default as DomesticScreen } from './screens/domestic/DomesticScreen'
 export type { DomesticScreenProps } from './screens/domestic/DomesticScreen'
 export { default as InvasionScreen } from './screens/invasion/InvasionScreen'
 export type { InvasionAssignment, InvasionDraft, InvasionScreenProps } from './screens/invasion/InvasionScreen'
+export { default as MoveScreen } from './screens/move/MoveScreen'
+export type { MoveDraft, MoveScreenProps } from './screens/move/MoveScreen'
 
 // Cut-ins: templates made with the catalog's editor, played over the screen
 export { default as CutInLayer } from './cutin/CutInLayer'

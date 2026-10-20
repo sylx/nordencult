@@ -9,6 +9,7 @@ import PartsEntry from './entries/PartsEntry'
 import CityCommandEntry from './entries/CityCommandEntry'
 import MapPickEntry from './entries/MapPickEntry'
 import InvasionEntry from './entries/InvasionEntry'
+import MoveEntry from './entries/MoveEntry'
 import DomesticEntry from './entries/DomesticEntry'
 import StrategyFlowEntry from './entries/StrategyFlowEntry'
 import CutInEditorEntry from './entries/CutInEditorEntry'
@@ -47,6 +48,8 @@ export const CATALOG: CatalogGroup[] = [
         description: '都市の内政ウィンドウ。左上の施設スロット（確認付き削除・建設の中断/取消・+で追加）と右側の建設候補一覧' },
       { id: 'invasion', label: '侵攻', name: 'InvasionScreen', Component: InvasionEntry,
         description: '出撃する騎士の選択と、騎士ごとの兵科・兵数。兵数の合計は出発都市の兵数まで' },
+      { id: 'move', label: '移動', name: 'MoveScreen', Component: MoveEntry,
+        description: '自勢力の都市への移動。騎士を複数選び、兵と物資を持たせる。単騎移動は兵と物資を0にして早く着く。到着までの月数を出す' },
     ],
   },
   {

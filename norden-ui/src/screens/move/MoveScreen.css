@@ -1,0 +1,74 @@
+/* One window (layout from screens.css): the knights and what they take side by side, the totals under them */
+.norden-move-layout { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 14px; height: 100%; min-height: 0; }
+.norden-move .norden-window-screen-layout > .norden-window-section { flex: 1 1 0; min-width: 0; min-height: 0; }
+.norden-move .norden-window-screen-layout > .norden-move-cargo { flex: 1.2 1 0; }
+
+.norden-move-list { display: grid; align-content: start; gap: 6px; margin: 0; padding: 0 4px 0 0; list-style: none; }
+.norden-move-list .norden-knight-card { width: 100%; }
+.norden-move-reason { font-size: 12px; color: #8a7050; white-space: nowrap; }
+
+.norden-move-route { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0; color: #f6e7c5; font-size: 17px; font-weight: 700; }
+.norden-move-route .norden-faction-mark { vertical-align: middle; }
+.norden-move-arrow { color: #8fc0e0; }
+.norden-move-via { margin: 0; font-size: 13px; color: #cbb282; text-align: center; }
+
+.norden-move-months {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px 6px;
+  padding: 10px 12px;
+  color: #f2e6c8;
+  background: rgb(0 0 0 / 0.2);
+  border: 1px solid #cbb2824d;
+  border-radius: 6px;
+}
+.norden-move-months b { font-size: 30px; line-height: 1; color: #ffe08a; font-variant-numeric: tabular-nums; }
+.norden-move-months small { flex-basis: 100%; font-size: 12px; color: #c8b490; text-align: center; }
+
+.norden-move-solo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  color: #362615;
+  background: #fff6dcde;
+  border: 1px solid #b38d52;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.norden-move-solo.is-checked { background: #fff0c6f2; border-color: #d8b25a; }
+.norden-move-solo input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: #8a6020; }
+.norden-move-solo > span { display: grid; gap: 2px; }
+.norden-move-solo small { font-size: 12px; color: #8a7050; }
+
+/* The soldiers and supplies on a parchment card; their number and maximum columns have fixed widths so the sliders line up */
+.norden-move-amounts {
+  display: grid;
+  gap: 10px;
+  padding: 8px 12px 10px;
+  background: #fff6dcde;
+  border: 1px solid #b38d52;
+  border-radius: 6px;
+}
+.norden-move-amounts .norden-quantity { grid-template-columns: 36px minmax(60px, 1fr) 36px 6.5em 4.5em; }
+
+.norden-move-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 4px 0;
+  color: #f2e6c8;
+  white-space: nowrap;
+  border-top: 1px solid #cbb2824d;
+}
+.norden-move-total { display: inline-flex; align-items: baseline; gap: 4px; font-size: 15px; }
+.norden-move-total b { font-size: 20px; color: #ffe08a; }
+.norden-move-problem { flex: 1; min-width: 14em; font-size: 12px; color: #f0b090; text-align: right; }
+
+@media (max-width: 900px) {
+  .norden-move .norden-window-screen-layout { flex-direction: column; overflow-y: auto; }
+  .norden-move .norden-window-screen-layout > .norden-window-section { flex: none; }
+  .norden-move-summary { flex-wrap: wrap; white-space: normal; }
+}
