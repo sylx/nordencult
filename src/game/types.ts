@@ -239,11 +239,12 @@ export type BattleWinner = BattleSide
  * How the battle was decided on the battlefield (battle-runtime's BattleEndReason).
  * eliminated: every unit of the losing side was wiped out or retreated,
  * stronghold: an attacking unit entered the defenders' stronghold,
- * commander: the losing side's commander's unit was wiped out.
- * On stronghold and commander, the losing side's remaining units were forced
- * to retreat (each choosing where to), so they come as retreats too
+ * commander: the losing side's commander's unit was wiped out,
+ * commanderRetreat: the losing side's commander's unit retreated (or was captured trying).
+ * On stronghold, commander and commanderRetreat, the losing side's remaining units were
+ * forced to retreat (each choosing where to), so they come as retreats too
  */
-export type BattleEndReason = 'eliminated' | 'stronghold' | 'commander'
+export type BattleEndReason = 'eliminated' | 'stronghold' | 'commander' | 'commanderRetreat'
 
 /**
  * A unit that left the battlefield by retreating, as the battle screen reports

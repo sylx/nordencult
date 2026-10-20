@@ -17,6 +17,7 @@ const REASON_LABELS: Readonly<Record<BattleEndReason, string>> = {
   eliminated: '敵軍の殲滅・退却',
   stronghold: '防衛拠点への入城',
   commander: '軍団長部隊の全滅',
+  commanderRetreat: '軍団長部隊の退却',
 }
 
 const cityName = (id: string | null) => (id ? CITY_MAP[id]?.name ?? id : '')
