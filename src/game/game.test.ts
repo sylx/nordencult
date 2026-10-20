@@ -123,7 +123,7 @@ describe('turns', () => {
     state = endStrategyPhase(state)
     expect(state.phase).toBe('march')
     expect(state.activeFaction).toBeNull()
-    expect(state.march).toEqual({ queue: [], current: null })
+    expect(state.march).toEqual({ moved: false, queue: [], current: null })
   })
 
   it('starts the next turn when no order is left', () => {

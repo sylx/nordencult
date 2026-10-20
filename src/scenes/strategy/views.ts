@@ -16,7 +16,7 @@ import { UNIT_TYPES } from '../../data/unitTypes'
 import {
   assignmentOf, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
   FUNDED_ROLES, governorOf, officerTraining,
-  MAX_MORALE, orderOf, ownerOf, seasonOf, tierOf, treasuryForecast, turnsToNextTier, unitAbilities, unitTypesOf, type AssignmentRole, type CityLogStat, type GameState,
+  MAX_MORALE, moveOrderOf, orderOf, ownerOf, seasonOf, tierOf, treasuryForecast, turnsToNextTier, unitAbilities, unitTypesOf, type AssignmentRole, type CityLogStat, type GameState,
   type Season,
 } from '../../game'
 
@@ -41,7 +41,7 @@ const SCALE_LABELS: Readonly<Record<PlaceType, string>> = {
   temple: '聖地',
 }
 
-const PHASE_LABELS = { strategy: '戦略フェーズ', march: '行軍フェーズ' } as const
+const PHASE_LABELS = { strategy: '戦略フェーズ', march: '進行フェーズ' } as const
 
 /** The pictures of the tiers on the map: 小さな町, 大きな街, 大都市 */
 const TIER_PLACE_TYPES: Readonly<Record<CityTier, PlaceType>> = { 1: 'town', 2: 'city', 3: 'metropolice' }
@@ -96,6 +96,7 @@ export function knightView(game: GameState, id: string): KnightView {
   const character = CHARACTER_MAP[id]
   if (!character) return { id, name: id }
   const order = orderOf(game, id)
+  const moveOrder = moveOrderOf(game, id)
   const assignment = assignmentOf(game, id)
   return {
     id,
@@ -110,6 +111,7 @@ export function knightView(game: GameState, id: string): KnightView {
       CHARACTER_TYPE_LABELS[character.type],
       ...(assignment ? [ASSIGNMENT_LABELS[assignment]] : []),
       ...(order ? [`${cityName(order.to)}へ侵攻予約中`] : []),
+      ...(moveOrder ? [`${cityName(moveOrder.to)}へ移動予約中`] : []),
     ].join(' / '),
     stats: [
       { label: '統率', value: character.leadership },
@@ -126,7 +128,7 @@ export function knightView(game: GameState, id: string): KnightView {
     defaultUnitType: defaultUnitType(id),
     unitTypes: unitTypesOf(id),
     commandRank: commandRank(game, id),
-    unavailableReason: order ? '侵攻予約中' : undefined,
+    unavailableReason: order ? '侵攻予約中' : moveOrder ? '移動予約中' : undefined,
   }
 }
 
@@ -356,4 +358,10 @@ export function unitPower(game: GameState, from: string, unit: InvasionAssignmen
     strength: leader ? mightFor(type, leader) : 0,
   }
   return { attack: basicAttack(power), defense: basicDefense(power) }
+}
+
+/** Knights of a move, e.g. マルクス・カルタほか2人 */
+export function knightsLabel(ids: readonly string[]) {
+  const first = ids[0] === undefined ? '' : CHARACTER_MAP[ids[0]]?.name ?? ids[0]
+  return ids.length > 1 ? `${first}ほか${ids.length - 1}人` : first
 }

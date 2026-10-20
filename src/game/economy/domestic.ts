@@ -2,7 +2,7 @@ import { BUILDING_MAP, upgradesOf } from '../../data/buildings'
 import { CITY_MAP } from '../../data/city'
 import { mixMorale } from '../army'
 import { GameRuleError } from '../errors'
-import { orderOf, ownerOf, soldiersLeft } from '../queries'
+import { moveOrderOf, orderOf, ownerOf, soldiersLeft, suppliesLeft } from '../queries'
 import type { AssignmentRole, CharacterId, CityAssignments, CityId, CityState, FactionId, FundedRole, GameState, OfficerRole } from '../types'
 import { neighbours } from '../world'
 import { AFFAIRS_BUDGET_LIMIT, OFFICERS_PER_ROLE, RECRUIT_GOLD } from './balance'
@@ -64,6 +64,7 @@ export function assignmentProblem(state: GameState, cityId: CityId, characterId:
   const character = state.characters[characterId]
   if (character?.cityId !== cityId || character.factionId !== ownerOf(state, cityId)) return `${characterId} はこの都市の騎士ではありません`
   if (orderOf(state, characterId)) return '出撃予約中です'
+  if (moveOrderOf(state, characterId)) return '移動予約中です'
   if (assignmentOf(state, characterId) === role) return role === 'governor' ? 'すでに領主です' : `すでに${OFFICER_LABELS[role]}担当官です`
   if (role === 'governor') return null
   const assignments = state.cities[cityId].assignments
@@ -304,7 +305,7 @@ export function transportProblem(state: GameState, from: CityId, to: CityId, { t
   if (![troops, supplies].every((n) => Number.isInteger(n) && n >= 0)) return '数が正しくありません'
   if (troops === 0 && supplies === 0) return '輸送するものを選んでください'
   if (troops > soldiersLeft(state, from)) return '兵が足りません'
-  if (supplies > state.cities[from].storedSupplies) return '物資が足りません'
+  if (supplies > suppliesLeft(state, from)) return '物資が足りません'
   return null
 }
 

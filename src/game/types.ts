@@ -32,7 +32,11 @@ export interface GameState {
   cityHistory: Readonly<Record<CityId, readonly CityRecord[]>>
   /** Invasions ordered this turn, in the order they were made */
   orders: readonly InvasionOrder[]
-  /** The march phase: orders still to resolve and the battle being fought */
+  /** Moves ordered this turn, in the order they were made; they set out in the progress phase */
+  moveOrders: readonly MoveOrder[]
+  /** Knights on their way to a city of their faction, every faction's (set out in this or an earlier progress phase) */
+  movements: readonly Movement[]
+  /** The progress phase (進行フェーズ, 'march'): the moves, then the orders still to resolve and the battle being fought */
   march: MarchState | null
   /** The latest battle's outcome (for the result screen) */
   lastBattle: BattleReport | null
@@ -41,7 +45,7 @@ export interface GameState {
 }
 
 export interface CharacterState {
-  /** City they serve in; null when unaffiliated (在野) */
+  /** City they serve in; null when unaffiliated (在野), or on their way to a city of their faction (GameState.movements) */
   cityId: CityId | null
   /** Faction they serve; null when unaffiliated */
   factionId: FactionId | null
@@ -201,7 +205,49 @@ export interface ArmyUnit {
   soldiers: number
 }
 
+/**
+ * Knights moving from a city of their faction to another, with soldiers and supplies (or alone: 単騎移動).
+ * They serve in the city they move to once there
+ */
+export interface MoveOrder {
+  id: string
+  factionId: FactionId
+  from: CityId
+  to: CityId
+  knights: readonly CharacterId[]
+  /** Soldiers and supplies taken from `from`; none when riding alone */
+  troops: number
+  supplies: number
+  /** 単騎移動: the knights alone, faster (moveMonths) */
+  solo: boolean
+}
+
+/** A move under way: where it is and the months it still takes */
+export interface Movement extends MoveOrder {
+  /** Morale of its soldiers: their city's when they set out */
+  troopMorale: number
+  /** The cities along the roads from where it is now to `to` (the first is where it is) */
+  route: readonly CityId[]
+  /** Months until it arrives in `to` */
+  monthsLeft: number
+}
+
+/** What the moves of a progress phase do this month, for showing them on the map */
+export interface MoveLeg {
+  id: string
+  factionId: FactionId
+  solo: boolean
+  knights: readonly CharacterId[]
+  /** The cities passed this month: from where it is to where it gets (a single city: it stays there) */
+  route: readonly CityId[]
+  /** Where it is going (another city of the faction when the one it set out for was lost) */
+  to: CityId
+  arrives: boolean
+}
+
 export interface MarchState {
+  /** The moves of this progress phase were made (runMovements); the battles come after them */
+  moved: boolean
   /** Orders not resolved yet, in resolving order */
   queue: readonly string[]
   /** The battle of the order being resolved (marching, then fighting) */

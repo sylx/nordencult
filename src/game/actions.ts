@@ -3,6 +3,7 @@ import { defenderArmy } from './defense'
 import { withoutAssignee } from './economy/domestic'
 import { runEconomy } from './economy/runEconomy'
 import { GameRuleError } from './errors'
+import { runMovements } from './movement'
 import { commandRank, leadingKnight, orderProblem, ownerOf, retreatCities, turnOrder } from './queries'
 import type {
   Battle, BattleEndReason, BattleReport, BattleRetreat, BattleSide, BattleWinner, BattleWipeout, CharacterId, CharacterMove, CharacterState,
@@ -35,8 +36,8 @@ export function cancelOrder(state: GameState, orderId: string): GameState {
 
 /**
  * The active faction ends its strategy phase: the next faction plays, or
- * after the last one the march phase starts with every order queued in the
- * factions' turn order.
+ * after the last one the progress phase (進行フェーズ, 'march') starts with every
+ * order queued in the factions' turn order. Its moves come first (runMovements).
  */
 export function endFactionTurn(state: GameState): GameState {
   if (state.phase !== 'strategy' || !state.activeFaction) throw new GameRuleError('戦略フェーズではありません')
@@ -46,11 +47,12 @@ export function endFactionTurn(state: GameState): GameState {
   const rank = (factionId: string) => order.indexOf(factionId)
   // Stable sort: one faction's orders keep the order they were made in
   const queue = [...state.orders].sort((a, b) => rank(a.factionId) - rank(b.factionId)).map((o) => o.id)
-  return { ...state, phase: 'march', activeFaction: null, march: { queue, current: null } }
+  return { ...state, phase: 'march', activeFaction: null, march: { moved: false, queue, current: null } }
 }
 
 /**
- * In the march phase with no battle under way: takes the next order and
+ * In the progress phase with no battle under way: makes the moves if they are
+ * not made yet (runMovements), then takes the next order and
  * creates its battle (the march to it is shown, then it is fought). Orders
  * no longer possible (the target became the faction's own, the city it set
  * out from was lost, its knights are gone) are skipped; the knights stay
@@ -58,14 +60,15 @@ export function endFactionTurn(state: GameState): GameState {
  * while a battle is under way, so calling it twice is harmless.
  */
 export function startNextBattle(state: GameState): GameState {
-  if (state.phase !== 'march' || !state.march) throw new GameRuleError('行軍フェーズではありません')
+  if (state.phase !== 'march' || !state.march) throw new GameRuleError('進行フェーズではありません')
   if (state.march.current) return state
-  const queue = [...state.march.queue]
+  if (!state.march.moved) state = runMovements(state)
+  const queue = [...state.march!.queue]
   for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
     const order = state.orders.find((o) => o.id === id)
     if (!order) continue
     const battle = createBattle(state, order)
-    if (battle) return { ...state, march: { queue, current: battle }, serial: state.serial + 1 }
+    if (battle) return { ...state, march: { moved: true, queue, current: battle }, serial: state.serial + 1 }
   }
   return startTurn(state)
 }
@@ -100,7 +103,7 @@ function createBattle(state: GameState, order: InvasionOrder): Battle | null {
 /** Every battle fought: the cities' economy runs (runEconomy), then the next turn's strategy phase starts */
 function startTurn(state: GameState): GameState {
   const turn = state.turn + 1
-  const next: GameState = { ...runEconomy(state, turn), turn, phase: 'strategy', orders: [], march: null }
+  const next: GameState = { ...runEconomy(state, turn), turn, phase: 'strategy', orders: [], moveOrders: [], march: null }
   return { ...next, activeFaction: turnOrder(next)[0] ?? null }
 }
 

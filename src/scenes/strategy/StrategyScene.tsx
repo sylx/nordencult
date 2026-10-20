@@ -1,21 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Banner, CITY_COMMAND_GROUPS, CUTIN_TEMPLATES, CityCommandScreen, CutInLayer, DomesticScreen, FactionMark, InvasionScreen,
-  MapPickScreen, ScreenHost, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
+  MapPickScreen, MoveScreen, ScreenHost, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft, type MoveDraft,
 } from 'norden-ui'
 import { MapView, type CityHighlight, type RoadHighlight, type StrategyMap } from 'norden-strategy'
 import { CHARACTER_MAP } from '../../data/character'
 import { FACTION_MAP, factionColor } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
-  MAX_SOLDIERS, MAX_UNITS, addOrder, assign, cancelConstruction, cancelOrder, charactersIn, citiesOf, demolishBuilding, domesticProblem, endFactionTurn,
-  invadeFromProblem, isPlayerTurn, openInvasionTargets, orderProblem, pauseConstruction, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle,
-  useGame, type CityId, type FactionId, type InvasionOrder,
+  MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, charactersIn, citiesOf, demolishBuilding,
+  domesticProblem, endFactionTurn, invadeFromProblem, isPlayerTurn, moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs,
+  openInvasionTargets, orderProblem, pauseConstruction, runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle,
+  suppliesLeft, useGame, type CityId, type FactionId, type InvasionOrder, type MoveOrder,
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import {
-  UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, mapSeason,
+  UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
   mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
@@ -28,7 +29,9 @@ const ARRIVAL_PAUSE_MS = 600
 /** World units per second */
 const MARCH_SPEED = 30
 
-const TARGET_COLOR = '#ff6a3d'
+/** Roads and cities of invasions (red) and moves (blue), whichever faction's; the markers moving along them have the faction's colour */
+const TARGET_COLOR = '#e5322d'
+const MOVE_COLOR = '#8fc0e0'
 
 /** The cut-in at the start of each phase: the phase, and the date below it */
 const PHASE_CUTIN = CUTIN_TEMPLATES['strategy-turn']
@@ -41,6 +44,10 @@ type StrategyScreens = {
   pickTarget: { from: string }
   /** Choosing the knights, unit types and soldiers */
   invasion: { from: string; to: string }
+  /** Choosing where to move from `from` on the map: any other city of the player's */
+  pickMoveTarget: { from: string }
+  /** Choosing the knights moving, and the soldiers and supplies they take (or riding alone) */
+  move: { from: string; to: string }
   /** The domestic screen of a city of the player's (its lord, buildings and officers), drawn over the city command screen */
   domestic: { cityId: string }
 }
@@ -54,6 +61,15 @@ const draftOrder = (factionId: FactionId, from: CityId, to: CityId, draft: Invas
   factionId, from, to, commander: draft.commander ?? '',
   knights: draft.units.flatMap((u) => (u.knightId === null ? [] : [u.knightId])), units: draft.units,
 })
+
+/** The move screen's draft as an order */
+const draftMove = (factionId: FactionId, from: CityId, to: CityId, draft: MoveDraft): Omit<MoveOrder, 'id'> => ({
+  factionId, from, to, knights: draft.knights, troops: draft.troops, supplies: draft.supplies, solo: draft.solo,
+})
+
+/** The roads between each pair of neighbouring cities along a route */
+const routeRoads = (route: readonly string[], color: string, flow?: boolean): RoadHighlight[] =>
+  route.slice(1).map((to, index) => ({ from: route[index], to, color, flow }))
 
 /** The strategy map with the game UI (norden-ui's screens) on top */
 export default function StrategyScene() {
@@ -71,7 +87,11 @@ export default function StrategyScene() {
   // The cities' pictures grow with their tiers, and their emblems follow their owners
   const placedCities = useMemo(() => mapCities(game), [game])
   const targets = useMemo(() => (top.screen === 'pickTarget' ? openInvasionTargets(game, top.params.from) : []), [game, top])
+  const moveDestinations = useMemo(() => (top.screen === 'pickMoveTarget' ? moveTargets(game, top.params.from) : []), [game, top])
   const battle = game.march?.current ?? null
+  // The progress phase makes every faction's moves first (shown on the map), then fights the battles
+  const moved = game.march?.moved ?? true
+  const legs = useMemo(() => (game.phase === 'march' && !moved ? movementLegs(game) : []), [game, moved])
   const playerCities = citiesOf(game, game.playerFaction)
   const cutIn = useCutIn()
 
@@ -102,6 +122,8 @@ export default function StrategyScene() {
     if (!id) return
     if (top.screen === 'pickTarget') {
       if (targets.includes(id)) nav.push('invasion', { from: top.params.from, to: id })
+    } else if (top.screen === 'pickMoveTarget') {
+      if (moveDestinations.includes(id)) nav.push('move', { from: top.params.from, to: id })
     } else if (top.screen === 'cityCommand') {
       nav.replace('cityCommand', { cityId: id })
     }
@@ -130,6 +152,12 @@ export default function StrategyScene() {
     } else if (top.screen === 'invasion') {
       cities.push({ id: top.params.from }, { id: top.params.to, color: TARGET_COLOR })
       roads.push({ from: top.params.from, to: top.params.to, color: TARGET_COLOR })
+    } else if (top.screen === 'pickMoveTarget') {
+      cities.push({ id: top.params.from }, ...moveDestinations.map((id) => ({ id, color: MOVE_COLOR })))
+    } else if (top.screen === 'move') {
+      const { from, to } = top.params
+      cities.push({ id: from }, { id: to, color: MOVE_COLOR })
+      roads.push(...routeRoads(moveRoute(game, game.playerFaction, from, to) ?? [], MOVE_COLOR))
     } else if (top.screen === 'domestic') {
       cities.push({ id: top.params.cityId })
     } else if (battle) {
@@ -143,12 +171,21 @@ export default function StrategyScene() {
       : game.orders.filter((o) => o.factionId === game.playerFaction)
     for (const o of pending) {
       if (top.screen === 'invasion' && o.from === top.params.from && o.to === top.params.to) continue
-      roads.push({ from: o.from, to: o.to, color: factionColor(o.factionId) })
+      roads.push({ from: o.from, to: o.to, color: TARGET_COLOR })
+    }
+    // In the strategy phase the player's moves ordered and every faction's on the way show their roads ahead
+    if (!game.march) {
+      for (const o of game.moveOrders) {
+        if (o.factionId !== game.playerFaction) continue
+        if (top.screen === 'move' && o.from === top.params.from && o.to === top.params.to) continue
+        roads.push(...routeRoads(moveRoute(game, o.factionId, o.from, o.to) ?? [], MOVE_COLOR))
+      }
+      for (const m of game.movements) roads.push(...routeRoads(m.route, MOVE_COLOR, !m.solo))
     }
     map.setCityHighlights(cities)
     const missing = map.setRoadHighlights(roads)
     if (missing.length > 0) console.warn('街道が見つかりません', missing)
-  }, [map, top, targets, battle, game.orders, game.march, game.playerFaction])
+  }, [map, top, targets, moveDestinations, battle, game])
 
   useEffect(() => {
     if (map && returnCity) map.focusPlace(returnCity, true)
@@ -162,13 +199,43 @@ export default function StrategyScene() {
     return () => clearTimeout(timer)
   }, [ready, game.phase, game.activeFaction, game.playerFaction, update])
 
-  // March phase: take the next order (or start the next turn when none is left)
+  // Progress phase: every faction's moves go a month's way along the roads (an envoy riding alone), then they are made
   useEffect(() => {
-    if (!ready || game.phase !== 'march' || battle || announcing) return
+    if (!map || game.phase !== 'march' || moved || announcing) return
+    let timer = 0
+    const marching = new Set<string>()
+    const finish = (pause = ARRIVAL_PAUSE_MS) => {
+      timer = window.setTimeout(() => update((s) => (s.phase === 'march' && s.march && !s.march.moved ? runMovements(s) : s)), pause)
+    }
+    const unsubscribe = map.onMarchArrive((marchId) => {
+      if (marching.delete(marchId) && marching.size === 0) finish()
+    })
+    for (const leg of legs) {
+      if (leg.route.length < 2) continue
+      const id = `move:${leg.id}`
+      const started = map.march({
+        id, route: leg.route, kind: leg.solo ? 'envoy' : 'army', speed: MARCH_SPEED,
+        color: factionColor(leg.factionId), label: knightsLabel(leg.knights),
+      })
+      if (started) marching.add(id)
+      else console.warn(`${leg.route.join(' → ')} の街道が地図にありません`)
+    }
+    // Nothing to show: the moves are made at once
+    if (marching.size === 0) finish(0)
+    return () => {
+      unsubscribe()
+      clearTimeout(timer)
+      for (const leg of legs) map.stopMarch(`move:${leg.id}`)
+    }
+  }, [map, game.phase, moved, announcing, legs, update])
+
+  // Progress phase, after the moves: take the next order (or start the next turn when none is left)
+  useEffect(() => {
+    if (!ready || game.phase !== 'march' || !moved || battle || announcing) return
     const timer = setTimeout(() => update((s) => (s.phase === 'march' && !s.march?.current ? startNextBattle(s) : s)),
       MARCH_PAUSE_MS)
     return () => clearTimeout(timer)
-  }, [ready, game.phase, battle, announcing, update])
+  }, [ready, game.phase, moved, battle, announcing, update])
 
   // The army of the order marches to its target, then the battle is fought
   useEffect(() => {
@@ -204,6 +271,8 @@ export default function StrategyScene() {
     const state: Partial<Record<CityCommandId, CommandState>> = Object.fromEntries(COMMAND_IDS.map((id) => [id, NOT_YET]))
     const problem = playerTurn ? invadeFromProblem(game, cityId) : '手番ではありません'
     state.invade = problem ? { disabled: true, reason: problem } : {}
+    const move = playerTurn ? moveFromProblem(game, cityId) : '手番ではありません'
+    state.move = move ? { disabled: true, reason: move } : {}
     const domestic = playerTurn ? domesticProblem(game, cityId) : '手番ではありません'
     state.domestic = domestic ? { disabled: true, reason: domestic } : {}
     return state
@@ -211,13 +280,15 @@ export default function StrategyScene() {
 
   const notice = battle
     ? `${FACTION_MAP[battle.attacker.factionId]?.name}軍が${cityName(battle.attacker.from)}から${cityName(battle.cityId)}へ進軍`
-    : game.phase === 'strategy' && !playerTurn && game.activeFaction
+    : legs.length > 0 && !announcing
+      ? '騎士の移動'
+      : game.phase === 'strategy' && !playerTurn && game.activeFaction
       ? `${FACTION_MAP[game.activeFaction]?.name}の手番`
       : null
 
   return (
     <div className={`strategy-scene${ready ? '' : ' strategy-scene--loading'}`}>
-      <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false} showStats={false}
+      <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false} showStats={false} copyClickPoint={false}
         cities={placedCities} season={mapSeason(game.turn)} />
       <ScreenHost nav={nav} overlays={['domestic']} screens={{
         cityCommand: ({ cityId }) => {
@@ -236,11 +307,13 @@ export default function StrategyScene() {
                 const domesticOpen = top.screen === 'domestic'
                 popTo('cityCommand')
                 if (id === 'invade') nav.push('pickTarget', { from: cityId })
+                else if (id === 'move') nav.push('pickMoveTarget', { from: cityId })
                 else if (id === 'domestic' && !domesticOpen) nav.push('domestic', { cityId })
               }}
               onEndTurn={endTurn} endTurnDisabled={!playerTurn}
               turnMenu={<p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(game.playerFaction)} /></p>}>
-              <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))} onSelectCity={showCity} />
+              <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))}
+                onCancelMove={(id) => update((s) => cancelMoveOrder(s, id))} onSelectCity={showCity} />
               {notice && <div className="norden-screen-top-center norden-screen-banner"><Banner>{notice}</Banner></div>}
             </CityCommandScreen>
           )
@@ -248,6 +321,24 @@ export default function StrategyScene() {
         pickTarget: ({ from }) => (
           <MapPickScreen message={`${cityName(from)}からの侵攻先を選んでください`} onCancel={nav.pop} />
         ),
+        pickMoveTarget: ({ from }) => (
+          <MapPickScreen message={`${cityName(from)}からの移動先を選んでください`} onCancel={nav.pop} />
+        ),
+        move: ({ from, to }) => {
+          const route = moveRoute(game, game.playerFaction, from, to) ?? [from, to]
+          return (
+            <MoveScreen from={cityView(game, from)} to={cityView(game, to)} route={route.map(cityName)}
+              months={moveMonths(route.length - 1, false)} soloMonths={moveMonths(route.length - 1, true)}
+              knights={charactersIn(game, from).map((id) => knightView(game, id))}
+              soldierPool={soldiersLeft(game, from)} supplyPool={suppliesLeft(game, from)}
+              validate={(draft) => moveOrderProblem(game, draftMove(game.playerFaction, from, to, draft))}
+              onCancel={nav.pop}
+              onConfirm={(draft) => {
+                update((s) => addMoveOrder(s, draftMove(s.playerFaction, from, to, draft)))
+                popTo('cityCommand')
+              }} />
+          )
+        },
         domestic: ({ cityId }) => (
           <DomesticScreen
             city={cityView(game, cityId)}
