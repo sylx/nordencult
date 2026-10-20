@@ -3,15 +3,12 @@ import {
   BattleScreen, lineBarks, SIDE_TEAM, type BarkSource, type BattleCutInTexts, type BattleFactions,
   type RetreatDestinations, type RetreatReport, type UnitStatus, type WipeoutReport,
 } from '@norden/battle-runtime'
-import { FactionLabel } from '../../components/FactionLabel'
-import { KnightList } from '../../components/KnightList'
 import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { factionName } from '../../data/faction'
 import { pickVoiceLine } from '../../data/voiceLines'
-import { UNIT_TYPE_MAP } from '../../data/unitTypes'
 import {
-  resolveBattle, retreatCities, useGame, type ArmyUnit, type Battle, type BattleArmy, type BattleEndReason, type BattleRetreat, type BattleSide, type BattleWinner,
+  resolveBattle, retreatCities, useGame, type Battle, type BattleEndReason, type BattleRetreat, type BattleSide, type BattleWinner,
   type BattleWipeout, type GameState,
 } from '../../game'
 import { useScene } from '../sceneContext'
@@ -84,8 +81,7 @@ function toBattleWipeout(battle: Battle, report: WipeoutReport): BattleWipeout {
 
 /**
  * A battle: the battlefield (norden-battle's battle screen: map, units, action menu,
- * terrain and battle log windows), the attacking and defending sides, and (for now)
- * debug buttons deciding who wins without fighting it out. When the battlefield is
+ * terrain, knight and battle log windows) and (for now) debug buttons deciding who wins without fighting it out. When the battlefield is
  * decided (a side wiped out or retreated, or the attackers entered the stronghold),
  * the button of the battle screen's outcome window hands it to resolveBattle and
  * goes to the result
@@ -149,7 +145,6 @@ function Battlefield({ battle }: { battle: Battle }) {
         )
           : <p className="battle-scene__placeholder">{error ? `戦闘マップを読めません: ${error}` : '戦闘マップを読み込み中…'}</p>}
       </div>
-      <BattleHeader battle={battle} />
       <aside className="battle-debug" aria-label="デバッグ">
         <h2>デバッグ: 決着を待たずに勝敗を決める</h2>
         <button type="button" className="battle-button" onClick={() => decide('attacker')}>攻撃側の勝利</button>
@@ -183,50 +178,5 @@ function Battlefield({ battle }: { battle: Battle }) {
         )}
       </aside>
     </div>
-  )
-}
-
-/** A unit as text, e.g. 騎兵 400 */
-const unitLabel = (unit: ArmyUnit) => `${UNIT_TYPE_MAP[unit.unitType]?.name ?? unit.unitType} ${unit.soldiers.toLocaleString()}`
-
-/** A side's knights with their units, and the units no knight of their own leads */
-function ArmyList({ army, empty }: { army: BattleArmy; empty?: string }) {
-  const unitOf = (id: string) => {
-    const unit = army.units.find((u) => u.knightId === id)
-    return unit && unitLabel(unit)
-  }
-  const others = army.units.filter((u) => u.knightId === null)
-  return (
-    <>
-      <KnightList ids={army.knights} compact notes={(id) => (id === army.commander ? ['軍団長'] : [])} aside={unitOf} empty={empty} />
-      {others.length > 0 && (
-        <p className="battle-side__from">
-          {army.commander ? '間接指揮' : '守備隊'}: {others.map(unitLabel).join('・')}
-        </p>
-      )}
-      <p className="battle-side__from">士気 {army.morale}</p>
-    </>
-  )
-}
-
-function BattleHeader({ battle }: { battle: Battle }) {
-  const { attacker, defender } = battle
-  return (
-    <header className="battle-header">
-      <section className="battle-side battle-side--attacker">
-        <h2><span className="battle-side__role">攻撃</span><FactionLabel factionId={attacker.factionId} /></h2>
-        <p className="battle-side__from">{CITY_MAP[attacker.from]?.name}から出撃</p>
-        <ArmyList army={attacker} />
-      </section>
-      <div className="battle-header__city">
-        <span>{CITY_MAP[battle.cityId]?.name}</span>
-        <small>攻防戦</small>
-      </div>
-      <section className="battle-side battle-side--defender">
-        <h2><span className="battle-side__role">防衛</span><FactionLabel factionId={defender.factionId} /></h2>
-        <p className="battle-side__from">{CITY_MAP[battle.cityId]?.name}の守備</p>
-        <ArmyList army={defender} empty="守備の騎士はいません。" />
-      </section>
-    </header>
   )
 }
