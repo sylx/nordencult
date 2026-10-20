@@ -14,7 +14,7 @@ const FLUEN = 'P012'
 const AMBARIA = 'P004'
 const VERSTA = 'P005' // レオニス帝国, next to アンバリア
 /** The knights of アンバリア: 013 and its lord コンラート (046) */
-const AMBARIA_KNIGHTS = ['013', '046']
+const AMBARIA_KNIGHTS = ['013', '046', '087']
 
 /** Ends the strategy phase of every faction */
 function endStrategyPhase(state: GameState): GameState {
@@ -287,6 +287,7 @@ describe('battle results', () => {
       { characterId: '016', kind: 'enter', from: FLUEN, to: AMBARIA },
       { characterId: '013', kind: 'retreat', from: AMBARIA, to: VERSTA },
       { characterId: '046', kind: 'retreat', from: AMBARIA, to: VERSTA },
+      { characterId: '087', kind: 'retreat', from: AMBARIA, to: VERSTA },
     ])
     expect(state.march?.current).toBeNull()
     expect(startNextBattle(state)).toMatchObject({ turn: 2, phase: 'strategy', activeFaction: 'carta' })
@@ -306,7 +307,7 @@ describe('battle results', () => {
     state = { ...state, cityOwners: { ...state.cityOwners, [VERSTA]: 'taurus' } }
     state = fight('attacker', state)
     for (const id of AMBARIA_KNIGHTS) expect(state.characters[id]).toEqual({ cityId: null, factionId: null })
-    expect(state.lastBattle?.moves.slice(-2)).toMatchObject(
+    expect(state.lastBattle?.moves.slice(-AMBARIA_KNIGHTS.length)).toMatchObject(
       AMBARIA_KNIGHTS.map((characterId) => ({ characterId, kind: 'wander', to: null })))
   })
 
