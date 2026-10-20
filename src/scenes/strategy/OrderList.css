@@ -1,9 +1,7 @@
 /* Below the DateBar on the right of the screen layer (norden-ui's regions are fixed, so this one is our own) */
 .order-list-region { position: absolute; top: 96px; right: 24px; z-index: 150; pointer-events: auto; }
 
-.order-list { display: grid; gap: 6px; width: 300px; padding: 10px 14px; font-size: 14px; }
-.order-list__title { margin: 0; font-size: 13px; font-weight: 700; color: #d4b06a; letter-spacing: 0.1em; }
-.order-list__empty { margin: 0; font-size: 12px; color: #c8b490; }
+.order-list { width: 300px; padding: 26px 18px 16px; font-size: 14px; }
 .order-list__items { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 
 .order-list__items li {
