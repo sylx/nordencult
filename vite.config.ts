@@ -17,6 +17,7 @@ export default defineConfig({
     alias: [
       { find: /^norden-strategy$/, replacement: local('./norden-strategy/src/index.ts') },
       { find: /^norden-strategy\/data$/, replacement: local('./norden-strategy/src/data.ts') },
+      { find: /^norden-strategy\/world$/, replacement: local('./norden-strategy/src/world.ts') },
       { find: /^norden-ui$/, replacement: local('./norden-ui/src/index.ts') },
       // The workspace packages' exports (norden-battle/battle-runtime/package.json, norden-battle/map-runtime/package.json)
       { find: /^@norden\/battle-runtime$/, replacement: local('./norden-battle/battle-runtime/src/index.ts') },

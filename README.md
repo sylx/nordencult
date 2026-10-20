@@ -25,10 +25,19 @@ main への push で GitHub Pages に公開します（`.github/workflows/deploy
 
 - `import { MapView, CITY_MAP } from 'norden-strategy'` → `norden-strategy/src/index.ts`
 - `import { PLACE_POINTS, ROAD_LINKS } from 'norden-strategy/data'` → `norden-strategy/src/data.ts`（データだけ。three.js を読み込まないので `src/game/` はこちらを使う）
+- `import { generateWorld, WorldSampler } from 'norden-strategy/world'` → `norden-strategy/src/world.ts`（マクロ地形の生成と読み取り。three.js を読み込まない。街道マップの生成に使う）
 - `import { BattleScreen } from '@norden/battle-runtime'` → `norden-battle/battle-runtime/src/index.ts`（戦闘画面。battle-editor と同じもの。中で `norden-ui` と map-runtime を使う）
 - `import { MapView } from '@norden/map-runtime/render/mapView'` → `norden-battle/map-runtime/src/render/mapView.ts`（パッケージの `exports` と同じ対応。依存の `simplex-noise` はルートに入れてある）
 
 戦闘マップ（`norden-battle/assets/maps/`）は、map-runtime の Vite プラグイン（`mapsPlugin`、読み取り専用）でページの `maps/` として配信し、ビルドでは `dist/maps/` にコピーします。
+
+街道マップ（`road-<ID>-<ID>.json`）の下書きは、戦略マップの地理情報から生成できます（`scripts/road-maps/`）。戦略マップの地形（`norden-strategy/world`）を map-runtime の `generateGeoRoadMap` で HEX にし、両端の都市を規模と種類に応じたテンプレートの城・砦で置きます。戦闘の範囲・初期配置地点・防衛拠点は仮の値なので、map-editor で手直ししてください。
+
+```sh
+npm run road-maps -- P003-P005 P018-P024   # 指定した街道
+npm run road-maps                          # まだマップの無い街道すべて
+npm run road-maps -- --force P003-P005     # 既存のマップも上書き（手で直した内容は失われる）
+```
 - `import { CityCommandScreen, ScreenHost } from 'norden-ui'` → `norden-ui/src/index.ts`
 
 公開APIは各 `src/index.ts` にまとめ、ルートから内部のファイルは直接参照しません。

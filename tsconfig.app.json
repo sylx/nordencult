@@ -17,6 +17,7 @@
     "paths": {
       "norden-strategy": ["./norden-strategy/src/index.ts"],
       "norden-strategy/data": ["./norden-strategy/src/data.ts"],
+      "norden-strategy/world": ["./norden-strategy/src/world.ts"],
       "norden-ui": ["./norden-ui/src/index.ts"],
       "react": ["./node_modules/@types/react/index.d.ts"],
       "react/*": ["./node_modules/@types/react/*"],
@@ -34,5 +35,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src", "scripts"]
 }
