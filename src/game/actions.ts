@@ -5,8 +5,8 @@ import { runEconomy } from './economy/runEconomy'
 import { GameRuleError } from './errors'
 import { commandRank, leadingKnight, orderProblem, ownerOf, retreatCities, turnOrder } from './queries'
 import type {
-  Battle, BattleEndReason, BattleReport, BattleRetreat, BattleWinner, BattleWipeout, CharacterMove, CharacterState, CityState,
-  GameState, InvasionOrder,
+  Battle, BattleEndReason, BattleReport, BattleRetreat, BattleSide, BattleWinner, BattleWipeout, CharacterId, CharacterMove, CharacterState,
+  CityId, CityState, GameState, GovernorAppointment, InvasionOrder,
 } from './types'
 import { neighbours } from './world'
 
@@ -119,10 +119,14 @@ function startTurn(state: GameState): GameState {
  * Characters who leave their city leave their assignment there (a governor is
  * no longer its lord); a city taken loses every assignment. `reason` is how the battlefield
  * decided it (the report keeps it); null when decided without fighting it out.
+ * Lords (governors) are then made (appointGovernor), and listed in the report:
+ * - The captured city: the attacking commander, when they entered it.
+ * - Each city knights retreated or went back to, if it has no lord: the commander of
+ *   their side when they are there, or else one of the faction's knights there at random.
  */
 export function resolveBattle(
   state: GameState, battleId: string, winner: BattleWinner, retreats: readonly BattleRetreat[] = [],
-  reason: BattleEndReason | null = null, wipeouts: readonly BattleWipeout[] = [],
+  reason: BattleEndReason | null = null, wipeouts: readonly BattleWipeout[] = [], random: () => number = Math.random,
 ): GameState {
   const battle = state.march?.current
   if (!state.march || !battle || battle.id !== battleId) throw new GameRuleError(`戦闘 ${battleId} は進行中ではありません`)
@@ -177,6 +181,32 @@ export function resolveBattle(
     for (const id of attacker.knights) if (!left.has(id)) move(id, 'return', attacker.from)
   }
 
-  const report: BattleReport = { battle, winner, reason, cityCaptured: winner === 'attacker', moves, retreats: [...retreats], wipeouts: [...wipeouts] }
+  const governors: GovernorAppointment[] = []
+  /**
+   * Makes a lord of `target` if it has none: the commander of `side` when they are there,
+   * or else one of the owner's knights there at random
+   */
+  const appointGovernor = (target: CityId, side: BattleSide) => {
+    const city = cities[target]
+    const owner = cityOwners[target]
+    if (!city || !owner || city.assignments.governor) return
+    const here = Object.keys(characters).filter((id) => characters[id].cityId === target && characters[id].factionId === owner)
+    if (here.length === 0) return
+    const commander = battle[side].commander
+    const governor = commander && here.includes(commander) ? commander : here[Math.floor(random() * here.length)]
+    // A governor holds no officer role
+    cities[target] = { ...city, assignments: { ...withoutAssignee(city.assignments, governor), governor } }
+    governors.push({ cityId: target, characterId: governor })
+  }
+  if (winner === 'attacker') appointGovernor(cityId, 'attacker')
+  // Cities retreated or gone back to, once each, in the order the knights got there
+  const sideOf = (id: CharacterId): BattleSide => (attacker.knights.includes(id) ? 'attacker' : 'defender')
+  const refuges = new Map<CityId, BattleSide>()
+  for (const m of moves) if ((m.kind === 'retreat' || m.kind === 'return') && m.to && !refuges.has(m.to)) refuges.set(m.to, sideOf(m.characterId))
+  for (const [target, side] of refuges) appointGovernor(target, side)
+
+  const report: BattleReport = {
+    battle, winner, reason, cityCaptured: winner === 'attacker', moves, retreats: [...retreats], wipeouts: [...wipeouts], governors,
+  }
   return { ...state, cityOwners, characters, cities, march: { ...state.march, current: null }, lastBattle: report }
 }

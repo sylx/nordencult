@@ -22,7 +22,7 @@ const REASON_LABELS: Readonly<Record<BattleEndReason, string>> = {
 
 const cityName = (id: string | null) => (id ? CITY_MAP[id]?.name ?? id : '')
 
-/** Outcome of a battle: who won, whether the city changed hands, where the knights went */
+/** Outcome of a battle: who won, whether the city changed hands, where the knights went, who became lords */
 export default function BattleResultScene({ params }: SceneProps<'battleResult'>) {
   const { state: game } = useGame()
   const { goTo } = useScene()
@@ -36,7 +36,7 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
     )
   }
 
-  const { battle, winner, reason, cityCaptured, moves, retreats, wipeouts } = report
+  const { battle, winner, reason, cityCaptured, moves, retreats, wipeouts, governors } = report
   // Knights captured retreating or wiped out (what happens to them is not decided yet), and how
   const captives = new Map([
     ...retreats.flatMap((r) => (r.captured && r.knightId ? [[r.knightId, '退却に失敗し捕虜に'] as const] : [])),
@@ -79,6 +79,17 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
             <MoveList moves={moves.filter((m) => m.kind === kind)} />
           </section>
         ))}
+
+        {governors.length > 0 && (
+          <section className="battle-result__section">
+            <h2>領主の任命</h2>
+            <KnightList
+              ids={governors.map((g) => g.characterId)}
+              compact
+              aside={(id) => `${cityName(governors.find((g) => g.characterId === id)!.cityId)}の領主に`}
+            />
+          </section>
+        )}
 
         {captives.size > 0 && (
           <section className="battle-result__section">

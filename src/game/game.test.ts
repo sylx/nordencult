@@ -268,10 +268,16 @@ describe('units', () => {
 })
 
 describe('battle results', () => {
-  const fight = (winner: 'attacker' | 'defender', state = invadeAmbaria()) => {
-    const marching = startNextBattle(endStrategyPhase(state))
-    return resolveBattle(marching, marching.march!.current!.id, winner)
+  /** Fights the next battle of `state` (or `state` itself when already `marching`) to `winner` */
+  const fight = (winner: 'attacker' | 'defender', state = invadeAmbaria(), marching = false) => {
+    const battle = marching ? state : startNextBattle(endStrategyPhase(state))
+    return resolveBattle(battle, battle.march!.current!.id, winner)
   }
+  /** `state` with no lord in `cityId` */
+  const withoutGovernor = (state: GameState, cityId: string): GameState => ({
+    ...state,
+    cities: { ...state.cities, [cityId]: { ...state.cities[cityId], assignments: { officers: state.cities[cityId].assignments.officers } } },
+  })
 
   it('the attacker takes the city; the defenders retreat to a neighbour of their own', () => {
     const state = fight('attacker')
@@ -280,8 +286,11 @@ describe('battle results', () => {
     expect(state.characters['013']).toMatchObject({ cityId: VERSTA, factionId: 'leonis' })
     // The lord who left the city is no longer its lord
     expect(state.characters['046']).toEqual({ cityId: VERSTA, factionId: 'leonis' })
-    expect(state.cities[AMBARIA].assignments).toEqual({ officers: {} })
+    // The captured city loses its assignments and the attacking commander becomes its lord
+    expect(state.cities[AMBARIA].assignments).toEqual({ governor: '015', officers: {} })
     expect(state.lastBattle).toMatchObject({ winner: 'attacker', cityCaptured: true })
+    // ヴェルスタ has a lord of its own, so only アンバリア gets one
+    expect(state.lastBattle?.governors).toEqual([{ cityId: AMBARIA, characterId: '015' }])
     expect(state.lastBattle?.moves).toEqual([
       { characterId: '015', kind: 'enter', from: FLUEN, to: AMBARIA },
       { characterId: '016', kind: 'enter', from: FLUEN, to: AMBARIA },
@@ -372,6 +381,30 @@ describe('battle results', () => {
     expect(state.characters['013']).toMatchObject({ cityId: VERSTA, factionId: 'leonis' })
   })
 
+  it('the commander becomes the lord of a city retreated to that has none', () => {
+    const marching = startNextBattle(endStrategyPhase(withoutGovernor(invadeAmbaria(), VERSTA)))
+    const { commander } = marching.march!.current!.defender
+    const state = fight('attacker', marching, true)
+    expect(commander).not.toBeNull()
+    expect(state.characters[commander!]).toMatchObject({ cityId: VERSTA })
+    expect(governorOf(state, VERSTA)).toBe(commander)
+    expect(state.lastBattle?.governors).toContainEqual({ cityId: VERSTA, characterId: commander })
+  })
+
+  it('without the commander there, one of the knights in the city retreated to becomes its lord at random', () => {
+    const marching = startNextBattle(endStrategyPhase(withoutGovernor(invadeAmbaria(), VERSTA)))
+    const { commander } = marching.march!.current!.defender
+    const knight = AMBARIA_KNIGHTS.find((id) => id !== commander)!
+    const retreats = [{ side: 'defender' as const, knightId: knight, to: VERSTA, captured: false }]
+    const knightsThere = (state: GameState) => Object.keys(state.characters)
+      .filter((id) => state.characters[id].cityId === VERSTA && state.characters[id].factionId === 'leonis')
+    const first = resolveBattle(marching, marching.march!.current!.id, 'defender', retreats, null, [], () => 0)
+    expect(governorOf(first, VERSTA)).toBe(knightsThere(first)[0])
+    const last = resolveBattle(marching, marching.march!.current!.id, 'defender', retreats, null, [], () => 0.999)
+    expect(governorOf(last, VERSTA)).toBe(knightsThere(last).at(-1))
+    expect(knightsThere(first)).toContain(knight)
+  })
+
   it('refuses retreats to cities not of their own or by knights not in the battle', () => {
     const marching = startNextBattle(endStrategyPhase(invadeAmbaria()))
     const id = marching.march!.current!.id
@@ -385,7 +418,8 @@ describe('battle results', () => {
     const state = fight('attacker', invadeAmbaria(['029']))
     expect(state.characters['029']).toMatchObject({ cityId: AMBARIA })
     expect(governorOf(state, FLUEN)).toBeUndefined()
-    expect(governorOf(state, AMBARIA)).toBeUndefined()
+    // …and, as the commander, becomes the lord of the city taken
+    expect(governorOf(state, AMBARIA)).toBe('029')
     expect(commandRank(state, '029')).toBe(2) // still the head of カルタ書院
     expect(governorOf(fight('defender', invadeAmbaria(['029'])), FLUEN)).toBe('029')
   })

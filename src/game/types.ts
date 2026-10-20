@@ -286,6 +286,12 @@ export interface CharacterMove {
   to: CityId | null
 }
 
+/** A knight made the lord (governor) of a city after a battle */
+export interface GovernorAppointment {
+  cityId: CityId
+  characterId: CharacterId
+}
+
 export interface BattleReport {
   battle: Battle
   winner: BattleWinner
@@ -297,4 +303,6 @@ export interface BattleReport {
   retreats: readonly BattleRetreat[]
   /** Units wiped out, in the order they were (with whether their knight was captured) */
   wipeouts: readonly BattleWipeout[]
+  /** Lords made after the battle: of the captured city, and of cities retreated to that had none */
+  governors: readonly GovernorAppointment[]
 }
