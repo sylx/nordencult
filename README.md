@@ -71,7 +71,7 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | `src/scenes/sceneContext.ts` | `useScene()` |
 | `src/scenes/strategy/StrategyScene.tsx` | 地図と画面スタック（`cityCommand` / `pickTarget` / `invasion` / `pickMoveTarget` / `move` / `domestic`）。地図の強調は表示中の画面（`nav.top`）から決める。進行フェーズの移動の演出（`movementLegs` を地図の `march()` で動かし、着いたら `runMovements`） |
 | `src/scenes/strategy/views.ts` | ゲームの状態 → norden-ui のview型（`CityView`・`KnightView`・`TurnView`・`BuildingView`）。施設の画像は `src/assets/buildings.webp` 上の位置（`buildingSprite.json`）で渡す |
-| `src/scenes/strategy/OrderList.tsx` | 侵攻予約・移動予約・移動中の騎士・行軍の一覧（都市コマンド画面に重ねるHUD） |
+| `src/scenes/strategy/OrderList.tsx` | 行動予約（侵攻予約・移動予約・移動中の騎士）と進行フェーズの一覧。norden-ui の `ActionOrders` に渡す（都市コマンド画面に重ねるHUD） |
 | `src/scenes/battle/BattleScene.tsx` | 戦闘マップを読み込み、battle-runtime の `BattleScreen` に渡す（アンマウントで破棄）。ユニットはまだ置かない（置くときはマップの `units` と `statuses` で渡す）。退却先の拠点（`retreatCities`）を軍ごとに渡し、退却した・捕虜になった部隊（`RetreatReport`）を `BattleRetreat` にして、決着（`onEnd`）またはデバッグの勝敗のボタンで `resolveBattle` に渡し、結果の画面へ進む |
 | `src/scenes/battle/battleMap.ts` | 戦闘マップの選択。攻撃元と目標の街道マップ `road-<小さい ID>-<大きい ID>.json` から目標の範囲（`battleAreas[目標]`）を切り出す。無ければ `fluen.json` 全体（コンソールに警告） |
 
@@ -102,10 +102,11 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 
 軍事 → 移動で、自勢力の都市から騎士（複数）を自勢力のほかの都市へ移します。地図で移動先（自勢力のすべての都市。隣接していなくてよい）を選び、移動画面（norden-ui の `MoveScreen`）で騎士と、持っていく兵数・物資を決めて予約します（`addMoveOrder`。予約は手番のうちなら取り消せる）。騎士は着いた都市の所属になります。
 
-- 経路は街道の最短経路で、なるべく自勢力の都市だけを通ります（通れなければ他勢力の都市も通る。`moveRoute`）。兵と物資を連れた移動は街道1区間に1ヶ月（`MOVE_HOPS_PER_MONTH`）かかり、移動画面に月数を出します
+- 経路は街道の最短経路で、なるべく自勢力の都市だけを通ります（通れなければ他勢力の都市も通る。`moveRoute`）。兵と物資を連れた移動は街道1区間に2ヶ月（`MOVE_MONTHS_PER_HOP`）かかり、区間の2ヶ月目の終わりに次の都市に着きます。移動画面に月数を出します
 - 単騎移動（`MoveOrder.solo`）は兵と物資を運ばない代わりに、1ヶ月に2区間進み、どこへでも1〜2ヶ月で着きます（`SOLO_HOPS_PER_MONTH`・`SOLO_MAX_MONTHS`）
 - 進行フェーズ（旧称: 行軍フェーズ。状態の `phase` は `'march'` のまま）の初めに、全勢力の移動をまとめて1ヶ月分進めます（`runMovements`）。その月に予約した移動はここで出発し、騎士は出発した都市と担当（領主・内政担当官）を離れ、兵と物資が都市から引かれます。移動中の騎士はどの都市にもいません（`CharacterState.cityId` が null で勢力はそのまま。`GameState.movements` に経路の残りと残りの月数）。着いた移動は、騎士がその都市に入り、兵（練度は兵数で加重平均）と物資がその都市に加わります
 - 移動は侵攻の戦闘より先に済ませるので、その月に着く騎士は着いた都市の防衛戦闘に加わります
+- 行動予約のウィンドウ（右上。norden-ui の `ActionOrders`）に、侵攻予約（侵攻元 → 侵攻先、軍団長 以下N名、取消）と移動予約（移動元 → 移動先、担当の騎士、取消）を並べます。月をまたいで移動中のものは出発した拠点から書き、取消の代わりに残りの月数を出します
 - 移動先の都市が奪われていたら、いまいる場所からいちばん近い自勢力の都市へ向かい直します。勢力の都市が無くなれば騎士は在野になり、兵と物資は失われます
 - 地図では、進行フェーズに全勢力の移動の1ヶ月分の道のりを移動のマーカーで見せます（兵と物資を連れた移動は侵攻と同じ軍団のマーカー、単騎移動は使者のマーカー）。戦略フェーズには、プレイヤーの移動予約と全勢力の移動中の騎士の残りの経路を街道の強調で出します。街道の強調の色は勢力によらず、移動は青、侵攻は赤です（地図上を動くマーカーは勢力の色）
 

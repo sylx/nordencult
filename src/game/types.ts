@@ -236,6 +236,8 @@ export interface Movement extends MoveOrder {
 export interface MoveLeg {
   id: string
   factionId: FactionId
+  /** The city it set out from */
+  from: CityId
   solo: boolean
   knights: readonly CharacterId[]
   /** The cities passed this month: from where it is to where it gets (a single city: it stays there) */

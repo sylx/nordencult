@@ -360,8 +360,11 @@ export function unitPower(game: GameState, from: string, unit: InvasionAssignmen
   return { attack: basicAttack(power), defense: basicDefense(power) }
 }
 
+/** A knight's name (the id when unknown) */
+export const knightName = (id: string) => CHARACTER_MAP[id]?.name ?? id
+
 /** Knights of a move, e.g. マルクス・カルタほか2人 */
 export function knightsLabel(ids: readonly string[]) {
-  const first = ids[0] === undefined ? '' : CHARACTER_MAP[ids[0]]?.name ?? ids[0]
+  const first = ids[0] === undefined ? '' : knightName(ids[0])
   return ids.length > 1 ? `${first}ほか${ids.length - 1}人` : first
 }

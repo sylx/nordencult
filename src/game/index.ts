@@ -11,6 +11,6 @@ export { createGameStore, type GameStore } from './store'
 export { GameContext, useGame } from './gameContext'
 export { neighbours } from './world'
 export {
-  addMoveOrder, cancelMoveOrder, MOVE_HOPS_PER_MONTH, moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, runMovements,
+  addMoveOrder, cancelMoveOrder, MOVE_MONTHS_PER_HOP, moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, runMovements,
   SOLO_HOPS_PER_MONTH, SOLO_MAX_MONTHS,
 } from './movement'
