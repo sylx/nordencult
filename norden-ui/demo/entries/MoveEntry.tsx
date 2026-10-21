@@ -29,7 +29,7 @@ export default function MoveEntry() {
     stage={<>
       <MockMap routes={route.slice(1).map((id, index) => ({ from: route[index]!, to: id, color: '#8fc0e0' }))} />
       <MoveScreen key={`${instance}-${to}`} from={cityView(FROM)} to={cityView(to)} route={route.map(id => CITY_MAP[id]!.name)}
-        months={hops * 2} soloMonths={Math.min(2, Math.ceil(hops / 2))} knights={knights}
+        months={Math.ceil(hops / 2)} soloMonths={Math.min(2, Math.ceil(hops / 2))} knights={knights}
         soldierPool={CITY_MAP[FROM]!.soldiers} supplyPool={CITY_MAP[FROM]!.supplies ?? 0}
         onConfirm={draft => add(`予約: ${describe(draft)}`)} onCancel={() => add('やめる')} />
     </>}
