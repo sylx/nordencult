@@ -1,0 +1,77 @@
+/* A HUD panel over the map: its height follows the rows up to a limit, then the rows scroll */
+.norden-action-orders { width: 320px; max-width: 100%; padding: 26px 16px 16px; font-size: 14px; }
+
+.norden-action-orders-empty { margin: 0; font-size: 13px; color: #c8b490; text-align: center; }
+
+.norden-action-orders-list {
+  display: grid;
+  gap: 6px;
+  max-height: min(60vh, 420px);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: #8a7350 transparent;
+}
+
+/* Two lines: [kind] route ／ knights, with the status and 取消 on the right of both */
+.norden-action-orders-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'kind route aside' '. knights aside';
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+  padding: 6px 8px;
+  background: rgb(255 255 255 / 0.06);
+  border-left: 3px solid var(--norden-action-orders-color);
+  border-radius: 4px;
+}
+.norden-action-orders-item.is-invasion { --norden-action-orders-color: #d0614c; }
+.norden-action-orders-item.is-move { --norden-action-orders-color: #8fc0e0; }
+.norden-action-orders-item.is-current { outline: 1px solid #ffe08a; background: rgb(255 224 138 / 0.15); }
+
+.norden-action-orders-kind {
+  grid-area: kind;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #1a140e;
+  background: var(--norden-action-orders-color);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.norden-action-orders-route {
+  grid-area: route;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 5px;
+  min-width: 0;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: left;
+}
+button.norden-action-orders-route { cursor: pointer; }
+button.norden-action-orders-route:hover { color: #ffe08a; }
+button.norden-action-orders-route:focus-visible { outline: 2px solid #ffe08a; outline-offset: 2px; }
+.norden-action-orders-route .norden-faction-mark img,
+.norden-action-orders-route .norden-faction-mark-blank { width: 18px; height: 18px; }
+/* A long name wraps at the arrow, not inside the name */
+.norden-action-orders-city { white-space: nowrap; }
+.norden-action-orders-arrow { color: #c8b490; font-weight: 400; }
+
+.norden-action-orders-knights { grid-area: knights; min-width: 0; font-size: 12px; line-height: 1.5; color: #e6d8b8; overflow-wrap: anywhere; }
+.norden-action-orders-knights-label { margin-right: 6px; color: #a8946e; }
+
+.norden-action-orders-aside { grid-area: aside; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.norden-action-orders-status { font-size: 12px; color: #c8b490; white-space: nowrap; }
+.norden-button.norden-action-orders-cancel { --norden-button-corner: 12px; min-width: 0; min-height: 28px; padding: 3px 12px; font-size: 12px; }

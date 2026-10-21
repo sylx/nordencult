@@ -5,6 +5,7 @@ import NavigationWindowEntry from './entries/NavigationWindowEntry'
 import CommandToolbarEntry from './entries/CommandToolbarEntry'
 import DateBarEntry from './entries/DateBarEntry'
 import FactionBarEntry from './entries/FactionBarEntry'
+import ActionOrdersEntry from './entries/ActionOrdersEntry'
 import PartsEntry from './entries/PartsEntry'
 import CityCommandEntry from './entries/CityCommandEntry'
 import MapPickEntry from './entries/MapPickEntry'
@@ -74,6 +75,8 @@ export const CATALOG: CatalogGroup[] = [
         description: '年月・ターンの表示と、歯車の設定メニュー' },
       { id: 'faction-bar', label: '勢力の情報', name: 'FactionBar', Component: FactionBarEntry,
         description: 'エンブレムが浮かぶ球と金属彫刻の専用バー。球をドラッグして移動。金と増減・総生産・総兵力・都市の切り替え' },
+      { id: 'action-orders', label: '行動予約', name: 'ActionOrders', Component: ActionOrdersEntry,
+        description: '侵攻と移動の予約の一覧。侵攻は侵攻元→侵攻先と軍団長以下の人数、移動は出発した拠点→移動先と担当の騎士。取消は今月の予約だけで、出発済みの移動は残りの月数を出す' },
       { id: 'parts', label: 'UIパーツ', name: 'Button / ChoiceGroup / QuantityInput …', Component: PartsEntry,
         description: '画面を組み立てる小さな部品。ボタン、単一選択、数量、騎士カード、勢力、案内の帯' },
     ],
