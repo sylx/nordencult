@@ -11,8 +11,8 @@ import { neighbours } from './world'
  * progress phase, before the battles: knights arriving defend their new city in that month's battles.
  */
 
-/** A move with soldiers and supplies takes this many months for each road (to the next city) */
-export const MOVE_MONTHS_PER_HOP = 2
+/** A move with soldiers and supplies goes this many cities a month (half a month a road) */
+export const MOVE_HOPS_PER_MONTH = 2
 /** Riding alone goes this many cities a month, and takes SOLO_MAX_MONTHS at most however far it goes */
 export const SOLO_HOPS_PER_MONTH = 2
 export const SOLO_MAX_MONTHS = 2
@@ -22,7 +22,7 @@ export function moveMonths(hops: number, solo: boolean): number {
   if (hops <= 0) return 0
   return solo
     ? Math.min(SOLO_MAX_MONTHS, Math.ceil(hops / SOLO_HOPS_PER_MONTH))
-    : hops * MOVE_MONTHS_PER_HOP
+    : Math.ceil(hops / MOVE_HOPS_PER_MONTH)
 }
 
 /** The shortest route along the roads (both ends included) whose cities in between are `passable`; null when there is none */
@@ -138,17 +138,10 @@ function heading(state: GameState, movement: Movement): Movement | null {
   return { ...movement, to, route, monthsLeft: moveMonths(route.length - 1, movement.solo) }
 }
 
-/**
- * A month of a movement: the cities it passes and where it is after it. A move with soldiers reaches the next
- * city in the last month of its road; riding alone goes ahead from the first month
- */
+/** A month of a movement: the cities it passes and where it is after it */
 function monthOf(movement: Movement): { leg: CityId[]; next: Movement } {
-  const { route, monthsLeft, solo } = movement
-  const hopsLeft = route.length - 1
-  const hopsAfter = monthsLeft <= 1 ? 0
-    : solo ? hopsLeft - Math.ceil(hopsLeft / monthsLeft)
-    : Math.min(hopsLeft, Math.ceil((monthsLeft - 1) / MOVE_MONTHS_PER_HOP))
-  const hops = hopsLeft - hopsAfter
+  const { route, monthsLeft } = movement
+  const hops = monthsLeft > 0 ? Math.ceil((route.length - 1) / monthsLeft) : route.length - 1
   return {
     leg: route.slice(0, hops + 1),
     next: { ...movement, route: route.slice(hops), monthsLeft: Math.max(0, monthsLeft - 1) },

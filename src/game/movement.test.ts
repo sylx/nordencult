@@ -32,13 +32,13 @@ function nextTurn(state: GameState): GameState {
 }
 
 describe('routes', () => {
-  it('goes along the faction\'s own roads, two months a road with soldiers and supplies', () => {
+  it('goes along the faction\'s own roads, two cities a month with soldiers and supplies', () => {
     const state = start()
     expect(moveRoute(state, 'leonis', AMBARIA, P011)).toEqual([AMBARIA, VERSTA, P010, P011])
     expect(moveTargets(state, AMBARIA)).toContain(P011)
     expect(moveTargets(state, AMBARIA)).not.toContain(AMBARIA)
     expect(moveTargets(state, AMBARIA)).not.toContain(FLUEN)
-    expect([1, 2, 3, 5].map((hops) => moveMonths(hops, false))).toEqual([2, 4, 6, 10])
+    expect([1, 2, 3, 5].map((hops) => moveMonths(hops, false))).toEqual([1, 1, 2, 3])
   })
 
   it('takes one or two months riding alone', () => {
@@ -85,7 +85,7 @@ describe('move orders', () => {
 })
 
 describe('the progress phase', () => {
-  it('moves the knights, soldiers and supplies to a neighbouring city in two months', () => {
+  it('moves the knights, soldiers and supplies to a neighbouring city in a month', () => {
     const before = start()
     // コンラート (046) is the lord of アンバリア: they leave it without one
     let state = addMoveOrder(before, move({ knights: ['046', '087'], troops: 300, supplies: 100 }))
@@ -93,33 +93,23 @@ describe('the progress phase', () => {
     expect(state.march?.moved).toBe(false)
     state = runMovements(state)
     expect(state.march?.moved).toBe(true)
-    expect(state.movements).toMatchObject([{ from: AMBARIA, route: [AMBARIA, VERSTA], monthsLeft: 1 }])
-    expect(state.characters['046']).toEqual({ cityId: null, factionId: 'leonis' })
+    expect(charactersIn(state, VERSTA)).toEqual(['046', '058', '079', '087'])
     expect(charactersIn(state, AMBARIA)).toEqual(['013'])
     expect(governorOf(state, AMBARIA)).toBeUndefined()
     expect(state.cities[AMBARIA].troops).toBe(before.cities[AMBARIA].troops - 300)
     expect(state.cities[AMBARIA].storedSupplies).toBe(before.cities[AMBARIA].storedSupplies - 100)
+    expect(state.cities[VERSTA].troops).toBe(before.cities[VERSTA].troops + 300)
+    expect(state.cities[VERSTA].storedSupplies).toBe(before.cities[VERSTA].storedSupplies + 100)
     expect(state.moveOrders).toEqual([])
-    const arriving = endStrategyPhase(nextTurn(state))
-    state = runMovements(arriving)
-    expect(charactersIn(state, VERSTA)).toEqual(['046', '058', '079', '087'])
-    expect(state.cities[VERSTA].troops).toBe(arriving.cities[VERSTA].troops + 300)
-    expect(state.cities[VERSTA].storedSupplies).toBe(arriving.cities[VERSTA].storedSupplies + 100)
     expect(state.movements).toEqual([])
   })
 
-  it('reaches the next city in the last month of its road, the knights in no city on the way', () => {
+  it('takes a month two cities, the knights in no city on the way', () => {
     let state = addMoveOrder(start(), move({ to: P011, troops: 200 }))
     state = nextTurn(state)
     expect(state.turn).toBe(2)
     expect(state.characters['013']).toEqual({ cityId: null, factionId: 'leonis' })
-    expect(state.movements).toMatchObject([{ from: AMBARIA, route: [AMBARIA, VERSTA, P010, P011], monthsLeft: 5, troops: 200 }])
-    state = nextTurn(state)
-    expect(state.movements).toMatchObject([{ from: AMBARIA, route: [VERSTA, P010, P011], monthsLeft: 4 }])
-    state = nextTurn(nextTurn(state))
-    expect(state.movements).toMatchObject([{ route: [P010, P011], monthsLeft: 2 }])
-    state = nextTurn(state)
-    expect(state.movements).toMatchObject([{ route: [P010, P011], monthsLeft: 1 }])
+    expect(state.movements).toMatchObject([{ from: AMBARIA, route: [P010, P011], monthsLeft: 1, troops: 200 }])
     state = nextTurn(state)
     expect(state.movements).toEqual([])
     expect(state.characters['013']).toEqual({ cityId: P011, factionId: 'leonis' })
@@ -137,8 +127,8 @@ describe('the progress phase', () => {
   })
 
   it('moves before the battles: knights arriving defend their new city', () => {
-    // ヴェルスタ's 058 rides alone to アンバリア, which カルタ書院 invades from フルーエン the same month
-    let state = addMoveOrder(start(), move({ from: VERSTA, to: AMBARIA, knights: ['058'], solo: true }))
+    // ヴェルスタ's 058 moves to アンバリア, which カルタ書院 invades from フルーエン the same month
+    let state = addMoveOrder(start(), move({ from: VERSTA, to: AMBARIA, knights: ['058'] }))
     while (state.activeFaction !== 'carta') state = endFactionTurn(state)
     state = addOrder(state, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015'] })
     state = startNextBattle(endStrategyPhase(state))
@@ -146,12 +136,12 @@ describe('the progress phase', () => {
   })
 
   it('heads for the nearest city of the faction when the one it set out for is lost', () => {
-    let state = nextTurn(nextTurn(addMoveOrder(start(), move({ to: P011 }))))
-    expect(state.movements[0].route[0]).toBe(VERSTA)
+    let state = nextTurn(addMoveOrder(start(), move({ to: P011 })))
+    expect(state.movements[0].route[0]).toBe(P010)
     state = { ...state, cityOwners: { ...state.cityOwners, [P011]: 'aqua' } }
     state = runMovements(endStrategyPhase(state))
-    // At ヴェルスタ, its own city
-    expect(state.characters['013']).toEqual({ cityId: VERSTA, factionId: 'leonis' })
+    // At P010, its own city
+    expect(state.characters['013']).toEqual({ cityId: P010, factionId: 'leonis' })
     expect(state.movements).toEqual([])
   })
 })
