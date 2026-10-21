@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import Button from '../parts/Button'
 import FactionMark from '../parts/FactionMark'
@@ -34,6 +35,10 @@ export interface ActionOrdersProps {
   onCancel?: (id: string) => void
   /** The route was clicked (e.g. to show its city on the map). Omitted: the route is plain text */
   onSelect?: (id: string) => void
+  /** The order picked on the list (e.g. its route shown on the map): highlighted */
+  activeId?: string | null
+  /** A click outside the panel while an order is active */
+  onDeactivate?: () => void
   className?: string
   style?: CSSProperties
 }
@@ -53,10 +58,22 @@ function knightsText({ kind, knights }: ActionOrderView) {
  * phase, every faction's, with their emblems and the one being resolved highlighted.
  */
 export default function ActionOrders({
-  orders, title = '行動予約', emptyLabel = '予約はありません', onCancel, onSelect, className = '', style,
+  orders, title = '行動予約', emptyLabel = '予約はありません', onCancel, onSelect, activeId = null, onDeactivate, className = '', style,
 }: ActionOrdersProps) {
+  const ref = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    if (activeId === null || !onDeactivate) return
+    // Capturing: the map below may stop the click from reaching the document
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.target instanceof Node && !ref.current?.contains(event.target)) onDeactivate()
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    return () => document.removeEventListener('pointerdown', onPointerDown, true)
+  }, [activeId, onDeactivate])
+
   return (
-    <ThinFrameWithTitle title={title} className={`norden-action-orders ${className}`} style={style}>
+    <ThinFrameWithTitle ref={ref} title={title} className={`norden-action-orders ${className}`} style={style}>
       {orders.length === 0
         ? <p className="norden-action-orders-empty">{emptyLabel}</p>
         : (
@@ -64,6 +81,7 @@ export default function ActionOrders({
             {orders.map(order => {
               const kind = KIND_LABELS[order.kind]
               const knights = knightsText(order)
+              const active = order.id === activeId
               const route = <>
                 {order.faction && <FactionMark faction={order.faction} emblemOnly />}
                 <span className="norden-action-orders-city">{order.from}</span>
@@ -71,11 +89,11 @@ export default function ActionOrders({
                 <span className="norden-action-orders-city">{order.to}</span>
               </>
               return (
-                <li key={order.id} className={`norden-action-orders-item is-${order.kind} ${order.current ? 'is-current' : ''}`}
+                <li key={order.id} className={`norden-action-orders-item is-${order.kind} ${order.current ? 'is-current' : ''} ${active ? 'is-active' : ''}`}
                   aria-current={order.current ? 'step' : undefined}>
                   <span className="norden-action-orders-kind">{kind}</span>
                   {onSelect
-                    ? <button type="button" className="norden-action-orders-route" onClick={() => onSelect(order.id)}>{route}</button>
+                    ? <button type="button" className="norden-action-orders-route" aria-pressed={active} onClick={() => onSelect(order.id)}>{route}</button>
                     : <span className="norden-action-orders-route">{route}</span>}
                   <span className="norden-action-orders-knights">
                     <span className="norden-action-orders-knights-label">{knights.label}</span>

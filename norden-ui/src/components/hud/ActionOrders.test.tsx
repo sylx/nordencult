@@ -42,4 +42,16 @@ describe('ActionOrders', () => {
     await userEvent.click(screen.getAllByRole('button', { name: /ミルデン/ })[1]!)
     expect(onSelect).toHaveBeenCalledWith('o3')
   })
+
+  it('highlights the active order and lets go of it on a click outside', async () => {
+    const onDeactivate = vi.fn()
+    render(<><ActionOrders orders={ORDERS} onSelect={() => {}} activeId="o2" onDeactivate={onDeactivate} /><button>地図</button></>)
+    const pressed = screen.getAllByRole('button', { pressed: true })
+    expect(pressed).toHaveLength(1)
+    expect(pressed[0]).toHaveTextContent('ヴェステル→ミルデン')
+    await userEvent.click(pressed[0]!)
+    expect(onDeactivate).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: '地図' }))
+    expect(onDeactivate).toHaveBeenCalledTimes(1)
+  })
 })

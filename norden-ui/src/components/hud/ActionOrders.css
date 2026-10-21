@@ -31,6 +31,7 @@
 .norden-action-orders-item.is-invasion { --norden-action-orders-color: #d0614c; }
 .norden-action-orders-item.is-move { --norden-action-orders-color: #8fc0e0; }
 .norden-action-orders-item.is-current { outline: 1px solid #ffe08a; background: rgb(255 224 138 / 0.15); }
+.norden-action-orders-item.is-active { outline: 1px solid var(--norden-action-orders-color); background: rgb(255 255 255 / 0.16); }
 
 .norden-action-orders-kind {
   grid-area: kind;
