@@ -1,8 +1,7 @@
 import { FACE_COUNT, troopStatus, type Portrait, type Troop, type TroopFactory, type UnitStatus } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
-import spriteSheet from '../../assets/character.webp'
 import { CHARACTER_MAP, type Character } from '../../data/character'
-import characterSprite from '../../data/characterSprite.json'
+import { characterSheet } from '../../data/characterSheets'
 import { unitAbilities, type Battle, type BattleSide, type CharacterId } from '../../game'
 
 /** Abilities of the leader of units nobody leads (the garrison of a city without knights). Provisional */
@@ -12,10 +11,11 @@ const SIDES: readonly BattleSide[] = ['attacker', 'defender']
 
 /** A character's face on the sprite sheet (as CharacterImage cuts it out), for the battle screen */
 function portraitOf({ imageInfo: { sprite, faceRect } }: Character): Portrait {
+  const { url, width, height } = characterSheet(sprite.sheet)
   return {
-    url: spriteSheet,
-    width: characterSprite.width,
-    height: characterSprite.height,
+    url,
+    width,
+    height,
     rect: { x: sprite.x + faceRect.x, y: sprite.y + faceRect.y, width: faceRect.width, height: faceRect.height },
   }
 }

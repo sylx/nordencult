@@ -16,9 +16,10 @@ export const CHARACTER_TYPE_LABELS: Readonly<Record<CharacterType, string>> = {
   landsknecht: 'ランツクネヒト',
 }
 
-/** Where a character is drawn on the sprite sheet (src/assets/character.webp; sizes in characterSprite.json) */
+/** Where a character is drawn on the sprite sheets (src/assets/character-<n>.webp; sizes in characterSprite.json, read through characterSheets.ts) */
 export interface CharacterImageInfo {
-  sprite: { x: number; y: number }
+  /** Which sheet, and the cell's top left on it */
+  sprite: { sheet: number; x: number; y: number }
   /** The face, relative to the sprite */
   faceRect: { x: number; y: number; width: number; height: number }
 }

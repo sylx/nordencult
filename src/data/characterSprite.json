@@ -1,6 +1,18 @@
 {
-  "width": 2560,
-  "height": 13824,
   "cellWidth": 512,
-  "cellHeight": 768
+  "cellHeight": 768,
+  "sheets": [
+    {
+      "width": 2560,
+      "height": 7680
+    },
+    {
+      "width": 2560,
+      "height": 7680
+    },
+    {
+      "width": 2560,
+      "height": 1536
+    }
+  ]
 }
