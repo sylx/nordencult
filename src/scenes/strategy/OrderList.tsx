@@ -8,6 +8,9 @@ interface Props {
   onCancel: (orderId: string) => void
   onCancelMove: (orderId: string) => void
   onSelectCity: (id: string) => void
+  /** The order picked on the list: its route is shown on the map */
+  activeId: string | null
+  onActiveChange: (id: string | null) => void
 }
 
 /** An order on the list, with the city it is shown by */
@@ -24,7 +27,7 @@ function invasionItem(order: InvasionOrder): Item {
  * (from the city they set out from, with the months left). In the progress phase every order still to resolve and
  * every faction's moves of the month until they are made. Hidden while there are none
  */
-export function OrderList({ game, onCancel, onCancelMove, onSelectCity }: Props) {
+export function OrderList({ game, onCancel, onCancelMove, onSelectCity, activeId, onActiveChange }: Props) {
   const playerTurn = isPlayerTurn(game)
   const march = game.march
   const items: Item[] = march
@@ -54,9 +57,11 @@ export function OrderList({ game, onCancel, onCancelMove, onSelectCity }: Props)
   return (
     <div className="order-list-region">
       <ActionOrders title={march ? '進行' : '行動予約'} orders={items} onCancel={cancel}
+        activeId={activeId} onDeactivate={() => onActiveChange(null)}
         onSelect={(id) => {
           const item = items.find((i) => i.id === id)
           if (item) onSelectCity(item.city)
+          onActiveChange(id === activeId ? null : id)
         }} />
     </div>
   )

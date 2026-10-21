@@ -94,6 +94,8 @@ export default function StrategyScene() {
   const legs = useMemo(() => (game.phase === 'march' && !moved ? movementLegs(game) : []), [game, moved])
   const playerCities = citiesOf(game, game.playerFaction)
   const cutIn = useCutIn()
+  // The order picked on the 行動予約 list: only its route is shown on the map
+  const [activeOrder, setActiveOrder] = useState<string | null>(null)
 
   // Each phase starts with a cut-in; the march waits for it. A march resumed after a battle was announced before
   const phaseKey = `${game.turn}:${game.phase}`
@@ -165,27 +167,23 @@ export default function StrategyScene() {
     } else {
       cities.push({ id: top.params.cityId })
     }
-    // Ordered invasions stay on the map until they are resolved
-    const pending = game.march
-      ? game.orders.filter((o) => game.march?.queue.includes(o.id) || battle?.orderId === o.id)
-      : game.orders.filter((o) => o.factionId === game.playerFaction)
-    for (const o of pending) {
-      if (top.screen === 'invasion' && o.from === top.params.from && o.to === top.params.to) continue
-      roads.push({ from: o.from, to: o.to, color: TARGET_COLOR })
-    }
-    // In the strategy phase the player's moves ordered and every faction's on the way show their roads ahead
-    if (!game.march) {
-      for (const o of game.moveOrders) {
-        if (o.factionId !== game.playerFaction) continue
-        if (top.screen === 'move' && o.from === top.params.from && o.to === top.params.to) continue
-        roads.push(...routeRoads(moveRoute(game, o.factionId, o.from, o.to) ?? [], MOVE_COLOR))
+    // Invasions to resolve stay on the map through the progress phase
+    if (game.march) {
+      for (const o of game.orders) {
+        if (game.march.queue.includes(o.id) || battle?.orderId === o.id) roads.push({ from: o.from, to: o.to, color: TARGET_COLOR })
       }
-      for (const m of game.movements) roads.push(...routeRoads(m.route, MOVE_COLOR, !m.solo))
     }
+    // The order picked on the 行動予約 list shows its road (an invasion) or its way ahead (a move)
+    const invasion = game.orders.find((o) => o.id === activeOrder)
+    const moveOrder = game.moveOrders.find((o) => o.id === activeOrder)
+    const movement = game.movements.find((m) => m.id === activeOrder)
+    if (invasion && !game.march) roads.push({ from: invasion.from, to: invasion.to, color: TARGET_COLOR })
+    if (moveOrder) roads.push(...routeRoads(moveRoute(game, moveOrder.factionId, moveOrder.from, moveOrder.to) ?? [], MOVE_COLOR))
+    if (movement) roads.push(...routeRoads(movement.route, MOVE_COLOR, !movement.solo))
     map.setCityHighlights(cities)
     const missing = map.setRoadHighlights(roads)
     if (missing.length > 0) console.warn('街道が見つかりません', missing)
-  }, [map, top, targets, moveDestinations, battle, game])
+  }, [map, top, targets, moveDestinations, battle, game, activeOrder])
 
   useEffect(() => {
     if (map && returnCity) map.focusPlace(returnCity, true)
@@ -313,7 +311,8 @@ export default function StrategyScene() {
               onEndTurn={endTurn} endTurnDisabled={!playerTurn}
               turnMenu={<p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(game.playerFaction)} /></p>}>
               <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))}
-                onCancelMove={(id) => update((s) => cancelMoveOrder(s, id))} onSelectCity={showCity} />
+                onCancelMove={(id) => update((s) => cancelMoveOrder(s, id))} onSelectCity={showCity}
+                activeId={activeOrder} onActiveChange={setActiveOrder} />
               {notice && <div className="norden-screen-top-center norden-screen-banner"><Banner>{notice}</Banner></div>}
             </CityCommandScreen>
           )
