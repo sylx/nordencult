@@ -1,0 +1,5 @@
+/* The move screen's layout and parts (MoveScreen.css), in the transports' colour */
+.norden-transport-arrow { color: #e0c070; }
+
+/* 繰り返し輸送: not made yet */
+.norden-transport .norden-move-solo.is-disabled { cursor: not-allowed; opacity: 0.6; }

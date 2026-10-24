@@ -11,6 +11,7 @@ import CityCommandEntry from './entries/CityCommandEntry'
 import MapPickEntry from './entries/MapPickEntry'
 import InvasionEntry from './entries/InvasionEntry'
 import MoveEntry from './entries/MoveEntry'
+import TransportEntry from './entries/TransportEntry'
 import DomesticEntry from './entries/DomesticEntry'
 import StrategyFlowEntry from './entries/StrategyFlowEntry'
 import CutInEditorEntry from './entries/CutInEditorEntry'
@@ -51,6 +52,8 @@ export const CATALOG: CatalogGroup[] = [
         description: '出撃する騎士の選択と、騎士ごとの兵科・兵数。兵数の合計は出発都市の兵数まで' },
       { id: 'move', label: '移動', name: 'MoveScreen', Component: MoveEntry,
         description: '自勢力の都市への移動。騎士を複数選び、兵と物資を持たせる。単騎移動は兵と物資を0にして早く着く。到着までの月数を出す' },
+      { id: 'transport', label: '輸送', name: 'TransportScreen', Component: TransportEntry,
+        description: '自勢力の都市への輸送。担当の騎士を1人選び、兵と物資の量を決める。騎士は輸送先で下ろして単騎で戻る。到着と帰還までの月数を出す。繰り返し輸送は準備中' },
     ],
   },
   {
@@ -76,7 +79,7 @@ export const CATALOG: CatalogGroup[] = [
       { id: 'faction-bar', label: '勢力の情報', name: 'FactionBar', Component: FactionBarEntry,
         description: 'エンブレムが浮かぶ球と金属彫刻の専用バー。球をドラッグして移動。金と増減・総生産・総兵力・都市の切り替え' },
       { id: 'action-orders', label: '行動予約', name: 'ActionOrders', Component: ActionOrdersEntry,
-        description: '侵攻と移動の予約の一覧。侵攻は侵攻元→侵攻先と軍団長以下の人数、移動は出発した拠点→移動先と担当の騎士。取消は今月の予約だけで、出発済みの移動は残りの月数を出す' },
+        description: '侵攻・移動・輸送の予約の一覧。侵攻は侵攻元→侵攻先と軍団長以下の人数、移動と輸送は出発した拠点→行き先と担当の騎士。取消は今月の予約だけで、出発済みの移動・輸送は残りの月数を出す' },
       { id: 'parts', label: 'UIパーツ', name: 'Button / ChoiceGroup / QuantityInput …', Component: PartsEntry,
         description: '画面を組み立てる小さな部品。ボタン、単一選択、数量、騎士カード、勢力、案内の帯' },
     ],

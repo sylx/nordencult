@@ -76,6 +76,8 @@ export { default as InvasionScreen } from './screens/invasion/InvasionScreen'
 export type { InvasionAssignment, InvasionDraft, InvasionScreenProps } from './screens/invasion/InvasionScreen'
 export { default as MoveScreen } from './screens/move/MoveScreen'
 export type { MoveDraft, MoveScreenProps } from './screens/move/MoveScreen'
+export { default as TransportScreen } from './screens/transport/TransportScreen'
+export type { TransportDraft, TransportScreenProps } from './screens/transport/TransportScreen'
 
 // Cut-ins: templates made with the catalog's editor, played over the screen
 export { default as CutInLayer } from './cutin/CutInLayer'

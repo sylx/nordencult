@@ -6,16 +6,16 @@ import ThinFrameWithTitle from '../parts/ThinFrameWithTitle'
 import type { FactionView } from '../../screens/types'
 import './ActionOrders.css'
 
-export type ActionOrderKind = 'invasion' | 'move'
+export type ActionOrderKind = 'invasion' | 'move' | 'transport'
 
-/** An order on the list: an invasion (侵攻) or a move (移動), this turn's or one still under way */
+/** An order on the list: an invasion (侵攻), a move (移動) or a transport (輸送), this turn's or one still under way */
 export interface ActionOrderView {
   id: string
   kind: ActionOrderKind
-  /** Names of the cities. A move under way: the city it set out from, not where it is now */
+  /** Names of the cities. A move or transport under way: the city it set out from, not where it is now */
   from: string
   to: string
-  /** Knights' names. invasion: the commander first (shown as 軍団長 〜 以下N名); move: every knight in charge */
+  /** Knights' names. invasion: the commander first (shown as 軍団長 〜 以下N名); move, transport: every knight in charge */
   knights: readonly string[]
   /** Shown as an emblem before the route; for lists of several factions' orders */
   faction?: FactionView
@@ -43,18 +43,18 @@ export interface ActionOrdersProps {
   style?: CSSProperties
 }
 
-const KIND_LABELS: Readonly<Record<ActionOrderKind, string>> = { invasion: '侵攻', move: '移動' }
+const KIND_LABELS: Readonly<Record<ActionOrderKind, string>> = { invasion: '侵攻', move: '移動', transport: '輸送' }
 
-/** 軍団長 〜 以下N名 for an invasion, 担当 〜・〜 for a move */
+/** 軍団長 〜 以下N名 for an invasion, 担当 〜・〜 for a move or a transport */
 function knightsText({ kind, knights }: ActionOrderView) {
-  if (kind === 'move') return { label: '担当', text: knights.join('・') }
+  if (kind !== 'invasion') return { label: '担当', text: knights.join('・') }
   const [commander = ''] = knights
   return { label: '軍団長', text: knights.length > 1 ? `${commander} 以下${knights.length}名` : commander }
 }
 
 /**
- * 行動予約: the invasions and moves ordered, one row each: the route, the knights, and 取消 for those that can
- * still be taken back (a move under way shows its months left instead). Also lists the orders of a progress
+ * 行動予約: the invasions, moves and transports ordered, one row each: the route, the knights, and 取消 for those that
+ * can still be taken back (a move or transport under way shows its months left instead). Also lists the orders of a progress
  * phase, every faction's, with their emblems and the one being resolved highlighted.
  */
 export default function ActionOrders({

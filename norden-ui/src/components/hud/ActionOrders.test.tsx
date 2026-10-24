@@ -8,24 +8,28 @@ const ORDERS: ActionOrderView[] = [
   { id: 'o1', kind: 'invasion', from: 'フルーエン', to: 'アンバリア', knights: ['エルネスト', 'リディア', 'セラフィナ'], cancellable: true },
   { id: 'o2', kind: 'move', from: 'ヴェステル', to: 'ミルデン', knights: ['オスカー', 'ミラ'], cancellable: true },
   { id: 'o3', kind: 'move', from: 'フルーエン', to: 'ミルデン', knights: ['マルクス'], status: 'あと3ヶ月' },
+  { id: 'o4', kind: 'transport', from: 'フルーエン', to: 'ドルン', knights: ['ルチア'], cancellable: true },
 ]
 
 describe('ActionOrders', () => {
-  it('lists invasions with the commander and their number, moves with every knight', () => {
+  it('lists invasions with the commander and their number, moves and transports with every knight', () => {
     render(<ActionOrders orders={ORDERS} onCancel={() => {}} />)
     const items = within(screen.getByRole('region', { name: '行動予約' })).getAllByRole('listitem')
-    expect(items).toHaveLength(3)
+    expect(items).toHaveLength(4)
     expect(items[0]).toHaveTextContent('侵攻フルーエン→アンバリア軍団長エルネスト 以下3名')
     expect(items[1]).toHaveTextContent('移動ヴェステル→ミルデン担当オスカー・ミラ')
     expect(items[2]).toHaveTextContent('あと3ヶ月')
+    expect(items[3]).toHaveTextContent('輸送フルーエン→ドルン担当ルチア')
   })
 
   it('cancels only the orders that can be taken back', async () => {
     const onCancel = vi.fn()
     render(<ActionOrders orders={ORDERS} onCancel={onCancel} />)
-    expect(screen.getAllByRole('button', { name: /を取り消す$/ })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: /を取り消す$/ })).toHaveLength(3)
     await userEvent.click(screen.getByRole('button', { name: 'ヴェステルからミルデンへの移動を取り消す' }))
     expect(onCancel).toHaveBeenCalledWith('o2')
+    await userEvent.click(screen.getByRole('button', { name: 'フルーエンからドルンへの輸送を取り消す' }))
+    expect(onCancel).toHaveBeenCalledWith('o4')
   })
 
   it('shows a single knight\'s invasion by the commander alone, and the empty list', () => {

@@ -25,7 +25,7 @@ http://localhost:5173 でカタログを開きます。左の一覧から項目�
 | 区分 | 項目 |
 | --- | --- |
 | 画面フロー | 戦略画面（`#strategy-flow`、既定）: 都市コマンド → 軍事 → 侵攻 → 地図で侵攻先を選ぶ → 侵攻画面 → 予約。Escで1段ずつ戻る |
-| 画面 | 都市コマンド（`#city-command`）、地図で選ぶ（`#map-pick`）、侵攻（`#invasion`）、移動（`#move`） |
+| 画面 | 都市コマンド（`#city-command`）、地図で選ぶ（`#map-pick`）、侵攻（`#invasion`）、移動（`#move`）、輸送（`#transport`） |
 | 基本部品 | ウィンドウ（`#info-window`）、ウィンドウ（閉じるボタン付き）（`#window-frame`）、ツールバー（`#command-toolbar`）、ターン情報（`#date-bar`）、行動予約（`#action-orders`）、UIパーツ（`#parts`） |
 | 演出 | カットインエディタ（`#cutin-editor`）: テンプレートを作り、JSONで書き出す。`src/cutin/templates/` のJSONを開いて直せる |
 
@@ -140,11 +140,14 @@ function BattleUi() {
 | `DomesticScreen` | 都市の内政。画面いっぱいのウィンドウに、領主（顔と「交代」）と都市の現状（人口の下に1ターンの伸びと次の Tier までのターン数の見込み）、施設スロット、内政担当官（商業・生産・訓練・募兵に2人まで）を並べ、右側に建設できる施設や任命する騎士の一覧を開く。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `city: CityView`, `buildOptions`, `gold`, `populationGrowth`, `stats`, `knights`, `officers`, `officerEffects`, `onBuild` などの施設の操作, `onChangeLord`, `onAssignOfficers`, `onClose` |
 | `InvasionScreen` | 侵攻。画面いっぱいのウィンドウに、出撃する騎士の一覧、軍団編成（部隊ごとの兵科と兵数）、編成した部隊の図を横に並べ、その下に合計兵数と「やめる / 予約」。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `from` / `to: CityView`, `defenders`, `knights: KnightView[]`, `unitTypes`, `indirectUnitTypes`, `maxUnits`, `soldierPool`, `maxSoldiers`, `morale`, `unitPower`, `soldierStep`, `validate(draft)`, `onConfirm(draft)`, `onCancel`（閉じるボタンも同じ） |
 | `MoveScreen` | 移動。画面いっぱいのウィンドウに、移動する騎士の一覧（チェックボックスで複数選ぶ）と、移動の内容（経路・到着までの月数・単騎移動・兵数・物資）を横に並べ、その下に合計と「やめる / 予約」 | `from` / `to: CityView`, `route`（経路の都市名）, `months`, `soloMonths`, `knights`, `soldierPool`, `supplyPool`, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
+| `TransportScreen` | 輸送。移動画面と同じ形のウィンドウに、担当の騎士の一覧（ラジオボタンで1人選ぶ）と、輸送の内容（経路・到着までの月数と騎士の帰還までの月数・兵数・物資・繰り返し輸送（準備中のため無効））を横に並べ、その下に合計と「やめる / 予約」 | `from` / `to: CityView`, `route`, `months`（到着まで）, `returnMonths`（下ろしたあと単騎で戻る月数）, `knights`, `soldierPool`, `supplyPool`, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
 
 アクションツールバーのコマンドは `CITY_COMMAND_GROUPS` に定義しています。内政、軍事（移動・侵攻・輸送）、研究、商人（購入・売却）と、最後にターン終了です。
 分類を押すと上にサブコマンドが開きます。`commandState={{ invade: { disabled: true, reason: '出撃できる騎士がいません' } }}` で無効にし、理由をツールチップに出します。
 
 移動画面は騎士を1人以上選ぶと「予約」を押せます。「単騎移動」にすると兵数と物資が0になって変えられなくなり、到着までの月数が `soloMonths` に変わります。`onConfirm` には `{ knights, troops, supplies, solo }` を渡します（`knights` は一覧の順）。
+
+輸送画面は担当の騎士を1人選び、兵か物資を1以上にすると「予約」を押せます。`onConfirm` には `{ knight, troops, supplies }` を渡します。
 
 侵攻画面は軍団を編成します。まず左の一覧で軍団長（侵攻を率いる騎士）を選び、続けてほかの騎士を加えます。部隊は間接指揮部隊も含めて `maxUnits`（既定6）までです。
 軍団長は編成済みの騎士の「軍団長にする」で付け替えられます。ただし `commandRank` を持つ騎士（領主・君主など）が加わると、いちばん高い騎士が軍団長になり、ほかの騎士には付け替えられません。軍団長が外れると、残った騎士のうち `commandRank` がいちばん高い騎士（同じなら先に加えた騎士）が軍団長になります。
@@ -165,14 +168,14 @@ function BattleUi() {
 | `NavigationWindow` | `title?`, `onClose`, `onBack?`, `onForward?`, `backDisabled?`, `forwardDisabled?`, `children`, `style` | `WindowFrame` の左上装飾に戻る・進むを埋め込んだ汎用ウィンドウ。各方向を独立して無効化可能。カタログ `#navigation-window` でプレビュー（[使い方・生成画像](docs/navigation-window.md)） |
 | `CommandToolbar` | `commands: { id, label, icon?, onClick?, disabled?, title?, active?, tone?, children? }[]`, `movable` | 子を持つコマンドは押すと上にサブコマンドの列を開く（再クリック・Esc・外側クリックで閉じる）。`tone: 'accent'` で強調。`movable` で左右の端をドラッグ・矢印キーで移動 |
 | `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `children?` | フェーズ・勢力のターン・年月・設定の順に表示。`children` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
-| `ActionOrders` | `orders: ActionOrderView[]`, `title?`（既定「行動予約」）, `onCancel?(id)`, `onSelect?(id)`, `activeId?`, `onDeactivate?()` | 侵攻（`kind: 'invasion'`）と移動（`'move'`）の予約を1行ずつ並べるHUDのパネル。経路（`from` → `to`、移動中の移動は出発した拠点から）と騎士（侵攻は「軍団長 〜 以下N名」、移動は「担当 〜・〜」）。`cancellable` の行に取消、`status`（「あと3ヶ月」など）を右に出す。`faction` で行頭に紋章、`current` で解決中の行を強調（進行フェーズの一覧）。`activeId` の行を選択中として強調し、パネルの外を押すと `onDeactivate` を呼ぶ。行が多いと一覧がスクロールする |
+| `ActionOrders` | `orders: ActionOrderView[]`, `title?`（既定「行動予約」）, `onCancel?(id)`, `onSelect?(id)`, `activeId?`, `onDeactivate?()` | 侵攻（`kind: 'invasion'`）・移動（`'move'`）・輸送（`'transport'`）の予約を1行ずつ並べるHUDのパネル。経路（`from` → `to`、移動中の移動・輸送は出発した拠点から）と騎士（侵攻は「軍団長 〜 以下N名」、移動と輸送は「担当 〜・〜」）。`cancellable` の行に取消、`status`（「あと3ヶ月」など）を右に出す。`faction` で行頭に紋章、`current` で解決中の行を強調（進行フェーズの一覧）。`activeId` の行を選択中として強調し、パネルの外を押すと `onDeactivate` を呼ぶ。行が多いと一覧がスクロールする |
 | `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `metal: 'gold' \| 'silver' \| 'none'`, `size`, `style` | 象牙の立体的なボタンに金／銀の四隅装飾、または装飾なし。生成画像を9分割で伸縮し、`style` で幅・高さを指定可能 |
 | `Banner` | `children`, `actions` | HUDの案内の帯（`role="status"`） |
 | `FactionBar` | `faction?: FactionView`, `summary?: FactionSummaryView`, `cityName`, `onPrevCity`, `onNextCity`, `cityPosition`, `movable`, `position`, `onPositionChange` | 左端の球に勢力のエンブレムを表示。球をドラッグしてバー全体を移動。矢印キーは10px、Shift併用は1px、Homeで元の位置。金（次のターンの増減）｜総生産｜総兵力｜◀ 都市名 ▶。`summary` が無ければ都市の切り替えだけ。ハンドラが無い方向は無効 |
 | `ChoiceGroup` | `label`, `options`, `value`, `onChange` | 単一選択のボタン列。radiogroupとして矢印キーで移動し、無効な選択肢を飛ばす |
 | `QuantityInput` | `label`, `value`, `onChange`, `min`, `max`, `step`, `unit` | スライダー・± ボタン・数値入力。範囲外は丸める |
 | `Card` | `as`, `children`, `className`, `style` | 羊皮紙とインクで描いた汎用装飾枠。`as` は div / article / section / label |
-| `KnightCard` | `knight: { name, portrait?, portraitSrc?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | `Card` に顔・名前・能力名と大きな能力値を配置。数値は段階別の色。`selection` でチェックボックスになる |
+| `KnightCard` | `knight: { name, portrait?, portraitSrc?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | `Card` に顔・名前・能力名と大きな能力値を配置。数値は段階別の色。`selection` でチェックボックス（`type: 'radio'` と `name` でラジオボタン）になる |
 | `FactionMark` | `faction?`, `emblemOnly` | 紋章と勢力名。省略すると中立 |
 | `BuildingSlots` | `buildings: CityBuildingsView`, `onSelect?`, `selectedId?` | 都市の施設スロット。建設済み（画像と名前）・建設中（進捗のバーと残りターン）・空きの順。`onSelect` で施設をボタンにする。`BuildingImage`（画像が無ければ頭文字）と `ConstructionProgress` も公開 |
 | `ThinFrameWithTitle` | `title`, `as`, `ref`, ほかの属性 | `ThinFrame` の上辺に題名の札を載せたHUDのパネル。題名がパネルの名前になる。札はCSSの仮組（[画像の仕様](docs/parts-assets.md#細いベゼルの題名の札)） |

@@ -32,8 +32,8 @@ export function KnightStats({ stats, className = '' }: { stats: NonNullable<Knig
 
 export interface KnightCardProps {
   knight: KnightCardData
-  /** Makes the card a checkbox */
-  selection?: { selected: boolean; onToggle: () => void; disabled?: boolean }
+  /** Makes the card a checkbox, or a radio button of the group `name` (one knight of several) */
+  selection?: { selected: boolean; onToggle: () => void; disabled?: boolean; type?: 'checkbox' | 'radio'; name?: string }
   /** Highlights the card, e.g. the one being edited */
   current?: boolean
   /** Shown at the end of the card */
@@ -45,7 +45,7 @@ export interface KnightCardProps {
 /** A character's face, name, subtitle and stats (all characters are "knights" in the UI) */
 export default function KnightCard({ knight, selection, current = false, aside, compact = false, className = '' }: KnightCardProps) {
   const body = <>
-    {selection && <input type="checkbox" aria-label={knight.name} checked={selection.selected} disabled={selection.disabled} onChange={selection.onToggle} />}
+    {selection && <input type={selection.type ?? 'checkbox'} name={selection.name} aria-label={knight.name} checked={selection.selected} disabled={selection.disabled} onChange={selection.onToggle} />}
     <span className="norden-knight-face">{knight.portraitSrc
       ? <img src={knight.portraitSrc} alt="" />
       : knight.portrait ?? <span className="norden-knight-initial">{knight.name.slice(0, 1)}</span>}</span>
