@@ -269,8 +269,7 @@ function startTurn(state: GameState): GameState {
  * no longer its lord); a city taken loses every assignment. `reason` is how the battlefield
  * decided it (the report keeps it); null when decided without fighting it out.
  * Lords (governors) are then made (appointGovernor), and listed in the report:
- * - A city the head of a faction (君主) retreated to: the head, in place of the lord there (not when they only go
- *   back where they set out from after a defeat, without retreating).
+ * - A city the head of a faction (君主) retreated or went back to: the head, in place of the lord there.
  * - The captured city: the attacking commander, when they entered it.
  * - Each city knights retreated or went back to, if it has no lord: the commander of
  *   their side when they are there, or else one of the faction's knights there at random.
@@ -373,12 +372,11 @@ export function resolveBattle(
   }
 
   const governors: GovernorAppointment[] = []
-  // The head of a faction (君主) retreating to a city of theirs (from the battlefield, or out of the city lost) becomes
-  // its lord in place of the one there; going back after a defeat without retreating does not make them lord
-  const retreated = new Set(retreats.flatMap((r) => (r.captured || r.knightId === null ? [] : [r.knightId])))
+  // The head of a faction (君主) retreating to a city of theirs (from the battlefield, or out of the city lost) or going
+  // back where they set out from becomes its lord in place of the one there
   for (const m of moves) {
     if (!m.to || !CHARACTER_MAP[m.characterId]?.isPatriarch) continue
-    if (m.kind !== 'retreat' && !(m.kind === 'return' && retreated.has(m.characterId))) continue
+    if (m.kind !== 'retreat' && m.kind !== 'return') continue
     if (cityOwners[m.to] !== characters[m.characterId].factionId || cities[m.to].assignments.governor === m.characterId) continue
     cities[m.to] = { ...cities[m.to], assignments: withGovernor(cities[m.to].assignments, m.characterId) }
     governors.push({ cityId: m.to, characterId: m.characterId })
