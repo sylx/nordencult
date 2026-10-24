@@ -12,7 +12,7 @@ import {
   MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
   charactersIn, citiesOf, demolishBuilding, domesticProblem, endFactionTurn, invadeFromProblem, isPlayerTurn, moveFromProblem, moveMonths, moveOrderProblem,
   moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, pauseConstruction, runMovements, setAffairsBudget, setOfficers, soldiersLeft,
-  startConstruction, startNextBattle, stationedIn, suppliesLeft, transportFromProblem, transportOrderProblem, useGame, type CityId, type FactionId, type InvasionOrder,
+  startConstruction, startNextBattle, stationedIn, suppliesLeft, transportFromProblem, transportOrderProblem, useGame, type CityId, type FactionId, type GameState, type InvasionOrder,
   type MoveOrder, type TransportOrder,
 } from '../../game'
 import { useScene } from '../sceneContext'
@@ -302,6 +302,21 @@ export default function StrategyScene() {
     }
   }, [map, battle, goTo])
 
+  /**
+   * An order made on its screen: added, back to the city command screen, and picked on the 行動予約 list (its route
+   * shown, the camera on both ends). `ordersOf` is the list it joins, the new one last
+   */
+  const order = (add: (s: GameState) => GameState, ordersOf: (s: GameState) => readonly { id: string }[]) => {
+    let added: string | null = null
+    update((s) => {
+      const next = add(s)
+      added = ordersOf(next).at(-1)?.id ?? null
+      return next
+    })
+    popTo('cityCommand')
+    setActiveOrder(added)
+  }
+
   const endTurn = () => {
     popTo('cityCommand')
     update((s) => (isPlayerTurn(s) ? endFactionTurn(s) : s))
@@ -378,10 +393,7 @@ export default function StrategyScene() {
               soldierPool={soldiersLeft(game, from)} supplyPool={suppliesLeft(game, from)}
               validate={(draft) => moveOrderProblem(game, draftMove(game.playerFaction, from, to, draft))}
               onCancel={nav.pop}
-              onConfirm={(draft) => {
-                update((s) => addMoveOrder(s, draftMove(s.playerFaction, from, to, draft)))
-                popTo('cityCommand')
-              }} />
+              onConfirm={(draft) => order((s) => addMoveOrder(s, draftMove(s.playerFaction, from, to, draft)), (s) => s.moveOrders)} />
           )
         },
         pickTransportTarget: ({ from }) => (
@@ -396,10 +408,7 @@ export default function StrategyScene() {
               soldierPool={soldiersLeft(game, from)} supplyPool={suppliesLeft(game, from)}
               validate={(draft) => transportOrderProblem(game, draftTransport(game.playerFaction, from, to, draft))}
               onCancel={nav.pop}
-              onConfirm={(draft) => {
-                update((s) => addTransportOrder(s, draftTransport(s.playerFaction, from, to, draft)))
-                popTo('cityCommand')
-              }} />
+              onConfirm={(draft) => order((s) => addTransportOrder(s, draftTransport(s.playerFaction, from, to, draft)), (s) => s.transportOrders)} />
           )
         },
         domestic: ({ cityId }) => (
@@ -429,10 +438,7 @@ export default function StrategyScene() {
             morale={game.cities[from].troopMorale} unitPower={(unit, commander) => unitPower(game, from, unit, commander)}
             validate={(draft) => orderProblem(game, draftOrder(game.playerFaction, from, to, draft))}
             onCancel={nav.pop}
-            onConfirm={(draft) => {
-              update((s) => addOrder(s, draftOrder(s.playerFaction, from, to, draft)))
-              popTo('cityCommand')
-            }} />
+            onConfirm={(draft) => order((s) => addOrder(s, draftOrder(s.playerFaction, from, to, draft)), (s) => s.orders)} />
         ),
       }} />
       <CutInLayer cutIn={cutIn} />
