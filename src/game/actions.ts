@@ -4,10 +4,10 @@ import { successorLord, withGovernor, withoutAssignee } from './economy/domestic
 import { runEconomy } from './economy/runEconomy'
 import { GameRuleError } from './errors'
 import { runMovements } from './movement'
-import { commandRank, leadingKnight, movementOf, orderProblem, ownerOf, retreatCities, stationedIn, turnOrder } from './queries'
+import { commandRank, isPlayerFaction, leadingKnight, movementOf, orderProblem, ownerOf, retreatCities, stationedIn, turnOrder } from './queries'
 import type {
   Battle, BattleEndReason, BattleReport, BattleRetreat, BattleSide, BattleWinner, BattleWipeout, CharacterId, CharacterMove, CharacterState,
-  CityId, CityState, GameState, GovernorAppointment, InvasionOrder,
+  CityId, CityState, Entry, GameState, GovernorAppointment, InvasionOrder,
 } from './types'
 import { neighbours } from './world'
 
@@ -37,7 +37,8 @@ export function cancelOrder(state: GameState, orderId: string): GameState {
 /**
  * The active faction ends its strategy phase: the next faction plays, or
  * after the last one the progress phase (進行フェーズ, 'march') starts with every
- * order queued in the factions' turn order. Its moves come first (runMovements).
+ * order queued in the factions' turn order (by 国力), each faction's in the order they were made.
+ * Its moves come first (the move part: runMovements), then the invasions one by one (the invasion part).
  */
 export function endFactionTurn(state: GameState): GameState {
   if (state.phase !== 'strategy' || !state.activeFaction) throw new GameRuleError('戦略フェーズではありません')
@@ -47,31 +48,84 @@ export function endFactionTurn(state: GameState): GameState {
   const rank = (factionId: string) => order.indexOf(factionId)
   // Stable sort: one faction's orders keep the order they were made in
   const queue = [...state.orders].sort((a, b) => rank(a.factionId) - rank(b.factionId)).map((o) => o.id)
-  return { ...state, phase: 'march', activeFaction: null, march: { moved: false, queue, current: null } }
+  return {
+    ...state, phase: 'march', activeFaction: null,
+    march: { moved: false, queue, owners: state.cityOwners, current: null, entry: null, decision: null, confirmed: [] },
+  }
 }
 
 /**
- * In the progress phase with no battle under way: makes the moves if they are
- * not made yet (runMovements), then takes the next order and
- * creates its battle (the march to it is shown, then it is fought). Orders
- * no longer possible (the target became the faction's own, the city it set
- * out from was lost, its knights are gone) are skipped; the knights stay
- * where they are. With no order left the next turn starts. Does nothing
- * while a battle is under way, so calling it twice is harmless.
+ * In the progress phase with nothing under way: makes the moves if they are
+ * not made yet (the move part: runMovements), then takes the next order of the invasion part:
+ * - Orders no longer possible (the city it set out from was lost, its knights are gone) are skipped; the knights
+ *   stay where they are.
+ * - The target was taken by the faction earlier in the invasion part (another of its invasions): the army marches
+ *   into it, as a move does (entry, then finishEntry). The city keeps its lord.
+ * - The target was taken by another faction earlier in the invasion part: a faction the player plays chooses
+ *   whether to go on (decision, then decideInvasion); others go on.
+ * - Otherwise its battle is created (the march to it is shown, then it is fought). The invasions still to come
+ *   from the city attacked are called off: their knights are there and defend it.
+ * With no order left the next turn starts. Does nothing while a battle, an entry or a decision is under way, so
+ * calling it twice is harmless.
  * A lord setting out on the invasion is followed by another in their city (setOutLord), as one moving away is.
  */
 export function startNextBattle(state: GameState, random: () => number = Math.random): GameState {
   if (state.phase !== 'march' || !state.march) throw new GameRuleError('進行フェーズではありません')
-  if (state.march.current) return state
+  if (state.march.current || state.march.entry || state.march.decision) return state
   if (!state.march.moved) state = runMovements(state, random)
-  const queue = [...state.march!.queue]
+  const march = state.march!
+  const queue = [...march.queue]
   for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
     const order = state.orders.find((o) => o.id === id)
-    if (!order) continue
-    const battle = createBattle(state, order)
-    if (battle) return { ...setOutLord(state, battle, queue, random), march: { moved: true, queue, current: battle }, serial: state.serial + 1 }
+    const knights = order && armyKnights(state, order)
+    if (!order || !knights) continue
+    const { factionId, from, to } = order
+    const owner = ownerOf(state, to)
+    if (owner === factionId) {
+      const entry: Entry = { id: `entry-${state.serial}`, orderId: order.id, factionId, from, to, knights }
+      return { ...setOutLord(state, from, knights, queue, random), march: { ...march, moved: true, queue, entry }, serial: state.serial + 1 }
+    }
+    if (owner !== march.owners[to] && isPlayerFaction(state, factionId) && !march.confirmed.includes(order.id)) {
+      return { ...state, march: { ...march, moved: true, queue: [order.id, ...queue], decision: order.id } }
+    }
+    const battle = createBattle(state, order, knights)
+    const left = queue.filter((q) => state.orders.find((o) => o.id === q)?.from !== to)
+    return {
+      ...setOutLord(state, from, knights, left, random), march: { ...march, moved: true, queue: left, current: battle }, serial: state.serial + 1,
+    }
   }
   return startTurn(state)
+}
+
+/**
+ * The faction of the order waiting for a decision (its target taken by another faction earlier in the invasion
+ * part) goes on with it (`goOn`: its battle comes next) or calls it off (its knights stay where they are)
+ */
+export function decideInvasion(state: GameState, orderId: string, goOn: boolean): GameState {
+  const march = state.march
+  if (!march || march.decision !== orderId) throw new GameRuleError(`侵攻 ${orderId} は判断を待っていません`)
+  return {
+    ...state,
+    march: goOn
+      ? { ...march, decision: null, confirmed: [...march.confirmed, orderId] }
+      : { ...march, decision: null, queue: march.queue.filter((id) => id !== orderId) },
+  }
+}
+
+/**
+ * The army of the entry under way gets into the city of its faction: its knights serve there, as knights moving
+ * there do (leaving their assignments in the city they set out from). The city's lord stays
+ */
+export function finishEntry(state: GameState, entryId: string): GameState {
+  const entry = state.march?.entry
+  if (!state.march || !entry || entry.id !== entryId) throw new GameRuleError(`入城 ${entryId} は進行中ではありません`)
+  const characters: Record<string, CharacterState> = { ...state.characters }
+  let city = state.cities[entry.from]
+  for (const id of entry.knights) {
+    city = { ...city, assignments: withoutAssignee(city.assignments, id) }
+    characters[id] = { ...characters[id], cityId: entry.to }
+  }
+  return { ...state, characters, cities: { ...state.cities, [entry.from]: city }, march: { ...state.march, entry: null } }
 }
 
 /**
@@ -79,8 +133,9 @@ export function startNextBattle(state: GameState, random: () => number = Math.ra
  * longer and another follows them (successorLord): not one of the army, nor of the invasions still to come, nor
  * one on a move
  */
-function setOutLord(state: GameState, battle: Battle, queue: readonly string[], random: () => number): GameState {
-  const { from, knights } = battle.attacker
+function setOutLord(
+  state: GameState, from: CityId, knights: readonly CharacterId[], queue: readonly string[], random: () => number,
+): GameState {
   const city = state.cities[from]
   const lord = city.assignments.governor
   if (!lord || !knights.includes(lord)) return state
@@ -93,14 +148,19 @@ function setOutLord(state: GameState, battle: Battle, queue: readonly string[], 
   return { ...state, cities: { ...state.cities, [from]: { ...city, assignments } } }
 }
 
-function createBattle(state: GameState, order: InvasionOrder): Battle | null {
-  const { factionId, from, to } = order
-  if (ownerOf(state, from) !== factionId || ownerOf(state, to) === factionId) return null
+/** The knights of an order still in the city it sets out from; null when there are none, or the city was lost */
+function armyKnights(state: GameState, order: InvasionOrder): CharacterId[] | null {
+  const { factionId, from } = order
+  if (ownerOf(state, from) !== factionId) return null
   const knights = order.knights.filter((id) => {
     const c = state.characters[id]
     return c?.cityId === from && c.factionId === factionId
   })
-  if (knights.length === 0) return null
+  return knights.length > 0 ? knights : null
+}
+
+function createBattle(state: GameState, order: InvasionOrder, knights: readonly CharacterId[]): Battle {
+  const { factionId, from, to } = order
   // A commander who is gone hands the command (and the indirect units) to the knight of the highest rank left
   const leader = leadingKnight(state, knights)!
   const commander = knights.includes(order.commander) && commandRank(state, order.commander) >= commandRank(state, leader)
@@ -115,7 +175,7 @@ function createBattle(state: GameState, order: InvasionOrder): Battle | null {
     id: `battle-${state.serial}`,
     orderId: order.id,
     cityId: to,
-    attacker: { factionId, from, commander, knights, units, morale: state.cities[from].troopMorale },
+    attacker: { factionId, from, commander, knights: [...knights], units, morale: state.cities[from].troopMorale },
     defender: defenderArmy(state, to, defender, defenders),
   }
 }

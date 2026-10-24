@@ -4,12 +4,13 @@ import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import {
   addOrder, affairsBudgetProblem, affairsGain, assign, assignmentOf, assignmentProblem, BALANCE, buildingBonus, buildingLocked, cancelConstruction,
-  cityOutput, commandRank, constructionProblem, constructionTurns, createInitialState, endFactionTurn, GameRuleError,
+  cityOutput, commandRank, constructionProblem, constructionTurns, endFactionTurn, GameRuleError,
   governorBonus, governorOf, maxAffairsBudget, maxRecruit, MAX_MORALE, mixMorale, officerAbility, officerPower, officerTraining, recruit,
   recruitCost, recruitLeft, recruitProblem, runEconomy, setAffairsBudget, slotsOf, setOfficers, startConstruction, startNextBattle,
   tierOf, turnsToNextTier, unassign,
   type CityState, type GameState,
 } from '..'
+import { playing } from '../testing'
 
 // The tests' own buildings, so that they do not follow the game's data
 vi.mock('../../data/buildingData.json', () => ({
@@ -93,7 +94,7 @@ describe('city output', () => {
   })
 
   it('forecasts what the funded officers do next turn from what is left of their budget', () => {
-    let state = assign(createInitialState('carta'), FLUEN, '016', 'commerce')
+    let state = assign(playing('carta'), FLUEN, '016', 'commerce')
     const power = officerAbility('016', 'commerce')
     // No budget: they spend nothing
     expect(cityOutput(state, FLUEN).affairs.commerce).toEqual({ spend: [0, 0], gain: [0, 0] })
@@ -109,7 +110,7 @@ describe('city output', () => {
   })
 
   it('applies the governor and the buildings to 商業 and 生産, not the officers', () => {
-    let state = createInitialState('carta')
+    let state = playing('carta')
     const city = CITY_MAP[FLUEN]
     const governor = governorBonus('029')
     const market = BUILDING_MAP.market.effects.find((e) => e.kind === 'marketPct')!
@@ -128,7 +129,7 @@ describe('city output', () => {
 
 describe('economy run', () => {
   it('runs between the march phase and the next turn, reporting each city before and after', () => {
-    const start = createInitialState('carta')
+    const start = playing('carta')
     const state = nextTurn(start)
     expect(state.turn).toBe(2)
     expect(state.lastEconomy?.turn).toBe(2)
@@ -139,7 +140,7 @@ describe('economy run', () => {
   })
 
   it('adds the cities\' gold and pays the knights', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     const income = ['P012', 'P026'].reduce((sum, id) => sum + cityOutput(state, id).income, 0)
     const knights = Object.values(state.characters).filter((c) => c.factionId === 'carta').length
     const gold = state.gold.carta
@@ -151,19 +152,19 @@ describe('economy run', () => {
   })
 
   it('pays salaries down to 0, not below', () => {
-    let state = createInitialState('carta')
+    let state = playing('carta')
     state = { ...state, gold: { ...state.gold, carta: 0 }, cityOwners: { ...state.cityOwners, [FLUEN]: 'leonis', [SILVA]: 'leonis' } }
     expect(runEconomy(state, 2).gold.carta).toBe(0)
   })
 
   it('stores the city\'s 生産 when nothing is being built', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     const next = runEconomy(state, 2)
     expect(next.cities[FLUEN].storedSupplies).toBe(state.cities[FLUEN].storedSupplies + cityOutput(state, FLUEN).production)
   })
 
   it('puts the 生産 into the construction, completes it and stores the surplus', () => {
-    let state = startConstruction(createInitialState('carta'), FLUEN, 'workshop')
+    let state = startConstruction(playing('carta'), FLUEN, 'workshop')
     const { production } = cityOutput(state, FLUEN)
     const stored = state.cities[FLUEN].storedSupplies
     state = runEconomy(state, 2)
@@ -182,7 +183,7 @@ describe('economy run', () => {
   })
 
   it('trains the soldiers by themselves and by the 訓練 officers, up to MAX_MORALE', () => {
-    let state = createInitialState('carta')
+    let state = playing('carta')
     const morale = state.cities[FLUEN].troopMorale
     expect(runEconomy(state, 2).cities[FLUEN].troopMorale).toBe(morale + BALANCE.NATURAL_TRAINING)
     state = assign(state, FLUEN, '027', 'training')
@@ -195,7 +196,7 @@ describe('economy run', () => {
   })
 
   it('raises the base 商業 and 生産 by the officers spending gold of their budget, rolled for each role', () => {
-    let state = createInitialState('carta')
+    let state = playing('carta')
     state = assign(assign(state, FLUEN, '016', 'commerce'), FLUEN, '027', 'production')
     state = setAffairsBudget(setAffairsBudget(state, FLUEN, 'commerce', 200), FLUEN, 'production', 200)
     const gold = state.gold.carta
@@ -218,7 +219,7 @@ describe('economy run', () => {
   })
 
   it('records each city\'s 人口・商業・生産 every turn, with the formulas the run used', () => {
-    let state = assign(createInitialState('carta'), FLUEN, '016', 'commerce')
+    let state = assign(playing('carta'), FLUEN, '016', 'commerce')
     state = setAffairsBudget(state, FLUEN, 'commerce', 200)
     expect(state.cityHistory[FLUEN]).toEqual([expect.objectContaining({
       turn: 1, population: state.cities[FLUEN].population, market: cityOutput(state, FLUEN).market, log: [],
@@ -243,7 +244,7 @@ describe('economy run', () => {
   })
 
   it('spends what is left of a budget at most, and nothing without officers or budget', () => {
-    let state = assign(createInitialState('carta'), FLUEN, '016', 'commerce')
+    let state = assign(playing('carta'), FLUEN, '016', 'commerce')
     state = setAffairsBudget(state, FLUEN, 'commerce', 30)
     const next = runEconomy(state, 2, () => 0.9999)
     expect(next.cities[FLUEN].affairsBudget.commerce).toBe(0)
@@ -253,12 +254,12 @@ describe('economy run', () => {
     expect(after.cities[FLUEN].market).toBe(next.cities[FLUEN].market)
     expect(after.lastEconomy!.cities[FLUEN].affairs.commerce).toBeUndefined()
     // A budget with no officer stays
-    const idle = setAffairsBudget(createInitialState('carta'), FLUEN, 'production', 200)
+    const idle = setAffairsBudget(playing('carta'), FLUEN, 'production', 200)
     expect(runEconomy(idle, 2).cities[FLUEN]).toMatchObject({ production: idle.cities[FLUEN].production, affairsBudget: { production: 200 } })
   })
 
   it('recruits soldiers by the 募兵 officers spending their budget, joining at the recruits\' morale', () => {
-    let state = assign(createInitialState('carta'), FLUEN, '016', 'recruitment')
+    let state = assign(playing('carta'), FLUEN, '016', 'recruitment')
     state = setAffairsBudget(state, FLUEN, 'recruitment', 500)
     const city = state.cities[FLUEN]
     const output = cityOutput(state, FLUEN)
@@ -272,7 +273,7 @@ describe('economy run', () => {
   })
 
   it('grows the population by the base 商業・生産, the buildings standing and the lord\'s 政治・魅力', () => {
-    const state = withCity(createInitialState('carta'), FLUEN, { buildings: ['market', 'granary'], construction: null })
+    const state = withCity(playing('carta'), FLUEN, { buildings: ['market', 'granary'], construction: null })
     const city = state.cities[FLUEN]
     const lord = CHARACTER_MAP[city.assignments.governor!]
     const pull = city.market * BALANCE.POP_GROWTH_COEF_MARKET + city.production * BALANCE.POP_GROWTH_COEF_PRODUCTION
@@ -286,7 +287,7 @@ describe('economy run', () => {
   })
 
   it('grows the population after the officers raised 商業・生産', () => {
-    let state = withCity(createInitialState('carta'), FLUEN, { construction: null })
+    let state = withCity(playing('carta'), FLUEN, { construction: null })
     state = setAffairsBudget(setOfficers(state, FLUEN, 'commerce', ['015']), FLUEN, 'commerce', 300)
     const city = state.cities[FLUEN]
     const gain = cityOutput(state, FLUEN).affairs.commerce!.gain[0]
@@ -300,7 +301,7 @@ describe('economy run', () => {
   })
 
   it('raises the tier and the building slots as the population reaches them', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     const [, tier3] = BALANCE.TIER_POPULATION
     const next = runEconomy(withCity(state, FLUEN, { population: tier3 - 1 }), 2)
     expect(next.cities[FLUEN].population).toBe(tier3 - 1 + cityOutput(withCity(state, FLUEN, { population: tier3 - 1 }), FLUEN).growth)
@@ -310,7 +311,7 @@ describe('economy run', () => {
   })
 
   it('keeps FIXED_SLOTS in a 聖地・要塞 whatever its population, and does not raise its tier', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     const fortress = 'P024' // ガルドハイム, 要塞
     const [tier2, tier3] = BALANCE.TIER_POPULATION
     expect(cityOutput(withCity(state, fortress, { population: tier2 - 1 }), fortress).slots).toBe(BALANCE.FIXED_SLOTS)
@@ -322,7 +323,7 @@ describe('economy run', () => {
   })
 
   it('lets every city grow, the CPU factions\' too', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     const next = runEconomy(state, 2)
     expect(next.cities[AMBARIA].population).toBeGreaterThan(state.cities[AMBARIA].population)
     expect(next.gold.leonis).not.toBe(state.gold.leonis)
@@ -331,14 +332,14 @@ describe('economy run', () => {
 
 describe('assignments', () => {
   it('starts each city with its lord as the governor', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     expect(state.cities[FLUEN].assignments).toEqual({ governor: '029', officers: {} })
     expect(assignmentOf(state, '029')).toBe('governor')
     expect(assignmentOf(state, '015')).toBeNull()
   })
 
   it('assigns knights of the city, one assignment each', () => {
-    let state = createInitialState('carta')
+    let state = playing('carta')
     state = assign(state, FLUEN, '016', 'training')
     state = assign(state, FLUEN, '027', 'training')
     expect(state.cities[FLUEN].assignments.officers.training).toEqual(['016', '027'])
@@ -353,7 +354,7 @@ describe('assignments', () => {
   })
 
   it('refuses assignments breaking the rules', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     expect(assignmentProblem(state, FLUEN, '015', 'governor')).toBeNull()
     expect(assignmentProblem(state, FLUEN, '029', 'governor')).toBe('すでに領主です')
     expect(assignmentProblem(state, FLUEN, '013', 'commerce')).not.toBeNull() // アンバリア's knight
@@ -370,7 +371,7 @@ describe('assignments', () => {
   })
 
   it('sets the officers of a role at once', () => {
-    let state = createInitialState('carta')
+    let state = playing('carta')
     state = setOfficers(state, FLUEN, 'commerce', ['015', '016'])
     expect(state.cities[FLUEN].assignments.officers.commerce).toEqual(['015', '016'])
     // Those left out lose the role; one taken from another role leaves it
@@ -384,7 +385,7 @@ describe('assignments', () => {
 
 describe('budgets', () => {
   it('moves gold between the treasury and a role\'s budget', () => {
-    const start = createInitialState('carta')
+    const start = playing('carta')
     let state = setAffairsBudget(start, FLUEN, 'commerce', 300)
     expect(state.cities[FLUEN].affairsBudget.commerce).toBe(300)
     expect(state.gold.carta).toBe(start.gold.carta - 300)
@@ -393,7 +394,7 @@ describe('budgets', () => {
   })
 
   it('limits a budget to AFFAIRS_BUDGET_LIMIT and to what the treasury can add', () => {
-    const initial = createInitialState('carta')
+    const initial = playing('carta')
     const state = { ...initial, gold: { ...initial.gold, carta: 500 } }
     expect(maxAffairsBudget(state, FLUEN, 'commerce')).toBe(500)
     expect(affairsBudgetProblem(state, FLUEN, 'commerce', 510)).toBe('金が足りません')
@@ -408,7 +409,7 @@ describe('budgets', () => {
 
 describe('construction', () => {
   it('pays the gold and starts building', () => {
-    const start = createInitialState('carta')
+    const start = playing('carta')
     const state = startConstruction(start, FLUEN, 'market')
     expect(state.gold.carta).toBe(start.gold.carta - BUILDING_MAP.market.gold)
     expect(state.cities[FLUEN].construction).toEqual({ buildingId: 'market', requiredSupplies: BUILDING_MAP.market.supplies, investedSupplies: 0 })
@@ -416,7 +417,7 @@ describe('construction', () => {
   })
 
   it('refuses buildings breaking the rules', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     expect(constructionProblem(state, FLUEN, 'nope')).not.toBeNull()
     expect(constructionProblem(startConstruction(state, FLUEN, 'market'), FLUEN, 'workshop')).toBe('ほかの施設を建設中です')
     expect(constructionProblem(withCity(state, FLUEN, { buildings: ['market'] }), FLUEN, 'market')).toBe('すでに建っています')
@@ -430,7 +431,7 @@ describe('construction', () => {
   })
 
   it('builds an upgrade over the building it replaces', () => {
-    let state = createInitialState('carta')
+    let state = playing('carta')
     expect(constructionProblem(state, FLUEN, 'grand_market')).toBe('市場がある都市で建てられます')
     // No free slot is needed: it takes the market's
     state = withCity(state, FLUEN, { buildings: ['workshop', 'market', 'granary', 'barracks'] })
@@ -445,7 +446,7 @@ describe('construction', () => {
   })
 
   it('locks the buildings the city cannot build at all yet, not those waiting for gold or a slot', () => {
-    const state = withCity(createInitialState('carta'), FLUEN, { buildings: ['workshop'] })
+    const state = withCity(playing('carta'), FLUEN, { buildings: ['workshop'] })
     expect(buildingLocked(state, FLUEN, 'market')).toBe(false)
     expect(buildingLocked({ ...state, gold: { ...state.gold, carta: 0 } }, FLUEN, 'market')).toBe(false)
     expect(buildingLocked(state, FLUEN, 'harbor')).toBe(false) // フルーエン is a port
@@ -457,7 +458,7 @@ describe('construction', () => {
   })
 
   it('cancels the construction without giving anything back', () => {
-    const started = startConstruction(createInitialState('carta'), FLUEN, 'market')
+    const started = startConstruction(playing('carta'), FLUEN, 'market')
     const state = cancelConstruction(started, FLUEN)
     expect(state.cities[FLUEN].construction).toBeNull()
     expect(state.gold.carta).toBe(started.gold.carta)
@@ -466,7 +467,7 @@ describe('construction', () => {
 
 describe('recruiting', () => {
   it('adds soldiers for gold and lowers the morale by the recruits\'', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     const { troops, troopMorale } = state.cities[FLUEN]
     const next = recruit(state, FLUEN, 200)
     expect(next.cities[FLUEN].troops).toBe(troops + 200)
@@ -478,7 +479,7 @@ describe('recruiting', () => {
   })
 
   it('limits a turn\'s recruits and the gold', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     const cap = cityOutput(state, FLUEN).recruitCap
     const rich = { ...state, gold: { ...state.gold, carta: 100000 } }
     expect(recruitProblem(rich, FLUEN, cap)).toBeNull()

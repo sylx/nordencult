@@ -1,6 +1,6 @@
 import { ActionOrders, type ActionOrderDetail, type ActionOrderMember, type ActionOrderView } from 'norden-ui'
 import {
-  isPlayerTurn, moveMonths, moveRoute, movementLegs, type GameState, type InvasionOrder, type MoveOrder, type Movement, type MovementKind,
+  isPlayerTurn, moveMonths, moveRoute, movementLegs, viewFaction, type GameState, type InvasionOrder, type MoveOrder, type Movement, type MovementKind,
   type TransportOrder,
 } from '../../game'
 import { cityName, factionView, knightName, knightView } from './views'
@@ -90,7 +90,7 @@ function legStatus(kind: MovementKind = 'move', solo: boolean, arrives: boolean)
 }
 
 /**
- * 行動予約: the player's invasions, moves and transports ordered this turn (cancellable on their turn), and their
+ * 行動予約: the invasions, moves and transports of the faction shown (viewFaction) ordered this turn (cancellable on their turn), and their
  * moves and transports under way (from the city they set out from, with the months left; a transport's knight
  * riding back from where they unloaded), in the order they were made: the first on top. In the progress phase every order still to resolve and every faction's
  * moves and transports of the month until they are made. The order picked opens its details (the knights' faces,
@@ -98,6 +98,7 @@ function legStatus(kind: MovementKind = 'move', solo: boolean, arrives: boolean)
  */
 export function OrderList({ game, onCancel, onCancelMove, onCancelTransport, onSelectCity, activeId, onActiveChange }: Props) {
   const playerTurn = isPlayerTurn(game)
+  const faction = viewFaction(game)
   const march = game.march
   const items: Item[] = march
     ? [
@@ -113,21 +114,25 @@ export function OrderList({ game, onCancel, onCancelMove, onCancelTransport, onS
           }
         }),
         ...game.orders
-          .filter((o) => march.queue.includes(o.id) || march.current?.orderId === o.id)
-          .map((o) => ({ ...invasionItem(game, o), faction: factionView(o.factionId), current: march.current?.orderId === o.id })),
+          .filter((o) => march.queue.includes(o.id) || march.current?.orderId === o.id || march.entry?.orderId === o.id)
+          .map((o) => ({
+            ...invasionItem(game, o), faction: factionView(o.factionId),
+            current: [march.current?.orderId, march.entry?.orderId, march.decision].includes(o.id),
+            ...(march.entry?.orderId === o.id && { status: '入城' }),
+          })),
       ]
     : [
-        ...game.orders.filter((o) => o.factionId === game.playerFaction).map((o) => ({ ...invasionItem(game, o), cancellable: playerTurn })),
-        ...game.moveOrders.filter((o) => o.factionId === game.playerFaction).map((o): Item => ({
+        ...game.orders.filter((o) => o.factionId === faction).map((o) => ({ ...invasionItem(game, o), cancellable: playerTurn })),
+        ...game.moveOrders.filter((o) => o.factionId === faction).map((o): Item => ({
           id: o.id, kind: 'move', city: o.from, from: cityName(o.from), to: cityName(o.to), knights: o.knights.map(knightName),
           status: o.solo ? '単騎' : undefined, cancellable: playerTurn, members: members(game, o.knights), details: orderDetails(game, o),
         })),
-        ...game.transportOrders.filter((o) => o.factionId === game.playerFaction).map((o): Item => ({
+        ...game.transportOrders.filter((o) => o.factionId === faction).map((o): Item => ({
           id: o.id, kind: 'transport', city: o.from, from: cityName(o.from), to: cityName(o.to), knights: [knightName(o.knight)], cancellable: playerTurn,
           members: members(game, [o.knight]), details: orderDetails(game, o),
         })),
         // Set out in an earlier month: no taking back
-        ...game.movements.filter((m) => m.factionId === game.playerFaction).map((m): Item => ({
+        ...game.movements.filter((m) => m.factionId === faction).map((m): Item => ({
           id: m.id, kind: kindOf(m.kind), city: m.from, from: cityName(m.from), to: cityName(m.to), knights: m.knights.map(knightName),
           status: `${m.kind === 'return' ? '帰還・' : ''}あと${m.monthsLeft}ヶ月`, members: members(game, m.knights), details: movementDetails(game, m),
         })),

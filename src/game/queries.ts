@@ -7,8 +7,16 @@ import { CITY_IDS, FACTION_IDS, areNeighbours, neighbours } from './world'
 /** The faction of a city; undefined when neutral */
 export const ownerOf = (state: GameState, cityId: CityId): FactionId | undefined => state.cityOwners[cityId]
 
+/** A faction the player plays */
+export const isPlayerFaction = (state: GameState, factionId: FactionId | null | undefined) =>
+  factionId != null && state.playerFactions.includes(factionId)
+
 export const isPlayerTurn = (state: GameState) =>
-  state.phase === 'strategy' && state.activeFaction === state.playerFaction
+  state.phase === 'strategy' && isPlayerFaction(state, state.activeFaction)
+
+/** The faction the screens show: the one playing its strategy phase when the player plays it, or else the player's first */
+export const viewFaction = (state: GameState): FactionId =>
+  isPlayerTurn(state) ? state.activeFaction! : state.playerFactions[0]
 
 /** The game starts in 灰歴312年4月 and a turn is a month */
 const START_YEAR = 312
@@ -29,15 +37,19 @@ export function seasonOf(month: number): Season {
   return '冬'
 }
 
+/** 国力: the population of the faction's cities */
+export const factionPower = (state: GameState, factionId: FactionId): number =>
+  citiesOf(state, factionId).reduce((sum, id) => sum + (state.cities[id]?.population ?? 0), 0)
+
 /**
  * Factions in the order they play the strategy phase (and their invasions
- * are resolved): the player first, then the others as in FACTION_LIST.
- * Factions without a city are out of the game.
+ * are resolved): by 国力 (factionPower), the highest first, those of the same
+ * as in FACTION_LIST. Factions without a city are out of the game.
  */
 export function turnOrder(state: GameState): FactionId[] {
   const owners = new Set(Object.values(state.cityOwners))
-  return [state.playerFaction, ...FACTION_IDS.filter((id) => id !== state.playerFaction)]
-    .filter((id) => owners.has(id))
+  const power = new Map(FACTION_IDS.map((id) => [id, factionPower(state, id)]))
+  return FACTION_IDS.filter((id) => owners.has(id)).sort((a, b) => power.get(b)! - power.get(a)!)
 }
 
 /** Cities of a faction, in city id order */
@@ -179,14 +191,16 @@ export function orderProblem(state: GameState, draft: Omit<InvasionOrder, 'id'>)
   if (commandRank(state, commander) < commandRank(state, leader)) {
     return `${leader} が出撃するときは軍団長になります`
   }
-  if (state.orders.some((o) => o.factionId === factionId && o.to === to)) return 'この目標にはすでに侵攻を予約しています'
+  if (state.orders.some((o) => o.factionId === factionId && o.from === from && o.to === to)) return 'この目標にはすでに侵攻を予約しています'
   return draft.units ? unitsProblem(state, from, knights, draft.units) : null
 }
 
-/** Targets still open from a city: its invasion targets not already ordered by the city's faction */
+/**
+ * Targets still open from a city: its invasion targets not already ordered from it (another city of the faction may
+ * invade the same target: the invasions go one by one, and one coming after a city was taken marches into it)
+ */
 export function openInvasionTargets(state: GameState, from: CityId): CityId[] {
-  const faction = ownerOf(state, from)
-  return invasionTargets(state, from).filter((to) => !state.orders.some((o) => o.factionId === faction && o.to === to))
+  return invasionTargets(state, from).filter((to) => !state.orders.some((o) => o.from === from && o.to === to))
 }
 
 /** Why the active faction cannot start an invasion from the city, or null when it can */

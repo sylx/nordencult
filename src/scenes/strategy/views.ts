@@ -16,8 +16,8 @@ import { UNIT_TYPES } from '../../data/unitTypes'
 import {
   assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
   FUNDED_ROLES, governorOf, officerTraining,
-  MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, seasonOf, tierOf, transportOrderOf, treasuryForecast, turnsToNextTier, unitAbilities, unitTypesOf, type AssignmentRole, type CityLogStat, type GameState,
-  type Season,
+  MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, seasonOf, tierOf, transportOrderOf, treasuryForecast, turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type AssignmentRole, type CityLogStat,
+  type GameState, type Season,
 } from '../../game'
 
 /** The game state turned into the view types norden-ui's screens draw */
@@ -329,10 +329,10 @@ export function turnView(game: GameState): TurnView {
   }
 }
 
-/** The player's faction on the faction bar: the treasury and its change next turn, the 生産 and soldiers of its cities */
+/** The player's faction shown (viewFaction) on the faction bar: the treasury and its change next turn, the 生産 and soldiers of its cities */
 export function factionSummary(game: GameState): FactionSummaryView {
-  const treasury = treasuryForecast(game, game.playerFaction)
-  const cities = citiesOf(game, game.playerFaction)
+  const treasury = treasuryForecast(game, viewFaction(game))
+  const cities = citiesOf(game, viewFaction(game))
   return {
     gold: treasury.before,
     goldForecast: treasury.after - treasury.before,

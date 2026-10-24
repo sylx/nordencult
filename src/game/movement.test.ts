@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { CHARACTER_MAP } from '../data/character'
 import {
-  addMoveOrder, addOrder, addTransportOrder, availableKnights, cancelMoveOrder, cancelTransportOrder, charactersIn, createInitialState, endFactionTurn,
+  addMoveOrder, addOrder, addTransportOrder, availableKnights, cancelMoveOrder, cancelTransportOrder, charactersIn, endFactionTurn,
   awayReason, GameRuleError, governorOf, moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, orderProblem, resolveBattle, runMovements, soldiersLeft,
   startNextBattle, suppliesLeft, transportFromProblem, transportOrderProblem, type GameState, type MoveOrder, type TransportOrder,
 } from '.'
+import { playing } from './testing'
 
 // レオニス帝国: アンバリア (P004) — ヴェルスタ (P005) — P010 — P011 along its own roads
 const AMBARIA = 'P004'
@@ -21,7 +22,7 @@ const transport = (draft: Partial<Omit<TransportOrder, 'id'>> = {}): Omit<Transp
   factionId: 'leonis', from: AMBARIA, to: VERSTA, knight: '013', troops: 300, supplies: 100, ...draft,
 })
 
-const start = () => createInitialState('leonis')
+const start = () => playing('leonis')
 
 /** Ends the strategy phase of every faction */
 function endStrategyPhase(state: GameState): GameState {

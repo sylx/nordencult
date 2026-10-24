@@ -18,7 +18,8 @@ export interface GameState {
   phase: Phase
   /** The faction whose turn it is in the strategy phase (null in the march phase) */
   activeFaction: FactionId | null
-  playerFaction: FactionId
+  /** The factions the player plays (?faction=, more than one for trying out what happens between factions) */
+  playerFactions: readonly FactionId[]
   /** Current faction of each city (starts from the city data's belongTo); a city not listed is neutral */
   cityOwners: Readonly<Record<CityId, FactionId>>
   characters: Readonly<Record<CharacterId, CharacterState>>
@@ -280,13 +281,38 @@ export interface MoveLeg {
   arrives: boolean
 }
 
+/**
+ * The progress phase: the move part (移動パート: every faction's moves and transports at once, runMovements), then
+ * the invasion part (侵攻パート: the invasions one by one, the factions by their 国力, each faction's in the order made)
+ */
 export interface MarchState {
   /** The moves of this progress phase were made (runMovements); the battles come after them */
   moved: boolean
   /** Orders not resolved yet, in resolving order */
   queue: readonly string[]
+  /** The owners of the cities as the invasion part started, for telling the cities taken in it */
+  owners: Readonly<Record<CityId, FactionId>>
   /** The battle of the order being resolved (marching, then fighting) */
   current: Battle | null
+  /** The order being resolved marching into a city its faction took earlier in the invasion part (no battle) */
+  entry: Entry | null
+  /**
+   * The order first in the queue whose target another faction took earlier in the invasion part, waiting for its
+   * faction (one the player plays) to choose whether to go on (decideInvasion)
+   */
+  decision: string | null
+  /** Orders whose faction chose to go on */
+  confirmed: readonly string[]
+}
+
+/** An invasion's army marching into a city of its own faction (taken by another of its invasions), as a move does */
+export interface Entry {
+  id: string
+  orderId: string
+  factionId: FactionId
+  from: CityId
+  to: CityId
+  knights: readonly CharacterId[]
 }
 
 /** A side of a battle: its knights and the units it fights with (the battle screen's troops) */

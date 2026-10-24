@@ -1,18 +1,19 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Banner, CITY_COMMAND_GROUPS, CUTIN_TEMPLATES, CityCommandScreen, CutInLayer, DomesticScreen, FactionMark, InvasionScreen,
+  Banner, CITY_COMMAND_GROUPS, CUTIN_TEMPLATES, CityCommandScreen, ConfirmDialog, CutInLayer, DomesticScreen, FactionMark, InvasionScreen,
   MapPickScreen, MoveScreen, ScreenHost, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
   type MoveDraft, type TransportDraft,
 } from 'norden-ui'
 import { MapView, type CityHighlight, type FocusInset, type RoadHighlight, type StrategyMap } from 'norden-strategy'
 import { CHARACTER_MAP } from '../../data/character'
-import { FACTION_MAP, factionColor } from '../../data/faction'
+import { FACTION_MAP, factionColor, factionName } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
-  charactersIn, citiesOf, demolishBuilding, domesticProblem, endFactionTurn, invadeFromProblem, isPlayerTurn, moveFromProblem, moveMonths, moveOrderProblem,
-  moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, pauseConstruction, runMovements, setAffairsBudget, setOfficers, soldiersLeft,
-  startConstruction, startNextBattle, stationedIn, suppliesLeft, transportFromProblem, transportOrderProblem, useGame, type CityId, type FactionId, type GameState, type InvasionOrder,
+  charactersIn, citiesOf, decideInvasion, demolishBuilding, domesticProblem, endFactionTurn, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn,
+  moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction,
+  runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, stationedIn, suppliesLeft, transportFromProblem,
+  transportOrderProblem, useGame, viewFaction, type CityId, type FactionId, type GameState, type InvasionOrder,
   type MoveOrder, type TransportOrder,
 } from '../../game'
 import { useScene } from '../sceneContext'
@@ -98,9 +99,11 @@ export default function StrategyScene() {
   const ready = map !== null
   // Coming back from a battle, the camera starts over its city
   const [returnCity] = useState(() => game.lastBattle?.battle.cityId)
+  // The faction the screens are about: the one playing (when the player plays more than one), or the player's
+  const faction = viewFaction(game)
   const nav = useScreenStack<StrategyScreens>(
-    { screen: 'cityCommand', params: { cityId: returnCity ?? citiesOf(game, game.playerFaction)[0] ?? 'P012' } })
-  const { top, popTo } = nav
+    { screen: 'cityCommand', params: { cityId: returnCity ?? citiesOf(game, faction)[0] ?? 'P012' } })
+  const { top, popTo, reset } = nav
   const playerTurn = isPlayerTurn(game)
   // The cities' pictures grow with their tiers, and their emblems follow their owners
   const placedCities = useMemo(() => mapCities(game), [game])
@@ -108,10 +111,14 @@ export default function StrategyScene() {
   const moveDestinations = useMemo(() => (top.screen === 'pickMoveTarget' ? moveTargets(game, top.params.from) : []), [game, top])
   const transportDestinations = useMemo(() => (top.screen === 'pickTransportTarget' ? moveTargets(game, top.params.from) : []), [game, top])
   const battle = game.march?.current ?? null
+  // An army marching into a city its faction took earlier in the invasion part, and an order waiting for the player
+  // to choose whether to go on (its target taken by another faction)
+  const entry = game.march?.entry ?? null
+  const decision = game.orders.find((o) => o.id === game.march?.decision) ?? null
   // The progress phase makes every faction's moves first (shown on the map), then fights the battles
   const moved = game.march?.moved ?? true
   const legs = useMemo(() => (game.phase === 'march' && !moved ? movementLegs(game) : []), [game, moved])
-  const playerCities = citiesOf(game, game.playerFaction)
+  const playerCities = citiesOf(game, faction)
   const cutIn = useCutIn()
   // The order picked on the 行動予約 list: only its route is shown on the map
   const [activeOrder, setActiveOrder] = useState<string | null>(null)
@@ -138,6 +145,15 @@ export default function StrategyScene() {
   useEffect(() => {
     if (!playerTurn) popTo('cityCommand')
   }, [playerTurn, popTo])
+
+  // Playing more than one faction: each one's turn opens on a city of its own
+  const lastPlayed = useRef(game.playerFactions[0])
+  useEffect(() => {
+    if (!playerTurn || faction === lastPlayed.current) return
+    lastPlayed.current = faction
+    const first = citiesOf(game, faction)[0]
+    if (first) reset('cityCommand', { cityId: first })
+  }, [playerTurn, faction, game, reset])
 
   const selectPlace = (id: string) => {
     if (!id) return
@@ -180,24 +196,30 @@ export default function StrategyScene() {
     } else if (top.screen === 'move') {
       const { from, to } = top.params
       cities.push({ id: from }, { id: to, color: MOVE_COLOR })
-      roads.push(...routeRoads(moveRoute(game, game.playerFaction, from, to) ?? [], MOVE_COLOR))
+      roads.push(...routeRoads(moveRoute(game, faction, from, to) ?? [], MOVE_COLOR))
     } else if (top.screen === 'pickTransportTarget') {
       cities.push({ id: top.params.from }, ...transportDestinations.map((id) => ({ id, color: TRANSPORT_COLOR })))
     } else if (top.screen === 'transport') {
       const { from, to } = top.params
       cities.push({ id: from }, { id: to, color: TRANSPORT_COLOR })
-      roads.push(...routeRoads(moveRoute(game, game.playerFaction, from, to) ?? [], TRANSPORT_COLOR))
+      roads.push(...routeRoads(moveRoute(game, faction, from, to) ?? [], TRANSPORT_COLOR))
     } else if (top.screen === 'domestic') {
       cities.push({ id: top.params.cityId })
     } else if (battle) {
       cities.push({ id: battle.cityId, color: TARGET_COLOR })
+    } else if (entry) {
+      cities.push({ id: entry.to })
+    } else if (decision) {
+      cities.push({ id: decision.to, color: TARGET_COLOR })
     } else {
       cities.push({ id: top.params.cityId })
     }
     // Invasions to resolve stay on the map through the progress phase
     if (game.march) {
       for (const o of game.orders) {
-        if (game.march.queue.includes(o.id) || battle?.orderId === o.id) roads.push({ from: o.from, to: o.to, color: TARGET_COLOR })
+        if (game.march.queue.includes(o.id) || battle?.orderId === o.id || entry?.orderId === o.id) {
+          roads.push({ from: o.from, to: o.to, color: TARGET_COLOR })
+        }
       }
     }
     // The order picked on the 行動予約 list shows its road (an invasion) or its way ahead (a move or a transport)
@@ -214,7 +236,7 @@ export default function StrategyScene() {
     map.setCityHighlights(cities)
     const missing = map.setRoadHighlights(roads)
     if (missing.length > 0) console.warn('街道が見つかりません', missing)
-  }, [map, top, targets, moveDestinations, transportDestinations, battle, game, activeOrder])
+  }, [map, top, targets, moveDestinations, transportDestinations, battle, entry, decision, faction, game, activeOrder])
 
   useEffect(() => {
     if (map && returnCity) map.focusPlace(returnCity, true)
@@ -234,10 +256,10 @@ export default function StrategyScene() {
   // CPU factions pass their turn (M001 has no CPU yet)
   useEffect(() => {
     const faction = game.activeFaction
-    if (!ready || game.phase !== 'strategy' || !faction || faction === game.playerFaction) return
+    if (!ready || game.phase !== 'strategy' || !faction || isPlayerFaction(game, faction)) return
     const timer = setTimeout(() => update((s) => (s.activeFaction === faction ? endFactionTurn(s) : s)), CPU_TURN_MS)
     return () => clearTimeout(timer)
-  }, [ready, game.phase, game.activeFaction, game.playerFaction, update])
+  }, [ready, game, update])
 
   // Progress phase: every faction's moves and transports go a month's way along the roads (an envoy riding alone), then they are made
   useEffect(() => {
@@ -270,12 +292,42 @@ export default function StrategyScene() {
   }, [map, game.phase, moved, announcing, legs, update])
 
   // Progress phase, after the moves: take the next order (or start the next turn when none is left)
+  const waiting = Boolean(battle || entry || decision)
   useEffect(() => {
-    if (!ready || game.phase !== 'march' || !moved || battle || announcing) return
-    const timer = setTimeout(() => update((s) => (s.phase === 'march' && !s.march?.current ? startNextBattle(s) : s)),
-      MARCH_PAUSE_MS)
+    if (!ready || game.phase !== 'march' || !moved || waiting || announcing) return
+    const timer = setTimeout(() => update((s) => (s.phase === 'march' ? startNextBattle(s) : s)), MARCH_PAUSE_MS)
     return () => clearTimeout(timer)
-  }, [ready, game.phase, moved, battle, announcing, update])
+  }, [ready, game.phase, moved, waiting, announcing, update])
+
+  // The army of an order whose target its faction took earlier marches into it, as a move does
+  useEffect(() => {
+    if (!map || !entry) return
+    const { id, factionId, from, to } = entry
+    let timer = 0
+    const enter = () => update((s) => (s.march?.entry?.id === id ? finishEntry(s, id) : s))
+    map.focusPlace(to)
+    const unsubscribe = map.onMarchArrive((marchId) => {
+      if (marchId === id) timer = window.setTimeout(enter, ARRIVAL_PAUSE_MS)
+    })
+    const marching = map.march({
+      id, route: [from, to], kind: 'army', speed: MARCH_SPEED, color: factionColor(factionId), label: `${factionName(factionId)}軍`,
+    })
+    if (!marching) {
+      console.warn(`${from} から ${to} への街道が地図にありません`)
+      timer = window.setTimeout(enter, ARRIVAL_PAUSE_MS)
+    }
+    return () => {
+      unsubscribe()
+      clearTimeout(timer)
+      map.stopMarch(id)
+    }
+  }, [map, entry, update])
+
+  // An order waiting for the player to choose: the camera on its target
+  const decisionTarget = decision?.to
+  useEffect(() => {
+    if (map && decisionTarget) map.focusPlace(decisionTarget)
+  }, [map, decisionTarget])
 
   // The army of the order marches to its target, then the battle is fought
   useEffect(() => {
@@ -337,6 +389,8 @@ export default function StrategyScene() {
 
   const notice = battle
     ? `${FACTION_MAP[battle.attacker.factionId]?.name}軍が${cityName(battle.attacker.from)}から${cityName(battle.cityId)}へ進軍`
+    : entry
+    ? `${factionName(entry.factionId)}軍が${cityName(entry.from)}から${cityName(entry.to)}へ入城`
     : legs.length > 0 && !announcing
       ? legs.some((leg) => leg.kind === 'transport') ? '騎士の移動と輸送' : '騎士の移動'
       : game.phase === 'strategy' && !playerTurn && game.activeFaction
@@ -352,7 +406,7 @@ export default function StrategyScene() {
           const index = playerCities.indexOf(cityId)
           return (
             <CityCommandScreen city={cityView(game, cityId)} turn={turnView(game)} faction={factionSummary(game)}
-              playerFaction={factionView(game.playerFaction)}
+              playerFaction={factionView(faction)}
               knightOf={(id) => CHARACTER_MAP[id] ? knightView(game, id) : undefined}
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
               onPrevCity={playerCities.length > 0 ? () => stepCity(cityId, -1) : undefined}
@@ -369,7 +423,7 @@ export default function StrategyScene() {
                 else if (id === 'domestic' && !domesticOpen) nav.push('domestic', { cityId })
               }}
               onEndTurn={endTurn} endTurnDisabled={!playerTurn}
-              turnMenu={<p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(game.playerFaction)} /></p>}>
+              turnMenu={<p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(faction)} /></p>}>
               <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))}
                 onCancelMove={(id) => update((s) => cancelMoveOrder(s, id))}
                 onCancelTransport={(id) => update((s) => cancelTransportOrder(s, id))} onSelectCity={showCity}
@@ -385,37 +439,37 @@ export default function StrategyScene() {
           <MapPickScreen message={`${cityName(from)}からの移動先を選んでください`} onCancel={nav.pop} />
         ),
         move: ({ from, to }) => {
-          const route = moveRoute(game, game.playerFaction, from, to) ?? [from, to]
+          const route = moveRoute(game, faction, from, to) ?? [from, to]
           return (
             <MoveScreen from={cityView(game, from)} to={cityView(game, to)} route={route.map(cityName)}
               months={moveMonths(route.length - 1, false)} soloMonths={moveMonths(route.length - 1, true)}
               knights={charactersIn(game, from).map((id) => knightView(game, id))}
               soldierPool={soldiersLeft(game, from)} supplyPool={suppliesLeft(game, from)}
-              validate={(draft) => moveOrderProblem(game, draftMove(game.playerFaction, from, to, draft))}
+              validate={(draft) => moveOrderProblem(game, draftMove(faction, from, to, draft))}
               onCancel={nav.pop}
-              onConfirm={(draft) => order((s) => addMoveOrder(s, draftMove(s.playerFaction, from, to, draft)), (s) => s.moveOrders)} />
+              onConfirm={(draft) => order((s) => addMoveOrder(s, draftMove(viewFaction(s), from, to, draft)), (s) => s.moveOrders)} />
           )
         },
         pickTransportTarget: ({ from }) => (
           <MapPickScreen message={`${cityName(from)}からの輸送先を選んでください`} onCancel={nav.pop} />
         ),
         transport: ({ from, to }) => {
-          const route = moveRoute(game, game.playerFaction, from, to) ?? [from, to]
+          const route = moveRoute(game, faction, from, to) ?? [from, to]
           return (
             <TransportScreen from={cityView(game, from)} to={cityView(game, to)} route={route.map(cityName)}
               months={moveMonths(route.length - 1, false)} returnMonths={moveMonths(route.length - 1, true)}
               knights={charactersIn(game, from).map((id) => knightView(game, id))}
               soldierPool={soldiersLeft(game, from)} supplyPool={suppliesLeft(game, from)}
-              validate={(draft) => transportOrderProblem(game, draftTransport(game.playerFaction, from, to, draft))}
+              validate={(draft) => transportOrderProblem(game, draftTransport(faction, from, to, draft))}
               onCancel={nav.pop}
-              onConfirm={(draft) => order((s) => addTransportOrder(s, draftTransport(s.playerFaction, from, to, draft)), (s) => s.transportOrders)} />
+              onConfirm={(draft) => order((s) => addTransportOrder(s, draftTransport(viewFaction(s), from, to, draft)), (s) => s.transportOrders)} />
           )
         },
         domestic: ({ cityId }) => (
           <DomesticScreen
             city={cityView(game, cityId)}
             buildOptions={buildOptions(game, cityId)}
-            gold={game.gold[game.playerFaction]}
+            gold={game.gold[faction]}
             populationGrowth={populationGrowthView(game, cityId)}
             stats={domesticStats(game, cityId)}
             onBuild={(buildingId) => update((s) => startConstruction(s, cityId, buildingId))}
@@ -436,11 +490,19 @@ export default function StrategyScene() {
             knights={charactersIn(game, from).map((id) => knightView(game, id))} unitTypes={UNIT_TYPE_VIEWS}
             indirectUnitTypes={INDIRECT_UNIT_TYPES} maxUnits={MAX_UNITS} maxSoldiers={MAX_SOLDIERS} soldierPool={soldiersLeft(game, from)}
             morale={game.cities[from].troopMorale} unitPower={(unit, commander) => unitPower(game, from, unit, commander)}
-            validate={(draft) => orderProblem(game, draftOrder(game.playerFaction, from, to, draft))}
+            validate={(draft) => orderProblem(game, draftOrder(faction, from, to, draft))}
             onCancel={nav.pop}
-            onConfirm={(draft) => order((s) => addOrder(s, draftOrder(s.playerFaction, from, to, draft)), (s) => s.orders)} />
+            onConfirm={(draft) => order((s) => addOrder(s, draftOrder(viewFaction(s), from, to, draft)), (s) => s.orders)} />
         ),
       }} />
+      {decision && ready && !announcing && (
+        <ConfirmDialog title="侵攻の継続"
+          message={`${cityName(decision.to)}は${factionName(ownerOf(game, decision.to))}の領地になりました。`
+            + `${factionName(decision.factionId)}軍（${cityName(decision.from)}から）は侵攻を続けますか？`}
+          confirmLabel="侵攻を続ける" cancelLabel="侵攻を中止"
+          onConfirm={() => update((s) => (s.march?.decision === decision.id ? decideInvasion(s, decision.id, true) : s))}
+          onCancel={() => update((s) => (s.march?.decision === decision.id ? decideInvasion(s, decision.id, false) : s))} />
+      )}
       <CutInLayer cutIn={cutIn} />
     </div>
   )

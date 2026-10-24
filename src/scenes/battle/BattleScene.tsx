@@ -8,7 +8,7 @@ import { CITY_MAP } from '../../data/city'
 import { factionName } from '../../data/faction'
 import { pickVoiceLine } from '../../data/voiceLines'
 import {
-  resolveBattle, retreatCities, useGame, type Battle, type BattleEndReason, type BattleRetreat, type BattleSide, type BattleWinner,
+  isPlayerFaction, resolveBattle, retreatCities, useGame, type Battle, type BattleEndReason, type BattleRetreat, type BattleSide, type BattleWinner,
   type BattleWipeout, type GameState,
 } from '../../game'
 import { useScene } from '../sceneContext'
@@ -17,10 +17,10 @@ import { loadBattleMap, type BattleMap } from './battleMap'
 import { battleTroops } from './battleTroops'
 import './BattleScene.css'
 
-/** The side the player's faction fights on; null when the battle is between others */
+/** The side a faction the player plays fights on (the attacker when both are); null when the battle is between others */
 function playerSideOf(game: GameState, battle: Battle): BattleSide | null {
-  if (battle.attacker.factionId === game.playerFaction) return 'attacker'
-  return battle.defender.factionId === game.playerFaction ? 'defender' : null
+  if (isPlayerFaction(game, battle.attacker.factionId)) return 'attacker'
+  return isPlayerFaction(game, battle.defender.factionId) ? 'defender' : null
 }
 
 /** The factions of a battle's sides; the battle screen calls each side's army by its faction's name */

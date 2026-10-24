@@ -10,12 +10,17 @@ import { isFactionId } from './world'
 /** The faction the player leads unless the URL says otherwise */
 export const DEFAULT_PLAYER_FACTION: FactionId = 'carta'
 
-/** ?faction=<id> picks the player's faction; anything else falls back to the default */
-export function readPlayerFaction(search: string): FactionId {
-  const id = new URLSearchParams(search).get('faction')
-  if (isFactionId(id)) return id
-  if (id !== null) console.warn(`?faction=${id} は勢力のIDではありません。${DEFAULT_PLAYER_FACTION} で始めます`)
-  return DEFAULT_PLAYER_FACTION
+/**
+ * ?faction=<id> picks the player's faction; more of them (?faction=leonis&faction=carta) let the player play each.
+ * Ids that are not factions are left out; with none left the player plays the default
+ */
+export function readPlayerFactions(search: string): FactionId[] {
+  const ids: FactionId[] = []
+  for (const id of new URLSearchParams(search).getAll('faction')) {
+    if (!isFactionId(id)) console.warn(`?faction=${id} は勢力のIDではありません`)
+    else if (!ids.includes(id)) ids.push(id)
+  }
+  return ids.length > 0 ? ids : [DEFAULT_PLAYER_FACTION]
 }
 
 /** A city as its data starts it, with its lord as the governor */
@@ -35,8 +40,8 @@ function initialCity(city: City, governor: CharacterId | undefined): CityState {
   }
 }
 
-/** Turn 1, the player's strategy phase, with the cities and characters where the data puts them */
-export function createInitialState(playerFaction: FactionId = DEFAULT_PLAYER_FACTION): GameState {
+/** Turn 1, the strategy phase of the first faction to play, with the cities and characters where the data puts them */
+export function createInitialState(playerFactions: readonly FactionId[] = [DEFAULT_PLAYER_FACTION]): GameState {
   const cityOwners: Record<string, FactionId> = {}
   for (const city of CITY_LIST) if (city.belongTo) cityOwners[city.id] = city.belongTo
   const characters: Record<string, CharacterState> = {}
@@ -55,7 +60,7 @@ export function createInitialState(playerFaction: FactionId = DEFAULT_PLAYER_FAC
     turn: 1,
     phase: 'strategy',
     activeFaction: null,
-    playerFaction,
+    playerFactions: [...playerFactions],
     cityOwners,
     characters,
     cities,

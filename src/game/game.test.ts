@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   addOrder, availableKnights, BALANCE, cancelOrder, charactersIn, commandRank, createInitialState, dateOf, defenderArmy,
   endFactionTurn, GameRuleError, governorOf,
-  INITIAL_MORALE, invadeFromProblem, invasionTargets, MAX_SOLDIERS, neighbours, orderProblem, readPlayerFaction,
+  INITIAL_MORALE, invadeFromProblem, invasionTargets, MAX_SOLDIERS, neighbours, orderProblem, readPlayerFactions,
   resolveBattle, retreatCities, seasonOf, soldiersLeft, startNextBattle, turnOrder, unitAbilities, type ArmyUnit,
+  decideInvasion, factionPower, finishEntry, isPlayerTurn, type InvasionOrder,
   type BattleRetreat, type BattleWipeout, type GameState,
 } from '.'
+import { playing } from './testing'
 import { CHARACTER_MAP } from '../data/character'
 import { FACTION_LIST } from '../data/faction'
 
@@ -25,12 +27,12 @@ function endStrategyPhase(state: GameState): GameState {
 /** マルクス (029) is the lord of フルーエン and the head of カルタ書院: they lead whenever they go */
 function invadeAmbaria(knights = ['015', '016']): GameState {
   const commander = knights.includes('029') ? '029' : knights[0]
-  return addOrder(createInitialState('carta'), { factionId: 'carta', from: FLUEN, to: AMBARIA, commander, knights })
+  return addOrder(playing('carta'), { factionId: 'carta', from: FLUEN, to: AMBARIA, commander, knights })
 }
 
 describe('setup', () => {
   it('starts the player on turn 1', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     expect(state.turn).toBe(1)
     expect(state.phase).toBe('strategy')
     expect(state.activeFaction).toBe('carta')
@@ -40,7 +42,7 @@ describe('setup', () => {
   })
 
   it('starts each faction with the gold of its data', () => {
-    const { gold } = createInitialState('carta')
+    const { gold } = playing('carta')
     for (const f of FACTION_LIST) expect(gold[f.id]).toBe(f.gold ?? BALANCE.INITIAL_GOLD)
   })
 
@@ -48,21 +50,36 @@ describe('setup', () => {
     expect(createInitialState().characters['028']).toEqual({ cityId: null, factionId: null })
   })
 
-  it('reads the player faction from the URL', () => {
-    expect(readPlayerFaction('?faction=leonis')).toBe('leonis')
-    expect(readPlayerFaction('')).toBe('carta')
-    expect(readPlayerFaction('?faction=nope')).toBe('carta')
+  it('reads the player factions from the URL', () => {
+    expect(readPlayerFactions('?faction=leonis')).toEqual(['leonis'])
+    expect(readPlayerFactions('?faction=leonis&faction=carta&faction=leonis')).toEqual(['leonis', 'carta'])
+    expect(readPlayerFactions('')).toEqual(['carta'])
+    expect(readPlayerFactions('?faction=nope')).toEqual(['carta'])
   })
 
-  it('plays the player first, then the others in FACTION_LIST order', () => {
-    expect(turnOrder(createInitialState('leonis'))).toEqual(
-      ['leonis', 'valhardt', 'nordis', 'carta', 'aqua', 'rosalia', 'taurus', 'sede'])
+  it('plays the factions by 国力 (the population of their cities), the highest first', () => {
+    const state = createInitialState(['carta'])
+    const order = turnOrder(state)
+    expect(order).toEqual(['leonis', 'aqua', 'nordis', 'rosalia', 'taurus', 'valhardt', 'carta', 'sede'])
+    expect(order.map((id) => factionPower(state, id))).toEqual(order.map((id) => factionPower(state, id)).sort((a, b) => b - a))
+    expect(state.activeFaction).toBe('leonis')
+    const grown = { ...state, cities: { ...state.cities, [FLUEN]: { ...state.cities[FLUEN], population: 200000 } } }
+    expect(turnOrder(grown)[0]).toBe('carta')
+  })
+
+  it('lets the player play more than one faction', () => {
+    let state = createInitialState(['carta', 'leonis'])
+    expect(isPlayerTurn(state)).toBe(true) // レオニス帝国 plays first
+    state = endFactionTurn(state)
+    expect(isPlayerTurn(state)).toBe(false)
+    while (state.activeFaction !== 'carta') state = endFactionTurn(state)
+    expect(isPlayerTurn(state)).toBe(true)
   })
 })
 
 describe('orders', () => {
   it('targets neighbouring cities of other factions', () => {
-    expect(invasionTargets(createInitialState('carta'), FLUEN)).toEqual([AMBARIA])
+    expect(invasionTargets(playing('carta'), FLUEN)).toEqual([AMBARIA])
   })
 
   it('adds and cancels an order', () => {
@@ -73,7 +90,7 @@ describe('orders', () => {
   })
 
   it('rejects orders breaking the rules', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015'] }
     expect(orderProblem(state, draft)).toBeNull()
     expect(orderProblem(state, { ...draft, knights: [] })).not.toBeNull()
@@ -88,7 +105,7 @@ describe('orders', () => {
   })
 
   it('needs a commander among the knights; the lord or the head of the faction leads when they go', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '016', knights: ['015', '016'] }
     expect(orderProblem(state, draft)).toBeNull()
     expect(orderProblem(state, { ...draft, commander: '027' })).toBe('軍団長が出撃する騎士にいません')
@@ -118,17 +135,19 @@ describe('turns', () => {
   })
 
   it('passes every CPU faction, then marches', () => {
-    let state = endFactionTurn(createInitialState('carta'))
-    expect(state.activeFaction).toBe('valhardt')
+    let state = endFactionTurn(playing('carta'))
+    expect(state.activeFaction).toBe('sede')
     state = endStrategyPhase(state)
     expect(state.phase).toBe('march')
     expect(state.activeFaction).toBeNull()
-    expect(state.march).toEqual({ moved: false, queue: [], current: null })
+    expect(state.march).toEqual({
+      moved: false, queue: [], owners: state.cityOwners, current: null, entry: null, decision: null, confirmed: [],
+    })
   })
 
   it('starts the next turn when no order is left', () => {
-    const state = startNextBattle(endStrategyPhase(createInitialState('carta')))
-    expect(state).toMatchObject({ turn: 2, phase: 'strategy', activeFaction: 'carta', orders: [], march: null })
+    const state = startNextBattle(endStrategyPhase(playing('carta')))
+    expect(state).toMatchObject({ turn: 2, phase: 'strategy', activeFaction: 'leonis', orders: [], march: null })
   })
 
   it('creates the battle of the next order once', () => {
@@ -144,7 +163,7 @@ describe('turns', () => {
 
   it('skips orders no longer possible', () => {
     let state = endStrategyPhase(invadeAmbaria())
-    state = { ...state, cityOwners: { ...state.cityOwners, [AMBARIA]: 'carta' } }
+    state = { ...state, cityOwners: { ...state.cityOwners, [FLUEN]: 'leonis' } }
     expect(startNextBattle(state)).toMatchObject({ turn: 2, phase: 'strategy' })
   })
 })
@@ -160,13 +179,13 @@ describe('units', () => {
   const ambariaTroops = 220 * BALANCE.INITIAL_TROOPS_PER_PRODUCTION
 
   it('takes the soldiers of an order from its city', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     expect(state.cities[FLUEN].troops).toBe(fluenTroops)
     expect(soldiersLeft(addOrder(state, draft), FLUEN)).toBe(fluenTroops - 500)
   })
 
   it('checks the units of an order', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     expect(orderProblem(state, draft)).toBeNull()
     expect(orderProblem(state, { ...draft, units: units.slice(0, 1) })).not.toBeNull()
     expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], soldiers: 0 }] })).not.toBeNull()
@@ -183,7 +202,7 @@ describe('units', () => {
   })
 
   it('checks the units the commander leads indirectly', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     expect(orderProblem(state, { ...draft, units: [units[0], indirect('archer', 180), units[1], indirect('infantry')] })).toBeNull()
     expect(orderProblem(state, { ...draft, units: [...units, indirect('cavalry')] })).toBe('間接指揮部隊は騎兵にできません')
     expect(orderProblem(state, { ...draft, units: [...units, indirect('archer', MAX_SOLDIERS + 10)] })).toBe(`1部隊の兵数は${MAX_SOLDIERS}までです`)
@@ -201,14 +220,14 @@ describe('units', () => {
   })
 
   it('allows 6 units at most', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     const sixth = [...units, ...Array.from({ length: 4 }, () => indirect('infantry'))]
     expect(orderProblem(state, { ...draft, units: sixth })).toBeNull()
     expect(orderProblem(state, { ...draft, units: [...sixth, indirect('infantry')] })).toBe('部隊は6つまでです')
   })
 
   it('says why a city cannot start an invasion', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     expect(invadeFromProblem(state, FLUEN)).toBeNull()
     expect(invadeFromProblem(state, AMBARIA)).toBe('自勢力の都市ではありません')
     expect(invadeFromProblem(addOrder(state, draft), FLUEN)).toBe('侵攻できる隣接都市がありません')
@@ -216,7 +235,7 @@ describe('units', () => {
   })
 
   it('takes the units into the battle', () => {
-    const marching = startNextBattle(endStrategyPhase(addOrder(createInitialState('carta'), draft)))
+    const marching = startNextBattle(endStrategyPhase(addOrder(playing('carta'), draft)))
     expect(marching.march?.current?.attacker.units).toEqual(units)
   })
 
@@ -229,7 +248,7 @@ describe('units', () => {
   })
 
   it('defends with a provisional army: the knights of the city, or a garrison without them', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     const army = defenderArmy(state, AMBARIA, 'leonis', ['013'])
     // 生産 × 5 soldiers shared out, MAX_SOLDIERS at most in each unit
     expect(army).toEqual({
@@ -247,7 +266,7 @@ describe('units', () => {
   })
 
   it('gives the units the morale of the city they set out from', () => {
-    const state = createInitialState('carta')
+    const state = playing('carta')
     expect(state.cities[FLUEN].troopMorale).toBe(INITIAL_MORALE)
     const trained = { ...state, cities: { ...state.cities, [FLUEN]: { ...state.cities[FLUEN], troopMorale: 85 } } }
     const marching = startNextBattle(endStrategyPhase(addOrder(trained, draft)))
@@ -256,10 +275,10 @@ describe('units', () => {
 
   it('keeps the indirect units in the battle; the knight of the highest rank left takes over a commander who is gone', () => {
     const order = { ...draft, units: [...units, indirect('archer')] }
-    const marching = startNextBattle(endStrategyPhase(addOrder(createInitialState('carta'), order)))
+    const marching = startNextBattle(endStrategyPhase(addOrder(playing('carta'), order)))
     expect(marching.march?.current?.attacker).toMatchObject({ commander: '015', units: [...units, indirect('archer')] })
 
-    let state = endStrategyPhase(addOrder(createInitialState('carta'), order))
+    let state = endStrategyPhase(addOrder(playing('carta'), order))
     state = { ...state, characters: { ...state.characters, '015': { ...state.characters['015'], cityId: 'P026' } } }
     expect(startNextBattle(state).march?.current?.attacker).toMatchObject({
       commander: '016', knights: ['016'], units: [units[1], indirect('archer')],
@@ -299,7 +318,7 @@ describe('battle results', () => {
       { characterId: '087', kind: 'retreat', from: AMBARIA, to: VERSTA },
     ])
     expect(state.march?.current).toBeNull()
-    expect(startNextBattle(state)).toMatchObject({ turn: 2, phase: 'strategy', activeFaction: 'carta' })
+    expect(startNextBattle(state)).toMatchObject({ turn: 2, phase: 'strategy' })
   })
 
   it('the defender holds; the attackers go back', () => {
@@ -415,7 +434,7 @@ describe('battle results', () => {
   })
 
   it('a lord setting out on an invasion is followed by the knight of the highest 政治 left, win or lose', () => {
-    const left = charactersIn(createInitialState('carta'), FLUEN).filter((id) => id !== '029')
+    const left = charactersIn(playing('carta'), FLUEN).filter((id) => id !== '029')
     const best = Math.max(...left.map((id) => CHARACTER_MAP[id].politics))
     const state = fight('attacker', invadeAmbaria(['029']))
     expect(state.characters['029']).toMatchObject({ cityId: AMBARIA })
@@ -432,11 +451,121 @@ describe('battle results', () => {
   })
 
   it('does not make a knight of the army setting out the lord', () => {
-    const left = charactersIn(createInitialState('carta'), FLUEN).filter((id) => id !== '029')
+    const left = charactersIn(playing('carta'), FLUEN).filter((id) => id !== '029')
       .sort((a, b) => CHARACTER_MAP[b].politics - CHARACTER_MAP[a].politics)
     const state = startNextBattle(endStrategyPhase(invadeAmbaria(['029', left[0]])))
     expect(state.march?.current).not.toBeNull()
     expect(governorOf(state, FLUEN)).not.toBe(left[0])
     expect(CHARACTER_MAP[governorOf(state, FLUEN)!].politics).toBe(CHARACTER_MAP[left[1]].politics)
+  })
+})
+
+describe('invasion part', () => {
+  const HALVAN = 'P002' // タウルス自由都市連合, next to アンバリア
+  const DARM = 'P003' // レオニス帝国, next to ティルナ
+  const CORNELIA = 'P011' // レオニス帝国, next to ティルナ
+  const TIRNA = 'P008' // ロザリア家
+
+  /** `state` played on to `factionId`'s strategy phase this turn */
+  const turnOf = (state: GameState, factionId: string) => {
+    while (state.activeFaction !== factionId) state = endFactionTurn(state)
+    return state
+  }
+  /** An order of the active faction with its knights `knights`, the first leading */
+  const invade = (state: GameState, from: string, to: string, knights: string[]) =>
+    addOrder(state, { factionId: state.activeFaction!, from, to, commander: knights[0], knights })
+  const idOf = (state: GameState, from: string, to: string) => state.orders.find((o: InvasionOrder) => o.from === from && o.to === to)!.id
+
+  it('lets a faction invade a city from more than one city, once from each', () => {
+    let state = playing('carta')
+    state = invade(state, FLUEN, AMBARIA, ['015'])
+    expect(orderProblem(state, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '016', knights: ['016'] }))
+      .toBe('この目標にはすでに侵攻を予約しています')
+    state = turnOf(createInitialState(['leonis']), 'leonis')
+    state = invade(state, DARM, TIRNA, ['036'])
+    expect(orderProblem(state, { factionId: 'leonis', from: CORNELIA, to: TIRNA, commander: '075', knights: ['075'] })).toBeNull()
+  })
+
+  it('resolves the invasions by the factions\' 国力, each faction\'s in the order made', () => {
+    let state = playing('leonis', 'carta')
+    state = invade(state, CORNELIA, TIRNA, ['075'])
+    state = invade(state, DARM, TIRNA, ['036'])
+    state = turnOf(state, 'carta')
+    state = invade(state, FLUEN, AMBARIA, ['015'])
+    const { queue } = endStrategyPhase(state).march!
+    expect(queue).toEqual([idOf(state, CORNELIA, TIRNA), idOf(state, DARM, TIRNA), idOf(state, FLUEN, AMBARIA)])
+  })
+
+  it('calls off the invasions still to come from a city attacked: their knights defend it', () => {
+    let state = playing('leonis', 'carta')
+    state = invade(state, AMBARIA, FLUEN, ['013'])
+    state = turnOf(state, 'carta')
+    state = invade(state, FLUEN, AMBARIA, ['015', '016'])
+    const marching = startNextBattle(endStrategyPhase(state))
+    const battle = marching.march!.current!
+    expect(battle).toMatchObject({ cityId: FLUEN, attacker: { factionId: 'leonis' } })
+    expect(battle.defender.knights).toEqual(['015', '016', '027', '029'])
+    expect(marching.march!.queue).toEqual([])
+    // Held: the army called off stays in フルーエン, and the turn ends
+    const held = resolveBattle(marching, battle.id, 'defender')
+    expect(held.characters['015']).toMatchObject({ cityId: FLUEN })
+    expect(startNextBattle(held)).toMatchObject({ turn: 2, phase: 'strategy' })
+  })
+
+  /** タウルス自由都市連合 takes アンバリア first; then カルタ書院's invasion of it comes */
+  const takenByTaurus = (players: string[]) => {
+    let state = turnOf(createInitialState(players), 'taurus')
+    state = invade(state, HALVAN, AMBARIA, ['034'])
+    state = turnOf(state, 'carta')
+    state = invade(state, FLUEN, AMBARIA, ['015', '016'])
+    const marching = startNextBattle(endStrategyPhase(state))
+    expect(marching.march!.current!.attacker.factionId).toBe('taurus')
+    return resolveBattle(marching, marching.march!.current!.id, 'attacker')
+  }
+
+  it('asks a faction the player plays whether to go on invading a city another faction took', () => {
+    const taken = takenByTaurus(['carta'])
+    const asking = startNextBattle(taken)
+    const orderId = asking.march!.decision!
+    expect(asking.orders.find((o) => o.id === orderId)).toMatchObject({ factionId: 'carta', to: AMBARIA })
+    expect(asking.march!.current).toBeNull()
+    expect(startNextBattle(asking)).toBe(asking)
+
+    const goingOn = startNextBattle(decideInvasion(asking, orderId, true))
+    expect(goingOn.march!.current).toMatchObject({ cityId: AMBARIA, attacker: { factionId: 'carta' }, defender: { factionId: 'taurus', knights: ['034'] } })
+
+    const calledOff = startNextBattle(decideInvasion(asking, orderId, false))
+    expect(calledOff).toMatchObject({ turn: 2, phase: 'strategy' })
+    expect(calledOff.characters['015']).toMatchObject({ cityId: FLUEN })
+  })
+
+  it('goes on without asking for a faction the player does not play', () => {
+    const state = startNextBattle(takenByTaurus(['taurus']))
+    expect(state.march!.decision).toBeNull()
+    expect(state.march!.current).toMatchObject({ cityId: AMBARIA, attacker: { factionId: 'carta' }, defender: { factionId: 'taurus' } })
+  })
+
+  it('marches the next army of a faction into the city it took, keeping its lord', () => {
+    let state = playing('leonis')
+    state = invade(state, DARM, TIRNA, ['036'])
+    // コルネリアの領主 (078) leads the second army
+    state = invade(state, CORNELIA, TIRNA, ['078', '075'])
+    let marching = startNextBattle(endStrategyPhase(state))
+    marching = resolveBattle(marching, marching.march!.current!.id, 'attacker')
+    expect(governorOf(marching, TIRNA)).toBe('036')
+    const entering = startNextBattle(marching)
+    const entry = entering.march!.entry!
+    expect(entry).toMatchObject({ factionId: 'leonis', from: CORNELIA, to: TIRNA, knights: ['078', '075'] })
+    expect(entering.march!.current).toBeNull()
+    // Setting out, the lord is followed by another in コルネリア
+    expect(governorOf(entering, CORNELIA)).toBe('082')
+    expect(startNextBattle(entering)).toBe(entering)
+
+    const entered = finishEntry(entering, entry.id)
+    expect(entered.characters['075']).toMatchObject({ cityId: TIRNA, factionId: 'leonis' })
+    expect(entered.characters['078']).toMatchObject({ cityId: TIRNA, factionId: 'leonis' })
+    expect(governorOf(entered, TIRNA)).toBe('036')
+    expect(entered.march!.entry).toBeNull()
+    expect(startNextBattle(entered)).toMatchObject({ turn: 2, phase: 'strategy' })
   })
 })
