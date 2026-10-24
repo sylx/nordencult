@@ -12,6 +12,7 @@ export interface KnightProfileWindowProps extends Omit<NavigationWindowProps, 't
   knightOf?: (id: string) => KnightView | undefined
   /** A name in the 略歴 was clicked */
   onSelectKnight?: (id: string) => void
+  onClose: () => void
 }
 
 const ABILITIES = ['leadership', 'strength', 'intelligence', 'politics', 'charm'] as const

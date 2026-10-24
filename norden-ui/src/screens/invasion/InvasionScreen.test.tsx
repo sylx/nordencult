@@ -209,4 +209,17 @@ describe('InvasionScreen', () => {
     await userEvent.click(button('やめる'))
     expect(onCancel).toHaveBeenCalledOnce()
   })
+
+  it('forms the defense of the target without a way to back out', async () => {
+    const onConfirm = vi.fn()
+    render(<InvasionScreen mode="defense" from={{ id: 'A', name: 'フルーエン' }} to={{ id: 'B', name: 'アンバリア' }}
+      knights={[{ id: 'k1', name: 'エルネスト' }]} unitTypes={unitTypes} soldierPool={600} onConfirm={onConfirm} />)
+    expect(screen.getByText('アンバリアの防衛')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '防衛する騎士' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'やめる' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '閉じる' })).not.toBeInTheDocument()
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('防衛する'))
+    expect(onConfirm).toHaveBeenCalledWith({ commander: 'k1', units: [{ knightId: 'k1', unitType: 'infantry', soldiers: 600 }] })
+  })
 })

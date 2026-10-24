@@ -13,7 +13,8 @@ export interface WindowFrameNavigation {
 
 export interface WindowFrameProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   title?: ReactNode
-  onClose: () => void
+  /** The close control's action. Omitted: no close control (a window that must be answered) */
+  onClose?: () => void
   closeLabel?: string
   background?: 'parchment' | 'dark'
   navigation?: WindowFrameNavigation
@@ -119,13 +120,15 @@ export default function WindowFrame({
           <span id={titleId} className="norden-window-frame-title-text">{title}</span>
         </div>
       )}
-      <button type="button" className="norden-window-frame-close"
-        aria-label={closeLabel} title={closeLabel} onClick={onClose}>
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-          strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false">
-          <path d="m5 5 14 14M19 5 5 19" />
-        </svg>
-      </button>
+      {onClose && (
+        <button type="button" className="norden-window-frame-close"
+          aria-label={closeLabel} title={closeLabel} onClick={onClose}>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+            strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false">
+            <path d="m5 5 14 14M19 5 5 19" />
+          </svg>
+        </button>
+      )}
       <div className="norden-window-frame-content">{children}</div>
     </section>
   )

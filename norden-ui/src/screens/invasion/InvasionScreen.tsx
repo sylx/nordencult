@@ -25,19 +25,24 @@ export interface InvasionDraft {
   units: readonly InvasionAssignment[]
 }
 
+/** invasion: an army setting out from `from` to invade `to`; defense: the army defending `to` against the invaders from `from` */
+export type InvasionScreenMode = 'invasion' | 'defense'
+
 export interface InvasionScreenProps {
+  /** Omitted: invasion */
+  mode?: InvasionScreenMode
   from: CityView
   to: CityView
   /** Knights defending the target */
   defenders?: number
-  /** Knights in the starting city. Those with `unavailableReason` are shown but cannot be picked */
+  /** Knights in the starting city (defense: in `to`). Those with `unavailableReason` are shown but cannot be picked */
   knights: readonly KnightView[]
   unitTypes: readonly UnitTypeView[]
   /** Unit types of the units the commander leads indirectly when knights run short. Omitted: none can be formed */
   indirectUnitTypes?: readonly string[]
   /** Most units of an army, the indirect ones included */
   maxUnits?: number
-  /** Soldiers available in the starting city, shared by the whole army */
+  /** Soldiers available in the starting city (defense: in `to`), shared by the whole army */
   soldierPool: number
   /** Most soldiers of each unit, the indirect ones included. Omitted: soldierPool */
   maxSoldiers?: number
@@ -50,10 +55,15 @@ export interface InvasionScreenProps {
   /** The host's rules. Return why the army cannot be ordered, or null */
   validate?: (draft: InvasionDraft) => string | null
   onConfirm: (draft: InvasionDraft) => void
-  /** やめる, or the window's close control */
-  onCancel: () => void
+  /** やめる, or the window's close control. Omitted: neither (the army must be formed) */
+  onCancel?: () => void
   confirmLabel?: string
   children?: ReactNode
+}
+
+const MODE_LABELS: Readonly<Record<InvasionScreenMode, { title: (to: string) => string; knights: string; leads: string; confirm: string }>> = {
+  invasion: { title: to => `${to}への侵攻`, knights: '出撃する騎士', leads: 'この侵攻', confirm: '予約' },
+  defense: { title: to => `${to}の防衛`, knights: '防衛する騎士', leads: 'この防衛', confirm: '防衛する' },
 }
 
 /** A unit and its React key (the knight's id, or a serial for the indirect ones) */
@@ -83,8 +93,9 @@ function draftProblem(units: readonly InvasionAssignment[]) {
  */
 export default function InvasionScreen({
   from, to, defenders, knights, unitTypes, indirectUnitTypes, maxUnits = 6, soldierPool, maxSoldiers = soldierPool, morale, unitPower, soldierStep = 10, validate,
-  onConfirm, onCancel, confirmLabel = '予約', children,
+  onConfirm, onCancel, confirmLabel, children, mode = 'invasion',
 }: InvasionScreenProps) {
+  const labels = MODE_LABELS[mode]
   const [units, setUnits] = useState<readonly Slot[]>([])
   const serial = useRef(0)
   const knightMap = new Map(knights.map(knight => [knight.id, knight]))
@@ -159,13 +170,13 @@ export default function InvasionScreen({
 
   return (
     <div className="norden-screen norden-invasion">
-      <WindowFrame className="norden-window-screen norden-invasion-window" title={`${to.name}への侵攻`} onClose={onCancel}>
+      <WindowFrame className="norden-window-screen norden-invasion-window" title={labels.title(to.name)} onClose={onCancel}>
         <div className="norden-invasion-layout">
           <div className="norden-window-screen-layout">
-            <section className="norden-window-section norden-invasion-knights" aria-label="出撃する騎士">
+            <section className="norden-window-section norden-invasion-knights" aria-label={labels.knights}>
               <SectionFrame />
               <header className="norden-window-section-header">
-                <h2 className="norden-window-section-title">出撃する騎士</h2>
+                <h2 className="norden-window-section-title">{labels.knights}</h2>
               </header>
               <p className="norden-invasion-route">
                 <span><FactionMark faction={from.faction} emblemOnly /> {from.name}</span>
@@ -179,7 +190,7 @@ export default function InvasionScreen({
               {knights.length === 0
                 ? <p className="norden-window-section-empty">出撃できる騎士がいません。</p>
                 : (
-                  <ul className="norden-invasion-list norden-window-scroll" aria-label="出撃する騎士">
+                  <ul className="norden-invasion-list norden-window-scroll" aria-label={labels.knights}>
                     {knights.map(knight => (
                       <li key={knight.id}>
                         <KnightCard knight={knight} compact current={units.some(item => item.knightId === knight.id)}
@@ -204,7 +215,7 @@ export default function InvasionScreen({
                 </span>}
               </header>
               {!commander
-                ? <p className="norden-window-section-empty norden-invasion-empty">左の一覧から軍団長を選んでください。<br />軍団長がこの侵攻を率います。</p>
+                ? <p className="norden-window-section-empty norden-invasion-empty">左の一覧から軍団長を選んでください。<br />軍団長が{labels.leads}を率います。</p>
                 : <div className="norden-invasion-units norden-window-scroll">
                   {units.map(item => {
                     if (item.knightId === null) {
@@ -317,9 +328,9 @@ export default function InvasionScreen({
               <span className="norden-invasion-remaining">残り {remaining.toLocaleString()}</span>
             </span>
             <span className="norden-invasion-problem" role="status">{problem ?? ''}</span>
-            <Button variant="quiet" onClick={onCancel}>やめる</Button>
+            {onCancel && <Button variant="quiet" onClick={onCancel}>やめる</Button>}
             <Button variant="primary" disabled={problem !== null} title={problem ?? undefined} onClick={() => onConfirm(draft)}>
-              {confirmLabel}
+              {confirmLabel ?? labels.confirm}
             </Button>
           </footer>
         </div>
