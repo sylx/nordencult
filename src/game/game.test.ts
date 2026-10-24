@@ -714,6 +714,26 @@ describe('the head of a faction and its fall', () => {
     expect(governorOf(state, FLUEN)).not.toBe('029')
   })
 
+  it('the head retreating to a city becomes its lord: out of the city lost, or from the battlefield', () => {
+    // レオニス帝国's head (039) defends アンバリア and flees to ヴェルスタ when it falls
+    const withHead = (state: GameState) => ({ ...state, characters: { ...state.characters, '039': { cityId: AMBARIA, factionId: 'leonis' } } })
+    let marching = startNextBattle(endStrategyPhase(withHead(invadeAmbaria())))
+    expect(governorOf(marching, VERSTA)).not.toBe('039')
+    const fled = resolveBattle(marching, marching.march!.current!.id, 'attacker')
+    expect(fled.characters['039']).toEqual({ cityId: VERSTA, factionId: 'leonis' })
+    expect(governorOf(fled, VERSTA)).toBe('039')
+    expect(fled.lastBattle?.governors).toContainEqual({ cityId: VERSTA, characterId: '039' })
+
+    // カルタ書院's head (029), lord of フルーエン, retreats back there: lord again
+    marching = startNextBattle(endStrategyPhase(invadeAmbaria(['029'])))
+    expect(governorOf(marching, FLUEN)).not.toBe('029')
+    const id = marching.march!.current!.id
+    const retreated = resolveBattle(marching, id, 'defender', [{ side: 'attacker', knightId: '029', to: FLUEN, captured: false }])
+    expect(governorOf(retreated, FLUEN)).toBe('029')
+    // Going back without retreating, they are not
+    expect(governorOf(resolveBattle(marching, id, 'defender'), FLUEN)).not.toBe('029')
+  })
+
   it('a faction losing its last city is destroyed: every knight of it becomes unaffiliated, and the event is told', () => {
     const start = playing('leonis')
     const knights = Object.keys(start.characters).filter((id) => start.characters[id].factionId === 'sede').sort()
