@@ -373,7 +373,7 @@
 .norden-knight-chip-face {
   display: grid;
   flex: none;
-  width: 30px;
+  width: 60px;
   aspect-ratio: 1;
   overflow: hidden;
   border-radius: 2px;
