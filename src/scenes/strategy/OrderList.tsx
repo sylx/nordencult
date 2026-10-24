@@ -1,9 +1,9 @@
-import { ActionOrders, type ActionOrderDetail, type ActionOrderView } from 'norden-ui'
+import { ActionOrders, type ActionOrderDetail, type ActionOrderMember, type ActionOrderView } from 'norden-ui'
 import {
   isPlayerTurn, moveMonths, moveRoute, movementLegs, type GameState, type InvasionOrder, type MoveOrder, type Movement, type MovementKind,
   type TransportOrder,
 } from '../../game'
-import { cityName, factionView, knightName } from './views'
+import { cityName, factionView, knightName, knightView } from './views'
 import './OrderList.css'
 
 interface Props {
@@ -20,18 +20,25 @@ interface Props {
 /** An order on the list, with the city it is shown by */
 type Item = ActionOrderView & { city: string }
 
-/** 侵攻元 → 侵攻先 and the commander first; the soldiers of its units in the details */
-function invasionItem(order: InvasionOrder): Item {
+/** The knights of an order with their faces, for its details */
+function members(game: GameState, ids: readonly string[], note?: (id: string) => string | undefined): ActionOrderMember[] {
+  return ids.map((id) => {
+    const { name, portrait } = knightView(game, id)
+    return { name, portrait, note: note?.(id) }
+  })
+}
+
+/** 侵攻元 → 侵攻先 and the commander first; their faces and the soldiers of its units in the details */
+function invasionItem(game: GameState, order: InvasionOrder): Item {
   const knights = [order.commander, ...order.knights.filter((id) => id !== order.commander)]
   const units = order.units ?? []
   const soldiers = units.reduce((sum, u) => sum + u.soldiers, 0)
   return {
     id: order.id, kind: 'invasion', city: order.from, from: cityName(order.from), to: cityName(order.to), knights: knights.map(knightName),
+    members: members(game, knights, (id) => (id === order.commander ? '軍団長' : undefined)),
     details: units.length > 0 ? [{ label: '兵', value: `${soldiers.toLocaleString()}（${units.length}部隊）` }] : undefined,
   }
 }
-
-const routeText = (route: readonly string[]) => route.map(cityName).join(' → ')
 
 /** The soldiers and supplies a move or a transport takes */
 function cargo(troops: number, supplies: number, solo: boolean): ActionOrderDetail[] {
@@ -45,22 +52,21 @@ function backMonths(game: GameState, factionId: string, from: string, to: string
   return route ? moveMonths(route.length - 1, true) : 0
 }
 
-/** What a move or a transport ordered this turn takes, its route and when it gets there (and back) */
+/** What a move or a transport ordered this turn takes and when it gets there (and back) */
 function orderDetails(game: GameState, order: MoveOrder | TransportOrder): ActionOrderDetail[] {
   const solo = 'solo' in order && order.solo
   const route = moveRoute(game, order.factionId, order.from, order.to) ?? [order.from, order.to]
   const months = moveMonths(route.length - 1, solo)
   return [
     ...cargo(order.troops, order.supplies, solo),
-    { label: '経路', value: routeText(route) },
     { label: '到着', value: `${months}ヶ月後` },
     ...('knight' in order ? [{ label: '帰還', value: `${months + backMonths(game, order.factionId, order.from, order.to)}ヶ月後` }] : []),
   ]
 }
 
-/** What a movement under way carries, where it is, the way ahead and the months left */
+/** What a movement under way carries, where it is and the months left */
 function movementDetails(game: GameState, m: Movement): ActionOrderDetail[] {
-  const where = [{ label: '現在地', value: cityName(m.route[0]) }, { label: '残りの経路', value: routeText(m.route) }]
+  const where = [{ label: '現在地', value: cityName(m.route[0]) }]
   if (m.kind === 'return') return [{ label: '積荷', value: '下ろし済み' }, ...where, { label: '帰還', value: `あと${m.monthsLeft}ヶ月` }]
   return [
     ...cargo(m.troops, m.supplies, m.solo),
@@ -84,8 +90,8 @@ function legStatus(kind: MovementKind = 'move', solo: boolean, arrives: boolean)
  * 行動予約: the player's invasions, moves and transports ordered this turn (cancellable on their turn), and their
  * moves and transports under way (from the city they set out from, with the months left; a transport's knight
  * riding back from where they unloaded). In the progress phase every order still to resolve and every faction's
- * moves and transports of the month until they are made. The order picked opens its details (what it takes, its
- * route and months). Hidden while there are none
+ * moves and transports of the month until they are made. The order picked opens its details (the knights' faces,
+ * what it takes and the months). Hidden while there are none
  */
 export function OrderList({ game, onCancel, onCancelMove, onCancelTransport, onSelectCity, activeId, onActiveChange }: Props) {
   const playerTurn = isPlayerTurn(game)
@@ -99,30 +105,28 @@ export function OrderList({ game, onCancel, onCancelMove, onCancelTransport, onS
           return {
             id: leg.id, kind: kindOf(leg.kind), faction: factionView(leg.factionId), city: leg.from, from: cityName(leg.from), to: cityName(leg.to),
             knights: leg.knights.map(knightName), status: legStatus(leg.kind, leg.solo, leg.arrives),
-            details: [
-              ...(leg.kind === 'return' ? [{ label: '積荷', value: '下ろし済み' }] : source ? cargo(source.troops, source.supplies, leg.solo) : []),
-              { label: '今月の道のり', value: routeText(leg.route) },
-            ],
+            members: members(game, leg.knights),
+            details: leg.kind === 'return' ? [{ label: '積荷', value: '下ろし済み' }] : source ? cargo(source.troops, source.supplies, leg.solo) : [],
           }
         }),
         ...game.orders
           .filter((o) => march.queue.includes(o.id) || march.current?.orderId === o.id)
-          .map((o) => ({ ...invasionItem(o), faction: factionView(o.factionId), current: march.current?.orderId === o.id })),
+          .map((o) => ({ ...invasionItem(game, o), faction: factionView(o.factionId), current: march.current?.orderId === o.id })),
       ]
     : [
-        ...game.orders.filter((o) => o.factionId === game.playerFaction).map((o) => ({ ...invasionItem(o), cancellable: playerTurn })),
+        ...game.orders.filter((o) => o.factionId === game.playerFaction).map((o) => ({ ...invasionItem(game, o), cancellable: playerTurn })),
         ...game.moveOrders.filter((o) => o.factionId === game.playerFaction).map((o): Item => ({
           id: o.id, kind: 'move', city: o.from, from: cityName(o.from), to: cityName(o.to), knights: o.knights.map(knightName),
-          status: o.solo ? '単騎' : undefined, cancellable: playerTurn, details: orderDetails(game, o),
+          status: o.solo ? '単騎' : undefined, cancellable: playerTurn, members: members(game, o.knights), details: orderDetails(game, o),
         })),
         ...game.transportOrders.filter((o) => o.factionId === game.playerFaction).map((o): Item => ({
           id: o.id, kind: 'transport', city: o.from, from: cityName(o.from), to: cityName(o.to), knights: [knightName(o.knight)], cancellable: playerTurn,
-          details: orderDetails(game, o),
+          members: members(game, [o.knight]), details: orderDetails(game, o),
         })),
         // Set out in an earlier month: no taking back
         ...game.movements.filter((m) => m.factionId === game.playerFaction).map((m): Item => ({
           id: m.id, kind: kindOf(m.kind), city: m.from, from: cityName(m.from), to: cityName(m.to), knights: m.knights.map(knightName),
-          status: `${m.kind === 'return' ? '帰還・' : ''}あと${m.monthsLeft}ヶ月`, details: movementDetails(game, m),
+          status: `${m.kind === 'return' ? '帰還・' : ''}あと${m.monthsLeft}ヶ月`, members: members(game, m.knights), details: movementDetails(game, m),
         })),
       ]
   if (items.length === 0) return null
