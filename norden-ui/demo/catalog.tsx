@@ -15,6 +15,7 @@ import TransportEntry from './entries/TransportEntry'
 import DomesticEntry from './entries/DomesticEntry'
 import StrategyFlowEntry from './entries/StrategyFlowEntry'
 import CutInEditorEntry from './entries/CutInEditorEntry'
+import EventEntry from './entries/EventEntry'
 
 export interface CatalogEntry {
   id: string
@@ -61,6 +62,8 @@ export const CATALOG: CatalogGroup[] = [
     entries: [
       { id: 'cutin-editor', label: 'カットインエディタ', name: 'useCutIn + CutInLayer', Component: CutInEditorEntry,
         description: '「戦闘開始」などのカットインと文字演出のテンプレートを作る。作ったJSONは useCutIn().play(json, { text }) で再生し、CutInLayer が画面に重ねて描く' },
+      { id: 'event', label: 'イベント通知', name: 'EventScreen', Component: EventEntry,
+        description: 'カット画像とその下のメッセージウィンドウで、起きたこと（勢力の滅亡など）と詳細を知らせる。カットイン faction_destruction からの流れも再生できる' },
     ],
   },
   {

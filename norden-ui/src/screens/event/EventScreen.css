@@ -1,0 +1,55 @@
+/* A notice of an event: the cut and its message window, centred over a dark veil that takes the pointer */
+.norden-event {
+  position: absolute;
+  inset: 0;
+  z-index: 280;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow-y: auto;
+  background: rgb(10 7 4 / 0.72);
+  pointer-events: auto;
+  animation: norden-event-veil 320ms ease-out both;
+}
+.norden-event-body {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  width: min(880px, 100%);
+}
+.norden-event-cut {
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  border: 3px double #b59151;
+  border-radius: 6px;
+  box-shadow: 0 6px 24px #000c;
+  animation: norden-event-cut 700ms ease-out both;
+}
+.norden-event-cut img { display: block; width: 100%; max-height: 52vh; object-fit: cover; }
+.norden-event-window {
+  display: grid;
+  gap: 14px;
+  box-sizing: border-box;
+  width: min(720px, 100%);
+  padding: 30px 28px 20px;
+  color: #f3ead7;
+  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  animation: norden-event-window 420ms ease-out 260ms both;
+}
+.norden-event-message { margin: 0; font-size: 17px; line-height: 1.7; text-align: center; }
+.norden-event-details { display: grid; gap: 4px; margin: 0; font-size: 14px; }
+.norden-event-detail { display: grid; grid-template-columns: 9em 1fr; gap: 12px; padding: 3px 0; border-bottom: 1px solid #f3ead71a; }
+.norden-event-detail dt { color: #cbb282; }
+.norden-event-detail dd { margin: 0; }
+.norden-event-actions { display: flex; justify-content: center; }
+
+@keyframes norden-event-veil { from { opacity: 0; } to { opacity: 1; } }
+@keyframes norden-event-cut { from { opacity: 0; scale: 1.03; } to { opacity: 1; scale: 1; } }
+@keyframes norden-event-window { from { opacity: 0; translate: 0 16px; } to { opacity: 1; translate: 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .norden-event, .norden-event-cut, .norden-event-window { animation: none; }
+}
+
+/* A row of KnightChips (or the like) the host puts in the window, e.g. the knights the event concerns */
+.norden-event-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; margin: 0; }

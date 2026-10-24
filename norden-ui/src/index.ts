@@ -80,6 +80,9 @@ export { default as MoveScreen } from './screens/move/MoveScreen'
 export type { MoveDraft, MoveScreenProps } from './screens/move/MoveScreen'
 export { default as TransportScreen } from './screens/transport/TransportScreen'
 export type { TransportDraft, TransportScreenProps } from './screens/transport/TransportScreen'
+export { default as EventScreen } from './screens/event/EventScreen'
+export type { EventDetail, EventScreenProps } from './screens/event/EventScreen'
+export { CUT_IMAGES } from './screens/event/cuts'
 
 // Cut-ins: templates made with the catalog's editor, played over the screen
 export { default as CutInLayer } from './cutin/CutInLayer'
