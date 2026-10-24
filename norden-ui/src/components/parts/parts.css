@@ -59,7 +59,7 @@
   position: absolute;
   inset: 5px;
   border-radius: 12px;
-  background: #211b14 url('../../assets/ui/hud/dark-texture.png') repeat;
+  background: #211b14 url('../../assets/ui/hud/dark-texture.webp') repeat;
 }
 .norden-thin-frame-border {
   position: absolute;
@@ -85,7 +85,7 @@
   position: absolute;
   inset: 0;
   border: var(--norden-section-frame-width, 22px) solid transparent;
-  border-image: url('../../assets/ui/skins/section-frame.png') 22% / var(--norden-section-frame-width, 22px) / 0 stretch;
+  border-image: url('../../assets/ui/skins/section-frame.webp') 22% / var(--norden-section-frame-width, 22px) / 0 stretch;
 }
 
 .norden-banner {
@@ -156,7 +156,7 @@
   pointer-events: none;
   border: 0 solid transparent;
   border-inline-width: var(--norden-thin-title-cap);
-  border-image: url('../../assets/ui/skins/thin-title.png') 0 10% fill / 0 var(--norden-thin-title-cap) / 0 stretch;
+  border-image: url('../../assets/ui/skins/thin-title.webp') 0 10% fill / 0 var(--norden-thin-title-cap) / 0 stretch;
 }
 .norden-thin-titled-title-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
@@ -170,7 +170,7 @@
   padding: 4px;
   border: 1px solid #947347;
   border-radius: 6px;
-  background: #3a2b1c url('../../assets/ui/hud/dark-texture.png') repeat;
+  background: #3a2b1c url('../../assets/ui/hud/dark-texture.webp') repeat;
   box-shadow: inset 0 2px 4px #120c0780, 0 1px #fff8;
 }
 .norden-choice { --norden-button-corner: 16px; gap: 7px; min-width: 92px; min-height: 40px; padding: 4px 14px; }

@@ -43,11 +43,11 @@ import { NavigationWindow } from 'norden-ui'
 
 ## 生成画像
 
-- 素材: [ornate-navigation-controls.png](../src/assets/ui/skins/ornate-navigation-controls.png)
-- 参照画像: [ornate-close-frame.png](../src/assets/ui/skins/ornate-close-frame.png)
+- 素材: [ornate-navigation-controls.webp](../src/assets/ui/skins/ornate-navigation-controls.webp)
+- 参照画像: [ornate-close-frame.webp](../src/assets/ui/skins/ornate-close-frame.webp)
 - 生成方式: 内蔵 `image_gen`、`transparent_background: true`
-- 画像サイズ: 1774 × 887、RGBA PNG
-- 生成PNGをそのまま保存し、透過を維持。矢印はSVGで重ねて有効・無効状態を描画します。
+- 画像サイズ: 512 × 256、透過WebP（生成画像 1774 × 887 のRGBA PNGを縮小）
+- 透過を維持。矢印はSVGで重ねて有効・無効状態を描画します。
 
 生成プロンプト:
 

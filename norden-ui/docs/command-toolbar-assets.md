@@ -3,7 +3,7 @@
 ## 子コマンド用フレーム
 
 2026-10-10、組み込みの `imagegen` ツールで、親の `command-frame.png` を画風の参照にして
-`src/assets/ui/hud/command-child-frame.png` を新規生成しました。
+`src/assets/ui/hud/command-child-frame.webp` を新規生成しました。
 `transparent_background: true` を指定し、中央と外側のアルファ透過を保持しています。
 
 生成画像（1774 × 887）の余白を `(x: 20, y: 94, width: 1734, height: 698)` で切り詰め、
@@ -25,9 +25,9 @@ Use case: stylized-concept. Asset type: a single production transparent PNG nine
 
 | 保存先（norden-ui からの相対パス） | 配信用サイズ | 参照画像 |
 | --- | --- | --- |
-| `src/assets/ui/hud/command-frame.png` | 384 × 240 | 変更前の command-frame.png |
-| `src/assets/ui/icons/icon-territory.png` | 128 × 128 | icon-knowledge.png、icon-gold.png（画風のみ） |
-| `src/assets/ui/icons/icon-sun.png` | 128 × 128 | 変更前の icon-sun.png |
+| `src/assets/ui/hud/command-frame.webp` | 256 × 160 | 変更前の command-frame.png |
+| `src/assets/ui/icons/icon-territory.webp` | 128 × 128 | icon-knowledge.webp、icon-gold.webp（画風のみ） |
+| `src/assets/ui/icons/icon-sun.webp` | 128 × 128 | 変更前の icon-sun.png |
 
 フレームは生成画像（1448 × 1086）の外側の余白を `(x: 4, y: 64, width: 1440, height: 900)` で切り詰めて縮小しました。
 アイコンは生成画像（1254 × 1254）を縮小しました。配信用の縮小には FFmpeg の Lanczos フィルターを使用しています。

@@ -19,7 +19,7 @@
   border: solid transparent;
   /* Keep the ornamental end caps fixed while stretching the straight rails. */
   border-width: 10px 37px;
-  border-image: url('../../assets/ui/hud/command-frame.png') 12% 34% / 10px 37px / 0 stretch;
+  border-image: url('../../assets/ui/hud/command-frame.webp') 12% 34% / 10px 37px / 0 stretch;
   pointer-events: none;
   z-index: 1;
 }
@@ -30,7 +30,7 @@
   overflow-x: auto;
   scrollbar-width: thin;
   scrollbar-color: #96723c #211910;
-  background: #211b14 url('../../assets/ui/hud/dark-texture.png') repeat;
+  background: #211b14 url('../../assets/ui/hud/dark-texture.webp') repeat;
 }
 
 .norden-command-toolbar-drag-handle {
@@ -98,7 +98,7 @@
   padding: 12px;
   translate: -50% 0;
   border-radius: 8px;
-  background: #211b14 url('../../assets/ui/hud/dark-texture.png') repeat;
+  background: #211b14 url('../../assets/ui/hud/dark-texture.webp') repeat;
   box-shadow: 0 6px 20px #0009;
   animation: norden-flyout-enter 140ms ease both;
 }
@@ -109,7 +109,7 @@
   inset: 0;
   /* A dedicated brass frame; stretch only the straight rails, preserving the small corners. */
   border: solid transparent;
-  border-image-source: url('../../assets/ui/hud/command-child-frame.png');
+  border-image-source: url('../../assets/ui/hud/command-child-frame.webp');
   border-image-slice: 20% 8%;
   border-image-repeat: stretch;
   pointer-events: none;

@@ -1,9 +1,9 @@
 # 生産・商業のアイコン
 
-組み込み `image_gen` で生成した透過PNG。`icon-gold.png` と `icon-military.png` を素材感の参考として使用。丸い背景や台座を付けず、26〜38pxで表示する。
+組み込み `image_gen` で生成した透過PNG。`icon-gold.webp` と `icon-military.webp` を素材感の参考として使用。丸い背景や台座を付けず、26〜38pxで表示する。
 
-- `src/assets/ui/icons/icon-production.png`: 金床とハンマー。FactionBar の総生産と都市情報の生産グラフに使用。
-- `src/assets/ui/icons/icon-commerce.png`: 天秤と金貨。都市情報の商業グラフに使用。
+- `src/assets/ui/icons/icon-production.webp`: 金床とハンマー。FactionBar の総生産と都市情報の生産グラフに使用。
+- `src/assets/ui/icons/icon-commerce.webp`: 天秤と金貨。都市情報の商業グラフに使用。
 
 ## 生産の生成プロンプト
 

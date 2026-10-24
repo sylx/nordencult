@@ -35,7 +35,7 @@
   /* One continuous image keeps the curved left contour joined to the bottom rail. */
   border: solid transparent;
   border-width: 0 0 var(--date-ornament-drop) var(--date-ornament-size);
-  border-image: url('../../assets/ui/hud/date-frame.png') 0 0 30% 20% fill / 0 0 var(--date-ornament-drop) var(--date-ornament-size) / 0 stretch;
+  border-image: url('../../assets/ui/hud/date-frame.webp') 0 0 30% 20% fill / 0 0 var(--date-ornament-drop) var(--date-ornament-size) / 0 stretch;
   pointer-events: none;
 }
 
@@ -168,7 +168,7 @@
   padding: 18px;
   border: 1px solid #b59151;
   border-top: 3px solid #b59151;
-  background: #101923 url('../../assets/ui/hud/date-center.png') center / cover;
+  background: #101923 url('../../assets/ui/hud/date-center.webp') center / cover;
   box-shadow: 0 6px 20px #0009;
 }
 

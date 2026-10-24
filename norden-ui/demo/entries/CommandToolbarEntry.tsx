@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { CommandToolbar } from '../../src'
 import type { ToolbarCommand } from '../../src'
-import iconDomestic from '../../src/assets/ui/icons/icon-territory.png'
-import iconMilitary from '../../src/assets/ui/icons/icon-military.png'
-import iconResearch from '../../src/assets/ui/icons/icon-knowledge.png'
-import iconMerchant from '../../src/assets/ui/icons/icon-gold.png'
-import iconSun from '../../src/assets/ui/icons/icon-sun.png'
+import iconDomestic from '../../src/assets/ui/icons/icon-territory.webp'
+import iconMilitary from '../../src/assets/ui/icons/icon-military.webp'
+import iconResearch from '../../src/assets/ui/icons/icon-knowledge.webp'
+import iconMerchant from '../../src/assets/ui/icons/icon-gold.webp'
+import iconSun from '../../src/assets/ui/icons/icon-sun.webp'
 import { Log, useLog, Workbench } from '../Workbench'
 
 export default function CommandToolbarEntry() {

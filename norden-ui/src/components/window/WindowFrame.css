@@ -29,14 +29,14 @@
   position: absolute;
   inset: var(--norden-window-surface-inset, calc(var(--norden-window-frame-size) * .28125));
   border-radius: var(--norden-window-surface-radius, 20px);
-  background: #211b14 url('../../assets/ui/hud/dark-texture.png') repeat;
+  background: #211b14 url('../../assets/ui/hud/dark-texture.webp') repeat;
   opacity: var(--norden-window-surface-opacity, 1);
 }
 .norden-window-frame-border {
   position: absolute;
   inset: 0;
   border: var(--norden-window-frame-size) solid transparent;
-  border-image: url('../../assets/ui/skins/ornate-close-frame.png') 25% / var(--norden-window-frame-size) / 0 stretch;
+  border-image: url('../../assets/ui/skins/ornate-close-frame.webp') 25% / var(--norden-window-frame-size) / 0 stretch;
 }
 .norden-window-frame[data-background='parchment'] {
   color: #342515;
@@ -70,7 +70,7 @@
   z-index: -1;
   border: 0 solid transparent;
   border-inline-width: 30px;
-  border-image: url('../../assets/ui/info_window_title_full.png') 0 8% fill / 0 30px / 0 stretch;
+  border-image: url('../../assets/ui/info_window_title_full.webp') 0 8% fill / 0 30px / 0 stretch;
 }
 .norden-window-frame-title.is-draggable { pointer-events: auto; touch-action: none; cursor: grab; }
 .norden-window-frame.is-dragging .norden-window-frame-title { cursor: grabbing; }

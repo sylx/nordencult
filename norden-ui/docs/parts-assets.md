@@ -13,7 +13,7 @@ FactionBarとBannerはInfoWindowの最も細いベゼル（`windowSkins.thin`）
 </ThinFrameWithTitle>
 ```
 
-札は `src/assets/ui/skins/thin-title.png`（1024×128pxの透過PNG）を使います。細い真鍮の上下の縁、
+札は `src/assets/ui/skins/thin-title.webp`（512×64pxの透過WebP）を使います。細い真鍮の上下の縁、
 左右の葉模様の端飾り、文字を載せる暗い茶の無地の帯を一枚にまとめています。
 `parts.css` の `.norden-thin-titled-title::before` で横方向に9分割し（`border-image: … 0 10% fill`）、
 左右各10%の端飾りを固定して中央だけを横に伸ばします。CSSの仮の帯と菱形は削除しました。
@@ -22,14 +22,14 @@ FactionBarとBannerはInfoWindowの最も細いベゼル（`windowSkins.thin`）
 
 組み込み `image_gen.imagegen` を `transparent_background: true` で使用して生成しました。
 元画像2172×724pxから上下の透明な余白だけを切り出し（`2172x256+0+234`）、
-ImageMagickのLanczosで1024×128pxに縮小しています。アルファを保持し、文字・外側の影は描き込んでいません。
+ImageMagickのLanczosで1024×128pxに縮小し、さらに512×64pxに縮小してWebPに変換しています。アルファを保持し、文字・外側の影は描き込んでいません。
 生成プロンプトは `docs/image-generation.json` の `thin-title` に記録しています。
 
 画像の仕様（生成の依頼に使う）:
 
 - 横長の透過PNG。縦横比はおよそ 8:1（例 1024×128）。画面では高さ24px前後に縮小して使う
 - 左右の端飾り（キャップ）は全幅の各10%以内に収め、中央は文字を載せる無地の帯。中央は横に伸ばすので、模様を入れず均一にする
-- 細いベゼル（`src/assets/ui/skins/thin-frame.png`）と同じ、くすんだ真鍮の細い縁と暗い地。文字は明るい色（#fff4d0）で載せる
+- 細いベゼル（`src/assets/ui/skins/thin-frame.webp`）と同じ、くすんだ真鍮の細い縁と暗い地。文字は明るい色（#fff4d0）で載せる
 - 札の外側は完全に透過。文字・影・余白の背景は描き込まない
 
 ## ボタンとスライダー

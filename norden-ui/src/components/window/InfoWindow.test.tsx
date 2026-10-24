@@ -11,8 +11,8 @@ describe('InfoWindow decoration skins', () => {
     expect(window).toHaveAttribute('data-skin', 'medium')
     expect(window.querySelectorAll('.norden-info-window-frame')).toHaveLength(1)
     expect(window.querySelector('.norden-info-window-frame')).toBeEmptyDOMElement()
-    expect(window.style.getPropertyValue('--norden-frame')).toContain('medium-frame.png')
-    expect(window.style.getPropertyValue('--norden-title-bar')).toContain('info_window_title_full.png')
+    expect(window.style.getPropertyValue('--norden-frame')).toContain('medium-frame.webp')
+    expect(window.style.getPropertyValue('--norden-title-bar')).toContain('info_window_title_full.webp')
     expect(window.querySelector('.norden-info-window-title-corner')).not.toBeInTheDocument()
   })
 
@@ -22,7 +22,7 @@ describe('InfoWindow decoration skins', () => {
     const window = screen.getByRole('region', { name: '都市' })
     expect(window.style.getPropertyValue('--norden-title-bar')).toBe('url("/custom/title.png")')
     expect(window.style.getPropertyValue('--norden-paper')).toBe('none')
-    expect(window.style.getPropertyValue('--norden-frame')).toContain('medium-frame.png')
+    expect(window.style.getPropertyValue('--norden-frame')).toContain('medium-frame.webp')
   })
 
   it('switches skins without remounting the frame or content', () => {

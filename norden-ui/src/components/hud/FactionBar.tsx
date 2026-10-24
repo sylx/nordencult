@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react'
-import iconGold from '../../assets/ui/icons/icon-gold.png'
-import iconProduction from '../../assets/ui/icons/icon-production.png'
-import iconTroops from '../../assets/ui/icons/icon-military.png'
-import ribbon from '../../assets/ui/hud/faction-ribbon.png'
+import iconGold from '../../assets/ui/icons/icon-gold.webp'
+import iconProduction from '../../assets/ui/icons/icon-production.webp'
+import iconTroops from '../../assets/ui/icons/icon-military.webp'
+import ribbon from '../../assets/ui/hud/faction-ribbon.webp'
 import type { FactionSummaryView, FactionView } from '../../screens/types'
 import './FactionBar.css'
 

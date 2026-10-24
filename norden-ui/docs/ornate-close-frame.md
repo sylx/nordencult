@@ -1,8 +1,8 @@
 # 閉じる操作を組み込んだ装飾枠
 
-素材: `src/assets/ui/skins/ornate-close-frame.png`
+素材: `src/assets/ui/skins/ornate-close-frame.webp`
 
-組み込みの `image_gen` ツールで生成。`medium-frame.png` は金属の質感の参考として使用。画像を四辺 25% で nine-slice し、角を 64px に固定して使う。右上の円形部分に、実際に操作できる透明なボタンと × を重ねる。
+組み込みの `image_gen` ツールで生成。`medium-frame.webp` は金属の質感の参考として使用。画像を四辺 25% で nine-slice し、角を 64px に固定して使う。右上の円形部分に、実際に操作できる透明なボタンと × を重ねる。
 
 生成プロンプト:
 

@@ -12,19 +12,19 @@ Use case: stylized-concept. Asset type: square transparent PNG medieval fantasy 
 
 共通プロンプトに以下の各 Subject を続けて、画像ごとに生成した。
 
-## 兵数 (`icon-troops.png`)
+## 兵数 (`icon-troops.webp`)
 
 ```text
 Subject: TROOP COUNT. A single substantial medieval infantry helmet with nose guard in three-quarter view, with two smaller helmets behind its left and right shoulders, forming a compact cohesive group of three helmets. Recognizable army manpower silhouette; no faces, no bodies, no feathers, no elaborate ornament. Steel silver dominates, restrained bronze rim.
 ```
 
-## 練度 (`icon-training.png`)
+## 練度 (`icon-training.webp`)
 
 ```text
 Subject: TROOP TRAINING / PROFICIENCY. Two broad steel practice swords crossing upward, their warm bronze hilts at lower left and right. A small tight bronze laurel sprig follows each lower outside edge, symbolizing earned military proficiency. Bold simple strong X silhouette, broad readable blades, no shield, no helmet, no characters, no ornate engraving.
 ```
 
-## 物資 (`icon-supplies.png`)
+## 物資 (`icon-supplies.webp`)
 
 ```text
 Subject: MILITARY SUPPLIES. A compact sturdy wooden provisioning crate with bronze metal corner straps, a tied tan canvas grain sack nestled next to it and a single short bundle of wheat heads peeking from the sack. Large simple wooden crate dominates, sack secondary. Warm natural oak and tan linen distinguish this from steel military icons. No coins, no weapons, no extra objects or scenery.

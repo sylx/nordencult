@@ -271,7 +271,7 @@ tests/                   実ブラウザでのテスト
 
 - 参考画像: `norden-strategy/docs/image/exec-0f8f41c4-e9b3-423a-af0d-ce7b8c4f8165.png`
 - 移植元: `nordencult-old/src/ui/components/{InfoWindow,InfoWindowWithTabs,CommandToolbar,DateBar}.{tsx,css}`、都市情報ウィンドウはルートの `src/scenes/strategy/CityWindow.tsx`
-- 画像: 枠は `src/assets/ui/skins/` の生成PNG3点、タイトルは生成した `info_window_title_full.png` を使用。羊皮紙・タブ画像・アイコン・HUD画像は旧実装から移植。都市画像は `src/assets/map/place_city.webp` からデモ専用にコピー
+- 画像: 枠は `src/assets/ui/skins/` の生成PNG3点、タイトルは生成した `info_window_title_full.webp` を使用。羊皮紙・タブ画像・アイコン・HUD画像は旧実装から移植。都市画像は `src/assets/map/place_city.webp` からデモ専用にコピー
 - ゲームの都市・人物データ、地図処理は含めず、view型として呼び出し側から渡す
 - 開発構成: [Viteのライブラリモード](https://vite.dev/guide/build.html#library-mode)
 - タブの操作と関連付け: [WAI-ARIA Tabs Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/)、単一選択: [Radio Group Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/radio/)

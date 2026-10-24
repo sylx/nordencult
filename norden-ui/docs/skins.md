@@ -12,14 +12,14 @@
 
 ## 生成した画像と透過
 
-- [細いベゼル PNG](../src/assets/ui/skins/thin-frame.png)
-- [中程度の装飾 PNG](../src/assets/ui/skins/medium-frame.png)
-- [女神像の枠 PNG](../src/assets/ui/skins/goddess-frame-v2.png)
-- [一枚のタイトルバー PNG](../src/assets/ui/info_window_title_full.png)
+- [細いベゼル](../src/assets/ui/skins/thin-frame.webp)
+- [中程度の装飾](../src/assets/ui/skins/medium-frame.webp)
+- [女神像の枠](../src/assets/ui/skins/goddess-frame-v2.webp)
+- [一枚のタイトルバー](../src/assets/ui/info_window_title_full.webp)
 - [生成プロンプト・修正指示](image-generation.json)
 
 内蔵の `image_gen` で `transparent_background: true` を指定して生成しました。
-枠はいずれも **1254 × 1254 のRGBA PNG** です。生成時のalphaをそのまま保存しています。
+枠は生成した 1254 × 1254 のRGBA PNGを、表示サイズの約2倍に縮小した透過WebPです（thin・medium は 512 × 512、goddess は 640 × 640）。alphaは保持しています。
 市松模様を画像に描き込んだものではありません。中央と外側は透過で、輪郭には半透明のアンチエイリアスがあります。
 中央には生成由来のalpha=1/255の微小なノイズが一部残っています。自動テストでは中央の最大alphaが1以下であることを確認します。
 完全にalpha=0へそろえる必要がある場合は、画像編集ソフトで中央の余白を完全消去してください。輪郭の半透明まで一括で消すとギザギザになります。
@@ -127,7 +127,7 @@ const skin: InfoWindowSkin = {
 タイトルには枠と異なり `fill` が必要です。中央の暗いプレートも同じPNGから描画するためです。
 下地の背景色や別画像は重ねず、端の切り抜きや輪郭のalphaを保ちます。
 
-同梱のタイトルPNGは内蔵 `image_gen` で生成し、上下の余分なキャンバスだけを切り出した **2172 × 278 のRGBA PNG** です。
+同梱のタイトルPNGは内蔵 `image_gen` で生成し、上下の余分なキャンバスだけを切り出した 2172 × 278 のRGBA PNGを、**800 × 102 の透過WebP** に縮小したものです。
 背景色への統合やalphaのしきい値処理は行っていません。外側の角はalpha=0、中央のプレートはほぼ不透明、輪郭は半透明です。
 生成プロンプトと切り出し位置は [image-generation.json](image-generation.json) に記録しています。
 

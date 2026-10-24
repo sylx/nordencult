@@ -25,7 +25,7 @@
 .norden-window-frame-navigation-decoration {
   position: absolute;
   inset: 0;
-  background: url('../../assets/ui/skins/ornate-navigation-controls.png') center / contain no-repeat;
+  background: url('../../assets/ui/skins/ornate-navigation-controls.webp') center / contain no-repeat;
 }
 .norden-window-frame-navigation-button {
   position: absolute;

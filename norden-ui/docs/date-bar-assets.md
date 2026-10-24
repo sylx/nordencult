@@ -4,8 +4,8 @@
 
 | 保存先（norden-ui からの相対パス） | サイズ | 処理 |
 | --- | --- | --- |
-| `src/assets/ui/hud/date-frame.png` | 600 × 198 | 2172 × 724 の透明PNGの上端8pxを切り詰めてLanczos縮小。アルファを保持 |
-| `src/assets/ui/hud/date-center.png` | 384 × 128 | 2172 × 724 の不透明PNGをLanczos縮小 |
+| `src/assets/ui/hud/date-frame.webp` | 400 × 132 | 2172 × 724 の透明PNGの上端8pxを切り詰めてLanczos縮小し、WebPに変換。アルファを保持 |
+| `src/assets/ui/hud/date-center.webp` | 384 × 128 | 2172 × 724 の不透明PNGをLanczos縮小し、WebPに変換 |
 
 画像の縮小には FFmpeg を使用しています。フレームは `border-image-slice: 0 0 30% 20% fill` で描画し、左の40pxと下の20pxを固定して濃紺部分を伸ばします。左端を別画像で重ねないため、輪郭のない背景がはみ出しません。球のある旧 `date-left.png` は削除しました。
 

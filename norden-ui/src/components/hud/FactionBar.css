@@ -77,7 +77,7 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: url('../../assets/ui/hud/faction-orb-compact.png') center / contain no-repeat;
+  background: url('../../assets/ui/hud/faction-orb-compact.webp') center / contain no-repeat;
   pointer-events: none;
 }
 .norden-faction-bar.is-dragging .norden-faction-bar-orb { cursor: grabbing; }

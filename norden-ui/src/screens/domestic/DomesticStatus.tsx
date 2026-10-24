@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import StatBar from '../../components/parts/StatBar'
 import iconAgriculture from '../../assets/ui/icons/icon-agriculture.svg'
-import iconCommerce from '../../assets/ui/icons/icon-commerce.png'
-import iconProduction from '../../assets/ui/icons/icon-production.png'
-import iconMorale from '../../assets/ui/icons/icon-military.png'
+import iconCommerce from '../../assets/ui/icons/icon-commerce.webp'
+import iconProduction from '../../assets/ui/icons/icon-production.webp'
+import iconMorale from '../../assets/ui/icons/icon-military.webp'
 import iconRecruit from '../../assets/ui/icons/icon_people.webp'
 import type { CityStatView, PopulationGrowthView } from '../types'
 

@@ -1,11 +1,11 @@
 import type { CSSProperties } from 'react'
 import paper from './assets/ui/ui_paper_texture.webp'
-import titleBar from './assets/ui/info_window_title_full.png'
-import tabActive from './assets/ui/tab_active.png'
-import tabInactive from './assets/ui/tab_inactive.png'
-import thinFrame from './assets/ui/skins/thin-frame.png'
-import mediumFrame from './assets/ui/skins/medium-frame.png'
-import goddessFrame from './assets/ui/skins/goddess-frame-v2.png'
+import titleBar from './assets/ui/info_window_title_full.webp'
+import tabActive from './assets/ui/tab_active.webp'
+import tabInactive from './assets/ui/tab_inactive.webp'
+import thinFrame from './assets/ui/skins/thin-frame.webp'
+import mediumFrame from './assets/ui/skins/medium-frame.webp'
+import goddessFrame from './assets/ui/skins/goddess-frame-v2.webp'
 
 export interface WindowSkinImages {
   paper: string
