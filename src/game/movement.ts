@@ -1,3 +1,4 @@
+import { CHARACTER_MAP } from '../data/character'
 import { mixMorale } from './army'
 import { withoutAssignee } from './economy/domestic'
 import { GameRuleError } from './errors'
@@ -220,13 +221,33 @@ function returnOf(state: GameState, transport: Movement): Movement | null {
 }
 
 /**
- * Movements of the orders of this turn still possible (moves, then transports), as they set out: their knights
- * still in the city they leave
+ * The lord a city gets when its lord moves away: of the faction's knights serving there and not moving away (on a
+ * transport is fine), not on an invasion either, the one of the highest 政治, at random among equals; none when
+ * there is nobody
  */
-function setOut(state: GameState): { state: GameState; movements: Movement[] } {
+function successorOf(state: GameState, cityId: CityId, movingAway: ReadonlySet<string>, random: () => number): string | undefined {
+  const owner = ownerOf(state, cityId)
+  const candidates = Object.keys(state.characters).sort().filter((id) => {
+    const character = state.characters[id]
+    return character.cityId === cityId && character.factionId === owner && !movingAway.has(id) && !orderOf(state, id)
+  })
+  const politics = (id: string) => CHARACTER_MAP[id]?.politics ?? 0
+  const best = Math.max(...candidates.map(politics))
+  const top = candidates.filter((id) => politics(id) === best)
+  return top.length > 0 ? top[Math.floor(random() * top.length)] : undefined
+}
+
+/**
+ * Movements of the orders of this turn still possible (moves, then transports), as they set out: their knights
+ * still in the city they leave. Knights moving away leave their assignments there, and a lord moving away is
+ * followed by another (successorOf); a transport's knight keeps theirs, serving there all the while
+ */
+function setOut(state: GameState, random: () => number = Math.random): { state: GameState; movements: Movement[] } {
   const characters: Record<string, CharacterState> = { ...state.characters }
   const cities: Record<string, CityState> = { ...state.cities }
   const movements: Movement[] = []
+  /** Cities whose lord moves away */
+  const lordless = new Set<CityId>()
   const transports = state.transportOrders.map(({ knight, ...order }): [MoveOrder, MovementKind] => [{ ...order, knights: [knight], solo: false }, 'transport'])
   for (const [order, kind] of [...state.moveOrders.map((o): [MoveOrder, MovementKind] => [o, 'move']), ...transports]) {
     const { factionId, from, to } = order
@@ -238,12 +259,25 @@ function setOut(state: GameState): { state: GameState; movements: Movement[] } {
     const troops = Math.min(order.troops, city.troops)
     const supplies = Math.min(order.supplies, city.storedSupplies)
     let assignments = city.assignments
-    for (const id of knights) assignments = withoutAssignee(assignments, id)
+    if (kind === 'move') {
+      for (const id of knights) {
+        if (assignments.governor === id) lordless.add(from)
+        assignments = withoutAssignee(assignments, id)
+      }
+    }
     cities[from] = { ...city, troops: city.troops - troops, storedSupplies: city.storedSupplies - supplies, assignments }
     movements.push({
       ...order, ...(kind !== 'move' && { kind }), knights, troops, supplies, troopMorale: city.troopMorale, route,
       monthsLeft: moveMonths(route.length - 1, order.solo),
     })
+  }
+  // Knights moving away now or on a move already (they still serve in the city they set out from until they arrive)
+  const movingAway = new Set([...state.movements, ...movements].flatMap((m) => (m.kind ? [] : m.knights)))
+  for (const cityId of lordless) {
+    const governor = successorOf(state, cityId, movingAway, random)
+    const { assignments } = cities[cityId]
+    // A governor holds no officer role
+    if (governor) cities[cityId] = { ...cities[cityId], assignments: { ...withoutAssignee(assignments, governor), governor } }
   }
   return { state: { ...state, characters, cities, moveOrders: [], transportOrders: [] }, movements }
 }
@@ -266,17 +300,17 @@ export function movementLegs(state: GameState): MoveLeg[] {
 }
 
 /**
- * The moves of a progress phase, before its battles: the moves and transports ordered this turn set out (their
- * knights leave their assignments in their city but still serve there until they arrive, their soldiers and
- * supplies are taken from it), then every
+ * The moves of a progress phase, before its battles: the moves and transports ordered this turn set out (setOut:
+ * the knights moving away leave their assignments in their city but still serve there until they arrive, a lord
+ * moving away is followed by another, their soldiers and supplies are taken from it), then every
  * movement goes a month's way. Those arriving join their city: the knights serve there, the soldiers join its
  * own (their morale mixing) and the supplies its store. A transport's knight does not stay: they ride back alone
  * to the city they set out from (serving there all the while), from the next month (returnOf). A movement whose city was lost heads for the
  * faction's nearest city instead; when the faction has no city left, its knights become unaffiliated
  * and its soldiers and supplies are lost.
  */
-export function runMovements(state: GameState): GameState {
-  const { state: departed, movements: setOff } = setOut(state)
+export function runMovements(state: GameState, random: () => number = Math.random): GameState {
+  const { state: departed, movements: setOff } = setOut(state, random)
   const characters: Record<string, CharacterState> = { ...departed.characters }
   const cities: Record<string, CityState> = { ...departed.cities }
   const movements: Movement[] = []

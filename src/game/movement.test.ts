@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { CHARACTER_MAP } from '../data/character'
 import {
   addMoveOrder, addOrder, addTransportOrder, availableKnights, cancelMoveOrder, cancelTransportOrder, charactersIn, createInitialState, endFactionTurn,
   awayReason, GameRuleError, governorOf, moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, orderProblem, resolveBattle, runMovements, soldiersLeft,
@@ -91,7 +92,7 @@ describe('move orders', () => {
 describe('the progress phase', () => {
   it('moves the knights, soldiers and supplies to a neighbouring city in a month', () => {
     const before = start()
-    // コンラート (046) is the lord of アンバリア: they leave it without one
+    // コンラート (046) is the lord of アンバリア: 013, the one left, follows them
     let state = addMoveOrder(before, move({ knights: ['046', '087'], troops: 300, supplies: 100 }))
     state = endStrategyPhase(state)
     expect(state.march?.moved).toBe(false)
@@ -99,7 +100,7 @@ describe('the progress phase', () => {
     expect(state.march?.moved).toBe(true)
     expect(charactersIn(state, VERSTA)).toEqual(['046', '058', '079', '087'])
     expect(charactersIn(state, AMBARIA)).toEqual(['013'])
-    expect(governorOf(state, AMBARIA)).toBeUndefined()
+    expect(governorOf(state, AMBARIA)).toBe('013')
     expect(state.cities[AMBARIA].troops).toBe(before.cities[AMBARIA].troops - 300)
     expect(state.cities[AMBARIA].storedSupplies).toBe(before.cities[AMBARIA].storedSupplies - 100)
     expect(state.cities[VERSTA].troops).toBe(before.cities[VERSTA].troops + 300)
@@ -262,5 +263,53 @@ describe('knights away', () => {
     expect(state.movements).toEqual([])
     expect(state.characters['013'].cityId).not.toBeNull()
     expect(state.cityOwners[state.characters['013'].cityId!]).toBe('leonis')
+  })
+})
+
+describe('a lord moving away', () => {
+  // アンバリア: 046 its lord, 013 and 087
+  const politics = (id: string) => CHARACTER_MAP[id].politics
+  const [higher, lower] = ['013', '087'].sort((a, b) => politics(b) - politics(a))
+  const invading = (state: GameState, id: string) =>
+    addOrder(state, { factionId: 'leonis', from: AMBARIA, to: FLUEN, commander: id, knights: [id] })
+  /** The lord 046 moves to ヴェルスタ and the moves set out */
+  const lordMoves = (state: GameState, random = () => 0) =>
+    runMovements(endStrategyPhase(addMoveOrder(state, move({ knights: ['046'] }))), random)
+
+  const saved = { ...CHARACTER_MAP['013'] }
+  afterEach(() => { CHARACTER_MAP['013'].politics = saved.politics })
+
+  it('stays the lord until the move sets out', () => {
+    expect(politics(higher)).toBeGreaterThan(politics(lower))
+    const state = addMoveOrder(start(), move({ knights: ['046'] }))
+    expect(governorOf(state, AMBARIA)).toBe('046')
+  })
+
+  it('is followed by the knight of the highest 政治 left', () => {
+    expect(governorOf(lordMoves(start()), AMBARIA)).toBe(higher)
+  })
+
+  it('is not followed by a knight on an invasion, nor one moving away', () => {
+    expect(governorOf(lordMoves(invading(start(), higher)), AMBARIA)).toBe(lower)
+    expect(governorOf(lordMoves(addMoveOrder(start(), move({ knights: [higher] }))), AMBARIA)).toBe(lower)
+    const both = addOrder(start(), { factionId: 'leonis', from: AMBARIA, to: FLUEN, commander: higher, knights: [higher, lower] })
+    expect(governorOf(lordMoves(both), AMBARIA)).toBeUndefined()
+  })
+
+  it('may be followed by a knight on a transport', () => {
+    const state = lordMoves(addTransportOrder(start(), transport({ knight: higher, to: P011 })))
+    expect(awayReason(state, higher)).toBe('輸送中')
+    expect(governorOf(state, AMBARIA)).toBe(higher)
+  })
+
+  it('is followed by one of the equals at random', () => {
+    CHARACTER_MAP['013'].politics = politics('087')
+    expect(governorOf(lordMoves(start(), () => 0), AMBARIA)).toBe('013')
+    expect(governorOf(lordMoves(start(), () => 0.99), AMBARIA)).toBe('087')
+  })
+
+  it('stays the lord on a transport', () => {
+    const state = runMovements(endStrategyPhase(addTransportOrder(start(), transport({ knight: '046' }))))
+    expect(governorOf(state, AMBARIA)).toBe('046')
   })
 })
