@@ -76,6 +76,9 @@ function movementDetails(game: GameState, m: Movement): ActionOrderDetail[] {
   ]
 }
 
+/** When an order was made: the serial its id ends with (order-12, move-13, transport-14; a movement keeps its order's id) */
+const orderedAt = (id: string) => Number(id.slice(id.lastIndexOf('-') + 1))
+
 /** A transport there and its knight riding back are both 輸送 on the list */
 const kindOf = (kind: MovementKind = 'move'): Item['kind'] => (kind === 'move' ? 'move' : 'transport')
 
@@ -89,7 +92,7 @@ function legStatus(kind: MovementKind = 'move', solo: boolean, arrives: boolean)
 /**
  * 行動予約: the player's invasions, moves and transports ordered this turn (cancellable on their turn), and their
  * moves and transports under way (from the city they set out from, with the months left; a transport's knight
- * riding back from where they unloaded). In the progress phase every order still to resolve and every faction's
+ * riding back from where they unloaded), in the order they were made: the first on top. In the progress phase every order still to resolve and every faction's
  * moves and transports of the month until they are made. The order picked opens its details (the knights' faces,
  * what it takes and the months). Hidden while there are none
  */
@@ -128,7 +131,7 @@ export function OrderList({ game, onCancel, onCancelMove, onCancelTransport, onS
           id: m.id, kind: kindOf(m.kind), city: m.from, from: cityName(m.from), to: cityName(m.to), knights: m.knights.map(knightName),
           status: `${m.kind === 'return' ? '帰還・' : ''}あと${m.monthsLeft}ヶ月`, members: members(game, m.knights), details: movementDetails(game, m),
         })),
-      ]
+      ].sort((a, b) => orderedAt(a.id) - orderedAt(b.id))
   if (items.length === 0) return null
   const cancel = (id: string) => {
     if (game.orders.some((o) => o.id === id)) onCancel(id)
