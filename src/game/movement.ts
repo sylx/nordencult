@@ -1,3 +1,4 @@
+import { CHARACTER_MAP } from '../data/character'
 import { mixMorale } from './army'
 import { successorLord, withGovernor, withoutAssignee } from './economy/domestic'
 import { GameRuleError } from './errors'
@@ -285,8 +286,9 @@ export function movementLegs(state: GameState): MoveLeg[] {
  * The moves of a progress phase, before its battles: the moves and transports ordered this turn set out (setOut:
  * the knights moving away leave their assignments in their city but still serve there until they arrive, a lord
  * moving away is followed by another, their soldiers and supplies are taken from it), then every
- * movement goes a month's way. Those arriving join their city: the knights serve there, the soldiers join its
- * own (their morale mixing) and the supplies its store. A transport's knight does not stay: they ride back alone
+ * movement goes a month's way. Those arriving join their city: the knights serve there (the head of the faction,
+ * 君主, moving in becomes its lord in place of the one there), the soldiers join its own (their morale mixing) and
+ * the supplies its store. A transport's knight does not stay: they ride back alone
  * to the city they set out from (serving there all the while), from the next month (returnOf). A movement whose city was lost heads for the
  * faction's nearest city instead; when the faction has no city left, its knights become unaffiliated
  * and its soldiers and supplies are lost.
@@ -317,6 +319,9 @@ export function runMovements(state: GameState, random: () => number = Math.rando
     const back = next.kind === 'transport' ? returnOf(departed, next) : null
     if (back) movements.push(back)
     else for (const id of next.knights) characters[id] = { ...characters[id], cityId: next.to }
+    // The head of the faction (君主) moving in becomes the lord of the city
+    const head = next.kind ? undefined : next.knights.find((id) => CHARACTER_MAP[id]?.isPatriarch && characters[id].factionId === next.factionId)
+    if (head) cities[next.to] = { ...cities[next.to], assignments: withGovernor(cities[next.to].assignments, head) }
   }
   return {
     ...departed, characters, cities, movements,

@@ -73,6 +73,7 @@ export function createInitialState(playerFactions: readonly FactionId[] = [DEFAU
     movements: [],
     march: null,
     lastBattle: null,
+    events: [],
     serial: 1,
   }
   return { ...state, activeFaction: turnOrder(state)[0] ?? null }

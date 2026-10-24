@@ -5,7 +5,7 @@ import {
   INITIAL_MORALE, invadeFromProblem, invasionTargets, MAX_SOLDIERS, neighbours, orderProblem, readPlayerFactions,
   resolveBattle, retreatCities, seasonOf, soldiersLeft, startNextBattle, turnOrder, unitAbilities, type ArmyUnit,
   decideInvasion, defaultUnitType, defenseKnights, defenseProblem, factionPower, finishEntry, formDefense, isPlayerTurn,
-  type InvasionOrder, type BattleSurvivor,
+  addMoveOrder, dismissEvent, type InvasionOrder, type BattleSurvivor,
   type BattleRetreat, type BattleWipeout, type GameState,
 } from '.'
 import { playing } from './testing'
@@ -683,5 +683,58 @@ describe('soldiers and defense', () => {
     // 087 stayed out of the army: losing the city, they retreat with the others
     const lost = resolveBattle(defended, pending.id, 'attacker')
     expect(lost.characters['087']).toMatchObject({ cityId: VERSTA, factionId: 'leonis' })
+  })
+})
+
+describe('the head of a faction and its fall', () => {
+  const SILVA = 'P026' // カルタ書院, next to フルーエン; 067 its lord
+  const ASHDAR = 'P000' // 法王府's only city
+  const ELDRAN = 'P013' // レオニス帝国, next to it
+
+  /** Plays on to the next turn's strategy phase of the same faction, the moves and battles (attackers winning) made */
+  const nextTurn = (state: GameState) => {
+    state = endStrategyPhase(state)
+    for (let next = startNextBattle(state); ; next = startNextBattle(state)) {
+      state = next
+      const battle = state.march?.current
+      if (!battle) return state
+      state = resolveBattle(state, battle.id, 'attacker')
+    }
+  }
+
+  it('the head (君主) moving to a city becomes its lord; another knight does not', () => {
+    expect(governorOf(playing('carta'), SILVA)).toBe('067')
+    let state = addMoveOrder(playing('carta'), { factionId: 'carta', from: FLUEN, to: SILVA, knights: ['015'], troops: 0, supplies: 0, solo: true })
+    expect(governorOf(nextTurn(state), SILVA)).toBe('067')
+
+    state = addMoveOrder(playing('carta'), { factionId: 'carta', from: FLUEN, to: SILVA, knights: ['029'], troops: 0, supplies: 0, solo: true })
+    state = nextTurn(state)
+    expect(state.characters['029'].cityId).toBe(SILVA)
+    expect(governorOf(state, SILVA)).toBe('029')
+    expect(governorOf(state, FLUEN)).not.toBe('029')
+  })
+
+  it('a faction losing its last city is destroyed: every knight of it becomes unaffiliated, and the event is told', () => {
+    const start = playing('leonis')
+    const knights = Object.keys(start.characters).filter((id) => start.characters[id].factionId === 'sede').sort()
+    expect(knights.length).toBeGreaterThan(0)
+    const marching = startNextBattle(endStrategyPhase(addOrder(start, { factionId: 'leonis', from: ELDRAN, to: ASHDAR, commander: '038', knights: ['038'] })))
+    const battle = marching.march!.current!
+    expect(battle.defender.factionId).toBe('sede')
+
+    const held = resolveBattle(marching, battle.id, 'defender')
+    expect(held.events).toEqual([])
+
+    const fallen = resolveBattle(marching, battle.id, 'attacker')
+    for (const id of knights) expect(fallen.characters[id]).toEqual({ cityId: null, factionId: null })
+    expect(fallen.events).toEqual([{
+      id: expect.any(String), kind: 'factionDestroyed', turn: 1, factionId: 'sede', cityId: ASHDAR, by: 'leonis', knights,
+    }])
+    expect(turnOrder(fallen)).not.toContain('sede')
+    // The march waits until the event is told
+    expect(startNextBattle(fallen)).toMatchObject({ turn: 2 })
+    const told = dismissEvent(fallen, fallen.events[0].id)
+    expect(told.events).toEqual([])
+    expect(dismissEvent(told, 'nope')).toBe(told)
   })
 })

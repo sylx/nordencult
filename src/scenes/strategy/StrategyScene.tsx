@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Banner, CITY_COMMAND_GROUPS, CUTIN_TEMPLATES, CityCommandScreen, ConfirmDialog, CutInLayer, DomesticScreen, FactionMark, InvasionScreen,
-  MapPickScreen, MoveScreen, ScreenHost, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
+  Banner, CITY_COMMAND_GROUPS, CUT_IMAGES, CUTIN_TEMPLATES, CityCommandScreen, ConfirmDialog, CutInLayer, DomesticScreen, EventScreen, FactionMark,
+  InvasionScreen, KnightChip, MapPickScreen, MoveScreen, ScreenHost, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
   type MoveDraft, type TransportDraft,
 } from 'norden-ui'
 import { MapView, type CityHighlight, type FocusInset, type RoadHighlight, type StrategyMap } from 'norden-strategy'
@@ -13,14 +13,14 @@ import {
   charactersIn, citiesOf, decideInvasion, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn,
   moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction,
   runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, stationedIn, suppliesLeft, transportFromProblem,
-  transportOrderProblem, useGame, viewFaction, type CityId, type DefenseDraft, type FactionId, type GameState, type InvasionOrder,
+  transportOrderProblem, dismissEvent, useGame, viewFaction, type CityId, type DefenseDraft, type FactionId, type GameState, type InvasionOrder,
   type MoveOrder, type TransportOrder,
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import {
   UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
-  mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, turnView, unitPower,
+  eventView, mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
 
@@ -145,6 +145,26 @@ export default function StrategyScene() {
       cutInQueue.clear()
     }
   }, [ready, announcing, phaseKey, game.phase, game.turn, cutInQueue])
+
+  // An event (a faction destroyed) is told by its cut-in, then its notice until the player closes it; the march waits
+  const event = game.events[0] ?? null
+  const told = useMemo(() => (event ? eventView(event) : null), [event])
+  const [eventCut, setEventCut] = useState<string | null>(null)
+  const eventId = event?.id
+  const eventCutIn = told?.cutIn
+  useEffect(() => {
+    if (!ready || announcing || !eventId || !eventCutIn || eventCut === eventId) return
+    let cancelled = false
+    const template = CUTIN_TEMPLATES[eventCutIn.template]
+    const played = template ? cutInQueue.play(template, { text: eventCutIn.text, subText: eventCutIn.subText }) : Promise.resolve()
+    played
+      .catch((error: unknown) => console.warn('カットインを再生できません', error))
+      .then(() => { if (!cancelled) setEventCut(eventId) })
+    return () => {
+      cancelled = true
+      cutInQueue.clear()
+    }
+  }, [ready, announcing, eventId, eventCutIn, eventCut, cutInQueue])
 
   // Ordering belongs to the player's turn
   useEffect(() => {
@@ -297,7 +317,7 @@ export default function StrategyScene() {
   }, [map, game.phase, moved, announcing, legs, update])
 
   // Progress phase, after the moves: take the next order (or start the next turn when none is left)
-  const waiting = Boolean(battle || entry || decision)
+  const waiting = Boolean(battle || entry || decision || event)
   useEffect(() => {
     if (!ready || game.phase !== 'march' || !moved || waiting || announcing) return
     const timer = setTimeout(() => update((s) => (s.phase === 'march' ? startNextBattle(s) : s)), MARCH_PAUSE_MS)
@@ -544,6 +564,14 @@ export default function StrategyScene() {
           confirmLabel="侵攻を続ける" cancelLabel="侵攻を中止"
           onConfirm={() => update((s) => (s.march?.decision === decision.id ? decideInvasion(s, decision.id, true) : s))}
           onCancel={() => update((s) => (s.march?.decision === decision.id ? decideInvasion(s, decision.id, false) : s))} />
+      )}
+      {event && told && eventCut === event.id && (
+        <EventScreen image={CUT_IMAGES[told.cut] ?? ''} title={told.title} message={told.message} details={told.details}
+          onClose={() => update((s) => dismissEvent(s, event.id))}>
+          {told.knights.length > 0 && (
+            <p className="norden-event-chips">{told.knights.map((id) => <KnightChip key={id} knight={knightView(game, id)} />)}</p>
+          )}
+        </EventScreen>
       )}
       <CutInLayer cutIn={cutIn} />
     </div>

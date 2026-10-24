@@ -2,7 +2,8 @@ import { createElement } from 'react'
 import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import type {
-  BuildOptionView, BuildingView, CityStatView, CityView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, FactionSummaryView, FactionView, InvasionAssignment, KnightView, PopulationGrowthView, TurnView, UnitTypeView,
+  BuildOptionView, BuildingView, CityStatView, CityView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, EventDetail, FactionSummaryView, FactionView,
+  InvasionAssignment, KnightView, PopulationGrowthView, TurnView, UnitTypeView,
 } from 'norden-ui'
 import type { MapCity, MapSeason, PlaceType } from 'norden-strategy'
 import buildingSheet from '../../assets/buildings.webp'
@@ -17,7 +18,7 @@ import {
   assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
   FUNDED_ROLES, governorOf, officerTraining,
   MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, seasonOf, tierOf, transportOrderOf, treasuryForecast, turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type AssignmentRole, type CityLogStat,
-  type GameState, type Season,
+  type GameEvent, type GameState, type Season,
 } from '../../game'
 
 /** The game state turned into the view types norden-ui's screens draw */
@@ -311,6 +312,32 @@ export function officerEffects(game: GameState, cityId: string): Partial<Record<
 export function dateLabel(turn: number) {
   const { year, month } = dateOf(turn)
   return `灰歴${year}年${month}月 ${seasonOf(month)}`
+}
+
+/** How an event is told: the cut-in (its template and texts), then the notice (its cut, words and the knights it concerns) */
+export interface EventView {
+  cutIn: { template: string; text: string; subText: string }
+  cut: string
+  title: string
+  message: string
+  details: EventDetail[]
+  knights: readonly string[]
+}
+
+export function eventView(event: GameEvent): EventView {
+  const faction = FACTION_MAP[event.factionId]?.name ?? event.factionId
+  return {
+    cutIn: { template: 'faction_destruction', text: `${faction}滅亡`, subText: dateLabel(event.turn) },
+    cut: 'faction_destruction',
+    title: '勢力滅亡',
+    message: `${faction}は${cityName(event.cityId)}を失い、滅亡しました。`,
+    details: [
+      { label: '最後の拠点', value: cityName(event.cityId) },
+      { label: '攻め落とした勢力', value: FACTION_MAP[event.by]?.name ?? event.by },
+      { label: '在野になった騎士', value: event.knights.length > 0 ? `${event.knights.length}人` : 'なし' },
+    ],
+    knights: event.knights,
+  }
 }
 
 const MAP_SEASONS: Readonly<Record<Season, MapSeason>> = { 春: 'spring', 夏: 'summer', 秋: 'autumn', 冬: 'winter' }

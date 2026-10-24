@@ -9,7 +9,7 @@ import {
 } from './queries'
 import type {
   ArmyUnit, Battle, BattleEndReason, BattleReport, BattleRetreat, BattleSide, BattleSurvivor, BattleWinner, BattleWipeout, CharacterId,
-  CharacterMove, CharacterState, CityId, CityState, DefenseDraft, Entry, GameState, GovernorAppointment, InvasionOrder, SoldierReturn,
+  CharacterMove, CharacterState, CityId, CityState, DefenseDraft, Entry, FactionDestroyed, FactionId, GameState, GovernorAppointment, InvasionOrder, SoldierReturn,
 } from './types'
 import { neighbours } from './world'
 
@@ -398,5 +398,29 @@ export function resolveBattle(
     battle, winner, reason, cityCaptured: winner === 'attacker', moves, retreats: [...retreats], wipeouts: [...wipeouts], governors,
     captives, soldiers,
   }
-  return { ...state, cityOwners, characters, cities, march: { ...state.march, current: null }, lastBattle: report }
+  const resolved: GameState = { ...state, cityOwners, characters, cities, march: { ...state.march, current: null }, lastBattle: report }
+  const lost = defender.factionId
+  return winner === 'attacker' && lost && !Object.values(cityOwners).includes(lost)
+    ? destroyFaction(resolved, lost, cityId, attacker.factionId, Object.keys(state.characters).filter((id) => state.characters[id].factionId === lost))
+    : resolved
 }
+
+/**
+ * A faction that lost its last city (`cityId`, to `by`) is destroyed: every knight of it (`knights`, as the battle
+ * started: some went unaffiliated in it) becomes unaffiliated (在野), prisoners and those on a move or a transport
+ * too (their movements end), and the event is told (FactionDestroyed)
+ */
+function destroyFaction(state: GameState, factionId: FactionId, cityId: CityId, by: FactionId, served: readonly CharacterId[]): GameState {
+  const knights = [...served].sort()
+  const characters: Record<string, CharacterState> = { ...state.characters }
+  for (const id of Object.keys(characters)) if (characters[id].factionId === factionId) characters[id] = { cityId: null, factionId: null }
+  const event: FactionDestroyed = { id: `event-${state.serial}`, kind: 'factionDestroyed', turn: state.turn, factionId, cityId, by, knights }
+  return {
+    ...state, characters, movements: state.movements.filter((m) => m.factionId !== factionId),
+    events: [...state.events, event], serial: state.serial + 1,
+  }
+}
+
+/** The event told to the player is dropped */
+export const dismissEvent = (state: GameState, eventId: string): GameState =>
+  (state.events.some((e) => e.id === eventId) ? { ...state, events: state.events.filter((e) => e.id !== eventId) } : state)

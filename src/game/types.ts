@@ -46,6 +46,8 @@ export interface GameState {
   march: MarchState | null
   /** The latest battle's outcome (for the result screen) */
   lastBattle: BattleReport | null
+  /** Events to tell the player (a cut-in, then a notice each), oldest first; each is dropped once told (dismissEvent) */
+  events: readonly GameEvent[]
   /** Next number for order and battle ids */
   serial: number
 }
@@ -454,3 +456,19 @@ export interface BattleReport {
   /** Soldiers each city got after the battle, in the order they got there */
   soldiers: readonly SoldierReturn[]
 }
+
+/** A faction lost its last city (in a battle) and is no more: every knight of it became unaffiliated (在野) */
+export interface FactionDestroyed {
+  id: string
+  kind: 'factionDestroyed'
+  turn: number
+  factionId: FactionId
+  /** Its last city */
+  cityId: CityId
+  /** The faction that took it */
+  by: FactionId
+  /** Its knights, unaffiliated now */
+  knights: readonly CharacterId[]
+}
+
+export type GameEvent = FactionDestroyed
