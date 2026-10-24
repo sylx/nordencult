@@ -4,7 +4,7 @@ import { withoutAssignee } from './economy/domestic'
 import { runEconomy } from './economy/runEconomy'
 import { GameRuleError } from './errors'
 import { runMovements } from './movement'
-import { commandRank, leadingKnight, orderProblem, ownerOf, retreatCities, turnOrder } from './queries'
+import { commandRank, leadingKnight, movementOf, orderProblem, ownerOf, retreatCities, stationedIn, turnOrder } from './queries'
 import type {
   Battle, BattleEndReason, BattleReport, BattleRetreat, BattleSide, BattleWinner, BattleWipeout, CharacterId, CharacterMove, CharacterState,
   CityId, CityState, GameState, GovernorAppointment, InvasionOrder,
@@ -89,8 +89,8 @@ function createBattle(state: GameState, order: InvasionOrder): Battle | null {
   const units = (order.units ?? knights.map((id) => ({ knightId: id, unitType: defaultUnitType(id), soldiers: MAX_SOLDIERS })))
     .filter((u) => u.knightId === null || knights.includes(u.knightId))
   const defender = ownerOf(state, to) ?? null
-  const defenders = Object.keys(state.characters).sort()
-    .filter((id) => state.characters[id].cityId === to && state.characters[id].factionId === defender)
+  // Knights away on a move or a transport do not defend
+  const defenders = stationedIn(state, to).filter((id) => state.characters[id].factionId === defender)
   return {
     id: `battle-${state.serial}`,
     orderId: order.id,
@@ -180,6 +180,12 @@ export function resolveBattle(
       if (left.has(id) || characters[id].cityId !== cityId || characters[id].factionId !== defender.factionId) continue
       move(id, refuge ? 'retreat' : 'wander', refuge ?? null)
     }
+    // Knights away on a move or a transport no longer serve in the city lost: they go on to where they were heading
+    for (const id of Object.keys(characters)) {
+      if (characters[id].cityId === cityId && characters[id].factionId !== attacker.factionId && movementOf(state, id)) {
+        characters[id] = { ...characters[id], cityId: null }
+      }
+    }
   } else {
     for (const id of attacker.knights) if (!left.has(id)) move(id, 'return', attacker.from)
   }
@@ -193,7 +199,8 @@ export function resolveBattle(
     const city = cities[target]
     const owner = cityOwners[target]
     if (!city || !owner || city.assignments.governor) return
-    const here = Object.keys(characters).filter((id) => characters[id].cityId === target && characters[id].factionId === owner)
+    const here = Object.keys(characters)
+      .filter((id) => characters[id].cityId === target && characters[id].factionId === owner && !movementOf(state, id))
     if (here.length === 0) return
     const commander = battle[side].commander
     const governor = commander && here.includes(commander) ? commander : here[Math.floor(random() * here.length)]

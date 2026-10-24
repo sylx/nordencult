@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   addMoveOrder, addOrder, addTransportOrder, availableKnights, cancelMoveOrder, cancelTransportOrder, charactersIn, createInitialState, endFactionTurn,
-  GameRuleError, governorOf, moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, orderProblem, runMovements, soldiersLeft,
+  awayReason, GameRuleError, governorOf, moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, orderProblem, resolveBattle, runMovements, soldiersLeft,
   startNextBattle, suppliesLeft, transportFromProblem, transportOrderProblem, type GameState, type MoveOrder, type TransportOrder,
 } from '.'
 
@@ -108,11 +108,17 @@ describe('the progress phase', () => {
     expect(state.movements).toEqual([])
   })
 
-  it('takes a month two cities, the knights in no city on the way', () => {
+  it('takes a month two cities, the knights serving where they set out from on the way, away from it', () => {
     let state = addMoveOrder(start(), move({ to: P011, troops: 200 }))
     state = nextTurn(state)
     expect(state.turn).toBe(2)
-    expect(state.characters['013']).toEqual({ cityId: null, factionId: 'leonis' })
+    expect(state.characters['013']).toEqual({ cityId: AMBARIA, factionId: 'leonis' })
+    expect(charactersIn(state, AMBARIA)).toContain('013')
+    expect(availableKnights(state, AMBARIA)).not.toContain('013')
+    expect(awayReason(state, '013')).toBe('移動中')
+    expect(moveOrderProblem(state, move())).toBe('013 は移動中です')
+    expect(transportOrderProblem(state, transport())).toBe('013 は移動中です')
+    expect(orderProblem(state, { factionId: 'leonis', from: AMBARIA, to: FLUEN, commander: '013', knights: ['013'] })).toBe('013 は移動中です')
     expect(state.movements).toMatchObject([{ from: AMBARIA, route: [P010, P011], monthsLeft: 1, troops: 200 }])
     state = nextTurn(state)
     expect(state.movements).toEqual([])
@@ -198,8 +204,10 @@ describe('transports in the progress phase', () => {
     expect(state.cities[VERSTA].troops).toBe(before.cities[VERSTA].troops + 300)
     expect(state.cities[VERSTA].storedSupplies).toBe(before.cities[VERSTA].storedSupplies + 100)
     expect(state.transportOrders).toEqual([])
-    // Not serving in ヴェルスタ: on the way back
-    expect(state.characters['013']).toEqual({ cityId: null, factionId: 'leonis' })
+    // Not serving in ヴェルスタ: still アンバリア's, on the way back
+    expect(state.characters['013']).toEqual({ cityId: AMBARIA, factionId: 'leonis' })
+    expect(charactersIn(state, VERSTA)).not.toContain('013')
+    expect(awayReason(state, '013')).toBe('輸送中')
     expect(state.movements).toMatchObject([{ kind: 'return', from: VERSTA, to: AMBARIA, solo: true, troops: 0, supplies: 0, monthsLeft: 1 }])
     while (state.phase === 'march') state = startNextBattle(state)
     state = endStrategyPhase(state)
@@ -225,5 +233,34 @@ describe('transports in the progress phase', () => {
     state = runMovements(endStrategyPhase(state))
     expect(state.cities[P010].troops).toBe(p010.troops + 300)
     expect(state.movements).toMatchObject([{ kind: 'return', from: P010, to: AMBARIA }])
+  })
+})
+
+describe('knights away', () => {
+  /** 013 rides back from P011 to アンバリア (a transport there) when カルタ書院 invades アンバリア from フルーエン */
+  function invadedWhileAway() {
+    let state = nextTurn(addTransportOrder(start(), transport({ to: P011 })))
+    while (state.activeFaction !== 'carta') state = endFactionTurn(state)
+    state = addOrder(state, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015'] })
+    return startNextBattle(endStrategyPhase(state))
+  }
+
+  it('do not defend the city they serve in', () => {
+    const state = invadedWhileAway()
+    expect(state.movements).toMatchObject([{ kind: 'return', knights: ['013'] }])
+    expect(state.characters['013'].cityId).toBe(AMBARIA)
+    expect(state.march?.current?.defender.knights).not.toContain('013')
+    expect(state.march?.current?.defender.knights).toContain('046')
+  })
+
+  it('no longer serve in their city when it is lost, and go on to the nearest city of their faction', () => {
+    let state = invadedWhileAway()
+    state = resolveBattle(state, state.march!.current!.id, 'attacker')
+    expect(state.characters['013']).toEqual({ cityId: null, factionId: 'leonis' })
+    expect(charactersIn(state, AMBARIA)).not.toContain('013')
+    state = nextTurn(nextTurn(state))
+    expect(state.movements).toEqual([])
+    expect(state.characters['013'].cityId).not.toBeNull()
+    expect(state.cityOwners[state.characters['013'].cityId!]).toBe('leonis')
   })
 })

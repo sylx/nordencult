@@ -12,7 +12,7 @@ import {
   MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
   charactersIn, citiesOf, demolishBuilding, domesticProblem, endFactionTurn, invadeFromProblem, isPlayerTurn, moveFromProblem, moveMonths, moveOrderProblem,
   moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, pauseConstruction, runMovements, setAffairsBudget, setOfficers, soldiersLeft,
-  startConstruction, startNextBattle, suppliesLeft, transportFromProblem, transportOrderProblem, useGame, type CityId, type FactionId, type InvasionOrder,
+  startConstruction, startNextBattle, stationedIn, suppliesLeft, transportFromProblem, transportOrderProblem, useGame, type CityId, type FactionId, type InvasionOrder,
   type MoveOrder, type TransportOrder,
 } from '../../game'
 import { useScene } from '../sceneContext'
@@ -409,7 +409,7 @@ export default function StrategyScene() {
           />
         ),
         invasion: ({ from, to }) => (
-          <InvasionScreen from={cityView(game, from)} to={cityView(game, to)} defenders={charactersIn(game, to).length}
+          <InvasionScreen from={cityView(game, from)} to={cityView(game, to)} defenders={stationedIn(game, to).length}
             knights={charactersIn(game, from).map((id) => knightView(game, id))} unitTypes={UNIT_TYPE_VIEWS}
             indirectUnitTypes={INDIRECT_UNIT_TYPES} maxUnits={MAX_UNITS} maxSoldiers={MAX_SOLDIERS} soldierPool={soldiersLeft(game, from)}
             morale={game.cities[from].troopMorale} unitPower={(unit, commander) => unitPower(game, from, unit, commander)}

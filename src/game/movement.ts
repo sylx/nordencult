@@ -1,7 +1,7 @@
 import { mixMorale } from './army'
 import { withoutAssignee } from './economy/domestic'
 import { GameRuleError } from './errors'
-import { availableKnights, citiesOf, moveOrderOf, orderOf, ownerOf, soldiersLeft, suppliesLeft, transportOrderOf } from './queries'
+import { availableKnights, awayReason, citiesOf, moveOrderOf, orderOf, ownerOf, soldiersLeft, suppliesLeft, transportOrderOf } from './queries'
 import type { CharacterState, CityId, CityState, FactionId, GameState, MoveLeg, MoveOrder, Movement, MovementKind, TransportOrder } from './types'
 import { neighbours } from './world'
 
@@ -9,6 +9,8 @@ import { neighbours } from './world'
  * Moves (移動): knights going from a city of their faction to another, with soldiers and supplies or alone (単騎移動).
  * Ordered in the strategy phase, they set out at the start of the progress phase and go a month's way in each
  * progress phase, before the battles: knights arriving defend their new city in that month's battles.
+ * On the way the knights still serve in the city they set out from (listed there, but away: they do not defend it
+ * and cannot be given orders), until they get where they are going.
  * Transports (輸送) go the same way as a move with soldiers and supplies: a knight takes them to another city of
  * the faction, unloads them there and rides back alone (as 単騎移動) to the city they set out from.
  */
@@ -84,6 +86,8 @@ export function moveOrderProblem(state: GameState, draft: Omit<MoveOrder, 'id'>)
   for (const id of knights) {
     const character = state.characters[id]
     if (!character || character.cityId !== from || character.factionId !== factionId) return `${id} は出発拠点の騎士ではありません`
+    const away = awayReason(state, id)
+    if (away) return `${id} は${away}です`
     if (orderOf(state, id)) return `${id} は侵攻を予約しています`
     if (moveOrderOf(state, id)) return `${id} はすでに移動を予約しています`
     if (transportOrderOf(state, id)) return `${id} は輸送を予約しています`
@@ -134,6 +138,8 @@ export function transportOrderProblem(state: GameState, draft: Omit<TransportOrd
   if (!knight) return '担当の騎士を選んでください'
   const character = state.characters[knight]
   if (!character || character.cityId !== from || character.factionId !== factionId) return `${knight} は出発拠点の騎士ではありません`
+  const away = awayReason(state, knight)
+  if (away) return `${knight} は${away}です`
   if (orderOf(state, knight)) return `${knight} は侵攻を予約しています`
   if (moveOrderOf(state, knight)) return `${knight} は移動を予約しています`
   if (transportOrderOf(state, knight)) return `${knight} はすでに輸送を予約しています`
@@ -232,10 +238,7 @@ function setOut(state: GameState): { state: GameState; movements: Movement[] } {
     const troops = Math.min(order.troops, city.troops)
     const supplies = Math.min(order.supplies, city.storedSupplies)
     let assignments = city.assignments
-    for (const id of knights) {
-      assignments = withoutAssignee(assignments, id)
-      characters[id] = { ...characters[id], cityId: null }
-    }
+    for (const id of knights) assignments = withoutAssignee(assignments, id)
     cities[from] = { ...city, troops: city.troops - troops, storedSupplies: city.storedSupplies - supplies, assignments }
     movements.push({
       ...order, ...(kind !== 'move' && { kind }), knights, troops, supplies, troopMorale: city.troopMorale, route,
@@ -264,10 +267,11 @@ export function movementLegs(state: GameState): MoveLeg[] {
 
 /**
  * The moves of a progress phase, before its battles: the moves and transports ordered this turn set out (their
- * knights leave their city and their assignments there, their soldiers and supplies are taken from it), then every
+ * knights leave their assignments in their city but still serve there until they arrive, their soldiers and
+ * supplies are taken from it), then every
  * movement goes a month's way. Those arriving join their city: the knights serve there, the soldiers join its
  * own (their morale mixing) and the supplies its store. A transport's knight does not stay: they ride back alone
- * to the city they set out from, from the next month (returnOf). A movement whose city was lost heads for the
+ * to the city they set out from (serving there all the while), from the next month (returnOf). A movement whose city was lost heads for the
  * faction's nearest city instead; when the faction has no city left, its knights become unaffiliated
  * and its soldiers and supplies are lost.
  */

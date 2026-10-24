@@ -1,7 +1,7 @@
 import { CHARACTER_MAP } from '../data/character'
 import { INDIRECT_UNIT_TYPES, UNIT_TYPE_MAP } from '../data/unitTypes'
 import { MAX_SOLDIERS, MAX_UNITS, unitTypesOf } from './army'
-import type { ArmyUnit, Battle, BattleSide, CharacterId, CityId, FactionId, GameState, InvasionOrder, MoveOrder, TransportOrder } from './types'
+import type { ArmyUnit, Battle, BattleSide, CharacterId, CityId, FactionId, GameState, InvasionOrder, MoveOrder, Movement, TransportOrder } from './types'
 import { CITY_IDS, FACTION_IDS, areNeighbours, neighbours } from './world'
 
 /** The faction of a city; undefined when neutral */
@@ -44,10 +44,25 @@ export function turnOrder(state: GameState): FactionId[] {
 export const citiesOf = (state: GameState, factionId: FactionId): CityId[] =>
   CITY_IDS.filter((id) => state.cityOwners[id] === factionId)
 
-/** Characters serving in a city, in id order */
+/** Characters serving in a city, in id order, those away on a move or a transport included */
 export function charactersIn(state: GameState, cityId: CityId): CharacterId[] {
   return Object.keys(state.characters).filter((id) => state.characters[id].cityId === cityId).sort()
 }
+
+/** The move or transport (there or riding back) a character is away on, if any */
+export const movementOf = (state: GameState, characterId: CharacterId): Movement | undefined =>
+  state.movements.find((m) => m.knights.includes(characterId))
+
+/** 移動中 or 輸送中 (a transport's knight riding back too) for a character away on a movement, or null */
+export function awayReason(state: GameState, characterId: CharacterId): string | null {
+  const movement = movementOf(state, characterId)
+  if (!movement) return null
+  return movement.kind ? '輸送中' : '移動中'
+}
+
+/** Characters in a city now, in id order: those serving there and not away (they defend it) */
+export const stationedIn = (state: GameState, cityId: CityId): CharacterId[] =>
+  charactersIn(state, cityId).filter((id) => !movementOf(state, id))
 
 /** The order a character is part of, if any */
 export const orderOf = (state: GameState, characterId: CharacterId): InvasionOrder | undefined =>
@@ -61,9 +76,9 @@ export const moveOrderOf = (state: GameState, characterId: CharacterId): MoveOrd
 export const transportOrderOf = (state: GameState, characterId: CharacterId): TransportOrder | undefined =>
   state.transportOrders.find((o) => o.knight === characterId)
 
-/** Characters of a city not yet sent on an invasion, a move or a transport */
+/** Characters in a city not yet sent on an invasion, a move or a transport */
 export const availableKnights = (state: GameState, cityId: CityId): CharacterId[] =>
-  charactersIn(state, cityId).filter((id) => !orderOf(state, id) && !moveOrderOf(state, id) && !transportOrderOf(state, id))
+  stationedIn(state, cityId).filter((id) => !orderOf(state, id) && !moveOrderOf(state, id) && !transportOrderOf(state, id))
 
 /** Cities a faction can invade from a city: joined by a road and not its own (neutral ones too) */
 export function invasionTargets(state: GameState, from: CityId): CityId[] {
@@ -153,6 +168,8 @@ export function orderProblem(state: GameState, draft: Omit<InvasionOrder, 'id'>)
     if (!character || character.cityId !== from || character.factionId !== factionId) {
       return `${id} は出発拠点の騎士ではありません`
     }
+    const away = awayReason(state, id)
+    if (away) return `${id} は${away}です`
     if (orderOf(state, id)) return `${id} はすでに別の侵攻に加わっています`
     if (moveOrderOf(state, id)) return `${id} は移動を予約しています`
     if (transportOrderOf(state, id)) return `${id} は輸送を予約しています`

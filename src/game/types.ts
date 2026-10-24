@@ -50,7 +50,10 @@ export interface GameState {
 }
 
 export interface CharacterState {
-  /** City they serve in; null when unaffiliated (在野), or on their way to a city of their faction (GameState.movements: a move or a transport) */
+  /**
+   * City they serve in; null when unaffiliated (在野). On a move or a transport (GameState.movements) they still serve in
+   * the city they set out from, away from it (movementOf), until they get where they are going; null when that city was lost
+   */
   cityId: CityId | null
   /** Faction they serve; null when unaffiliated */
   factionId: FactionId | null

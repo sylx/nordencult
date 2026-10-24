@@ -2,7 +2,7 @@ import { BUILDING_MAP, upgradesOf } from '../../data/buildings'
 import { CITY_MAP } from '../../data/city'
 import { mixMorale } from '../army'
 import { GameRuleError } from '../errors'
-import { moveOrderOf, orderOf, ownerOf, transportOrderOf } from '../queries'
+import { awayReason, moveOrderOf, orderOf, ownerOf, transportOrderOf } from '../queries'
 import type { AssignmentRole, CharacterId, CityAssignments, CityId, CityState, FundedRole, GameState, OfficerRole } from '../types'
 import { AFFAIRS_BUDGET_LIMIT, OFFICERS_PER_ROLE, RECRUIT_GOLD } from './balance'
 import { cityOutput } from './output'
@@ -62,6 +62,8 @@ export function assignmentProblem(state: GameState, cityId: CityId, characterId:
   if (problem) return problem
   const character = state.characters[characterId]
   if (character?.cityId !== cityId || character.factionId !== ownerOf(state, cityId)) return `${characterId} はこの都市の騎士ではありません`
+  const away = awayReason(state, characterId)
+  if (away) return `${away}です`
   if (orderOf(state, characterId)) return '出撃予約中です'
   if (moveOrderOf(state, characterId)) return '移動予約中です'
   if (transportOrderOf(state, characterId)) return '輸送予約中です'
