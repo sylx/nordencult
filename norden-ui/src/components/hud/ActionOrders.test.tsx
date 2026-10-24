@@ -58,4 +58,15 @@ describe('ActionOrders', () => {
     await userEvent.click(screen.getByRole('button', { name: '地図' }))
     expect(onDeactivate).toHaveBeenCalledTimes(1)
   })
+
+  it('opens the details of the active order only', () => {
+    const details = [{ label: '兵', value: '300' }, { label: '物資', value: '100' }]
+    const orders = ORDERS.map(order => ({ ...order, details }))
+    const { rerender } = render(<ActionOrders orders={orders} onSelect={() => {}} />)
+    expect(screen.queryByRole('term')).not.toBeInTheDocument()
+    rerender(<ActionOrders orders={orders} onSelect={() => {}} activeId="o4" />)
+    const list = screen.getByLabelText('フルーエンからドルンへの輸送の詳細')
+    expect(within(list).getAllByRole('term').map(term => term.textContent)).toEqual(['兵', '物資'])
+    expect(within(list).getAllByRole('definition').map(value => value.textContent)).toEqual(['300', '100'])
+  })
 })

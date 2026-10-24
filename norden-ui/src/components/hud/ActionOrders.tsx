@@ -8,6 +8,12 @@ import './ActionOrders.css'
 
 export type ActionOrderKind = 'invasion' | 'move' | 'transport'
 
+/** A line of an order's details, e.g. 兵 300 */
+export interface ActionOrderDetail {
+  label: string
+  value: string
+}
+
 /** An order on the list: an invasion (侵攻), a move (移動) or a transport (輸送), this turn's or one still under way */
 export interface ActionOrderView {
   id: string
@@ -25,6 +31,8 @@ export interface ActionOrderView {
   cancellable?: boolean
   /** The order being resolved: highlighted */
   current?: boolean
+  /** What the order takes and when it gets there (soldiers, supplies, route, months…), shown under it while it is active */
+  details?: readonly ActionOrderDetail[]
 }
 
 export interface ActionOrdersProps {
@@ -55,7 +63,8 @@ function knightsText({ kind, knights }: ActionOrderView) {
 /**
  * 行動予約: the invasions, moves and transports ordered, one row each: the route, the knights, and 取消 for those that
  * can still be taken back (a move or transport under way shows its months left instead). Also lists the orders of a progress
- * phase, every faction's, with their emblems and the one being resolved highlighted.
+ * phase, every faction's, with their emblems and the one being resolved highlighted. The active order (picked with
+ * its route) opens its details under it.
  */
 export default function ActionOrders({
   orders, title = '行動予約', emptyLabel = '予約はありません', onCancel, onSelect, activeId = null, onDeactivate, className = '', style,
@@ -99,6 +108,16 @@ export default function ActionOrders({
                     <span className="norden-action-orders-knights-label">{knights.label}</span>
                     {knights.text}
                   </span>
+                  {active && order.details && order.details.length > 0 && (
+                    <dl className="norden-action-orders-details" aria-label={`${order.from}から${order.to}への${kind}の詳細`}>
+                      {order.details.map(detail => (
+                        <div key={detail.label} className="norden-action-orders-detail">
+                          <dt>{detail.label}</dt>
+                          <dd>{detail.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
                   {(order.status || (order.cancellable && onCancel)) && (
                     <span className="norden-action-orders-aside">
                       {order.status && <span className="norden-action-orders-status">{order.status}</span>}

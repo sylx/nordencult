@@ -19,7 +19,7 @@
 .norden-action-orders-item {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas: 'kind route aside' '. knights aside';
+  grid-template-areas: 'kind route aside' '. knights aside' 'details details details';
   align-items: center;
   column-gap: 8px;
   row-gap: 2px;
@@ -73,6 +73,24 @@ button.norden-action-orders-route:focus-visible { outline: 2px solid #ffe08a; ou
 
 .norden-action-orders-knights { grid-area: knights; min-width: 0; font-size: 12px; line-height: 1.5; color: #e6d8b8; overflow-wrap: anywhere; }
 .norden-action-orders-knights-label { margin-right: 6px; color: #a8946e; }
+
+/* The active order's details: label and value in two columns, across the row */
+.norden-action-orders-details {
+  grid-area: details;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 10px;
+  row-gap: 2px;
+  margin: 6px 0 0;
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  background: rgb(0 0 0 / 0.25);
+  border-radius: 3px;
+}
+.norden-action-orders-detail { display: contents; }
+.norden-action-orders-detail dt { color: #a8946e; white-space: nowrap; }
+.norden-action-orders-detail dd { margin: 0; min-width: 0; color: #f2e6c8; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 
 .norden-action-orders-aside { grid-area: aside; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .norden-action-orders-status { font-size: 12px; color: #c8b490; white-space: nowrap; }

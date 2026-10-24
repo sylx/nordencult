@@ -21,7 +21,7 @@ export type { DateBarProps } from './components/hud/DateBar'
 export { default as FactionBar } from './components/hud/FactionBar'
 export type { FactionBarProps } from './components/hud/FactionBar'
 export { default as ActionOrders } from './components/hud/ActionOrders'
-export type { ActionOrderKind, ActionOrderView, ActionOrdersProps } from './components/hud/ActionOrders'
+export type { ActionOrderDetail, ActionOrderKind, ActionOrderView, ActionOrdersProps } from './components/hud/ActionOrders'
 
 // Basic components: parts
 export { default as Card } from './components/parts/Card'
