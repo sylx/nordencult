@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import Button from '../parts/Button'
 import FactionMark from '../parts/FactionMark'
+import KnightChip from '../parts/KnightChip'
+import type { KnightCardData } from '../parts/KnightCard'
 import ThinFrameWithTitle from '../parts/ThinFrameWithTitle'
 import type { FactionView } from '../../screens/types'
 import './ActionOrders.css'
@@ -13,6 +15,9 @@ export interface ActionOrderDetail {
   label: string
   value: string
 }
+
+/** A knight of an order with their face, shown in its details; `note` e.g. 軍団長 */
+export type ActionOrderMember = Pick<KnightCardData, 'name' | 'portrait' | 'portraitSrc'> & { note?: string }
 
 /** An order on the list: an invasion (侵攻), a move (移動) or a transport (輸送), this turn's or one still under way */
 export interface ActionOrderView {
@@ -31,8 +36,10 @@ export interface ActionOrderView {
   cancellable?: boolean
   /** The order being resolved: highlighted */
   current?: boolean
-  /** What the order takes and when it gets there (soldiers, supplies, route, months…), shown under it while it is active */
+  /** What the order takes and when it gets there (soldiers, supplies, months…), shown under it while it is active */
   details?: readonly ActionOrderDetail[]
+  /** The knights with their faces (KnightChip), shown above the details while it is active */
+  members?: readonly ActionOrderMember[]
 }
 
 export interface ActionOrdersProps {
@@ -108,16 +115,27 @@ export default function ActionOrders({
                     <span className="norden-action-orders-knights-label">{knights.label}</span>
                     {knights.text}
                   </span>
-                  {active && order.details && order.details.length > 0 && (
-                    <dl className="norden-action-orders-details" aria-label={`${order.from}から${order.to}への${kind}の詳細`}>
-                      {order.details.map(detail => (
-                        <div key={detail.label} className="norden-action-orders-detail">
-                          <dt>{detail.label}</dt>
-                          <dd>{detail.value}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  )}
+                  {active && (order.details?.length || order.members?.length) ? (
+                    <div className="norden-action-orders-details" role="group" aria-label={`${order.from}から${order.to}への${kind}の詳細`}>
+                      {order.members && order.members.length > 0 && (
+                        <ul className="norden-action-orders-members" aria-label="騎士">
+                          {order.members.map((member, index) => (
+                            <li key={`${index}-${member.name}`}><KnightChip knight={member} note={member.note} /></li>
+                          ))}
+                        </ul>
+                      )}
+                      {order.details && order.details.length > 0 && (
+                        <dl className="norden-action-orders-detail-list">
+                          {order.details.map(detail => (
+                            <div key={detail.label} className="norden-action-orders-detail">
+                              <dt>{detail.label}</dt>
+                              <dd>{detail.value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      )}
+                    </div>
+                  ) : null}
                   {(order.status || (order.cancellable && onCancel)) && (
                     <span className="norden-action-orders-aside">
                       {order.status && <span className="norden-action-orders-status">{order.status}</span>}

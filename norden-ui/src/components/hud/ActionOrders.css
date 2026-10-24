@@ -74,20 +74,21 @@ button.norden-action-orders-route:focus-visible { outline: 2px solid #ffe08a; ou
 .norden-action-orders-knights { grid-area: knights; min-width: 0; font-size: 12px; line-height: 1.5; color: #e6d8b8; overflow-wrap: anywhere; }
 .norden-action-orders-knights-label { margin-right: 6px; color: #a8946e; }
 
-/* The active order's details: label and value in two columns, across the row */
+/* The active order's details across the row: the knights' faces, then label and value in two columns */
 .norden-action-orders-details {
   grid-area: details;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  column-gap: 10px;
-  row-gap: 2px;
-  margin: 6px 0 0;
+  gap: 6px;
+  margin-top: 6px;
   padding: 6px 8px;
   font-size: 12px;
   line-height: 1.5;
   background: rgb(0 0 0 / 0.25);
   border-radius: 3px;
 }
+.norden-action-orders-members { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px 8px; margin: 0; padding: 0; list-style: none; color: #f2e6c8; }
+.norden-action-orders-members > li { display: flex; min-width: 0; }
+.norden-action-orders-detail-list { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; row-gap: 2px; margin: 0; }
 .norden-action-orders-detail { display: contents; }
 .norden-action-orders-detail dt { color: #a8946e; white-space: nowrap; }
 .norden-action-orders-detail dd { margin: 0; min-width: 0; color: #f2e6c8; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }

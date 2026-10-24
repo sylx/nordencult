@@ -59,14 +59,15 @@ describe('ActionOrders', () => {
     expect(onDeactivate).toHaveBeenCalledTimes(1)
   })
 
-  it('opens the details of the active order only', () => {
+  it('opens the details of the active order only, with the knights\' faces', () => {
     const details = [{ label: '兵', value: '300' }, { label: '物資', value: '100' }]
-    const orders = ORDERS.map(order => ({ ...order, details }))
+    const orders = ORDERS.map(order => ({ ...order, details, members: [{ name: 'ルチア', note: '担当' }] }))
     const { rerender } = render(<ActionOrders orders={orders} onSelect={() => {}} />)
     expect(screen.queryByRole('term')).not.toBeInTheDocument()
     rerender(<ActionOrders orders={orders} onSelect={() => {}} activeId="o4" />)
     const list = screen.getByLabelText('フルーエンからドルンへの輸送の詳細')
     expect(within(list).getAllByRole('term').map(term => term.textContent)).toEqual(['兵', '物資'])
     expect(within(list).getAllByRole('definition').map(value => value.textContent)).toEqual(['300', '100'])
+    expect(within(within(list).getByRole('list', { name: '騎士' })).getByRole('listitem')).toHaveTextContent('ルチア担当')
   })
 })

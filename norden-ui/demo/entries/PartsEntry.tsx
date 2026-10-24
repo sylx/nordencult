@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ButtonProps } from '../../src'
-import { Banner, Button, Card, ChoiceGroup, FactionMark, InfoWindow, KnightCard, QuantityInput, SectionFrame, ThinFrameWithTitle } from '../../src'
+import { Banner, Button, Card, ChoiceGroup, FactionMark, InfoWindow, KnightCard, KnightChip, QuantityInput, SectionFrame, ThinFrameWithTitle } from '../../src'
 import { repositoryCharacters, RepositoryPortrait } from '../repositoryCharacters'
 import { FACTIONS, KNIGHTS, UNIT_TYPES } from '../mock/data'
 import { Log, useLog, Workbench } from '../Workbench'
@@ -51,6 +51,8 @@ export default function PartsEntry() {
           <h3>KnightCard</h3>
           <KnightCard knight={preview} selection={{ selected, onToggle: () => setSelected(value => !value) }} aside="率兵 420" />
           <KnightCard knight={KNIGHTS[2]!} compact />
+          <h3>KnightChip</h3>
+          <div className="demo-row"><KnightChip knight={preview} /><KnightChip knight={KNIGHTS[2]!} note="軍団長" /></div>
           <h3>Card</h3>
           <Card><strong>騎士団の記録</strong><p className="demo-card-description">羊皮紙とインクの装飾枠。任意の内容を配置できます。</p></Card>
           <h3>FactionMark</h3>

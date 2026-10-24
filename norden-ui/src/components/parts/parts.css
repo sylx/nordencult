@@ -367,3 +367,27 @@
 .norden-faction-mark { display: inline-flex; align-items: center; gap: 0.35em; white-space: nowrap; }
 .norden-faction-mark img, .norden-faction-mark-blank { width: 1.6em; height: 1.6em; object-fit: contain; }
 .norden-faction-mark-blank { display: inline-block; border-radius: 50%; background: rgb(0 0 0 / 0.1); }
+
+/* KnightChip: a face and a name on one line, over any background (the text colour is inherited) */
+.norden-knight-chip { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; font-size: 13px; line-height: 1.3; }
+.norden-knight-chip-face {
+  display: grid;
+  flex: none;
+  width: 30px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px #76563280, 0 0 0 2px #c5aa7650;
+}
+.norden-knight-chip-face > * { width: 100%; height: 100%; }
+.norden-knight-chip-face > img { display: block; object-fit: cover; }
+.norden-knight-chip-initial {
+  display: grid;
+  place-content: center;
+  color: #f4e6c4;
+  background: linear-gradient(135deg, #7a5530, #3e2814);
+  font-size: 14px;
+  font-weight: 700;
+}
+.norden-knight-chip-name { min-width: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.norden-knight-chip-note { flex: none; padding: 0 5px; font-size: 11px; line-height: 1.5; border: 1px solid currentColor; border-radius: 3px; opacity: 0.75; }

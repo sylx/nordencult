@@ -1,40 +1,41 @@
 import { useState } from 'react'
 import { ActionOrders } from '../../src'
 import type { ActionOrderView } from '../../src'
-import { CITY_MAP, FACTIONS } from '../mock/data'
+import { CITY_MAP, FACTIONS, KNIGHTS } from '../mock/data'
 import MockMap from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
 
 const city = (id: string) => CITY_MAP[id]!.name
+/** The demo knights with their faces, by name */
+const members = (...names: string[]) => names.map(name => KNIGHTS.find(knight => knight.name === name) ?? { name })
 
 /** The player's orders of the strategy phase: this turn's (cancellable on the player's turn) and a move under way */
 const INVASION: ActionOrderView = {
   id: 'o1', kind: 'invasion', from: city('P012'), to: city('P004'), knights: ['エルネスト・ヴァイス', 'リディア・ハーン', 'セラフィナ・ルクス'],
+  members: [{ ...members('エルネスト・ヴァイス')[0]!, note: '軍団長' }, ...members('リディア・ハーン', 'セラフィナ・ルクス')],
   details: [{ label: '兵', value: '2,400（4部隊）' }],
 }
 const MOVE: ActionOrderView = {
   id: 'o2', kind: 'move', from: city('P010'), to: city('P015'), knights: ['オスカー・ブラント', 'ミラ・ゼーフェルト'],
-  details: [
-    { label: '兵', value: '300' }, { label: '物資', value: '100' },
-    { label: '経路', value: `${city('P010')} → ${city('P012')} → ${city('P015')}` }, { label: '到着', value: '1ヶ月後' },
-  ],
+  members: members('オスカー・ブラント', 'ミラ・ゼーフェルト'),
+  details: [{ label: '兵', value: '300' }, { label: '物資', value: '100' }, { label: '到着', value: '1ヶ月後' }],
 }
 /** Set out from フルーエン last month: shown from where it set out, with no 取消 */
 const UNDER_WAY: ActionOrderView = {
   id: 'o3', kind: 'move', from: city('P012'), to: city('P015'), knights: ['マルクス・カルタ'], status: 'あと3ヶ月',
-  details: [{ label: '兵', value: '500' }, { label: '物資', value: '0' }, { label: '残りの経路', value: `${city('P012')} → ${city('P015')}` }, { label: '到着', value: 'あと3ヶ月' }],
+  members: members('マルクス・カルタ'),
+  details: [{ label: '兵', value: '500' }, { label: '物資', value: '0' }, { label: '現在地', value: city('P012') }, { label: '到着', value: 'あと3ヶ月' }],
 }
 const TRANSPORT: ActionOrderView = {
   id: 'o5', kind: 'transport', from: city('P012'), to: city('P015'), knights: ['リディア・ハーン'],
-  details: [
-    { label: '兵', value: '200' }, { label: '物資', value: '400' }, { label: '経路', value: `${city('P012')} → ${city('P015')}` },
-    { label: '到着', value: '1ヶ月後' }, { label: '帰還', value: '2ヶ月後' },
-  ],
+  members: members('リディア・ハーン'),
+  details: [{ label: '兵', value: '200' }, { label: '物資', value: '400' }, { label: '到着', value: '1ヶ月後' }, { label: '帰還', value: '2ヶ月後' }],
 }
 /** A transport's knight riding back alone: from where they unloaded to where they set out from */
 const RETURNING: ActionOrderView = {
   id: 'o6', kind: 'transport', from: city('P015'), to: city('P010'), knights: ['ミラ・ゼーフェルト'], status: '帰還・あと1ヶ月',
-  details: [{ label: '積荷', value: '下ろし済み' }, { label: '残りの経路', value: `${city('P015')} → ${city('P012')} → ${city('P010')}` }, { label: '帰還', value: 'あと1ヶ月' }],
+  members: members('ミラ・ゼーフェルト'),
+  details: [{ label: '積荷', value: '下ろし済み' }, { label: '現在地', value: city('P015') }, { label: '帰還', value: 'あと1ヶ月' }],
 }
 const LONG: ActionOrderView = {
   id: 'o4', kind: 'invasion', from: city('P020'), to: city('P006'),
@@ -86,7 +87,7 @@ export default function ActionOrdersEntry() {
     </>}
     controls={<>
       <h2>行動予約</h2>
-      <p>侵攻は侵攻元 → 侵攻先と軍団長以下の人数、移動と輸送は出発した拠点 → 行き先と担当の騎士を出します。取消はプレイヤーの手番の今月の予約だけで、月をまたいで移動・輸送中のものは残りの月数を出します。経路を押すとその予約を選び、兵・物資・経路・到着までの月数などの詳細を開きます。</p>
+      <p>侵攻は侵攻元 → 侵攻先と軍団長以下の人数、移動と輸送は出発した拠点 → 行き先と担当の騎士を出します。取消はプレイヤーの手番の今月の予約だけで、月をまたいで移動・輸送中のものは残りの月数を出します。経路を押すとその予約を選び、騎士の顔と名前、兵・物資・到着までの月数などの詳細を開きます。</p>
       <label htmlFor="orders-phase">フェーズ</label>
       <select id="orders-phase" value={phase} onChange={event => setPhase(event.target.value as typeof phase)}>
         <option value="strategy">戦略フェーズ（プレイヤーの予約）</option>

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import ChoiceGroup from './ChoiceGroup'
+import KnightChip from './KnightChip'
 import QuantityInput from './QuantityInput'
 import ThinFrameWithTitle from './ThinFrameWithTitle'
 
@@ -62,5 +63,15 @@ describe('ThinFrameWithTitle', () => {
     expect(panel).toHaveClass('norden-thin-titled', 'log')
     expect(screen.getByRole('heading', { name: '戦闘記録' })).toBeInTheDocument()
     expect(screen.getByText('本文')).toBeInTheDocument()
+  })
+})
+
+describe('KnightChip', () => {
+  it('shows the face (or the initial), the name and a note', () => {
+    const { container, rerender } = render(<KnightChip knight={{ name: 'エルネスト' }} note="軍団長" />)
+    expect(container.firstChild).toHaveTextContent('エエルネスト軍団長')
+    rerender(<KnightChip knight={{ name: 'エルネスト', portraitSrc: 'face.png' }} />)
+    expect(container.querySelector('img')).toHaveAttribute('src', 'face.png')
+    expect(container.firstChild).toHaveTextContent(/^エルネスト$/)
   })
 })
