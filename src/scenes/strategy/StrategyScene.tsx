@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Banner, CITY_COMMAND_GROUPS, CUTIN_TEMPLATES, CityCommandScreen, CutInLayer, DomesticScreen, FactionMark, InvasionScreen,
   MapPickScreen, MoveScreen, ScreenHost, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
@@ -82,22 +82,8 @@ const draftTransport = (factionId: FactionId, from: CityId, to: CityId, draft: T
   factionId, from, to, knight: draft.knight, troops: draft.troops, supplies: draft.supplies,
 })
 
-/** The screens' windows over the map that cities in focus should not hide behind: the city window, the 行動予約 list */
-const COVERING = ['.norden-city-command .norden-info-window', '.order-list-region']
-
-/** The room the windows over the map cover at its left and right (each counts for the side its centre is on) */
-function coveredInset(root: HTMLElement): FocusInset {
-  const box = root.getBoundingClientRect()
-  let left = 0
-  let right = 0
-  for (const element of root.querySelectorAll(COVERING.join(','))) {
-    const rect = element.getBoundingClientRect()
-    if (rect.width === 0) continue
-    if (rect.left + rect.width / 2 < box.left + box.width / 2) left = Math.max(left, rect.right - box.left)
-    else right = Math.max(right, box.right - rect.left)
-  }
-  return { left, right }
-}
+/** The room (px) the city window on the left and the 行動予約 list on the right take from the map, for focusing on cities */
+const FOCUS_INSET: FocusInset = { left: 360, right: 200 }
 
 /** The roads between each pair of neighbouring cities along a route */
 const routeRoads = (route: readonly string[], color: string, flow?: boolean): RoadHighlight[] =>
@@ -127,7 +113,6 @@ export default function StrategyScene() {
   const legs = useMemo(() => (game.phase === 'march' && !moved ? movementLegs(game) : []), [game, moved])
   const playerCities = citiesOf(game, game.playerFaction)
   const cutIn = useCutIn()
-  const sceneRef = useRef<HTMLDivElement>(null)
   // The order picked on the 行動予約 list: only its route is shown on the map
   const [activeOrder, setActiveOrder] = useState<string | null>(null)
 
@@ -243,7 +228,7 @@ export default function StrategyScene() {
     if (!map || !focusKey) return
     const [, from, to] = focusKey.split(':')
     // After MapView's focusPlace of the city shown (its effect runs first), clear of the windows over the map
-    map.focusPlaces([from, to], { inset: sceneRef.current ? coveredInset(sceneRef.current) : undefined })
+    map.focusPlaces([from, to], { inset: FOCUS_INSET })
   }, [map, focusKey])
 
   // CPU factions pass their turn (M001 has no CPU yet)
@@ -344,7 +329,7 @@ export default function StrategyScene() {
       : null
 
   return (
-    <div ref={sceneRef} className={`strategy-scene${ready ? '' : ' strategy-scene--loading'}`}>
+    <div className={`strategy-scene${ready ? '' : ' strategy-scene--loading'}`}>
       <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false} showStats={false} copyClickPoint={false}
         cities={placedCities} season={mapSeason(game.turn)} />
       <ScreenHost nav={nav} overlays={['domestic']} screens={{
