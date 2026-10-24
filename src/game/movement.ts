@@ -1,14 +1,16 @@
 import { mixMorale } from './army'
 import { withoutAssignee } from './economy/domestic'
 import { GameRuleError } from './errors'
-import { availableKnights, citiesOf, moveOrderOf, orderOf, ownerOf, soldiersLeft, suppliesLeft } from './queries'
-import type { CharacterState, CityId, CityState, FactionId, GameState, MoveLeg, MoveOrder, Movement } from './types'
+import { availableKnights, citiesOf, moveOrderOf, orderOf, ownerOf, soldiersLeft, suppliesLeft, transportOrderOf } from './queries'
+import type { CharacterState, CityId, CityState, FactionId, GameState, MoveLeg, MoveOrder, Movement, MovementKind, TransportOrder } from './types'
 import { neighbours } from './world'
 
 /**
  * Moves (移動): knights going from a city of their faction to another, with soldiers and supplies or alone (単騎移動).
  * Ordered in the strategy phase, they set out at the start of the progress phase and go a month's way in each
  * progress phase, before the battles: knights arriving defend their new city in that month's battles.
+ * Transports (輸送) go the same way as a move with soldiers and supplies: a knight takes them to another city of
+ * the faction, unloads them there and rides back alone (as 単騎移動) to the city they set out from.
  */
 
 /** A move with soldiers and supplies goes this many cities a month (half a month a road) */
@@ -84,6 +86,7 @@ export function moveOrderProblem(state: GameState, draft: Omit<MoveOrder, 'id'>)
     if (!character || character.cityId !== from || character.factionId !== factionId) return `${id} は出発拠点の騎士ではありません`
     if (orderOf(state, id)) return `${id} は侵攻を予約しています`
     if (moveOrderOf(state, id)) return `${id} はすでに移動を予約しています`
+    if (transportOrderOf(state, id)) return `${id} は輸送を予約しています`
   }
   if (![troops, supplies].every((n) => Number.isInteger(n) && n >= 0)) return '数が正しくありません'
   if (solo && (troops > 0 || supplies > 0)) return '単騎移動では兵と物資を運べません'
@@ -108,6 +111,55 @@ export function cancelMoveOrder(state: GameState, orderId: string): GameState {
     throw new GameRuleError('手番でない勢力の予約は取り消せません')
   }
   return { ...state, moveOrders: state.moveOrders.filter((o) => o.id !== orderId) }
+}
+
+/** Why the active faction cannot start a transport from the city, or null when it can */
+export function transportFromProblem(state: GameState, cityId: CityId): string | null {
+  if (state.phase !== 'strategy' || !state.activeFaction) return '手番ではありません'
+  if (ownerOf(state, cityId) !== state.activeFaction) return '自勢力の都市ではありません'
+  if (availableKnights(state, cityId).length === 0) return '輸送を担当できる騎士がいません'
+  if (soldiersLeft(state, cityId) <= 0 && suppliesLeft(state, cityId) <= 0) return '輸送できる兵も物資もありません'
+  if (moveTargets(state, cityId).length === 0) return '輸送できる自勢力の都市がありません'
+  return null
+}
+
+/** Why a transport cannot be ordered now, or null when it can */
+export function transportOrderProblem(state: GameState, draft: Omit<TransportOrder, 'id'>): string | null {
+  const { factionId, from, to, knight, troops, supplies } = draft
+  if (state.phase !== 'strategy' || state.activeFaction !== factionId) return '手番ではありません'
+  if (ownerOf(state, from) !== factionId) return '出発拠点が自勢力の都市ではありません'
+  if (from === to) return '出発拠点と同じ都市です'
+  if (ownerOf(state, to) !== factionId) return '輸送先が自勢力の都市ではありません'
+  if (!moveRoute(state, factionId, from, to)) return '輸送先へ街道がつながっていません'
+  if (!knight) return '担当の騎士を選んでください'
+  const character = state.characters[knight]
+  if (!character || character.cityId !== from || character.factionId !== factionId) return `${knight} は出発拠点の騎士ではありません`
+  if (orderOf(state, knight)) return `${knight} は侵攻を予約しています`
+  if (moveOrderOf(state, knight)) return `${knight} は移動を予約しています`
+  if (transportOrderOf(state, knight)) return `${knight} はすでに輸送を予約しています`
+  if (![troops, supplies].every((n) => Number.isInteger(n) && n >= 0)) return '数が正しくありません'
+  if (troops === 0 && supplies === 0) return '輸送するものを選んでください'
+  if (troops > soldiersLeft(state, from)) return '兵が足りません'
+  if (supplies > suppliesLeft(state, from)) return '物資が足りません'
+  return null
+}
+
+/** Adds a transport to this turn's orders */
+export function addTransportOrder(state: GameState, draft: Omit<TransportOrder, 'id'>): GameState {
+  const problem = transportOrderProblem(state, draft)
+  if (problem) throw new GameRuleError(problem)
+  const order: TransportOrder = { ...draft, id: `transport-${state.serial}` }
+  return { ...state, transportOrders: [...state.transportOrders, order], serial: state.serial + 1 }
+}
+
+/** Takes back a transport of the active faction during its strategy phase */
+export function cancelTransportOrder(state: GameState, orderId: string): GameState {
+  const order = state.transportOrders.find((o) => o.id === orderId)
+  if (!order) return state
+  if (state.phase !== 'strategy' || state.activeFaction !== order.factionId) {
+    throw new GameRuleError('手番でない勢力の予約は取り消せません')
+  }
+  return { ...state, transportOrders: state.transportOrders.filter((o) => o.id !== orderId) }
 }
 
 /** The faction's city nearest to `from` along the roads (`from` itself when it is one), or null when it has none */
@@ -148,12 +200,29 @@ function monthOf(movement: Movement): { leg: CityId[]; next: Movement } {
   }
 }
 
-/** Movements of the orders of this turn still possible, as they set out: their knights still in the city they leave */
+/**
+ * A transport's knight riding back alone from where they unloaded to the city they set out from; null when they
+ * unloaded there (or the roads do not lead back): they stay
+ */
+function returnOf(state: GameState, transport: Movement): Movement | null {
+  const route = moveRoute(state, transport.factionId, transport.to, transport.from)
+  if (!route || route.length < 2) return null
+  return {
+    ...transport, kind: 'return', from: transport.to, to: transport.from, troops: 0, supplies: 0, solo: true,
+    route, monthsLeft: moveMonths(route.length - 1, true),
+  }
+}
+
+/**
+ * Movements of the orders of this turn still possible (moves, then transports), as they set out: their knights
+ * still in the city they leave
+ */
 function setOut(state: GameState): { state: GameState; movements: Movement[] } {
   const characters: Record<string, CharacterState> = { ...state.characters }
   const cities: Record<string, CityState> = { ...state.cities }
   const movements: Movement[] = []
-  for (const order of state.moveOrders) {
+  const transports = state.transportOrders.map(({ knight, ...order }): [MoveOrder, MovementKind] => [{ ...order, knights: [knight], solo: false }, 'transport'])
+  for (const [order, kind] of [...state.moveOrders.map((o): [MoveOrder, MovementKind] => [o, 'move']), ...transports]) {
     const { factionId, from, to } = order
     if (ownerOf(state, from) !== factionId) continue
     const knights = order.knights.filter((id) => characters[id]?.cityId === from && characters[id].factionId === factionId)
@@ -169,10 +238,11 @@ function setOut(state: GameState): { state: GameState; movements: Movement[] } {
     }
     cities[from] = { ...city, troops: city.troops - troops, storedSupplies: city.storedSupplies - supplies, assignments }
     movements.push({
-      ...order, knights, troops, supplies, troopMorale: city.troopMorale, route, monthsLeft: moveMonths(route.length - 1, order.solo),
+      ...order, ...(kind !== 'move' && { kind }), knights, troops, supplies, troopMorale: city.troopMorale, route,
+      monthsLeft: moveMonths(route.length - 1, order.solo),
     })
   }
-  return { state: { ...state, characters, cities, moveOrders: [] }, movements }
+  return { state: { ...state, characters, cities, moveOrders: [], transportOrders: [] }, movements }
 }
 
 /**
@@ -185,15 +255,19 @@ export function movementLegs(state: GameState): MoveLeg[] {
     const movement = heading(departed, m)
     if (!movement) return []
     const { leg, next } = monthOf(movement)
-    return [{ id: m.id, factionId: m.factionId, from: m.from, solo: m.solo, knights: m.knights, route: leg, to: next.to, arrives: next.monthsLeft === 0 }]
+    return [{
+      id: m.id, ...(m.kind && { kind: m.kind }), factionId: m.factionId, from: m.from, solo: m.solo, knights: m.knights, route: leg, to: next.to,
+      arrives: next.monthsLeft === 0,
+    }]
   })
 }
 
 /**
- * The moves of a progress phase, before its battles: the moves ordered this turn set out (their knights
- * leave their city and their assignments there, their soldiers and supplies are taken from it), then every
+ * The moves of a progress phase, before its battles: the moves and transports ordered this turn set out (their
+ * knights leave their city and their assignments there, their soldiers and supplies are taken from it), then every
  * movement goes a month's way. Those arriving join their city: the knights serve there, the soldiers join its
- * own (their morale mixing) and the supplies its store. A movement whose city was lost heads for the
+ * own (their morale mixing) and the supplies its store. A transport's knight does not stay: they ride back alone
+ * to the city they set out from, from the next month (returnOf). A movement whose city was lost heads for the
  * faction's nearest city instead; when the faction has no city left, its knights become unaffiliated
  * and its soldiers and supplies are lost.
  */
@@ -213,7 +287,6 @@ export function runMovements(state: GameState): GameState {
       movements.push(next)
       continue
     }
-    for (const id of next.knights) characters[id] = { ...characters[id], cityId: next.to }
     const city = cities[next.to]
     cities[next.to] = {
       ...city,
@@ -221,6 +294,9 @@ export function runMovements(state: GameState): GameState {
       troopMorale: mixMorale(city.troops, city.troopMorale, next.troops, next.troopMorale),
       storedSupplies: city.storedSupplies + next.supplies,
     }
+    const back = next.kind === 'transport' ? returnOf(departed, next) : null
+    if (back) movements.push(back)
+    else for (const id of next.knights) characters[id] = { ...characters[id], cityId: next.to }
   }
   return {
     ...departed, characters, cities, movements,

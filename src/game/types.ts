@@ -34,7 +34,12 @@ export interface GameState {
   orders: readonly InvasionOrder[]
   /** Moves ordered this turn, in the order they were made; they set out in the progress phase */
   moveOrders: readonly MoveOrder[]
-  /** Knights on their way to a city of their faction, every faction's (set out in this or an earlier progress phase) */
+  /** Transports ordered this turn, in the order they were made; they set out in the progress phase with the moves */
+  transportOrders: readonly TransportOrder[]
+  /**
+   * Knights on their way to a city of their faction, every faction's (set out in this or an earlier progress phase):
+   * moves, and transports there and back
+   */
   movements: readonly Movement[]
   /** The progress phase (進行フェーズ, 'march'): the moves, then the orders still to resolve and the battle being fought */
   march: MarchState | null
@@ -45,7 +50,7 @@ export interface GameState {
 }
 
 export interface CharacterState {
-  /** City they serve in; null when unaffiliated (在野), or on their way to a city of their faction (GameState.movements) */
+  /** City they serve in; null when unaffiliated (在野), or on their way to a city of their faction (GameState.movements: a move or a transport) */
   cityId: CityId | null
   /** Faction they serve; null when unaffiliated */
   factionId: FactionId | null
@@ -222,8 +227,31 @@ export interface MoveOrder {
   solo: boolean
 }
 
-/** A move under way: where it is and the months it still takes */
+/**
+ * Soldiers and supplies taken from a city of the faction to another (輸送) by a knight, who unloads them there and
+ * rides back alone to `from` (like 単騎移動). Any city of the faction the roads lead to, the months as a move's
+ */
+export interface TransportOrder {
+  id: string
+  factionId: FactionId
+  from: CityId
+  to: CityId
+  /** The knight in charge */
+  knight: CharacterId
+  troops: number
+  supplies: number
+}
+
+/**
+ * What a movement is: a move; a transport on its way there (unloading in `to`, then going back to `from` as a
+ * 'return'); a transport's knight riding back alone (its `from` is where they unloaded)
+ */
+export type MovementKind = 'move' | 'transport' | 'return'
+
+/** A move or a transport under way: where it is and the months it still takes */
 export interface Movement extends MoveOrder {
+  /** Omitted: 'move' */
+  kind?: MovementKind
   /** Morale of its soldiers: their city's when they set out */
   troopMorale: number
   /** The cities along the roads from where it is now to `to` (the first is where it is) */
@@ -235,6 +263,8 @@ export interface Movement extends MoveOrder {
 /** What the moves of a progress phase do this month, for showing them on the map */
 export interface MoveLeg {
   id: string
+  /** Omitted: 'move' */
+  kind?: MovementKind
   factionId: FactionId
   /** The city it set out from */
   from: CityId

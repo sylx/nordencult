@@ -1,7 +1,7 @@
 import { CHARACTER_MAP } from '../data/character'
 import { INDIRECT_UNIT_TYPES, UNIT_TYPE_MAP } from '../data/unitTypes'
 import { MAX_SOLDIERS, MAX_UNITS, unitTypesOf } from './army'
-import type { ArmyUnit, Battle, BattleSide, CharacterId, CityId, FactionId, GameState, InvasionOrder, MoveOrder } from './types'
+import type { ArmyUnit, Battle, BattleSide, CharacterId, CityId, FactionId, GameState, InvasionOrder, MoveOrder, TransportOrder } from './types'
 import { CITY_IDS, FACTION_IDS, areNeighbours, neighbours } from './world'
 
 /** The faction of a city; undefined when neutral */
@@ -57,9 +57,13 @@ export const orderOf = (state: GameState, characterId: CharacterId): InvasionOrd
 export const moveOrderOf = (state: GameState, characterId: CharacterId): MoveOrder | undefined =>
   state.moveOrders.find((o) => o.knights.includes(characterId))
 
-/** Characters of a city not yet sent on an invasion or a move */
+/** The transport a character is in charge of this turn, if any */
+export const transportOrderOf = (state: GameState, characterId: CharacterId): TransportOrder | undefined =>
+  state.transportOrders.find((o) => o.knight === characterId)
+
+/** Characters of a city not yet sent on an invasion, a move or a transport */
 export const availableKnights = (state: GameState, cityId: CityId): CharacterId[] =>
-  charactersIn(state, cityId).filter((id) => !orderOf(state, id) && !moveOrderOf(state, id))
+  charactersIn(state, cityId).filter((id) => !orderOf(state, id) && !moveOrderOf(state, id) && !transportOrderOf(state, id))
 
 /** Cities a faction can invade from a city: joined by a road and not its own (neutral ones too) */
 export function invasionTargets(state: GameState, from: CityId): CityId[] {
@@ -78,16 +82,16 @@ export function retreatCities(state: GameState, battle: Battle, side: BattleSide
   return factionId ? neighbours(battle.cityId).filter((id) => ownerOf(state, id) === factionId) : []
 }
 
-/** Soldiers of a city not yet sent on an invasion or a move this turn */
+/** Soldiers of a city not yet sent on an invasion, a move or a transport this turn */
 export function soldiersLeft(state: GameState, cityId: CityId): number {
   const sent = state.orders.filter((o) => o.from === cityId).flatMap((o) => o.units ?? [])
-  const moved = state.moveOrders.filter((o) => o.from === cityId)
+  const moved = [...state.moveOrders, ...state.transportOrders].filter((o) => o.from === cityId)
   return (state.cities[cityId]?.troops ?? 0) - sent.reduce((sum, u) => sum + u.soldiers, 0) - moved.reduce((sum, o) => sum + o.troops, 0)
 }
 
-/** Supplies of a city not yet sent on a move this turn */
+/** Supplies of a city not yet sent on a move or a transport this turn */
 export function suppliesLeft(state: GameState, cityId: CityId): number {
-  const moved = state.moveOrders.filter((o) => o.from === cityId)
+  const moved = [...state.moveOrders, ...state.transportOrders].filter((o) => o.from === cityId)
   return (state.cities[cityId]?.storedSupplies ?? 0) - moved.reduce((sum, o) => sum + o.supplies, 0)
 }
 
@@ -151,6 +155,7 @@ export function orderProblem(state: GameState, draft: Omit<InvasionOrder, 'id'>)
     }
     if (orderOf(state, id)) return `${id} はすでに別の侵攻に加わっています`
     if (moveOrderOf(state, id)) return `${id} は移動を予約しています`
+    if (transportOrderOf(state, id)) return `${id} は輸送を予約しています`
   }
   if (!knights.includes(commander)) return '軍団長が出撃する騎士にいません'
   const leader = leadingKnight(state, knights)!

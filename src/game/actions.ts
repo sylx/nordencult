@@ -103,7 +103,7 @@ function createBattle(state: GameState, order: InvasionOrder): Battle | null {
 /** Every battle fought: the cities' economy runs (runEconomy), then the next turn's strategy phase starts */
 function startTurn(state: GameState): GameState {
   const turn = state.turn + 1
-  const next: GameState = { ...runEconomy(state, turn), turn, phase: 'strategy', orders: [], moveOrders: [], march: null }
+  const next: GameState = { ...runEconomy(state, turn), turn, phase: 'strategy', orders: [], moveOrders: [], transportOrders: [], march: null }
   return { ...next, activeFaction: turnOrder(next)[0] ?? null }
 }
 

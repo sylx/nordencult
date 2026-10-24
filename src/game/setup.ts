@@ -64,6 +64,7 @@ export function createInitialState(playerFaction: FactionId = DEFAULT_PLAYER_FAC
     cityHistory: Object.fromEntries(Object.entries(cities).map(([id, city]) => [id, [cityRecord(city, id, 1)]])),
     orders: [],
     moveOrders: [],
+    transportOrders: [],
     movements: [],
     march: null,
     lastBattle: null,

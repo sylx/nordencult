@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addMoveOrder, addOrder, availableKnights, cancelMoveOrder, charactersIn, createInitialState, endFactionTurn, GameRuleError, governorOf,
-  moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, runMovements, soldiersLeft, startNextBattle,
-  suppliesLeft, type GameState, type MoveOrder,
+  addMoveOrder, addOrder, addTransportOrder, availableKnights, cancelMoveOrder, cancelTransportOrder, charactersIn, createInitialState, endFactionTurn,
+  GameRuleError, governorOf, moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, orderProblem, runMovements, soldiersLeft,
+  startNextBattle, suppliesLeft, transportFromProblem, transportOrderProblem, type GameState, type MoveOrder, type TransportOrder,
 } from '.'
 
 // レオニス帝国: アンバリア (P004) — ヴェルスタ (P005) — P010 — P011 along its own roads
@@ -14,6 +14,10 @@ const FLUEN = 'P012' // カルタ書院, next to アンバリア
 
 const move = (draft: Partial<Omit<MoveOrder, 'id'>> = {}): Omit<MoveOrder, 'id'> => ({
   factionId: 'leonis', from: AMBARIA, to: VERSTA, knights: ['013'], troops: 0, supplies: 0, solo: false, ...draft,
+})
+
+const transport = (draft: Partial<Omit<TransportOrder, 'id'>> = {}): Omit<TransportOrder, 'id'> => ({
+  factionId: 'leonis', from: AMBARIA, to: VERSTA, knight: '013', troops: 300, supplies: 100, ...draft,
 })
 
 const start = () => createInitialState('leonis')
@@ -143,5 +147,83 @@ describe('the progress phase', () => {
     // At P010, its own city
     expect(state.characters['013']).toEqual({ cityId: P010, factionId: 'leonis' })
     expect(state.movements).toEqual([])
+  })
+})
+
+describe('transport orders', () => {
+  it('reserves the knight, soldiers and supplies until cancelled', () => {
+    const state = addTransportOrder(start(), transport())
+    expect(availableKnights(state, AMBARIA)).toEqual(['046', '087'])
+    expect(soldiersLeft(state, AMBARIA)).toBe(start().cities[AMBARIA].troops - 300)
+    expect(suppliesLeft(state, AMBARIA)).toBe(start().cities[AMBARIA].storedSupplies - 100)
+    expect(moveOrderProblem(state, move())).toBe('013 は輸送を予約しています')
+    expect(orderProblem(state, { factionId: 'leonis', from: AMBARIA, to: FLUEN, commander: '013', knights: ['013'] })).toBe('013 は輸送を予約しています')
+    const cancelled = cancelTransportOrder(state, state.transportOrders[0].id)
+    expect(cancelled.transportOrders).toEqual([])
+    expect(availableKnights(cancelled, AMBARIA)).toEqual(['013', '046', '087'])
+  })
+
+  it('rejects transports breaking the rules', () => {
+    const state = start()
+    expect(transportOrderProblem(state, transport())).toBeNull()
+    expect(transportOrderProblem(state, transport({ to: P011 }))).toBeNull()
+    expect(transportOrderProblem(state, transport({ to: FLUEN }))).toBe('輸送先が自勢力の都市ではありません')
+    expect(transportOrderProblem(state, transport({ to: AMBARIA }))).toBe('出発拠点と同じ都市です')
+    expect(transportOrderProblem(state, transport({ knight: '' }))).toBe('担当の騎士を選んでください')
+    expect(transportOrderProblem(state, transport({ knight: '058' }))).toBe('058 は出発拠点の騎士ではありません')
+    expect(transportOrderProblem(state, transport({ troops: 0, supplies: 0 }))).toBe('輸送するものを選んでください')
+    expect(transportOrderProblem(state, transport({ troops: state.cities[AMBARIA].troops + 10 }))).toBe('兵が足りません')
+    expect(transportOrderProblem(state, transport({ supplies: state.cities[AMBARIA].storedSupplies + 10 }))).toBe('物資が足りません')
+    expect(() => addTransportOrder(state, transport({ to: FLUEN }))).toThrow(GameRuleError)
+    const moving = addMoveOrder(state, move())
+    expect(transportOrderProblem(moving, transport())).toBe('013 は移動を予約しています')
+  })
+
+  it('is open from a city with knights, soldiers or supplies and another city of the faction', () => {
+    expect(transportFromProblem(start(), AMBARIA)).toBeNull()
+    expect(transportFromProblem(start(), FLUEN)).toBe('自勢力の都市ではありません')
+    const everyone = addMoveOrder(start(), move({ knights: ['013', '046', '087'] }))
+    expect(transportFromProblem(everyone, AMBARIA)).toBe('輸送を担当できる騎士がいません')
+  })
+})
+
+describe('transports in the progress phase', () => {
+  it('unloads the soldiers and supplies, then the knight rides back alone', () => {
+    const before = start()
+    let state = endStrategyPhase(addTransportOrder(before, transport()))
+    expect(movementLegs(state)).toMatchObject([{ kind: 'transport', solo: false, route: [AMBARIA, VERSTA], arrives: true }])
+    state = runMovements(state)
+    expect(state.cities[AMBARIA].troops).toBe(before.cities[AMBARIA].troops - 300)
+    expect(state.cities[AMBARIA].storedSupplies).toBe(before.cities[AMBARIA].storedSupplies - 100)
+    expect(state.cities[VERSTA].troops).toBe(before.cities[VERSTA].troops + 300)
+    expect(state.cities[VERSTA].storedSupplies).toBe(before.cities[VERSTA].storedSupplies + 100)
+    expect(state.transportOrders).toEqual([])
+    // Not serving in ヴェルスタ: on the way back
+    expect(state.characters['013']).toEqual({ cityId: null, factionId: 'leonis' })
+    expect(state.movements).toMatchObject([{ kind: 'return', from: VERSTA, to: AMBARIA, solo: true, troops: 0, supplies: 0, monthsLeft: 1 }])
+    while (state.phase === 'march') state = startNextBattle(state)
+    state = endStrategyPhase(state)
+    expect(movementLegs(state)).toMatchObject([{ kind: 'return', solo: true, route: [VERSTA, AMBARIA], arrives: true }])
+    state = runMovements(state)
+    expect(state.characters['013']).toEqual({ cityId: AMBARIA, factionId: 'leonis' })
+    expect(state.movements).toEqual([])
+  })
+
+  it('takes a month two cities there, and the way back as riding alone', () => {
+    let state = nextTurn(addTransportOrder(start(), transport({ to: P011 })))
+    expect(state.movements).toMatchObject([{ kind: 'transport', route: [P010, P011], monthsLeft: 1, troops: 300 }])
+    state = nextTurn(state)
+    expect(state.movements).toMatchObject([{ kind: 'return', route: [P011, P010, VERSTA, AMBARIA], monthsLeft: moveMonths(3, true) }])
+    state = nextTurn(nextTurn(state))
+    expect(state.characters['013']).toEqual({ cityId: AMBARIA, factionId: 'leonis' })
+  })
+
+  it('unloads in the nearest city of the faction when the one it set out for is lost', () => {
+    let state = nextTurn(addTransportOrder(start(), transport({ to: P011 })))
+    const p010 = state.cities[P010]
+    state = { ...state, cityOwners: { ...state.cityOwners, [P011]: 'aqua' } }
+    state = runMovements(endStrategyPhase(state))
+    expect(state.cities[P010].troops).toBe(p010.troops + 300)
+    expect(state.movements).toMatchObject([{ kind: 'return', from: P010, to: AMBARIA }])
   })
 })

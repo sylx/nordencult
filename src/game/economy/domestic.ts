@@ -2,15 +2,14 @@ import { BUILDING_MAP, upgradesOf } from '../../data/buildings'
 import { CITY_MAP } from '../../data/city'
 import { mixMorale } from '../army'
 import { GameRuleError } from '../errors'
-import { moveOrderOf, orderOf, ownerOf, soldiersLeft, suppliesLeft } from '../queries'
-import type { AssignmentRole, CharacterId, CityAssignments, CityId, CityState, FactionId, FundedRole, GameState, OfficerRole } from '../types'
-import { neighbours } from '../world'
+import { moveOrderOf, orderOf, ownerOf, transportOrderOf } from '../queries'
+import type { AssignmentRole, CharacterId, CityAssignments, CityId, CityState, FundedRole, GameState, OfficerRole } from '../types'
 import { AFFAIRS_BUDGET_LIMIT, OFFICERS_PER_ROLE, RECRUIT_GOLD } from './balance'
 import { cityOutput } from './output'
 
 /**
- * The domestic commands of a city: assigning its knights, building, recruiting
- * and transporting. Each has a `…Problem` function saying why it is not
+ * The domestic commands of a city: assigning its knights, building and
+ * recruiting (transports are orders: movement.ts). Each has a `…Problem` function saying why it is not
  * allowed (or null); the command throws GameRuleError with that reason.
  */
 
@@ -65,6 +64,7 @@ export function assignmentProblem(state: GameState, cityId: CityId, characterId:
   if (character?.cityId !== cityId || character.factionId !== ownerOf(state, cityId)) return `${characterId} はこの都市の騎士ではありません`
   if (orderOf(state, characterId)) return '出撃予約中です'
   if (moveOrderOf(state, characterId)) return '移動予約中です'
+  if (transportOrderOf(state, characterId)) return '輸送予約中です'
   if (assignmentOf(state, characterId) === role) return role === 'governor' ? 'すでに領主です' : `すでに${OFFICER_LABELS[role]}担当官です`
   if (role === 'governor') return null
   const assignments = state.cities[cityId].assignments
@@ -272,57 +272,4 @@ export function recruit(state: GameState, cityId: CityId, soldiers: number): Gam
     recruited: city.recruited + soldiers,
   })
   return { ...next, gold: { ...state.gold, [factionId]: state.gold[factionId] - recruitCost(soldiers) } }
-}
-
-// ── Transport ──
-
-export interface Cargo {
-  troops?: number
-  supplies?: number
-}
-
-/** Whether `to` can be reached from `from` along roads through the faction's own cities */
-export function connectedByOwnRoads(state: GameState, factionId: FactionId, from: CityId, to: CityId): boolean {
-  const seen = new Set([from])
-  const queue = [from]
-  for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
-    if (id === to) return true
-    for (const next of neighbours(id)) {
-      if (seen.has(next) || ownerOf(state, next) !== factionId) continue
-      seen.add(next)
-      queue.push(next)
-    }
-  }
-  return false
-}
-
-export function transportProblem(state: GameState, from: CityId, to: CityId, { troops = 0, supplies = 0 }: Cargo): string | null {
-  const problem = commandProblem(state, from)
-  if (problem) return problem
-  if (from === to) return '同じ都市です'
-  if (ownerOf(state, to) !== state.activeFaction || !state.cities[to]) return '輸送先が自勢力の都市ではありません'
-  if (!connectedByOwnRoads(state, state.activeFaction!, from, to)) return '自勢力の街道でつながっていません'
-  if (![troops, supplies].every((n) => Number.isInteger(n) && n >= 0)) return '数が正しくありません'
-  if (troops === 0 && supplies === 0) return '輸送するものを選んでください'
-  if (troops > soldiersLeft(state, from)) return '兵が足りません'
-  if (supplies > suppliesLeft(state, from)) return '物資が足りません'
-  return null
-}
-
-/**
- * Moves soldiers and supplies at once to a city of the faction joined by its
- * own roads (taking turns comes with the transport screen). The soldiers'
- * morale mixes with the city's they join
- */
-export function transport(state: GameState, from: CityId, to: CityId, cargo: Cargo): GameState {
-  check(transportProblem(state, from, to, cargo))
-  const { troops = 0, supplies = 0 } = cargo
-  const source = state.cities[from]
-  const target = state.cities[to]
-  const moved = withCity(state, from, { troops: source.troops - troops, storedSupplies: source.storedSupplies - supplies })
-  return withCity(moved, to, {
-    troops: target.troops + troops,
-    troopMorale: mixMorale(target.troops, target.troopMorale, troops, source.troopMorale),
-    storedSupplies: target.storedSupplies + supplies,
-  })
 }

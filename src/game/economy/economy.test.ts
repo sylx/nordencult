@@ -4,10 +4,10 @@ import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import {
   addOrder, affairsBudgetProblem, affairsGain, assign, assignmentOf, assignmentProblem, BALANCE, buildingBonus, buildingLocked, cancelConstruction,
-  cityOutput, commandRank, connectedByOwnRoads, constructionProblem, constructionTurns, createInitialState, endFactionTurn, GameRuleError,
+  cityOutput, commandRank, constructionProblem, constructionTurns, createInitialState, endFactionTurn, GameRuleError,
   governorBonus, governorOf, maxAffairsBudget, maxRecruit, MAX_MORALE, mixMorale, officerAbility, officerPower, officerTraining, recruit,
-  recruitCost, recruitLeft, recruitProblem, runEconomy, setAffairsBudget, slotsOf, setOfficers, soldiersLeft, startConstruction, startNextBattle,
-  tierOf, transport, transportProblem, turnsToNextTier, unassign,
+  recruitCost, recruitLeft, recruitProblem, runEconomy, setAffairsBudget, slotsOf, setOfficers, startConstruction, startNextBattle,
+  tierOf, turnsToNextTier, unassign,
   type CityState, type GameState,
 } from '..'
 
@@ -27,7 +27,6 @@ vi.mock('../../data/buildingData.json', () => ({
 
 const FLUEN = 'P012' // カルタ書院, 港湾
 const SILVA = 'P026' // カルタ書院, joined to フルーエン by a road
-const IGNIS = 'P014' // レオニス帝国, joined to シルヴァ
 const AMBARIA = 'P004' // レオニス帝国
 
 const scale = (value: number) => Math.max(0, (value - BALANCE.ABILITY_BASE) / (100 - BALANCE.ABILITY_BASE))
@@ -489,37 +488,5 @@ describe('recruiting', () => {
     expect(maxRecruit(poor, FLUEN)).toBe(Math.floor(10 / BALANCE.RECRUIT_GOLD))
     expect(recruitCost(maxRecruit(poor, FLUEN))).toBeLessThanOrEqual(10)
     expect(recruitProblem(poor, FLUEN, maxRecruit(poor, FLUEN) + 10)).toBe('金が足りません')
-  })
-})
-
-describe('transport', () => {
-  it('moves soldiers and supplies to a city joined by the faction\'s own roads', () => {
-    const state = createInitialState('carta')
-    const from = state.cities[FLUEN]
-    const to = state.cities[SILVA]
-    const next = transport(state, FLUEN, SILVA, { troops: 300, supplies: 100 })
-    expect(next.cities[FLUEN]).toMatchObject({ troops: from.troops - 300, storedSupplies: from.storedSupplies - 100 })
-    expect(next.cities[SILVA]).toMatchObject({ troops: to.troops + 300, storedSupplies: to.storedSupplies + 100 })
-  })
-
-  it('mixes the morale of the soldiers', () => {
-    let state = createInitialState('carta')
-    state = withCity(withCity(state, FLUEN, { troopMorale: 90 }), SILVA, { troops: 100, troopMorale: 30 })
-    expect(transport(state, FLUEN, SILVA, { troops: 300 }).cities[SILVA].troopMorale).toBe(Math.round((100 * 30 + 300 * 90) / 400))
-  })
-
-  it('refuses transports breaking the rules', () => {
-    const state = createInitialState('carta')
-    expect(transportProblem(state, FLUEN, AMBARIA, { troops: 10 })).toBe('輸送先が自勢力の都市ではありません')
-    expect(transportProblem(state, FLUEN, FLUEN, { troops: 10 })).toBe('同じ都市です')
-    expect(transportProblem(state, FLUEN, SILVA, {})).toBe('輸送するものを選んでください')
-    expect(transportProblem(state, FLUEN, SILVA, { supplies: state.cities[FLUEN].storedSupplies + 1 })).toBe('物資が足りません')
-    expect(transportProblem(state, FLUEN, SILVA, { troops: soldiersLeft(state, FLUEN) + 1 })).toBe('兵が足りません')
-    // イグニス joins フルーエン through シルヴァ only while シルヴァ is カルタ書院's too
-    const ignis = { ...state, cityOwners: { ...state.cityOwners, [IGNIS]: 'carta' } }
-    expect(connectedByOwnRoads(ignis, 'carta', FLUEN, IGNIS)).toBe(true)
-    const cut = { ...ignis, cityOwners: { ...ignis.cityOwners, [SILVA]: 'leonis' } }
-    expect(connectedByOwnRoads(cut, 'carta', FLUEN, IGNIS)).toBe(false)
-    expect(transportProblem(cut, FLUEN, IGNIS, { troops: 10 })).toBe('自勢力の街道でつながっていません')
   })
 })

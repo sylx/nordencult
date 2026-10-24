@@ -51,7 +51,7 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | シーン | 内容 |
 | --- | --- |
 | `title` | タイトル画面（仮） |
-| `strategy` | 戦略マップ＋norden-ui の画面スタック（都市コマンド → 侵攻先の選択 → 侵攻画面、都市コマンド → 移動先の選択 → 移動画面。Escで1段戻る）。都市をクリックでその都市の都市コマンド画面へ。進行フェーズでは、まず全勢力の移動が進み、続いて侵攻の軍団が進んで、到着すると `battle` へ |
+| `strategy` | 戦略マップ＋norden-ui の画面スタック（都市コマンド → 侵攻先の選択 → 侵攻画面、都市コマンド → 移動先の選択 → 移動画面、都市コマンド → 輸送先の選択 → 輸送画面。Escで1段戻る）。都市をクリックでその都市の都市コマンド画面へ。進行フェーズでは、まず全勢力の移動と輸送が進み、続いて侵攻の軍団が進んで、到着すると `battle` へ |
 | `battle` | 戦闘（`{ battleId }`）。戦闘画面（battle-runtime の `BattleScreen`）、攻守の勢力と騎士、デバッグ用の勝敗ボタンと使ったマップの表示。決着のウィンドウの「戦闘の結果へ」で `battleResult` へ |
 | `battleResult` | 戦闘結果（`{ battleId }`）。勝敗と決着の理由（入城・殲滅/退却）・拠点の所属の変化・騎士の移動。「戦略マップへ」で進行フェーズの続きへ |
 
@@ -69,15 +69,15 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | `src/scenes/registry.ts` | シーン名とコンポーネントの対応（遅延読み込み） |
 | `src/scenes/SceneManager.tsx` | 現在のシーンの表示・切り替え |
 | `src/scenes/sceneContext.ts` | `useScene()` |
-| `src/scenes/strategy/StrategyScene.tsx` | 地図と画面スタック（`cityCommand` / `pickTarget` / `invasion` / `pickMoveTarget` / `move` / `domestic`）。地図の強調は表示中の画面（`nav.top`）から決める。進行フェーズの移動の演出（`movementLegs` を地図の `march()` で動かし、着いたら `runMovements`） |
+| `src/scenes/strategy/StrategyScene.tsx` | 地図と画面スタック（`cityCommand` / `pickTarget` / `invasion` / `pickMoveTarget` / `move` / `pickTransportTarget` / `transport` / `domestic`）。地図の強調は表示中の画面（`nav.top`）から決める。進行フェーズの移動と輸送の演出（`movementLegs` を地図の `march()` で動かし、着いたら `runMovements`） |
 | `src/scenes/strategy/views.ts` | ゲームの状態 → norden-ui のview型（`CityView`・`KnightView`・`TurnView`・`BuildingView`）。施設の画像は `src/assets/buildings.webp` 上の位置（`buildingSprite.json`）で渡す |
-| `src/scenes/strategy/OrderList.tsx` | 行動予約（侵攻予約・移動予約・移動中の騎士）と進行フェーズの一覧。norden-ui の `ActionOrders` に渡す（都市コマンド画面に重ねるHUD） |
+| `src/scenes/strategy/OrderList.tsx` | 行動予約（侵攻予約・移動予約・輸送予約・移動中と輸送中の騎士）と進行フェーズの一覧。norden-ui の `ActionOrders` に渡す（都市コマンド画面に重ねるHUD） |
 | `src/scenes/battle/BattleScene.tsx` | 戦闘マップを読み込み、battle-runtime の `BattleScreen` に渡す（アンマウントで破棄）。ユニットはまだ置かない（置くときはマップの `units` と `statuses` で渡す）。退却先の拠点（`retreatCities`）を軍ごとに渡し、退却した・捕虜になった部隊（`RetreatReport`）を `BattleRetreat` にして、決着（`onEnd`）またはデバッグの勝敗のボタンで `resolveBattle` に渡し、結果の画面へ進む |
 | `src/scenes/battle/battleMap.ts` | 戦闘マップの選択。攻撃元と目標の街道マップ `road-<小さい ID>-<大きい ID>.json` から目標の範囲（`battleAreas[目標]`）を切り出す。無ければ `fluen.json` 全体（コンソールに警告） |
 
 ## ゲームの状態
 
-`src/game/` にゲームの状態（ターン・フェーズ・都市の所属・都市の状態・勢力の金・キャラクターの所属・侵攻予約・移動予約と移動中の騎士・行軍・直近の戦闘と内政処理）と、それを変える純粋な関数（状態 → 新しい状態）をまとめます。React と地図からは独立しています。
+`src/game/` にゲームの状態（ターン・フェーズ・都市の所属・都市の状態・勢力の金・キャラクターの所属・侵攻予約・移動予約・輸送予約と移動中の騎士・行軍・直近の戦闘と内政処理）と、それを変える純粋な関数（状態 → 新しい状態）をまとめます。React と地図からは独立しています。
 
 | ファイル | 役割 |
 | --- | --- |
@@ -86,11 +86,11 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | `src/game/queries.ts` | 状態の問い合わせ（手番の順・都市の騎士・侵攻先・予約の条件・残りの兵・戦闘からの退却先） |
 | `src/game/army.ts` | 兵の仮の規則（1部隊の兵数の上限・既定の兵科・間接指揮部隊は軍団長の能力の半分・練度の加重平均） |
 | `src/game/actions.ts` | 予約の追加・取消、手番の終了、戦闘の開始（その前に移動を済ませる）、`resolveBattle`（戦後処理）、次のターンの開始（内政処理を含む） |
-| `src/game/movement.ts` | 移動: 経路（`moveRoute`）と月数（`moveMonths`）、移動先（`moveTargets`）、予約の追加・取消と条件、進行フェーズの移動（`runMovements`）とその演出用の1ヶ月分の道のり（`movementLegs`） |
+| `src/game/movement.ts` | 移動と輸送: 経路（`moveRoute`）と月数（`moveMonths`）、行き先（`moveTargets`）、予約の追加・取消と条件、進行フェーズの移動と輸送（`runMovements`）とその演出用の1ヶ月分の道のり（`movementLegs`） |
 | `src/game/economy/balance.ts` | 内政の定数（金・俸禄・Tier の閾値とスロット・領主の補正・担当官の予算と係数・人口の成長・募兵・出撃の費用）。すべて仮の値 |
 | `src/game/economy/output.ts` | `cityOutput`: 都市の Tier・スロット・実効の商業と生産・領主と施設の補正・担当官の能力と次のターンの見込み・収入・成長・訓練・募兵の上限（内政処理と画面の見込みで共有） |
 | `src/game/economy/runEconomy.ts` | `runEconomy`: 毎ターンの内政処理（金と俸禄 → 担当官の内政 → 物資と建設 → 練度と募兵 → 人口と Tier）と、演出用の結果 `lastEconomy` |
-| `src/game/economy/domestic.ts` | 内政の操作（担当の割り当て・解除、担当官の予算、着工・中止、募兵、輸送）と、できない理由を返す `…Problem` |
+| `src/game/economy/domestic.ts` | 内政の操作（担当の割り当て・解除、担当官の予算、着工・中止、募兵）と、できない理由を返す `…Problem` |
 | `src/game/store.ts`, `gameContext.ts` | `App` に置くストアと `useGame()`（シーンを切り替えても状態が残る） |
 | `src/game/world.ts` | 都市・勢力・街道のつながり（`ROAD_LINKS` から） |
 
@@ -109,6 +109,16 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 - 行動予約のウィンドウ（右上。norden-ui の `ActionOrders`）に、侵攻予約（侵攻元 → 侵攻先、軍団長 以下N名、取消）と移動予約（移動元 → 移動先、担当の騎士、取消）を並べます。月をまたいで移動中のものは出発した拠点から書き、取消の代わりに残りの月数を出します
 - 移動先の都市が奪われていたら、いまいる場所からいちばん近い自勢力の都市へ向かい直します。勢力の都市が無くなれば騎士は在野になり、兵と物資は失われます
 - 地図では、進行フェーズに全勢力の移動の1ヶ月分の道のりを移動のマーカーで見せます（兵と物資を連れた移動は侵攻と同じ軍団のマーカー、単騎移動は使者のマーカー）。行動予約のウィンドウで予約を押すと、その予約の経路（侵攻は侵攻先への街道、移動は残りの経路）だけを街道の強調で出します（ほかの場所を押すと消える）。街道の強調の色は勢力によらず、移動は青、侵攻は赤です（地図上を動くマーカーは勢力の色）
+
+### 輸送
+
+軍事 → 輸送で、自勢力の都市から兵と物資を自勢力のほかの都市へ運びます。地図で輸送先（自勢力のすべての都市。隣接していなくてよい）を選び、輸送画面（norden-ui の `TransportScreen`）で担当の騎士1人と、運ぶ兵数・物資を決めて予約します（`addTransportOrder`。予約は手番のうちなら取り消せる）。
+
+- 経路と月数は兵と物資を連れた移動と同じです（街道1区間に半月。隣接か2区間先なら1ヶ月、3区間なら2ヶ月）。進行フェーズに移動と一緒に出発・前進し（`GameState.movements` の `kind: 'transport'`）、担当の騎士は出発した都市と担当（領主・内政担当官）を離れます
+- 着くと兵（練度は兵数で加重平均）と物資をその都市に下ろし、騎士はその都市に入らず、翌月から単騎移動と同じ月数で出発した都市へ戻ります（`kind: 'return'`。戻ると出発した都市の所属に戻る）。輸送先や戻り先の都市が奪われていたら、移動と同じくいちばん近い自勢力の都市へ向かい直します
+- 地図では、輸送中は輸送のマーカー、戻りは使者のマーカーで動きます。街道と都市の強調の色は金色です
+- 行動予約のウィンドウに、輸送予約（輸送元 → 輸送先、担当の騎士、取消）を並べます。月をまたいだものは取消の代わりに残りの月数を出し、戻りは「輸送先 → 輸送元」と「帰還・あとNヶ月」を出します
+- 繰り返し輸送（兵と物資が指定の量になるまで待って自動で輸送を続ける）は未実装で、輸送画面のチェックボックスは無効です
 
 ### 内政
 
