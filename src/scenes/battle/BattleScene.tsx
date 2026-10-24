@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  BattleScreen, lineBarks, SIDE_TEAM, type BarkSource, type BattleCutInTexts, type BattleFactions,
-  type RetreatDestinations, type RetreatReport, type UnitStatus, type WipeoutReport,
+  BattleScreen, lineBarks, SIDE_TEAM, type BarkSource, type BattleCutInTexts, type BattleFactions, type BattleOutcome,
+  type RemainingUnit, type RetreatDestinations, type RetreatReport, type UnitStatus, type WipeoutReport,
 } from '@norden/battle-runtime'
 import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { factionName } from '../../data/faction'
 import { pickVoiceLine } from '../../data/voiceLines'
 import {
-  isPlayerFaction, resolveBattle, retreatCities, useGame, type Battle, type BattleEndReason, type BattleRetreat, type BattleSide, type BattleWinner,
-  type BattleWipeout, type GameState,
+  isPlayerFaction, resolveBattle, retreatCities, useGame, type Battle, type BattleRetreat, type BattleSide, type BattleSurvivor,
+  type BattleWinner, type BattleWipeout, type GameState,
 } from '../../game'
 import { useScene } from '../sceneContext'
 import type { SceneProps } from '../types'
@@ -64,15 +64,19 @@ function battleRetreats(game: GameState, battle: Battle): RetreatDestinations {
  * knight's unit is the knight's id (battleTroops); units led indirectly or by
  * nobody have no knight.
  */
-function sideAndKnight(battle: Battle, { unit, troopId }: RetreatReport | WipeoutReport) {
+function sideAndKnight(battle: Battle, { unit, troopId }: RetreatReport | WipeoutReport | RemainingUnit) {
   const side: BattleSide = unit.team === SIDE_TEAM.attacker ? 'attacker' : 'defender'
   return { side, knightId: troopId !== null && battle[side].knights.includes(troopId) ? troopId : null }
 }
 
-/** A retreat reported by the battle screen, for resolveBattle */
+/** A retreat reported by the battle screen, for resolveBattle: with the soldiers the unit had */
 function toBattleRetreat(battle: Battle, report: RetreatReport): BattleRetreat {
-  return { ...sideAndKnight(battle, report), to: report.to.id, captured: report.captured }
+  return { ...sideAndKnight(battle, report), to: report.to.id, captured: report.captured, soldiers: report.status.soldiers }
 }
+
+/** The units still on the battlefield when it was decided, for resolveBattle */
+const toBattleSurvivors = (battle: Battle, outcome: BattleOutcome): BattleSurvivor[] | undefined =>
+  outcome.remaining?.map((unit) => ({ ...sideAndKnight(battle, unit), soldiers: unit.status.soldiers }))
 
 /** A unit wiped out reported by the battle screen, for resolveBattle */
 function toBattleWipeout(battle: Battle, report: WipeoutReport): BattleWipeout {
@@ -125,8 +129,10 @@ function Battlefield({ battle }: { battle: Battle }) {
     return () => { cancelled = true }
   }, [from, to])
 
-  const decide = (winner: BattleWinner, reason: BattleEndReason | null = null) => {
-    update((s) => resolveBattle(s, battle.id, winner, retreats, reason, wipeouts))
+  /** The battle decided on the battlefield (`outcome`, with the units left there) or by the debug buttons (every unit left as it started) */
+  const decide = (winner: BattleWinner, outcome?: BattleOutcome) => {
+    const survivors = outcome && toBattleSurvivors(battle, outcome)
+    update((s) => resolveBattle(s, battle.id, winner, retreats, outcome?.reason ?? null, wipeouts, Math.random, survivors))
     goTo('battleResult', { battleId: battle.id })
   }
 
@@ -138,7 +144,7 @@ function Battlefield({ battle }: { battle: Battle }) {
             map={map.data} troops={troops.troops} factions={factions} cutInTexts={battleCutInTexts(battle)} barks={barks} retreats={retreatTo}
             onRetreat={(report) => setRetreats((list) => [...list, toBattleRetreat(battle, report)])}
             onWipeout={(report) => setWipeouts((list) => [...list, toBattleWipeout(battle, report)])}
-            onEnd={(outcome) => decide(outcome.winner, outcome.reason)} endLabel="戦闘の結果へ"
+            onEnd={(outcome) => decide(outcome.winner, outcome)} endLabel="戦闘の結果へ"
             playerSide={playerSideOf(game, battle)}
             className="battle-scene__screen"
           />

@@ -10,10 +10,10 @@ import { FACTION_MAP, factionColor, factionName } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
-  charactersIn, citiesOf, decideInvasion, demolishBuilding, domesticProblem, endFactionTurn, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn,
+  charactersIn, citiesOf, decideInvasion, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn,
   moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction,
   runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, stationedIn, suppliesLeft, transportFromProblem,
-  transportOrderProblem, useGame, viewFaction, type CityId, type FactionId, type GameState, type InvasionOrder,
+  transportOrderProblem, useGame, viewFaction, type CityId, type DefenseDraft, type FactionId, type GameState, type InvasionOrder,
   type MoveOrder, type TransportOrder,
 } from '../../game'
 import { useScene } from '../sceneContext'
@@ -61,6 +61,8 @@ type StrategyScreens = {
   transport: { from: string; to: string }
   /** The domestic screen of a city of the player's (its lord, buildings and officers), drawn over the city command screen */
   domestic: { cityId: string }
+  /** Forming the army defending `cityId` (a city of a faction the player plays) in the battle `battleId`; no going back */
+  defense: { cityId: string; battleId: string }
 }
 
 /** Commands not made yet */
@@ -77,6 +79,9 @@ const draftOrder = (factionId: FactionId, from: CityId, to: CityId, draft: Invas
 const draftMove = (factionId: FactionId, from: CityId, to: CityId, draft: MoveDraft): Omit<MoveOrder, 'id'> => ({
   factionId, from, to, knights: draft.knights, troops: draft.troops, supplies: draft.supplies, solo: draft.solo,
 })
+
+/** The defense screen's draft (the screen does not confirm one without a commander) */
+const draftDefense = (draft: InvasionDraft): DefenseDraft => ({ commander: draft.commander ?? '', units: draft.units })
 
 /** The transport screen's draft as an order */
 const draftTransport = (factionId: FactionId, from: CityId, to: CityId, draft: TransportDraft): Omit<TransportOrder, 'id'> => ({
@@ -329,30 +334,50 @@ export default function StrategyScene() {
     if (map && decisionTarget) map.focusPlace(decisionTarget)
   }, [map, decisionTarget])
 
-  // The army of the order marches to its target, then the battle is fought
+  // The army of the order marches to its target. Then: a city without its lord there or soldiers is taken at once (the
+  // result shown), a faction the player plays forms the army defending it (the defense screen, then the battle), or
+  // the battle is fought. Keyed by the battle's ends so that forming the defense does not march it again
+  const latestBattle = useRef(battle)
+  useEffect(() => { latestBattle.current = battle })
+  const { push } = nav
+  const battleId = battle?.id
+  const battleFrom = battle?.attacker.from
+  const battleCity = battle?.cityId
+  const battleFaction = battle?.attacker.factionId
   useEffect(() => {
-    if (!map || !battle) return
-    const { id, attacker, cityId } = battle
+    if (!map || !battleId || !battleFrom || !battleCity || !battleFaction) return
+    const id = battleId
     let timer = 0
-    const fight = () => goTo('battle', { battleId: id })
-    map.focusPlace(cityId)
+    const arrive = () => {
+      const current = latestBattle.current
+      if (current?.id !== id) return
+      if (current.undefended) {
+        update((s) => (s.march?.current?.id === id ? resolveBattle(s, id, 'attacker') : s))
+        goTo('battleResult', { battleId: id })
+      } else if (current.pendingDefense) {
+        push('defense', { cityId: current.cityId, battleId: id })
+      } else {
+        goTo('battle', { battleId: id })
+      }
+    }
+    map.focusPlace(battleCity)
     const unsubscribe = map.onMarchArrive((marchId) => {
-      if (marchId === id) timer = window.setTimeout(fight, ARRIVAL_PAUSE_MS)
+      if (marchId === id) timer = window.setTimeout(arrive, ARRIVAL_PAUSE_MS)
     })
     const marching = map.march({
-      id, route: [attacker.from, cityId], kind: 'army', speed: MARCH_SPEED,
-      color: factionColor(attacker.factionId), label: `${FACTION_MAP[attacker.factionId]?.name ?? ''}軍`,
+      id, route: [battleFrom, battleCity], kind: 'army', speed: MARCH_SPEED,
+      color: factionColor(battleFaction), label: `${FACTION_MAP[battleFaction]?.name ?? ''}軍`,
     })
     if (!marching) {
-      console.warn(`${attacker.from} から ${cityId} への街道が地図にありません`)
-      timer = window.setTimeout(fight, ARRIVAL_PAUSE_MS)
+      console.warn(`${battleFrom} から ${battleCity} への街道が地図にありません`)
+      timer = window.setTimeout(arrive, ARRIVAL_PAUSE_MS)
     }
     return () => {
       unsubscribe()
       clearTimeout(timer)
       map.stopMarch(id)
     }
-  }, [map, battle, goTo])
+  }, [map, battleId, battleFrom, battleCity, battleFaction, goTo, update, push])
 
   /**
    * An order made on its screen: added, back to the city command screen, and picked on the 行動予約 list (its route
@@ -401,7 +426,7 @@ export default function StrategyScene() {
     <div className={`strategy-scene${ready ? '' : ' strategy-scene--loading'}`}>
       <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false} showStats={false} copyClickPoint={false}
         cities={placedCities} season={mapSeason(game.turn)} />
-      <ScreenHost nav={nav} overlays={['domestic']} screens={{
+      <ScreenHost nav={nav} overlays={['domestic']} escapeToPop={top.screen !== 'defense'} screens={{
         cityCommand: ({ cityId }) => {
           const index = playerCities.indexOf(cityId)
           return (
@@ -485,6 +510,23 @@ export default function StrategyScene() {
             onClose={nav.pop}
           />
         ),
+        defense: ({ cityId, battleId }) => {
+          const defended = battle?.id === battleId ? battle : null
+          if (!defended) return null
+          return (
+            <InvasionScreen mode="defense" from={cityView(game, defended.attacker.from)} to={cityView(game, cityId)}
+              // Knights of invasions called off defend: their orders do not hold them
+              knights={defenseKnights(game, defended).map((id) => ({ ...knightView(game, id), unavailableReason: undefined }))}
+              unitTypes={UNIT_TYPE_VIEWS} indirectUnitTypes={INDIRECT_UNIT_TYPES} maxUnits={MAX_UNITS} maxSoldiers={MAX_SOLDIERS}
+              soldierPool={game.cities[cityId].troops} morale={game.cities[cityId].troopMorale}
+              unitPower={(unit, commander) => unitPower(game, cityId, unit, commander)}
+              validate={(draft) => defenseProblem(game, defended, draftDefense(draft))}
+              onConfirm={(draft) => {
+                update((s) => formDefense(s, battleId, draftDefense(draft)))
+                goTo('battle', { battleId })
+              }} />
+          )
+        },
         invasion: ({ from, to }) => (
           <InvasionScreen from={cityView(game, from)} to={cityView(game, to)} defenders={stationedIn(game, to).length}
             knights={charactersIn(game, from).map((id) => knightView(game, id))} unitTypes={UNIT_TYPE_VIEWS}

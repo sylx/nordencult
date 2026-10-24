@@ -4,7 +4,8 @@ import {
   endFactionTurn, GameRuleError, governorOf,
   INITIAL_MORALE, invadeFromProblem, invasionTargets, MAX_SOLDIERS, neighbours, orderProblem, readPlayerFactions,
   resolveBattle, retreatCities, seasonOf, soldiersLeft, startNextBattle, turnOrder, unitAbilities, type ArmyUnit,
-  decideInvasion, factionPower, finishEntry, isPlayerTurn, type InvasionOrder,
+  decideInvasion, defaultUnitType, defenseKnights, defenseProblem, factionPower, finishEntry, formDefense, isPlayerTurn,
+  type InvasionOrder, type BattleSurvivor,
   type BattleRetreat, type BattleWipeout, type GameState,
 } from '.'
 import { playing } from './testing'
@@ -239,11 +240,11 @@ describe('units', () => {
     expect(marching.march?.current?.attacker.units).toEqual(units)
   })
 
-  it('sends each knight with their default unit type when an order has no units', () => {
+  it('sends each knight with their default unit type when an order has no units, as many soldiers as the city has', () => {
     const marching = startNextBattle(endStrategyPhase(invadeAmbaria(['015', '016'])))
     expect(marching.march?.current?.attacker.units).toEqual([
       { knightId: '015', unitType: 'infantry', soldiers: MAX_SOLDIERS },
-      { knightId: '016', unitType: 'cavalry', soldiers: MAX_SOLDIERS },
+      { knightId: '016', unitType: 'cavalry', soldiers: fluenTroops - MAX_SOLDIERS },
     ])
   })
 
@@ -504,10 +505,11 @@ describe('invasion part', () => {
     const marching = startNextBattle(endStrategyPhase(state))
     const battle = marching.march!.current!
     expect(battle).toMatchObject({ cityId: FLUEN, attacker: { factionId: 'leonis' } })
-    expect(battle.defender.knights).toEqual(['015', '016', '027', '029'])
+    expect(defenseKnights(marching, battle)).toEqual(['015', '016', '027', '029'])
     expect(marching.march!.queue).toEqual([])
     // Held: the army called off stays in フルーエン, and the turn ends
-    const held = resolveBattle(marching, battle.id, 'defender')
+    const defended = formDefense(marching, battle.id, { commander: '029', units: [{ knightId: '029', unitType: defaultUnitType('029'), soldiers: 100 }] })
+    const held = resolveBattle(defended, battle.id, 'defender')
     expect(held.characters['015']).toMatchObject({ cityId: FLUEN })
     expect(startNextBattle(held)).toMatchObject({ turn: 2, phase: 'strategy' })
   })
@@ -561,11 +563,125 @@ describe('invasion part', () => {
     expect(governorOf(entering, CORNELIA)).toBe('082')
     expect(startNextBattle(entering)).toBe(entering)
 
+    // The army's soldiers go with it
+    expect(entry.soldiers).toBeGreaterThan(0)
+    expect(entering.cities[CORNELIA].troops).toBe(marching.cities[CORNELIA].troops - entry.soldiers)
+
     const entered = finishEntry(entering, entry.id)
+    expect(entered.cities[TIRNA].troops).toBe(entering.cities[TIRNA].troops + entry.soldiers)
     expect(entered.characters['075']).toMatchObject({ cityId: TIRNA, factionId: 'leonis' })
     expect(entered.characters['078']).toMatchObject({ cityId: TIRNA, factionId: 'leonis' })
     expect(governorOf(entered, TIRNA)).toBe('036')
     expect(entered.march!.entry).toBeNull()
     expect(startNextBattle(entered)).toMatchObject({ turn: 2, phase: 'strategy' })
+  })
+})
+
+describe('soldiers and defense', () => {
+  const units: ArmyUnit[] = [{ knightId: '015', unitType: 'infantry', soldiers: 300 }, { knightId: '016', unitType: 'cavalry', soldiers: 200 }]
+  const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015', '016'], units }
+  const troops = (state: GameState, cityId: string) => state.cities[cityId].troops
+  /** カルタ書院 (the player's) invades アンバリア with `units`, `change` made to the state first */
+  const marchOn = (change: (state: GameState) => GameState = (s) => s) =>
+    startNextBattle(endStrategyPhase(addOrder(change(playing('carta')), draft)))
+  const withCity = (state: GameState, cityId: string, patch: Partial<GameState['cities'][string]>): GameState =>
+    ({ ...state, cities: { ...state.cities, [cityId]: { ...state.cities[cityId], ...patch } } })
+  const sum = (list: readonly ArmyUnit[]) => list.reduce((total, u) => total + u.soldiers, 0)
+
+  it('takes the soldiers of each army from its city as the battle starts', () => {
+    const start = playing('carta')
+    const marching = marchOn()
+    const battle = marching.march!.current!
+    expect(battle).toMatchObject({ undefended: false, pendingDefense: false })
+    expect(troops(marching, FLUEN)).toBe(troops(start, FLUEN) - 500)
+    expect(sum(battle.defender.units)).toBeGreaterThan(0)
+    expect(troops(marching, AMBARIA)).toBe(troops(start, AMBARIA) - sum(battle.defender.units))
+  })
+
+  it('takes a city without its lord there, without soldiers or neutral at once, capturing its knights', () => {
+    const lordless = (s: GameState) => withCity(s, AMBARIA, { assignments: { officers: {} } })
+    const cases = [
+      lordless,
+      (s: GameState) => withCity(s, AMBARIA, { troops: 0 }),
+      (s: GameState) => ({ ...s, cityOwners: Object.fromEntries(Object.entries(s.cityOwners).filter(([id]) => id !== AMBARIA)) }),
+    ]
+    for (const change of cases) expect(marchOn(change).march!.current).toMatchObject({ undefended: true, defender: { units: [] } })
+
+    const marching = marchOn(lordless)
+    const battle = marching.march!.current!
+    expect(battle.defender.knights).toEqual(AMBARIA_KNIGHTS)
+    expect(() => resolveBattle(marching, battle.id, 'defender')).toThrow(GameRuleError)
+    const taken = resolveBattle(marching, battle.id, 'attacker')
+    expect(taken.cityOwners[AMBARIA]).toBe('carta')
+    expect(taken.lastBattle).toMatchObject({ reason: 'undefended', captives: AMBARIA_KNIGHTS, soldiers: [{ cityId: AMBARIA, soldiers: 500 }] })
+    // The city's soldiers and supplies are the attacker's now, the army's soldiers joining them
+    expect(troops(taken, AMBARIA)).toBe(troops(marching, AMBARIA) + 500)
+    expect(taken.cities[AMBARIA].storedSupplies).toBe(marching.cities[AMBARIA].storedSupplies)
+    // Prisoners stay as they are for now
+    expect(taken.characters['013']).toEqual({ cityId: AMBARIA, factionId: 'leonis' })
+    expect(taken.characters['015']).toMatchObject({ cityId: AMBARIA, factionId: 'carta' })
+  })
+
+  it('the attacker takes the city with the soldiers left: those the defender kept in it and its own', () => {
+    const marching = marchOn()
+    const battle = marching.march!.current!
+    const survivors: BattleSurvivor[] = [
+      { side: 'attacker', knightId: '015', soldiers: 250 }, { side: 'attacker', knightId: '016', soldiers: 0 },
+      { side: 'defender', knightId: '046', soldiers: 40 },
+    ]
+    const state = resolveBattle(marching, battle.id, 'attacker', [], 'stronghold', [], Math.random, survivors)
+    expect(troops(state, AMBARIA)).toBe(troops(marching, AMBARIA) + 250)
+    // The defender's soldiers left go with its knights to ヴェルスタ
+    expect(troops(state, VERSTA)).toBe(troops(marching, VERSTA) + 40)
+    expect(state.lastBattle?.soldiers).toEqual([{ cityId: AMBARIA, soldiers: 250 }, { cityId: VERSTA, soldiers: 40 }])
+  })
+
+  it('units retreating take their soldiers to where they retreat; those captured lose them', () => {
+    const marching = marchOn()
+    const battle = marching.march!.current!
+    const retreats: BattleRetreat[] = [
+      { side: 'attacker', knightId: '016', to: FLUEN, captured: false, soldiers: 120 },
+      { side: 'defender', knightId: '013', to: VERSTA, captured: true, soldiers: 90 },
+    ]
+    const survivors: BattleSurvivor[] = [{ side: 'attacker', knightId: '015', soldiers: 150 }, { side: 'defender', knightId: '046', soldiers: 300 }]
+    const state = resolveBattle(marching, battle.id, 'defender', retreats, 'commanderRetreat', [], Math.random, survivors)
+    // Back in フルーエン: 120 retreating and 150 going back
+    expect(troops(state, FLUEN)).toBe(troops(marching, FLUEN) + 270)
+    expect(troops(state, AMBARIA)).toBe(troops(marching, AMBARIA) + 300)
+    expect(troops(state, VERSTA)).toBe(troops(marching, VERSTA))
+  })
+
+  it('without the battlefield\'s report every unit is left as it started', () => {
+    const start = playing('carta')
+    const marching = marchOn()
+    const state = resolveBattle(marching, marching.march!.current!.id, 'defender')
+    expect(troops(state, FLUEN)).toBe(troops(start, FLUEN))
+    expect(troops(state, AMBARIA)).toBe(troops(start, AMBARIA))
+  })
+
+  it('a faction the player plays forms the army defending its city', () => {
+    // カルタ書院 invades アンバリア of レオニス帝国, the player's
+    let leonis = playing('leonis')
+    while (leonis.activeFaction !== 'carta') leonis = endFactionTurn(leonis)
+    const invaded = startNextBattle(endStrategyPhase(addOrder(leonis, draft)))
+    const pending = invaded.march!.current!
+    expect(pending).toMatchObject({ pendingDefense: true, undefended: false, defender: { factionId: 'leonis', knights: [], units: [] } })
+    expect(startNextBattle(invaded)).toBe(invaded)
+    expect(() => resolveBattle(invaded, pending.id, 'attacker')).toThrow(GameRuleError)
+    expect(defenseKnights(invaded, pending)).toEqual(AMBARIA_KNIGHTS)
+
+    const unit = (knightId: string, soldiers = 100): ArmyUnit => ({ knightId, unitType: defaultUnitType(knightId), soldiers })
+    // コンラート (046) is the lord of アンバリア: they lead when they defend
+    expect(defenseProblem(invaded, pending, { commander: '013', units: [unit('013'), unit('046')] })).toBe('046 が防衛するときは軍団長になります')
+    expect(defenseProblem(invaded, pending, { commander: '015', units: [unit('015')] })).toBe('015 はこの拠点で防衛できる騎士ではありません')
+    expect(defenseProblem(invaded, pending, { commander: '046', units: [unit('046', troops(invaded, AMBARIA) + 10)] })).not.toBeNull()
+
+    const defended = formDefense(invaded, pending.id, { commander: '046', units: [unit('046', 300), unit('013', 200)] })
+    expect(defended.march!.current).toMatchObject({ pendingDefense: false, defender: { knights: ['046', '013'], commander: '046' } })
+    expect(troops(defended, AMBARIA)).toBe(troops(invaded, AMBARIA) - 500)
+    expect(() => formDefense(defended, pending.id, { commander: '046', units: [unit('046')] })).toThrow(GameRuleError)
+    // 087 stayed out of the army: losing the city, they retreat with the others
+    const lost = resolveBattle(defended, pending.id, 'attacker')
+    expect(lost.characters['087']).toMatchObject({ cityId: VERSTA, factionId: 'leonis' })
   })
 })

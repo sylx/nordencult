@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { CHARACTER_MAP } from '../data/character'
 import {
+  defaultUnitType, defenseKnights, formDefense,
   addMoveOrder, addOrder, addTransportOrder, availableKnights, cancelMoveOrder, cancelTransportOrder, charactersIn, endFactionTurn,
   awayReason, GameRuleError, governorOf, moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, orderProblem, resolveBattle, runMovements, soldiersLeft,
   startNextBattle, suppliesLeft, transportFromProblem, transportOrderProblem, type GameState, type MoveOrder, type TransportOrder,
@@ -144,7 +145,8 @@ describe('the progress phase', () => {
     while (state.activeFaction !== 'carta') state = endFactionTurn(state)
     state = addOrder(state, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015'] })
     state = startNextBattle(endStrategyPhase(state))
-    expect(state.march?.current?.defender.knights).toContain('058')
+    // レオニス帝国 (the player's) forms the defense from the knights there
+    expect(defenseKnights(state, state.march!.current!)).toContain('058')
   })
 
   it('heads for the nearest city of the faction when the one it set out for is lost', () => {
@@ -251,13 +253,15 @@ describe('knights away', () => {
     const state = invadedWhileAway()
     expect(state.movements).toMatchObject([{ kind: 'return', knights: ['013'] }])
     expect(state.characters['013'].cityId).toBe(AMBARIA)
-    expect(state.march?.current?.defender.knights).not.toContain('013')
-    expect(state.march?.current?.defender.knights).toContain('046')
+    expect(defenseKnights(state, state.march!.current!)).not.toContain('013')
+    expect(defenseKnights(state, state.march!.current!)).toContain('046')
   })
 
   it('no longer serve in their city when it is lost, and go on to the nearest city of their faction', () => {
     let state = invadedWhileAway()
-    state = resolveBattle(state, state.march!.current!.id, 'attacker')
+    const { id } = state.march!.current!
+    state = formDefense(state, id, { commander: '046', units: [{ knightId: '046', unitType: defaultUnitType('046'), soldiers: 100 }] })
+    state = resolveBattle(state, id, 'attacker')
     expect(state.characters['013']).toEqual({ cityId: null, factionId: 'leonis' })
     expect(charactersIn(state, AMBARIA)).not.toContain('013')
     state = nextTurn(nextTurn(state))

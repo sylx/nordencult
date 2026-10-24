@@ -8,8 +8,8 @@ const GARRISON_UNITS = 2
 /**
  * The army a city defends with against an invasion. Provisional until the defending
  * faction forms it itself (choosing the knights, unit types and soldiers like an invasion):
- * - the city's knights of the highest rank first, MAX_UNITS at most, each leading their default unit type;
- *   the first of them leads the army,
+ * - the city's knights of the highest rank first, MAX_UNITS at most, each leading their default unit type
+ *   (the army's knights); the first of them leads the army,
  * - the city's soldiers shared out evenly, MAX_SOLDIERS at most in each unit,
  * - a city without knights defends with GARRISON_UNITS infantry units nobody leads,
  * - the morale of the city's soldiers.
@@ -26,7 +26,8 @@ export function defenderArmy(
     : Array.from({ length: GARRISON_UNITS }, () => ({ knightId: null, unitType: 'infantry', soldiers: share(GARRISON_UNITS) }))
   return {
     factionId,
-    knights,
+    // Those leading the units, in the order given
+    knights: knights.filter((id) => leading.includes(id)),
     commander: leadingKnight(state, leading) ?? null,
     units: units.filter((u) => u.soldiers > 0),
     morale: city?.troopMorale ?? 0,

@@ -313,6 +313,9 @@ export interface Entry {
   from: CityId
   to: CityId
   knights: readonly CharacterId[]
+  /** Soldiers of its units (taken from `from` as it set out), joining those of `to`, and their morale */
+  soldiers: number
+  morale: number
 }
 
 /** A side of a battle: its knights and the units it fights with (the battle screen's troops) */
@@ -332,10 +335,27 @@ export interface Battle {
   id: string
   orderId: string
   cityId: CityId
-  /** The invasion's army, from the city it set out from */
+  /** The invasion's army, from the city it set out from (its soldiers taken from there as it set out) */
   attacker: BattleArmy & { factionId: FactionId; from: CityId; commander: CharacterId }
-  /** The city's faction (null for a neutral city), the knights in it and the army they defend with (defenderArmy) */
+  /**
+   * The city's faction (null for a neutral city) and the army defending it, its soldiers taken from the city's:
+   * formed by the faction (defenderArmy) or, for one the player plays, by the player (pendingDefense).
+   * Undefended: the knights in the city, who are captured
+   */
   defender: BattleArmy
+  /**
+   * No battle: the city has no lord there (a neutral city has none) or no soldiers. The attackers take it at once,
+   * with its soldiers and supplies, and capture the knights there
+   */
+  undefended: boolean
+  /** The defender is a faction the player plays: it forms its army (formDefense) once the invaders arrive. No units till then */
+  pendingDefense: boolean
+}
+
+/** The army a faction the player plays defends a city with: its commander and units (the commander's first) */
+export interface DefenseDraft {
+  commander: CharacterId
+  units: readonly ArmyUnit[]
 }
 
 export type BattleSide = 'attacker' | 'defender'
@@ -349,9 +369,10 @@ export type BattleWinner = BattleSide
  * commander: the losing side's commander's unit was wiped out,
  * commanderRetreat: the losing side's commander's unit retreated (or was captured trying).
  * On stronghold, commander and commanderRetreat, the losing side's remaining units were
- * forced to retreat (each choosing where to), so they come as retreats too
+ * forced to retreat (each choosing where to), so they come as retreats too.
+ * undefended: no battle (Battle.undefended)
  */
-export type BattleEndReason = 'eliminated' | 'stronghold' | 'commander' | 'commanderRetreat'
+export type BattleEndReason = 'eliminated' | 'stronghold' | 'commander' | 'commanderRetreat' | 'undefended'
 
 /**
  * A unit that left the battlefield by retreating, as the battle screen reports
@@ -367,6 +388,22 @@ export interface BattleRetreat {
   to: CityId
   /** Failed to retreat and was taken prisoner */
   captured: boolean
+  /** Soldiers of the unit as it retreated, joining the city retreated to. Omitted: those it had when the battle started */
+  soldiers?: number
+}
+
+/** A unit still on the battlefield when the battle was decided (battle-runtime's RemainingUnit) */
+export interface BattleSurvivor {
+  side: BattleSide
+  /** The knight leading the unit; null for units led indirectly or by nobody */
+  knightId: CharacterId | null
+  soldiers: number
+}
+
+/** Soldiers a city got after a battle: survivors entering it or coming back, units retreating to it */
+export interface SoldierReturn {
+  cityId: CityId
+  soldiers: number
 }
 
 /**
@@ -412,4 +449,8 @@ export interface BattleReport {
   wipeouts: readonly BattleWipeout[]
   /** Lords made after the battle: of the captured city, and of cities retreated to that had none */
   governors: readonly GovernorAppointment[]
+  /** Knights captured in a city taken without a battle (undefended) */
+  captives: readonly CharacterId[]
+  /** Soldiers each city got after the battle, in the order they got there */
+  soldiers: readonly SoldierReturn[]
 }

@@ -1,7 +1,9 @@
 import { CHARACTER_MAP } from '../data/character'
 import { INDIRECT_UNIT_TYPES, UNIT_TYPE_MAP } from '../data/unitTypes'
 import { MAX_SOLDIERS, MAX_UNITS, unitTypesOf } from './army'
-import type { ArmyUnit, Battle, BattleSide, CharacterId, CityId, FactionId, GameState, InvasionOrder, MoveOrder, Movement, TransportOrder } from './types'
+import type {
+  ArmyUnit, Battle, BattleSide, CharacterId, CityId, DefenseDraft, FactionId, GameState, InvasionOrder, MoveOrder, Movement, TransportOrder,
+} from './types'
 import { CITY_IDS, FACTION_IDS, areNeighbours, neighbours } from './world'
 
 /** The faction of a city; undefined when neutral */
@@ -142,10 +144,8 @@ export function leadingKnight(state: GameState, knights: readonly CharacterId[])
     (best, id) => (best === undefined || commandRank(state, id) > commandRank(state, best) ? id : best), undefined)
 }
 
-/** Why the units of an order are not allowed, or null */
-function unitsProblem(
-  state: GameState, from: CityId, knights: readonly CharacterId[], units: readonly ArmyUnit[],
-) {
+/** Why the units of an army (of `pool` soldiers at most) are not allowed, or null */
+function unitsProblem(knights: readonly CharacterId[], units: readonly ArmyUnit[], pool: number) {
   const led = units.filter((u) => u.knightId !== null)
   if (led.length !== knights.length || led.some((u, i) => u.knightId !== knights[i])) {
     return '部隊の騎士が予約の騎士と一致しません'
@@ -161,7 +161,7 @@ function unitsProblem(
     }
     if (!unitTypesOf(u.knightId).some((id) => id === u.unitType)) return `${u.knightId} は${UNIT_TYPE_MAP[u.unitType].name}を率いられません`
   }
-  if (units.reduce((sum, u) => sum + u.soldiers, 0) > soldiersLeft(state, from)) return '出撃できる兵が足りません'
+  if (units.reduce((sum, u) => sum + u.soldiers, 0) > pool) return '出撃できる兵が足りません'
   return null
 }
 
@@ -192,7 +192,27 @@ export function orderProblem(state: GameState, draft: Omit<InvasionOrder, 'id'>)
     return `${leader} が出撃するときは軍団長になります`
   }
   if (state.orders.some((o) => o.factionId === factionId && o.from === from && o.to === to)) return 'この目標にはすでに侵攻を予約しています'
-  return draft.units ? unitsProblem(state, from, knights, draft.units) : null
+  return draft.units ? unitsProblem(knights, draft.units, soldiersLeft(state, from)) : null
+}
+
+/** Knights who can defend the city of a battle: the defender's knights there (those of invasions called off too) */
+export const defenseKnights = (state: GameState, battle: Battle): CharacterId[] =>
+  stationedIn(state, battle.cityId).filter((id) => state.characters[id].factionId === battle.defender.factionId)
+
+/** Why the army a faction the player plays defends a city with is not allowed, or null */
+export function defenseProblem(state: GameState, battle: Battle, draft: DefenseDraft): string | null {
+  const { commander, units } = draft
+  if (!battle.pendingDefense) return '防衛軍団はもう編成されています'
+  const knights = units.flatMap((u) => (u.knightId === null ? [] : [u.knightId]))
+  if (knights.length === 0) return '騎士を1人以上選んでください'
+  if (new Set(knights).size !== knights.length) return '同じ騎士が重複しています'
+  const allowed = defenseKnights(state, battle)
+  const outsider = knights.find((id) => !allowed.includes(id))
+  if (outsider) return `${outsider} はこの拠点で防衛できる騎士ではありません`
+  if (!knights.includes(commander)) return '軍団長が防衛する騎士にいません'
+  const leader = leadingKnight(state, knights)!
+  if (commandRank(state, commander) < commandRank(state, leader)) return `${leader} が防衛するときは軍団長になります`
+  return unitsProblem(knights, units, state.cities[battle.cityId]?.troops ?? 0)
 }
 
 /**

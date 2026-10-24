@@ -51,7 +51,7 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | シーン | 内容 |
 | --- | --- |
 | `title` | タイトル画面（仮） |
-| `strategy` | 戦略マップ＋norden-ui の画面スタック（都市コマンド → 侵攻先の選択 → 侵攻画面、都市コマンド → 移動先の選択 → 移動画面、都市コマンド → 輸送先の選択 → 輸送画面。Escで1段戻る）。都市をクリックでその都市の都市コマンド画面へ。進行フェーズでは、まず全勢力の移動と輸送が進み（移動パート）、続いて侵攻の軍団が1つずつ進んで（侵攻パート）、到着すると `battle` へ |
+| `strategy` | 戦略マップ＋norden-ui の画面スタック（都市コマンド → 侵攻先の選択 → 侵攻画面、都市コマンド → 移動先の選択 → 移動画面、都市コマンド → 輸送先の選択 → 輸送画面。Escで1段戻る。プレイヤーの勢力が侵攻されると防衛軍団の編成画面 `defense`）。都市をクリックでその都市の都市コマンド画面へ。進行フェーズでは、まず全勢力の移動と輸送が進み（移動パート）、続いて侵攻の軍団が1つずつ進んで（侵攻パート）、到着すると `battle` へ |
 | `battle` | 戦闘（`{ battleId }`）。戦闘画面（battle-runtime の `BattleScreen`）、攻守の勢力と騎士、デバッグ用の勝敗ボタンと使ったマップの表示。決着のウィンドウの「戦闘の結果へ」で `battleResult` へ |
 | `battleResult` | 戦闘結果（`{ battleId }`）。勝敗と決着の理由（入城・殲滅/退却）・拠点の所属の変化・騎士の移動。「戦略マップへ」で進行フェーズの続きへ |
 
@@ -72,7 +72,7 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | `src/scenes/strategy/StrategyScene.tsx` | 地図と画面スタック（`cityCommand` / `pickTarget` / `invasion` / `pickMoveTarget` / `move` / `pickTransportTarget` / `transport` / `domestic`）。地図の強調は表示中の画面（`nav.top`）から決める。進行フェーズの移動と輸送の演出（`movementLegs` を地図の `march()` で動かし、着いたら `runMovements`） |
 | `src/scenes/strategy/views.ts` | ゲームの状態 → norden-ui のview型（`CityView`・`KnightView`・`TurnView`・`BuildingView`）。施設の画像は `src/assets/buildings.webp` 上の位置（`buildingSprite.json`）で渡す |
 | `src/scenes/strategy/OrderList.tsx` | 行動予約（侵攻予約・移動予約・輸送予約・移動中と輸送中の騎士）と進行フェーズの一覧。norden-ui の `ActionOrders` に渡す（都市コマンド画面に重ねるHUD） |
-| `src/scenes/battle/BattleScene.tsx` | 戦闘マップを読み込み、battle-runtime の `BattleScreen` に渡す（アンマウントで破棄）。ユニットはまだ置かない（置くときはマップの `units` と `statuses` で渡す）。退却先の拠点（`retreatCities`）を軍ごとに渡し、退却した・捕虜になった部隊（`RetreatReport`）を `BattleRetreat` にして、決着（`onEnd`）またはデバッグの勝敗のボタンで `resolveBattle` に渡し、結果の画面へ進む |
+| `src/scenes/battle/BattleScene.tsx` | 戦闘マップを読み込み、battle-runtime の `BattleScreen` に渡す（アンマウントで破棄）。ユニットはまだ置かない（置くときはマップの `units` と `statuses` で渡す）。退却先の拠点（`retreatCities`）を軍ごとに渡し、退却した・捕虜になった部隊（`RetreatReport`）を `BattleRetreat`（退却したときの兵数を含む）に、決着のときに戦場に残っていた部隊（`BattleOutcome.remaining`）を `BattleSurvivor` にして、決着（`onEnd`）またはデバッグの勝敗のボタンで `resolveBattle` に渡し、結果の画面へ進む |
 | `src/scenes/battle/battleMap.ts` | 戦闘マップの選択。攻撃元と目標の街道マップ `road-<小さい ID>-<大きい ID>.json` から目標の範囲（`battleAreas[目標]`）を切り出す。無ければ `fluen.json` 全体（コンソールに警告） |
 
 ## ゲームの状態
@@ -112,6 +112,13 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 - 侵攻パートで先に別の勢力が奪った拠点への侵攻は、プレイヤーの勢力なら続けるかどうかを選びます（`MarchState.decision`、確認のダイアログ → `decideInvasion`。外交関係を考えて中止できる）。中止すると騎士は出発した都市に残ります。プレイヤーの勢力でなければそのまま続けます
 - 侵攻パートで先に自勢力の別の軍団が奪った拠点への侵攻は、戦闘をせず、移動と同じく軍団の騎士がその拠点に入ります（`MarchState.entry`、地図で行軍を見せたあと `finishEntry`）。拠点の領主は変わりません（出発した都市の領主が加わっていれば、出発したときに後任が決まるのは侵攻と同じ）
 - 同じ勢力が同じ拠点に、別々の都市から侵攻を予約できます（同じ都市からは1つだけ）
+
+### 兵の出入りと防衛軍団
+
+- 侵攻軍の兵は、出発したとき（その侵攻の戦闘が始まるとき）に出発した都市の兵から引かれます（その時点で都市に残る兵まで。部隊の順に割り当て、兵の付かなかった騎士は出撃しない）。先に自勢力が奪った拠点へ入城する軍団の兵は、入城した拠点の兵に加わります
+- 拠点の領主がいない（領主が移動・輸送で出ている場合を含む。中立の拠点には領主がいない）か兵が0なら、戦闘は行われず侵攻側の勝利です（`Battle.undefended`。地図で行軍を見せたあと、そのまま結果の画面へ）。拠点の兵と物資は侵攻側のものになり、侵攻軍の兵が加わります。拠点にいた防衛側の騎士は全員捕縛され、ほかの捕虜と同じくそのままにして結果（`BattleReport.captives`）と結果画面の「捕虜」に出すだけです
+- 侵攻された拠点は防衛軍団を編成し、その兵が拠点の兵から引かれます。プレイヤーの勢力でなければ自動で編成します（`defenderArmy`: 格の高い騎士から6人まで、兵を均等に割る）。プレイヤーの勢力なら、侵攻軍が着いたところで防衛軍団の編成画面（norden-ui の `InvasionScreen` の `mode="defense"`。Esc・やめる・閉じるで戻れない）に入り、確定で戦闘へ進みます（`Battle.pendingDefense` → `formDefense`。条件は侵攻と同じで `defenseProblem`。選べる騎士は `defenseKnights`）。編成に入らなかった騎士は戦場に出ず、拠点を奪われると防衛軍団の騎士と同じく退却します
+- 戦闘の後、退却した部隊の兵はその退却先の拠点に加わります（捕虜になった部隊の兵は失われる）。戦場に残った部隊（battle-runtime の `BattleOutcome.remaining` → `BattleSurvivor`）の兵は騎士と同じ所へ行きます: 勝った側は戦った拠点へ（侵攻側なら、防衛軍団に割かれなかった兵＋侵攻軍の残りの兵になる）、負けた侵攻側は出発した都市へ、負けた防衛側は退却先へ（無ければ失われる）。デバッグの勝敗のボタンで決めたときは、退却・殲滅していない部隊が編成したときの兵数のまま残ったものとします。加わる兵の練度は兵数で加重平均します。結果画面の「兵」に、拠点ごとに加わった兵（`BattleReport.soldiers`）を出します
 
 ### 移動
 

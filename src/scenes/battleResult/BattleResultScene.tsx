@@ -18,6 +18,7 @@ const REASON_LABELS: Readonly<Record<BattleEndReason, string>> = {
   stronghold: '防衛拠点への入城',
   commander: '軍団長部隊の全滅',
   commanderRetreat: '軍団長部隊の退却',
+  undefended: '守り手の不在（領主・兵がいない）',
 }
 
 const cityName = (id: string | null) => (id ? CITY_MAP[id]?.name ?? id : '')
@@ -36,11 +37,12 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
     )
   }
 
-  const { battle, winner, reason, cityCaptured, moves, retreats, wipeouts, governors } = report
-  // Knights captured retreating or wiped out (what happens to them is not decided yet), and how
+  const { battle, winner, reason, cityCaptured, moves, retreats, wipeouts, governors, soldiers } = report
+  // Knights captured retreating, wiped out or in a city taken without a battle (what happens to them is not decided yet), and how
   const captives = new Map([
     ...retreats.flatMap((r) => (r.captured && r.knightId ? [[r.knightId, '退却に失敗し捕虜に'] as const] : [])),
     ...wipeouts.flatMap((w) => (w.captured && w.knightId ? [[w.knightId, '殲滅され捕虜に'] as const] : [])),
+    ...report.captives.map((id) => [id, '捕縛され捕虜に'] as const),
   ])
   const winnerFaction = winner === 'attacker' ? battle.attacker.factionId : battle.defender.factionId
   const city = cityName(battle.cityId)
@@ -54,7 +56,7 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
           {winner === 'attacker' ? '攻撃側の勝利' : '防衛側の勝利'}
         </h1>
         <p className="battle-result__winner"><FactionLabel factionId={winnerFaction} /></p>
-        {reason && <p className="battle-result__reason">{REASON_LABELS[reason]}による決着</p>}
+        {reason && <p className="battle-result__reason">{reason === 'undefended' ? `${REASON_LABELS[reason]}により戦闘なし` : `${REASON_LABELS[reason]}による決着`}</p>}
 
         <section className="battle-result__section">
           <h2>{city}</h2>
@@ -72,6 +74,20 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
             </p>
           )}
         </section>
+
+        {soldiers.length > 0 && (
+          <section className="battle-result__section">
+            <h2>兵</h2>
+            <ul className="battle-result__soldiers">
+              {soldiers.map((r) => (
+                <li key={r.cityId}>
+                  {cityName(r.cityId)}に{r.soldiers.toLocaleString()}人
+                  <span className="battle-result__soldiers-after">（{cityName(r.cityId)}の兵 {game.cities[r.cityId]?.troops.toLocaleString()}人）</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {kinds.map((kind) => (
           <section key={kind} className="battle-result__section">
