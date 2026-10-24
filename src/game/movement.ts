@@ -1,6 +1,5 @@
-import { CHARACTER_MAP } from '../data/character'
 import { mixMorale } from './army'
-import { withoutAssignee } from './economy/domestic'
+import { successorLord, withGovernor, withoutAssignee } from './economy/domestic'
 import { GameRuleError } from './errors'
 import { availableKnights, awayReason, citiesOf, moveOrderOf, orderOf, ownerOf, soldiersLeft, suppliesLeft, transportOrderOf } from './queries'
 import type { CharacterState, CityId, CityState, FactionId, GameState, MoveLeg, MoveOrder, Movement, MovementKind, TransportOrder } from './types'
@@ -221,26 +220,9 @@ function returnOf(state: GameState, transport: Movement): Movement | null {
 }
 
 /**
- * The lord a city gets when its lord moves away: of the faction's knights serving there and not moving away (on a
- * transport is fine), not on an invasion either, the one of the highest 政治, at random among equals; none when
- * there is nobody
- */
-function successorOf(state: GameState, cityId: CityId, movingAway: ReadonlySet<string>, random: () => number): string | undefined {
-  const owner = ownerOf(state, cityId)
-  const candidates = Object.keys(state.characters).sort().filter((id) => {
-    const character = state.characters[id]
-    return character.cityId === cityId && character.factionId === owner && !movingAway.has(id) && !orderOf(state, id)
-  })
-  const politics = (id: string) => CHARACTER_MAP[id]?.politics ?? 0
-  const best = Math.max(...candidates.map(politics))
-  const top = candidates.filter((id) => politics(id) === best)
-  return top.length > 0 ? top[Math.floor(random() * top.length)] : undefined
-}
-
-/**
  * Movements of the orders of this turn still possible (moves, then transports), as they set out: their knights
  * still in the city they leave. Knights moving away leave their assignments there, and a lord moving away is
- * followed by another (successorOf); a transport's knight keeps theirs, serving there all the while
+ * followed by another (successorLord); a transport's knight keeps theirs, serving there all the while
  */
 function setOut(state: GameState, random: () => number = Math.random): { state: GameState; movements: Movement[] } {
   const characters: Record<string, CharacterState> = { ...state.characters }
@@ -271,13 +253,13 @@ function setOut(state: GameState, random: () => number = Math.random): { state: 
       monthsLeft: moveMonths(route.length - 1, order.solo),
     })
   }
-  // Knights moving away now or on a move already (they still serve in the city they set out from until they arrive)
-  const movingAway = new Set([...state.movements, ...movements].flatMap((m) => (m.kind ? [] : m.knights)))
+  // Not the lord: knights moving away now or on a move already (serving in the city they set out from until they
+  // arrive), nor those on an invasion
+  const excluded = new Set([
+    ...[...state.movements, ...movements].flatMap((m) => (m.kind ? [] : m.knights)), ...state.orders.flatMap((o) => o.knights),
+  ])
   for (const cityId of lordless) {
-    const governor = successorOf(state, cityId, movingAway, random)
-    const { assignments } = cities[cityId]
-    // A governor holds no officer role
-    if (governor) cities[cityId] = { ...cities[cityId], assignments: { ...withoutAssignee(assignments, governor), governor } }
+    cities[cityId] = { ...cities[cityId], assignments: withGovernor(cities[cityId].assignments, successorLord(state, cityId, excluded, random)) }
   }
   return { state: { ...state, characters, cities, moveOrders: [], transportOrders: [] }, movements }
 }

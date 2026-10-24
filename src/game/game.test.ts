@@ -414,13 +414,29 @@ describe('battle results', () => {
       .toThrow(GameRuleError)
   })
 
-  it('a lord who leaves their city is no longer its lord', () => {
+  it('a lord setting out on an invasion is followed by the knight of the highest 政治 left, win or lose', () => {
+    const left = charactersIn(createInitialState('carta'), FLUEN).filter((id) => id !== '029')
+    const best = Math.max(...left.map((id) => CHARACTER_MAP[id].politics))
     const state = fight('attacker', invadeAmbaria(['029']))
     expect(state.characters['029']).toMatchObject({ cityId: AMBARIA })
-    expect(governorOf(state, FLUEN)).toBeUndefined()
+    const successor = governorOf(state, FLUEN)
+    expect(successor && CHARACTER_MAP[successor].politics).toBe(best)
     // …and, as the commander, becomes the lord of the city taken
     expect(governorOf(state, AMBARIA)).toBe('029')
     expect(commandRank(state, '029')).toBe(2) // still the head of カルタ書院
-    expect(governorOf(fight('defender', invadeAmbaria(['029'])), FLUEN)).toBe('029')
+    // Coming back, they are lord no longer
+    const lost = fight('defender', invadeAmbaria(['029']))
+    expect(lost.characters['029']).toMatchObject({ cityId: FLUEN })
+    expect(governorOf(lost, FLUEN)).not.toBe('029')
+    expect(governorOf(lost, FLUEN) && CHARACTER_MAP[governorOf(lost, FLUEN)!].politics).toBe(best)
+  })
+
+  it('does not make a knight of the army setting out the lord', () => {
+    const left = charactersIn(createInitialState('carta'), FLUEN).filter((id) => id !== '029')
+      .sort((a, b) => CHARACTER_MAP[b].politics - CHARACTER_MAP[a].politics)
+    const state = startNextBattle(endStrategyPhase(invadeAmbaria(['029', left[0]])))
+    expect(state.march?.current).not.toBeNull()
+    expect(governorOf(state, FLUEN)).not.toBe(left[0])
+    expect(CHARACTER_MAP[governorOf(state, FLUEN)!].politics).toBe(CHARACTER_MAP[left[1]].politics)
   })
 })

@@ -1,6 +1,6 @@
 import { MAX_SOLDIERS, defaultUnitType } from './army'
 import { defenderArmy } from './defense'
-import { withoutAssignee } from './economy/domestic'
+import { successorLord, withGovernor, withoutAssignee } from './economy/domestic'
 import { runEconomy } from './economy/runEconomy'
 import { GameRuleError } from './errors'
 import { runMovements } from './movement'
@@ -58,19 +58,39 @@ export function endFactionTurn(state: GameState): GameState {
  * out from was lost, its knights are gone) are skipped; the knights stay
  * where they are. With no order left the next turn starts. Does nothing
  * while a battle is under way, so calling it twice is harmless.
+ * A lord setting out on the invasion is followed by another in their city (setOutLord), as one moving away is.
  */
-export function startNextBattle(state: GameState): GameState {
+export function startNextBattle(state: GameState, random: () => number = Math.random): GameState {
   if (state.phase !== 'march' || !state.march) throw new GameRuleError('進行フェーズではありません')
   if (state.march.current) return state
-  if (!state.march.moved) state = runMovements(state)
+  if (!state.march.moved) state = runMovements(state, random)
   const queue = [...state.march!.queue]
   for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
     const order = state.orders.find((o) => o.id === id)
     if (!order) continue
     const battle = createBattle(state, order)
-    if (battle) return { ...state, march: { moved: true, queue, current: battle }, serial: state.serial + 1 }
+    if (battle) return { ...setOutLord(state, battle, queue, random), march: { moved: true, queue, current: battle }, serial: state.serial + 1 }
   }
   return startTurn(state)
+}
+
+/**
+ * An invasion's army sets out: when the lord of the city it sets out from is among its knights, they are lord no
+ * longer and another follows them (successorLord): not one of the army, nor of the invasions still to come, nor
+ * one on a move
+ */
+function setOutLord(state: GameState, battle: Battle, queue: readonly string[], random: () => number): GameState {
+  const { from, knights } = battle.attacker
+  const city = state.cities[from]
+  const lord = city.assignments.governor
+  if (!lord || !knights.includes(lord)) return state
+  const excluded = new Set([
+    ...knights,
+    ...state.orders.filter((o) => queue.includes(o.id)).flatMap((o) => o.knights),
+    ...state.movements.flatMap((m) => (m.kind ? [] : m.knights)),
+  ])
+  const assignments = withGovernor(withoutAssignee(city.assignments, lord), successorLord(state, from, excluded, random))
+  return { ...state, cities: { ...state.cities, [from]: { ...city, assignments } } }
 }
 
 function createBattle(state: GameState, order: InvasionOrder): Battle | null {

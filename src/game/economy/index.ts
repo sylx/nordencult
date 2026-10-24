@@ -4,7 +4,7 @@ export {
   affairsBudgetProblem, assign, assignmentOf, assignmentProblem, buildingLocked, OFFICER_ROLES, setOfficers, buildingProblem, cancelConstruction, commandProblem as domesticProblem,
   constructionProblem,
   constructionTurns, demolishBuilding, maxAffairsBudget, maxRecruit, pauseConstruction, recruit, recruitCost, recruitLeft, recruitProblem, setAffairsBudget, startConstruction,
-  unassign, withoutAssignee,
+  successorLord, unassign, withGovernor, withoutAssignee,
 } from './domestic'
 export {
   affairsGain, buildingBonus, cityOutput, FUNDED_ROLES, governorBonus, OFFICER_WEIGHTS, officerAbility, officerPower, officerTraining, populationGrowth,

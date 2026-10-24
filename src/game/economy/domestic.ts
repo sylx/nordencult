@@ -1,4 +1,5 @@
 import { BUILDING_MAP, upgradesOf } from '../../data/buildings'
+import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { mixMorale } from '../army'
 import { GameRuleError } from '../errors'
@@ -56,6 +57,29 @@ export function withoutAssignee(assignments: CityAssignments, characterId: Chara
       : assignments.officers,
   }
 }
+
+/**
+ * The knight to follow a city's lord who leaves it (on a move or an invasion): of the faction's knights serving
+ * there and not `excluded` (those leaving too, those on an invasion; a transport's knight is fine), the one of the
+ * highest 政治, at random among equals; none when there is nobody
+ */
+export function successorLord(
+  state: GameState, cityId: CityId, excluded: ReadonlySet<CharacterId>, random: () => number,
+): CharacterId | undefined {
+  const owner = ownerOf(state, cityId)
+  const candidates = Object.keys(state.characters).sort().filter((id) => {
+    const character = state.characters[id]
+    return character.cityId === cityId && character.factionId === owner && !excluded.has(id)
+  })
+  const politics = (id: CharacterId) => CHARACTER_MAP[id]?.politics ?? 0
+  const best = Math.max(...candidates.map(politics))
+  const top = candidates.filter((id) => politics(id) === best)
+  return top.length > 0 ? top[Math.floor(random() * top.length)] : undefined
+}
+
+/** The assignments with `governor` made the lord (giving up an officer role: a governor holds none); unchanged when undefined */
+export const withGovernor = (assignments: CityAssignments, governor: CharacterId | undefined): CityAssignments =>
+  (governor ? { ...withoutAssignee(assignments, governor), governor } : assignments)
 
 export function assignmentProblem(state: GameState, cityId: CityId, characterId: CharacterId, role: AssignmentRole): string | null {
   const problem = commandProblem(state, cityId)
