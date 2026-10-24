@@ -217,6 +217,17 @@ export default function StrategyScene() {
     if (map && returnCity) map.focusPlace(returnCity, true)
   }, [map, returnCity])
 
+  // A move or a transport picked on the 行動予約 list: the camera takes in where it set out from and where it goes.
+  // Keyed by the ends so that the camera stays put as the game changes while it is picked
+  const activeEnds = [...game.moveOrders, ...game.transportOrders, ...game.movements].find((o) => o.id === activeOrder)
+  const focusKey = activeEnds ? `${activeOrder}:${activeEnds.from}:${activeEnds.to}` : null
+  useEffect(() => {
+    if (!map || !focusKey) return
+    const [, from, to] = focusKey.split(':')
+    // After MapView's focusPlace of the city shown (its effect runs first)
+    map.focusPlaces([from, to])
+  }, [map, focusKey])
+
   // CPU factions pass their turn (M001 has no CPU yet)
   useEffect(() => {
     const faction = game.activeFaction
