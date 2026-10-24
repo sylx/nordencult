@@ -10,6 +10,8 @@
   margin: 0;
   padding: 0;
   overflow-y: auto;
+  /* Scrolling to the end does not go on to the map below */
+  overscroll-behavior: contain;
   list-style: none;
   scrollbar-width: thin;
   scrollbar-color: #8a7350 transparent;

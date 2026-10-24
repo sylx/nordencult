@@ -78,6 +78,12 @@ export default function ActionOrders({
 }: ActionOrdersProps) {
   const ref = useRef<HTMLElement>(null)
 
+  // The order picked comes into view with its details (the list scrolls past its max-height)
+  useEffect(() => {
+    if (activeId === null) return
+    ref.current?.querySelector('.norden-action-orders-item.is-active')?.scrollIntoView?.({ block: 'nearest' })
+  }, [activeId])
+
   useEffect(() => {
     if (activeId === null || !onDeactivate) return
     // Capturing: the map below may stop the click from reaching the document
