@@ -1,4 +1,4 @@
-import { FACE_COUNT, troopStatus, type Portrait, type Troop, type TroopFactory, type UnitStatus } from '@norden/battle-runtime'
+import { troopStatus, type Portrait, type Troop, type TroopFactory, type UnitStatus } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import { CHARACTER_MAP, type Character } from '../../data/character'
 import { characterSheet } from '../../data/characterSheets'
@@ -30,23 +30,22 @@ export interface BattleTroops {
 /**
  * The units of both sides as the battle screen's troops. A knight's unit has the knight's id as its
  * troop id (retreats and wipeouts report it back); the others are `<side>-indirect-<n>`. Units led
- * indirectly have half of their commander's abilities (unitAbilities) and the commander's face; the garrison nobody leads has norden-battle's placeholder faces.
+ * indirectly have half of their commander's abilities (unitAbilities) and the commander's face; the garrison nobody leads has no face.
  */
 export function battleTroops(battle: Battle): BattleTroops {
   const knights = new Map<UnitStatus, CharacterId | null>()
   const troops: TroopFactory = () => {
     knights.clear()
-    return SIDES.flatMap((side, s): Troop[] => {
+    return SIDES.flatMap((side): Troop[] => {
       const army = battle[side]
       let indirect = 0
-      return army.units.map((unit, i) => {
+      return army.units.map((unit) => {
         const leader = CHARACTER_MAP[unit.knightId ?? army.commander ?? '']
         const abilities = unitAbilities(unit.knightId, army.commander)
         const status = troopStatus(unit.unitType as UnitType, {
           soldiers: unit.soldiers,
           morale: army.morale,
           ...(leader && abilities ? { ...abilities, portrait: portraitOf(leader) } : GARRISON_LEADER),
-          face: (s * 4 + i) % FACE_COUNT,
           commander: unit.knightId !== null && unit.knightId === army.commander,
         })
         knights.set(status, unit.knightId)
