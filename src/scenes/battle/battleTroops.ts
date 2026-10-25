@@ -31,6 +31,7 @@ export interface BattleTroops {
  * The units of both sides as the battle screen's troops. A knight's unit has the knight's id as its
  * troop id (retreats and wipeouts report it back); the others are `<side>-indirect-<n>`. Units led
  * indirectly have half of their commander's abilities (unitAbilities) and the commander's face; the garrison nobody leads has no face.
+ * A knight's unit carries the knight's name, so the battle screen calls it "<name>隊".
  */
 export function battleTroops(battle: Battle): BattleTroops {
   const knights = new Map<UnitStatus, CharacterId | null>()
@@ -46,6 +47,8 @@ export function battleTroops(battle: Battle): BattleTroops {
           soldiers: unit.soldiers,
           morale: army.morale,
           ...(leader && abilities ? { ...abilities, portrait: portraitOf(leader) } : GARRISON_LEADER),
+          // Only a knight's own unit is called by the knight's name; the others keep "<faction> <unit type>"
+          ...(unit.knightId && leader ? { name: leader.name } : {}),
           commander: unit.knightId !== null && unit.knightId === army.commander,
         })
         knights.set(status, unit.knightId)
