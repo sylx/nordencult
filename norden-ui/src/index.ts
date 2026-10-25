@@ -6,6 +6,8 @@ export { default as NavigationWindow } from './components/window/NavigationWindo
 export type { NavigationWindowProps } from './components/window/NavigationWindow'
 export { default as ConfirmDialog } from './components/window/ConfirmDialog'
 export type { ConfirmDialogProps } from './components/window/ConfirmDialog'
+export { default as AlertDialog } from './components/window/AlertDialog'
+export type { AlertDialogProps } from './components/window/AlertDialog'
 export { default as InfoWindow } from './components/window/InfoWindow'
 export type { InfoWindowProps } from './components/window/InfoWindow'
 export { default as InfoWindowWithTabs } from './components/window/InfoWindowWithTabs'

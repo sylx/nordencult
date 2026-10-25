@@ -4,7 +4,7 @@
 
 | 層 | 内容 | 場所 |
 | --- | --- | --- |
-| 基本部品 | ウィンドウ（`InfoWindow` / `InfoWindowWithTabs`）、ツールバー（`CommandToolbar`）、ターン情報（`DateBar`）、勢力の情報（`FactionBar`）、行動予約（`ActionOrders`）、UIパーツ（`Button`・`ChoiceGroup`・`QuantityInput`・`KnightCard`・`KnightChip` など） | `src/components/` |
+| 基本部品 | ウィンドウ（`InfoWindow` / `InfoWindowWithTabs`）、確認・お知らせのダイアログ（`ConfirmDialog` / OK だけの `AlertDialog`）、ツールバー（`CommandToolbar`）、ターン情報（`DateBar`）、勢力の情報（`FactionBar`）、行動予約（`ActionOrders`）、UIパーツ（`Button`・`ChoiceGroup`・`QuantityInput`・`KnightCard`・`KnightChip` など） | `src/components/` |
 | 画面 | 基本部品を組み合わせた1画面分のUI。都市コマンド画面・地図で選ぶステップ・侵攻画面 | `src/screens/` |
 | 画面スタック | 画面の階層。都市コマンド → 侵攻先の選択 → 侵攻画面と積み、Escで1段戻る | `src/navigation/` |
 
