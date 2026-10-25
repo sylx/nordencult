@@ -121,7 +121,7 @@ describe('InvasionScreen', () => {
   it('pictures the units with their soldiers and morale, and the empty slots', async () => {
     const unitPower = vi.fn((unit: { soldiers: number }, commander: string) => ({ attack: unit.soldiers / 10, defense: commander === 'k1' ? 120 : 0 }))
     setup({ soldierPool: 2000, maxUnits: 4, morale: 70, unitPower,
-      unitTypes: unitTypes.map(type => ({ ...type, image: `/units/${type.id}.png` })) })
+      unitTypes: unitTypes.map(type => ({ ...type, image: `/units/${type.id}.webp` })) })
     const formation = within(screen.getByRole('list', { name: '編成した部隊' }))
     expect(formation.getAllByRole('listitem').map(slot => slot.textContent)).toEqual(['空き', '空き', '空き', '空き'])
 
@@ -132,7 +132,7 @@ describe('InvasionScreen', () => {
     expect(commander.getByText('軍団長')).toBeInTheDocument()
     expect(commander.getByRole('meter', { name: 'エルネストの兵数' })).toHaveAttribute('aria-valuetext', '400 / 400')
     expect(commander.getByRole('meter', { name: 'エルネストの士気' })).toHaveAttribute('aria-valuenow', '70')
-    expect(formation.getByRole('listitem', { name: 'エルネスト' }).querySelector('img')).toHaveAttribute('src', '/units/cavalry.png')
+    expect(formation.getByRole('listitem', { name: 'エルネスト' }).querySelector('img')).toHaveAttribute('src', '/units/cavalry.webp')
     // the knight's face (their initial without a portrait), clipped round at the top left
     expect(formation.getByRole('listitem', { name: 'エルネスト' }).querySelector('.norden-invasion-slot-face')).toHaveTextContent('エ')
     expect(commander.getByText('攻撃').nextElementSibling).toHaveTextContent('40')

@@ -294,8 +294,8 @@ export const ROADS: [string, string][] = [
 ]
 
 // The battle screen's unit sprites when the catalog runs inside the game's repository (norden-battle/assets/units/)
-const unitImages = import.meta.glob<string>('../../../norden-battle/assets/units/*.png', { eager: true, query: '?url', import: 'default' })
-const unitImage = (id: string) => unitImages[`../../../norden-battle/assets/units/${id}.png`]
+const unitImages = import.meta.glob<string>('../../../norden-battle/assets/units/*.webp', { eager: true, query: '?url', import: 'default' })
+const unitImage = (id: string) => unitImages[`../../../norden-battle/assets/units/${id}.webp`]
 
 export const UNIT_TYPES: UnitTypeView[] = [
   { id: 'infantry', name: '歩兵', description: '守りに強い', image: unitImage('infantry') },
