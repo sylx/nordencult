@@ -18,7 +18,8 @@ type StrategyScreens = {
 interface Order { id: number; from: string; to: string; draft: InvasionDraft }
 
 const COMMAND_LABELS: Record<CityCommandId, string> = {
-  domestic: '内政', move: '移動', invade: '侵攻', transport: '輸送', quest: '探索', tree: 'ツリー', buy: '購入', sell: '売却',
+  domestic: '内政', move: '移動', invade: '侵攻', transport: '輸送', mercenary: '傭兵', quest: '探索', relic: '遺物', tech: '技術',
+  diplomacy: '外交', prisoner: '捕虜', merchant: '商人', factionInfo: '勢力情報', mercenaryInfo: '傭兵情報', geographyInfo: '地理情報', relicInfo: '遺物情報',
 }
 
 const name = (id: string) => CITY_MAP[id]?.name ?? id
