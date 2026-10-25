@@ -258,12 +258,12 @@ function startTurn(state: GameState): GameState {
  * - A city taken without a battle (undefended): the attacker wins, and the knights in the city are captured
  *   (the report lists them as captives).
  * - Knights who retreated from the battlefield (`retreats`) go to the city they
- *   chose instead, whoever wins (an attacker retreating to where they set out
- *   from goes back there).
+ *   chose instead, whoever wins (an attacker can only go back where they set out from).
  * - Knights captured (retreating, wiped out, or in a city taken) by the side that won are its prisoners
  *   (CharacterState.prisoner), held in the city fought over. Those the losing side captured are set free and go back
  *   where they were: an attacker to the city they set out from, a defender staying in their city.
- *   Knights of units wiped out who got away go with their side.
+ *   Knights of units wiped out who got away go to the city they got away to whoever wins, or become unaffiliated
+ *   when their side had nowhere to retreat to.
  * - Prisoners of the attacker's faction held in the city it takes are set free and serve there; those of other
  *   factions are the attacker's prisoners now. Those being taken away on a move or a transport go on.
  * Soldiers: units retreating take theirs to the city they retreat to (lost when captured). The units still on the
@@ -298,8 +298,8 @@ export function resolveBattle(
       throw new GameRuleError(`${r.knightId} はこの戦闘の${r.side === 'attacker' ? '攻撃側' : '防衛側'}の騎士ではありません`)
     }
   }
-  for (const r of retreats) {
-    if (!retreatCities(state, battle, r.side).includes(r.to)) throw new GameRuleError(`${r.to} へは退却できません`)
+  for (const r of [...retreats, ...wipeouts]) {
+    if (r.to !== null && !retreatCities(state, battle, r.side).includes(r.to)) throw new GameRuleError(`${r.to} へは退却できません`)
   }
   const captives = battle.undefended ? [...defender.knights] : []
   // Where the defender's knights retreat out of the city lost, and their soldiers go when it holds
@@ -316,9 +316,9 @@ export function resolveBattle(
   const prisoners: Imprisonment[] = [...captured].flatMap(([characterId, side]) => (side === winner ? [] : [{ characterId, cityId }]))
   // The losing side's captures come to nothing: the attackers it took go back where they set out from (the defenders it took are in their city)
   const released = [...captured].flatMap(([id, side]) => (side === winner && side === 'attacker' ? [id] : []))
-  /** Knights who left the battlefield by retreating, were taken prisoner, or were set free and go back */
+  /** Knights who left the battlefield by retreating (or getting away wiped out), were taken prisoner, or were set free and go back */
   const left = new Set([
-    ...retreats.flatMap((r) => (r.knightId && !r.captured ? [r.knightId] : [])),
+    ...[...retreats, ...wipeouts].flatMap((r) => (r.knightId && !r.captured ? [r.knightId] : [])),
     ...prisoners.map((p) => p.characterId),
     ...released,
   ])
@@ -357,10 +357,18 @@ export function resolveBattle(
     if (r.captured) continue
     addSoldiers(r.to, r.soldiers ?? startedWith(r.side, r.knightId), battle[r.side].morale)
     if (r.knightId === null) continue
-    if (r.side === 'attacker') move(r.knightId, r.to === attacker.from ? 'return' : 'retreat', r.to)
+    if (r.side === 'attacker') move(r.knightId, 'return', r.to)
     // Only defenders still in the city (another battle may have moved them)
     else if (characters[r.knightId].cityId === cityId && characters[r.knightId].factionId === defender.factionId) {
       move(r.knightId, 'retreat', r.to)
+    }
+  }
+  // Knights of units wiped out who got away (they have no soldiers left), unaffiliated with nowhere to go
+  for (const w of wipeouts) {
+    if (w.captured || w.knightId === null) continue
+    if (w.side === 'attacker') move(w.knightId, w.to ? 'return' : 'wander', w.to)
+    else if (characters[w.knightId].cityId === cityId && characters[w.knightId].factionId === defender.factionId) {
+      move(w.knightId, w.to ? 'retreat' : 'wander', w.to)
     }
   }
 

@@ -349,6 +349,19 @@ describe('battle results', () => {
     expect(neighbours(AMBARIA)).toEqual(expect.arrayContaining([...retreatCities(marching, battle, 'defender'), FLUEN]))
   })
 
+  it('the attacker can retreat only to the city it set out from', () => {
+    // ヴェルスタ, next to アンバリア, is the attacker's too
+    const marching = startNextBattle(endStrategyPhase(invadeAmbaria()))
+    const state = { ...marching, cityOwners: { ...marching.cityOwners, [VERSTA]: 'carta' } }
+    const battle = state.march!.current!
+    expect(retreatCities(state, battle, 'attacker')).toEqual([FLUEN])
+    expect(() => resolveBattle(state, battle.id, 'defender', [{ side: 'attacker', knightId: '016', to: VERSTA, captured: false }]))
+      .toThrow(GameRuleError)
+    // Not once it lost it
+    const lost = { ...marching, cityOwners: { ...marching.cityOwners, [FLUEN]: 'taurus' } }
+    expect(retreatCities(lost, battle, 'attacker')).toEqual([])
+  })
+
   it('knights who retreated go where they chose; those the losing side captured go back where they were', () => {
     const retreats: BattleRetreat[] = [
       { side: 'attacker', knightId: '016', to: FLUEN, captured: false },
@@ -378,10 +391,10 @@ describe('battle results', () => {
     expect(resolveBattle(marching, id, 'defender').lastBattle?.reason).toBeNull()
   })
 
-  it('knights captured when wiped out are held in the city of the side that won; those who got away go with their side', () => {
+  it('knights captured when wiped out are held in the city of the side that won; those who got away go where they got away to', () => {
     const wipeouts: BattleWipeout[] = [
-      { side: 'attacker', knightId: '015', captured: true },
-      { side: 'attacker', knightId: '016', captured: false },
+      { side: 'attacker', knightId: '015', captured: true, to: null },
+      { side: 'attacker', knightId: '016', captured: false, to: FLUEN },
     ]
     const marching = startNextBattle(endStrategyPhase(invadeAmbaria()))
     const state = resolveBattle(marching, marching.march!.current!.id, 'defender', [], null, wipeouts)
@@ -392,8 +405,19 @@ describe('battle results', () => {
     ])
     expect(state.lastBattle?.wipeouts).toEqual(wipeouts)
     expect(() => resolveBattle(marching, marching.march!.current!.id, 'defender', [], null, [
-      { side: 'defender', knightId: '015', captured: true },
+      { side: 'defender', knightId: '015', captured: true, to: null },
     ])).toThrow(GameRuleError)
+  })
+
+  it('a defender wiped out who got away leaves even when the defence holds, unaffiliated with nowhere to go', () => {
+    const marching = startNextBattle(endStrategyPhase(invadeAmbaria()))
+    const id = marching.march!.current!.id
+    const away = resolveBattle(marching, id, 'defender', [], null, [{ side: 'defender', knightId: '013', captured: false, to: VERSTA }])
+    expect(away.cityOwners[AMBARIA]).toBe('leonis')
+    expect(away.characters['013']).toMatchObject({ cityId: VERSTA, factionId: 'leonis' })
+    const wandering = resolveBattle(marching, id, 'defender', [], null, [{ side: 'defender', knightId: '013', captured: false, to: null }])
+    expect(wandering.characters['013']).toEqual({ cityId: null, factionId: null })
+    expect(wandering.lastBattle?.moves).toContainEqual({ characterId: '013', kind: 'wander', from: AMBARIA, to: null })
   })
 
   it('a defender who retreated leaves even when the defence holds', () => {

@@ -121,13 +121,14 @@ export function invasionTargets(state: GameState, from: CityId): CityId[] {
 }
 
 /**
- * Cities a side of a battle can retreat to from the battlefield: the
- * neighbours of the city fought over held by the side's faction, in ROAD_LINKS
- * order (for the attacker this includes the city it set out from). None for
- * the defender of a neutral city.
+ * Cities a side of a battle can retreat to from the battlefield: for the
+ * attacker only the city it set out from (while it still holds it), for the
+ * defender the neighbours of the city fought over held by its faction, in
+ * ROAD_LINKS order (none for the defender of a neutral city).
  */
 export function retreatCities(state: GameState, battle: Battle, side: BattleSide): CityId[] {
-  const factionId = side === 'attacker' ? battle.attacker.factionId : battle.defender.factionId
+  if (side === 'attacker') return ownerOf(state, battle.attacker.from) === battle.attacker.factionId ? [battle.attacker.from] : []
+  const factionId = battle.defender.factionId
   return factionId ? neighbours(battle.cityId).filter((id) => ownerOf(state, id) === factionId) : []
 }
 

@@ -421,9 +421,10 @@ export interface SoldierReturn {
 
 /**
  * A unit wiped out on the battlefield, as the battle screen reports it
- * (battle-runtime's WipeoutReport). Its knight may be captured: a prisoner,
- * like a knight captured retreating. Otherwise they get away and go with
- * their side as if they had fought on.
+ * (battle-runtime's WipeoutReport). Its knight retreats on their own and may be
+ * captured: a prisoner, like a knight captured retreating. Otherwise they get
+ * away to the first city their side can retreat to, or become unaffiliated
+ * when it has none.
  */
 export interface BattleWipeout {
   side: BattleSide
@@ -431,6 +432,8 @@ export interface BattleWipeout {
   knightId: CharacterId | null
   /** The knight was captured and taken prisoner */
   captured: boolean
+  /** The city the knight got away to (one of retreatCities); null when captured, or with nowhere to go (unaffiliated) */
+  to: CityId | null
 }
 
 /** enter: into the captured city, return: back to where the attack started, retreat: to a city of their own, wander: unaffiliated */

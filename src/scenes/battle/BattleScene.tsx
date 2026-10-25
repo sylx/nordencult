@@ -78,9 +78,9 @@ function toBattleRetreat(battle: Battle, report: RetreatReport): BattleRetreat {
 const toBattleSurvivors = (battle: Battle, outcome: BattleOutcome): BattleSurvivor[] | undefined =>
   outcome.remaining?.map((unit) => ({ ...sideAndKnight(battle, unit), soldiers: unit.status.soldiers }))
 
-/** A unit wiped out reported by the battle screen, for resolveBattle */
+/** A unit wiped out reported by the battle screen, for resolveBattle: with where its knight got away to */
 function toBattleWipeout(battle: Battle, report: WipeoutReport): BattleWipeout {
-  return { ...sideAndKnight(battle, report), captured: report.captured }
+  return { ...sideAndKnight(battle, report), captured: report.captured, to: report.to?.id ?? null }
 }
 
 /**
@@ -177,7 +177,7 @@ function Battlefield({ battle }: { battle: Battle }) {
             殲滅: {wipeouts.map((w, i) => (
               <span key={i}>
                 <br />{w.side === 'attacker' ? '攻撃' : '防衛'} {w.knightId ?? '(騎士なし)'}
-                {w.captured ? '（捕縛・捕虜）' : '（落ち延びた）'}
+                {w.captured ? '（捕縛・捕虜）' : w.to ? `（${CITY_MAP[w.to]?.name ?? w.to}へ落ち延びた）` : '（落ち延びて在野に）'}
               </span>
             ))}
           </p>
