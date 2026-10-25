@@ -54,6 +54,21 @@
 }
 .norden-move-amounts .norden-quantity { grid-template-columns: 36px minmax(60px, 1fr) 36px 6.5em 4.5em; }
 
+/* The prisoners to take along, on a parchment card under the amounts; the list scrolls past a few */
+.norden-move-prisoners {
+  display: grid;
+  gap: 6px;
+  padding: 8px 12px 10px;
+  color: #362615;
+  background: #fff6dcde;
+  border: 1px solid #b38d52;
+  border-radius: 6px;
+}
+.norden-move-prisoners > header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.norden-move-prisoners > header span { font-size: 12px; color: #8a7050; }
+.norden-move-prisoners .norden-move-list { max-height: 196px; overflow-y: auto; }
+.norden-move-prisoners.is-disabled .norden-move-list { opacity: 0.6; }
+
 .norden-move-summary {
   display: flex;
   align-items: center;

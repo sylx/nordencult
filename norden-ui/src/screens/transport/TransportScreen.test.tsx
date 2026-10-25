@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import TransportScreen from './TransportScreen'
@@ -41,7 +41,16 @@ describe('TransportScreen', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: '物資（数値）' }), { target: { value: '500' } })
     await userEvent.click(confirm())
     // Supplies up to the pool
-    expect(onConfirm).toHaveBeenCalledWith({ knight: 'k2', troops: 400, supplies: 300 })
+    expect(onConfirm).toHaveBeenCalledWith({ knight: 'k2', troops: 400, supplies: 300, prisoners: [] })
+  })
+
+  it('transports prisoners, with or without soldiers and supplies', async () => {
+    const { onConfirm } = setup({ prisoners: [{ id: 'p1', name: 'ミレイ', faction: { name: 'レオニス帝国' } }] })
+    await userEvent.click(screen.getByRole('radio', { name: 'リディア' }))
+    expect(screen.getByText('輸送する兵・物資・捕虜を決めてください')).toBeInTheDocument()
+    await userEvent.click(within(screen.getByRole('list', { name: '連れて行く捕虜' })).getByRole('checkbox', { name: 'ミレイ' }))
+    await userEvent.click(confirm())
+    expect(onConfirm).toHaveBeenCalledWith({ knight: 'k2', troops: 0, supplies: 0, prisoners: ['p1'] })
   })
 
   it('has the 繰り返し輸送 checkbox disabled for now', () => {

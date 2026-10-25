@@ -73,6 +73,15 @@ export const KNIGHTS: MockKnight[] = [
   knight('k9', 'ルチア・ベルネ', 'P021', '魔法使い / 領主', 66, 15, 92),
 ]
 
+/** Prisoners (捕虜) held in the player's cities: knights of other factions, with the faction they served */
+const PRISONERS: (MockKnight & Pick<KnightView, 'faction'>)[] = [
+  { ...knight('k10', 'ヴァルター・グラウ', 'P010', '騎士', 72, 81, 44), faction: FACTIONS.leonis },
+  { ...knight('k11', 'イルザ・ノイマン', 'P010', '狩人', 58, 66, 71), faction: FACTIONS.leonis },
+  { ...knight('k12', 'ベルトラム・ケスラー', 'P012', '学者', 35, 18, 87), faction: null },
+]
+
+export const prisonersIn = (id: string): KnightView[] => PRISONERS.filter(item => item.cityId === id)
+
 /** A knight by their id, or by the character id a 略歴 names them by */
 export function knightOf(id: string): KnightView | undefined {
   const found = KNIGHTS.find(item => item.id === id || characterIds[item.id] === id)
@@ -328,6 +337,7 @@ export function cityView(id: string, knights: readonly KnightView[] = knightsIn(
     lord: lord ? lordView(lord.id) : undefined,
     faction: owner ? FACTIONS[owner] : undefined,
     knights,
+    prisoners: prisonersIn(id),
     history: historyOf(city),
   }
 }

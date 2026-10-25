@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { TransportScreen } from '../../src'
 import type { TransportDraft } from '../../src'
-import { CITY_MAP, KNIGHTS, cityView, knightsIn } from '../mock/data'
+import { CITY_MAP, KNIGHTS, cityView, knightsIn, prisonersIn } from '../mock/data'
 import MockMap from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
 
-const knightName = (id: string) => KNIGHTS.find(knight => knight.id === id)?.name ?? id
-const describe = (draft: TransportDraft) => `${knightName(draft.knight)}／兵${draft.troops}・物資${draft.supplies}`
+const knightName = (id: string) => [...KNIGHTS, ...prisonersIn(FROM)].find(knight => knight.id === id)?.name ?? id
+const prisonersOf = (ids: readonly string[]) => (ids.length > 0 ? `・捕虜 ${ids.map(knightName).join('・')}` : '')
+const describe = (draft: TransportDraft) => `${knightName(draft.knight)}／兵${draft.troops}・物資${draft.supplies}${prisonersOf(draft.prisoners)}`
 
 /** The demo's routes from ヴェステル: to フルーエン next to it, or to ミルデン by way of フルーエン */
 const FROM = 'P010'
@@ -29,7 +30,7 @@ export default function TransportEntry() {
       <MockMap routes={route.slice(1).map((id, index) => ({ from: route[index]!, to: id, color: '#e0c070' }))} />
       <TransportScreen key={`${instance}-${to}`} from={cityView(FROM)} to={cityView(to)} route={route.map(id => CITY_MAP[id]!.name)}
         months={Math.ceil(hops / 2)} returnMonths={Math.min(2, Math.ceil(hops / 2))} knights={knights}
-        soldierPool={CITY_MAP[FROM]!.soldiers} supplyPool={CITY_MAP[FROM]!.supplies ?? 0}
+        soldierPool={CITY_MAP[FROM]!.soldiers} supplyPool={CITY_MAP[FROM]!.supplies ?? 0} prisoners={prisonersIn(FROM)}
         onConfirm={draft => add(`予約: ${describe(draft)}`)} onCancel={() => add('やめる')} />
     </>}
     controls={<>

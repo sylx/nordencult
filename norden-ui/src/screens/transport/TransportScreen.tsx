@@ -6,16 +6,19 @@ import QuantityInput from '../../components/parts/QuantityInput'
 import FactionMark from '../../components/parts/FactionMark'
 import Button from '../../components/parts/Button'
 import SectionFrame from '../../components/parts/SectionFrame'
+import PrisonerPicker from '../move/PrisonerPicker'
 import type { CityView, KnightView } from '../types'
 import '../screens.css'
 import '../move/MoveScreen.css'
 import './TransportScreen.css'
 
-/** The transport: the knight in charge, and the soldiers and supplies they take */
+/** The transport: the knight in charge, and the soldiers, supplies and prisoners they take */
 export interface TransportDraft {
   knight: string
   troops: number
   supplies: number
+  /** Ids of the prisoners taken along and left there, in the order of the list */
+  prisoners: readonly string[]
 }
 
 export interface TransportScreenProps {
@@ -33,6 +36,11 @@ export interface TransportScreenProps {
   supplyPool: number
   soldierStep?: number
   supplyStep?: number
+  /**
+   * Prisoners held in the starting city (捕虜), to take along and leave there as the soldiers and supplies. Those
+   * with `unavailableReason` are shown but cannot be picked. None (or omitted): their list is not shown
+   */
+  prisoners?: readonly KnightView[]
   /** The host's rules. Return why the transport cannot be ordered, or null */
   validate?: (draft: TransportDraft) => string | null
   onConfirm: (draft: TransportDraft) => void
@@ -48,18 +56,24 @@ export interface TransportScreenProps {
  * 繰り返し輸送 (waiting for the amounts and transporting again) is not made yet: its checkbox is disabled.
  */
 export default function TransportScreen({
-  from, to, route, months, returnMonths, knights, soldierPool, supplyPool, soldierStep = 10, supplyStep = 10, validate,
+  from, to, route, months, returnMonths, knights, soldierPool, supplyPool, soldierStep = 10, supplyStep = 10, prisoners = [], validate,
   onConfirm, onCancel, confirmLabel = '予約', children,
 }: TransportScreenProps) {
   const [picked, setPicked] = useState<string | null>(null)
   const [troops, setTroops] = useState(0)
   const [supplies, setSupplies] = useState(0)
+  const [pickedPrisoners, setPickedPrisoners] = useState<readonly string[]>([])
 
   const knight = knights.find(item => item.id === picked && !item.unavailableReason)
-  const draft: TransportDraft = { knight: knight?.id ?? '', troops, supplies }
+  const taken = prisoners.filter(prisoner => pickedPrisoners.includes(prisoner.id) && !prisoner.unavailableReason).map(prisoner => prisoner.id)
+  const draft: TransportDraft = { knight: knight?.id ?? '', troops, supplies, prisoners: taken }
   const problem = (!knight ? '担当の騎士を選んでください' : null)
-    ?? (troops === 0 && supplies === 0 ? '輸送する兵か物資を決めてください' : null)
+    ?? (troops === 0 && supplies === 0 && taken.length === 0
+      ? prisoners.length > 0 ? '輸送する兵・物資・捕虜を決めてください' : '輸送する兵か物資を決めてください'
+      : null)
     ?? validate?.(draft) ?? null
+  const togglePrisoner = (id: string) =>
+    setPickedPrisoners(current => (current.includes(id) ? current.filter(item => item !== id) : [...current, id]))
 
   return (
     <div className="norden-screen norden-move norden-transport">
@@ -116,6 +130,7 @@ export default function TransportScreen({
                 <QuantityInput label="兵数" unit="人" step={soldierStep} value={troops} max={soldierPool} onChange={setTroops} />
                 <QuantityInput label="物資" step={supplyStep} value={supplies} max={supplyPool} onChange={setSupplies} />
               </div>
+              {prisoners.length > 0 && <PrisonerPicker prisoners={prisoners} picked={taken} onToggle={togglePrisoner} />}
               <label className="norden-move-solo is-disabled">
                 <input type="checkbox" checked={false} disabled readOnly />
                 <span>
@@ -129,6 +144,7 @@ export default function TransportScreen({
           <footer className="norden-move-summary">
             <span className="norden-move-total">
               兵 <b>{troops.toLocaleString()}</b>・物資 <b>{supplies.toLocaleString()}</b>
+              {prisoners.length > 0 && <>・捕虜 <b>{taken.length}</b>人</>}
             </span>
             <span className="norden-move-problem" role="status">{problem ?? ''}</span>
             <Button variant="quiet" onClick={onCancel}>やめる</Button>

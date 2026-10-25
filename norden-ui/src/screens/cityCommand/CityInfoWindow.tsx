@@ -1,10 +1,11 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import InfoWindowWithTabs from '../../components/window/InfoWindowWithTabs'
 import type { InfoWindowWithTabsProps, TabInfo } from '../../components/window/InfoWindowWithTabs'
 import KnightCard from '../../components/parts/KnightCard'
 import StatBar from '../../components/parts/StatBar'
 import BuildingSlots from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
+import FactionMark from '../../components/parts/FactionMark'
 import { ABILITY_LABELS, knightAbility } from '../domestic/DomesticOfficers'
 import KnightProfileWindow from './KnightProfileWindow'
 import { useBrowseHistory } from '../../hooks/useBrowseHistory'
@@ -91,6 +92,7 @@ function CityInfo({ city }: { city: CityView }) {
             {city.scaleLabel && <div><dt>規模</dt><dd>{city.scaleLabel}</dd></div>}
             {city.special && <div><dt>特殊</dt><dd>{city.special}</dd></div>}
             <div><dt>騎士</dt><dd>{city.knights?.length ?? 0}人</dd></div>
+            {city.prisoners && city.prisoners.length > 0 && <div><dt>捕虜</dt><dd>{city.prisoners.length}人</dd></div>}
           </dl>
         </div>
         {city.lord && (city.lord.imageSrc || city.lord.image) && (
@@ -129,34 +131,51 @@ function CityInfo({ city }: { city: CityView }) {
 
 const ABILITIES = ['leadership', 'strength', 'intelligence', 'politics', 'charm'] as const
 
-/** The city's knights with all their abilities, its lord first */
+/** The city's knights with all their abilities, its lord first; after a splitter the prisoners held there, with the faction they served */
 function CityKnights({ city, onShowKnight }: { city: CityView; onShowKnight?: (id: string) => void }) {
   const knights = city.knights ?? []
-  if (knights.length === 0) return <p className="norden-city-empty">この都市に所属する騎士はいません。</p>
+  const prisoners = city.prisoners ?? []
   // The lord is matched to their knight by id, or by name when the city gives none
   const lord = city.lord
   const isLord = (knight: KnightView) => lord !== undefined && (lord.id ? knight.id === lord.id : knight.name === lord.name)
   const ordered = [...knights.filter(isLord), ...knights.filter(knight => !isLord(knight))]
+  const card = (knight: KnightView, badge?: ReactNode, current = false) => (
+    <KnightCard
+      key={knight.id}
+      current={current}
+      knight={{
+        ...knight,
+        stats: ABILITIES.map(ability => ({ label: ABILITY_LABELS[ability], value: knightAbility(knight, ability) ?? '—' })),
+      }}
+      aside={<span className="norden-city-knight-aside">
+        {badge}
+        <Button size="small" aria-label={`${knight.name}の詳細`} disabled={!onShowKnight}
+          onClick={() => onShowKnight?.(knight.id)}>詳細</Button>
+      </span>}
+    />
+  )
   return (
     <div className="norden-city-knights">
-      {ordered.map(knight => {
-        const lordCard = isLord(knight)
-        return (
-          <KnightCard
-            key={knight.id}
-            current={lordCard}
-            knight={{
-              ...knight,
-              stats: ABILITIES.map(ability => ({ label: ABILITY_LABELS[ability], value: knightAbility(knight, ability) ?? '—' })),
-            }}
-            aside={<span className="norden-city-knight-aside">
-              {lordCard && <span className="norden-city-knight-badge">領主</span>}
-              <Button size="small" aria-label={`${knight.name}の詳細`} disabled={!onShowKnight}
-                onClick={() => onShowKnight?.(knight.id)}>詳細</Button>
-            </span>}
-          />
-        )
-      })}
+      {knights.length === 0
+        ? <p className="norden-city-empty">この都市に所属する騎士はいません。</p>
+        : ordered.map(knight => {
+          const lordCard = isLord(knight)
+          return card(knight, lordCard && <span className="norden-city-knight-badge">領主</span>, lordCard)
+        })}
+      {prisoners.length > 0 && <>
+        <div className="norden-city-knights-splitter" role="separator">
+          <span>捕虜 {prisoners.length}人</span>
+        </div>
+        <ul className="norden-city-prisoners" aria-label="捕虜">
+          {prisoners.map(prisoner => (
+            <li key={prisoner.id}>
+              {card(prisoner, <span className="norden-city-prisoner-faction">
+                {prisoner.faction ? <FactionMark faction={prisoner.faction} /> : '在野'}
+              </span>)}
+            </li>
+          ))}
+        </ul>
+      </>}
     </div>
   )
 }

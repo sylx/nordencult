@@ -106,6 +106,23 @@ describe('CityCommandScreen', () => {
     }
   })
 
+  it('lists the prisoners held in the city after its knights', async () => {
+    setup({
+      city: {
+        ...city,
+        knights: [{ id: 'k1', name: 'エルネスト' }],
+        prisoners: [{ id: 'p1', name: 'ミレイ', faction: { name: 'レオニス帝国' } }, { id: 'p2', name: 'グレタ', faction: null }],
+      },
+    })
+    await userEvent.click(screen.getByRole('tab', { name: '騎士' }))
+    expect(screen.getByRole('separator')).toHaveTextContent('捕虜 2人')
+    const prisoners = within(screen.getByRole('list', { name: '捕虜' })).getAllByRole('listitem')
+    expect(prisoners[0]).toHaveTextContent('ミレイ')
+    expect(prisoners[0]).toHaveTextContent('レオニス帝国')
+    expect(prisoners[1]).toHaveTextContent('在野')
+    expect(screen.getAllByRole('button', { name: /の詳細$/ })).toHaveLength(3)
+  })
+
   it('shows the domestic log of each turn, newest first, on the 推移 tab', async () => {
     setup({
       city: {

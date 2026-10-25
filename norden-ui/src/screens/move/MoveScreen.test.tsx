@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import MoveScreen from './MoveScreen'
@@ -41,7 +41,7 @@ describe('MoveScreen', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: '物資（数値）' }), { target: { value: '500' } })
     await userEvent.click(confirm())
     // In the order of the list; supplies up to the pool
-    expect(onConfirm).toHaveBeenCalledWith({ knights: ['k1', 'k2'], troops: 400, supplies: 300, solo: false })
+    expect(onConfirm).toHaveBeenCalledWith({ knights: ['k1', 'k2'], troops: 400, supplies: 300, solo: false, prisoners: [] })
   })
 
   it('riding alone takes no soldiers or supplies and arrives sooner', async () => {
@@ -53,7 +53,28 @@ describe('MoveScreen', () => {
     expect(screen.getByRole('spinbutton', { name: '兵数（数値）' })).toHaveValue(0)
     expect(screen.getByRole('spinbutton', { name: '兵数（数値）' })).toBeDisabled()
     await userEvent.click(confirm())
-    expect(onConfirm).toHaveBeenCalledWith({ knights: ['k1'], troops: 0, supplies: 0, solo: true })
+    expect(onConfirm).toHaveBeenCalledWith({ knights: ['k1'], troops: 0, supplies: 0, solo: true, prisoners: [] })
+  })
+
+  it('takes prisoners along, not riding alone', async () => {
+    const { onConfirm } = setup({
+      prisoners: [{ id: 'p1', name: 'ミレイ', faction: { name: 'レオニス帝国' } }, { id: 'p2', name: 'グレタ', unavailableReason: '移送予約中' }],
+    })
+    const prisoners = screen.getByRole('list', { name: '連れて行く捕虜' })
+    expect(within(prisoners).getByRole('checkbox', { name: 'グレタ' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('checkbox', { name: 'エルネスト' }))
+    await userEvent.click(within(prisoners).getByRole('checkbox', { name: 'ミレイ' }))
+    await userEvent.click(screen.getByRole('checkbox', { name: /単騎移動/ }))
+    expect(within(prisoners).getByRole('checkbox', { name: 'ミレイ' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('checkbox', { name: /単騎移動/ }))
+    await userEvent.click(within(prisoners).getByRole('checkbox', { name: 'ミレイ' }))
+    await userEvent.click(confirm())
+    expect(onConfirm).toHaveBeenCalledWith({ knights: ['k1'], troops: 0, supplies: 0, solo: false, prisoners: ['p1'] })
+  })
+
+  it('shows no prisoners without any', () => {
+    setup()
+    expect(screen.queryByRole('list', { name: '連れて行く捕虜' })).not.toBeInTheDocument()
   })
 
   it('shows the host\'s problem and cancels', async () => {

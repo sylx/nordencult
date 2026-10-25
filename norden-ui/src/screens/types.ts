@@ -156,6 +156,8 @@ export interface CityView {
   buildings?: CityBuildingsView
   tags?: readonly string[]
   knights?: readonly KnightView[]
+  /** Prisoners held in the city (捕虜), knights of other factions: `faction` is the one they served (null: 在野) */
+  prisoners?: readonly KnightView[]
   /** The city's numbers at the start of each turn so far, oldest first */
   history?: readonly CityHistoryView[]
 }

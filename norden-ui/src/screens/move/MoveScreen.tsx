@@ -6,16 +6,19 @@ import QuantityInput from '../../components/parts/QuantityInput'
 import FactionMark from '../../components/parts/FactionMark'
 import Button from '../../components/parts/Button'
 import SectionFrame from '../../components/parts/SectionFrame'
+import PrisonerPicker from './PrisonerPicker'
 import type { CityView, KnightView } from '../types'
 import '../screens.css'
 import './MoveScreen.css'
 
-/** The move: the knights going, the soldiers and supplies they take, or the knights alone (単騎移動) */
+/** The move: the knights going, the soldiers, supplies and prisoners they take, or the knights alone (単騎移動) */
 export interface MoveDraft {
   knights: readonly string[]
   troops: number
   supplies: number
   solo: boolean
+  /** Ids of the prisoners taken along, in the order of the list; none riding alone */
+  prisoners: readonly string[]
 }
 
 export interface MoveScreenProps {
@@ -33,6 +36,11 @@ export interface MoveScreenProps {
   supplyPool: number
   soldierStep?: number
   supplyStep?: number
+  /**
+   * Prisoners held in the starting city (捕虜), to take along as soldiers and supplies are (not riding alone). Those
+   * with `unavailableReason` are shown but cannot be picked. None (or omitted): their list is not shown
+   */
+  prisoners?: readonly KnightView[]
   /** The host's rules. Return why the move cannot be ordered, or null */
   validate?: (draft: MoveDraft) => string | null
   onConfirm: (draft: MoveDraft) => void
@@ -44,30 +52,34 @@ export interface MoveScreenProps {
 
 /**
  * Move screen, one window of two sections: the knights to pick (several), and what they take with them.
- * 単騎移動 sends the knights alone: no soldiers or supplies, but they arrive sooner (soloMonths).
+ * 単騎移動 sends the knights alone: no soldiers, supplies or prisoners, but they arrive sooner (soloMonths).
  * The months the move takes are shown as the choice changes.
  */
 export default function MoveScreen({
-  from, to, route, months, soloMonths, knights, soldierPool, supplyPool, soldierStep = 10, supplyStep = 10, validate,
+  from, to, route, months, soloMonths, knights, soldierPool, supplyPool, soldierStep = 10, supplyStep = 10, prisoners = [], validate,
   onConfirm, onCancel, confirmLabel = '予約', children,
 }: MoveScreenProps) {
   const [picked, setPicked] = useState<readonly string[]>([])
+  const [pickedPrisoners, setPickedPrisoners] = useState<readonly string[]>([])
   const [troops, setTroops] = useState(0)
   const [supplies, setSupplies] = useState(0)
   const [solo, setSolo] = useState(false)
 
   // In the order of the list
   const selected = knights.filter(knight => picked.includes(knight.id)).map(knight => knight.id)
-  const draft: MoveDraft = { knights: selected, troops: solo ? 0 : troops, supplies: solo ? 0 : supplies, solo }
+  const taken = solo ? [] : prisoners.filter(prisoner => pickedPrisoners.includes(prisoner.id) && !prisoner.unavailableReason).map(prisoner => prisoner.id)
+  const draft: MoveDraft = { knights: selected, troops: solo ? 0 : troops, supplies: solo ? 0 : supplies, solo, prisoners: taken }
   const problem = (selected.length === 0 ? '移動する騎士を選んでください' : null) ?? validate?.(draft) ?? null
   const arrival = solo ? soloMonths : months
 
-  const toggle = (id: string) => setPicked(current => (current.includes(id) ? current.filter(item => item !== id) : [...current, id]))
+  const toggleIn = (id: string) => (current: readonly string[]) => (current.includes(id) ? current.filter(item => item !== id) : [...current, id])
+  const toggle = (id: string) => setPicked(toggleIn(id))
   const setAlone = (alone: boolean) => {
     setSolo(alone)
     if (alone) {
       setTroops(0)
       setSupplies(0)
+      setPickedPrisoners([])
     }
   }
 
@@ -120,7 +132,7 @@ export default function MoveScreen({
                 <input type="checkbox" checked={solo} onChange={event => setAlone(event.target.checked)} />
                 <span>
                   <b>単騎移動</b>
-                  <small>兵と物資を運ばず、騎士だけで急ぎます（{soloMonths}ヶ月。通常は{months}ヶ月）</small>
+                  <small>兵{prisoners.length > 0 ? '・物資・捕虜' : 'と物資'}を運ばず、騎士だけで急ぎます（{soloMonths}ヶ月。通常は{months}ヶ月）</small>
                 </span>
               </label>
               <div className="norden-move-amounts">
@@ -129,12 +141,17 @@ export default function MoveScreen({
                 <QuantityInput label="物資" step={supplyStep} value={draft.supplies} max={supplyPool} disabled={solo}
                   onChange={setSupplies} />
               </div>
+              {prisoners.length > 0 && (
+                <PrisonerPicker prisoners={prisoners} picked={draft.prisoners} onToggle={id => setPickedPrisoners(toggleIn(id))}
+                  disabledReason={solo ? '単騎移動では連れて行けません' : undefined} />
+              )}
             </section>
           </div>
 
           <footer className="norden-move-summary">
             <span className="norden-move-total">
               騎士 <b>{selected.length}</b>人・兵 <b>{draft.troops.toLocaleString()}</b>・物資 <b>{draft.supplies.toLocaleString()}</b>
+              {prisoners.length > 0 && <>・捕虜 <b>{draft.prisoners.length}</b>人</>}
             </span>
             <span className="norden-move-problem" role="status">{problem ?? ''}</span>
             <Button variant="quiet" onClick={onCancel}>やめる</Button>
