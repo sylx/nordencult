@@ -52,4 +52,9 @@
 }
 
 /* A row of KnightChips (or the like) the host puts in the window, e.g. the knights the event concerns */
-.norden-event-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; margin: 0; }
+.norden-event-chips { 
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr; 
+  gap: 8px 16px;
+  margin: 0;
+}
