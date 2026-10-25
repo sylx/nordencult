@@ -2,8 +2,11 @@ import { CHARACTER_MAP } from '../data/character'
 import { mixMorale } from './army'
 import { successorLord, withGovernor, withoutAssignee } from './economy/domestic'
 import { GameRuleError } from './errors'
-import { availableKnights, awayReason, citiesOf, moveOrderOf, orderOf, ownerOf, soldiersLeft, suppliesLeft, transportOrderOf } from './queries'
-import type { CharacterState, CityId, CityState, FactionId, GameState, MoveLeg, MoveOrder, Movement, MovementKind, TransportOrder } from './types'
+import {
+  availableKnights, availablePrisoners, awayReason, citiesOf, isPrisoner, moveOrderOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, soldiersLeft,
+  suppliesLeft, transportOrderOf,
+} from './queries'
+import type { CharacterId, CharacterState, CityId, CityState, FactionId, GameState, MoveLeg, MoveOrder, Movement, MovementKind, TransportOrder } from './types'
 import { neighbours } from './world'
 
 /**
@@ -14,6 +17,8 @@ import { neighbours } from './world'
  * and cannot be given orders), until they get where they are going.
  * Transports (輸送) go the same way as a move with soldiers and supplies: a knight takes them to another city of
  * the faction, unloads them there and rides back alone (as 単騎移動) to the city they set out from.
+ * Both take prisoners held in the city along as they take soldiers and supplies (not riding alone): the prisoners
+ * are held in the city they set out from until they get there.
  */
 
 /** A move with soldiers and supplies goes this many cities a month (half a month a road) */
@@ -74,9 +79,20 @@ export function moveFromProblem(state: GameState, cityId: CityId): string | null
   return null
 }
 
+/** Why the prisoners cannot be taken along from `from` this turn, or null when they can */
+function prisonersProblem(state: GameState, from: CityId, prisoners: readonly CharacterId[]): string | null {
+  if (new Set(prisoners).size !== prisoners.length) return '同じ捕虜が重複しています'
+  for (const id of prisoners) {
+    if (!isPrisoner(state, id) || state.characters[id].cityId !== from) return `${id} は出発拠点の捕虜ではありません`
+    if (prisonerMovementOf(state, id)) return `${id} は移送中です`
+    if (prisonerOrderOf(state, id)) return `${id} はすでに移送を予約しています`
+  }
+  return null
+}
+
 /** Why a move cannot be ordered now, or null when it can */
 export function moveOrderProblem(state: GameState, draft: Omit<MoveOrder, 'id'>): string | null {
-  const { factionId, from, to, knights, troops, supplies, solo } = draft
+  const { factionId, from, to, knights, troops, supplies, solo, prisoners = [] } = draft
   if (state.phase !== 'strategy' || state.activeFaction !== factionId) return '手番ではありません'
   if (ownerOf(state, from) !== factionId) return '出発拠点が自勢力の都市ではありません'
   if (from === to) return '出発拠点と同じ都市です'
@@ -95,16 +111,19 @@ export function moveOrderProblem(state: GameState, draft: Omit<MoveOrder, 'id'>)
   }
   if (![troops, supplies].every((n) => Number.isInteger(n) && n >= 0)) return '数が正しくありません'
   if (solo && (troops > 0 || supplies > 0)) return '単騎移動では兵と物資を運べません'
+  if (solo && prisoners.length > 0) return '単騎移動では捕虜を連れて行けません'
   if (troops > soldiersLeft(state, from)) return '兵が足りません'
   if (supplies > suppliesLeft(state, from)) return '物資が足りません'
-  return null
+  return prisonersProblem(state, from, prisoners)
 }
 
 /** Adds a move to this turn's orders */
 export function addMoveOrder(state: GameState, draft: Omit<MoveOrder, 'id'>): GameState {
   const problem = moveOrderProblem(state, draft)
   if (problem) throw new GameRuleError(problem)
-  const order: MoveOrder = { ...draft, knights: [...draft.knights], id: `move-${state.serial}` }
+  const order: MoveOrder = {
+    ...draft, knights: [...draft.knights], ...(draft.prisoners && draft.prisoners.length > 0 && { prisoners: [...draft.prisoners] }), id: `move-${state.serial}`,
+  }
   return { ...state, moveOrders: [...state.moveOrders, order], serial: state.serial + 1 }
 }
 
@@ -123,14 +142,16 @@ export function transportFromProblem(state: GameState, cityId: CityId): string |
   if (state.phase !== 'strategy' || !state.activeFaction) return '手番ではありません'
   if (ownerOf(state, cityId) !== state.activeFaction) return '自勢力の都市ではありません'
   if (availableKnights(state, cityId).length === 0) return '輸送を担当できる騎士がいません'
-  if (soldiersLeft(state, cityId) <= 0 && suppliesLeft(state, cityId) <= 0) return '輸送できる兵も物資もありません'
+  if (soldiersLeft(state, cityId) <= 0 && suppliesLeft(state, cityId) <= 0 && availablePrisoners(state, cityId).length === 0) {
+    return '輸送できる兵も物資もありません'
+  }
   if (moveTargets(state, cityId).length === 0) return '輸送できる自勢力の都市がありません'
   return null
 }
 
 /** Why a transport cannot be ordered now, or null when it can */
 export function transportOrderProblem(state: GameState, draft: Omit<TransportOrder, 'id'>): string | null {
-  const { factionId, from, to, knight, troops, supplies } = draft
+  const { factionId, from, to, knight, troops, supplies, prisoners = [] } = draft
   if (state.phase !== 'strategy' || state.activeFaction !== factionId) return '手番ではありません'
   if (ownerOf(state, from) !== factionId) return '出発拠点が自勢力の都市ではありません'
   if (from === to) return '出発拠点と同じ都市です'
@@ -145,17 +166,19 @@ export function transportOrderProblem(state: GameState, draft: Omit<TransportOrd
   if (moveOrderOf(state, knight)) return `${knight} は移動を予約しています`
   if (transportOrderOf(state, knight)) return `${knight} はすでに輸送を予約しています`
   if (![troops, supplies].every((n) => Number.isInteger(n) && n >= 0)) return '数が正しくありません'
-  if (troops === 0 && supplies === 0) return '輸送するものを選んでください'
+  if (troops === 0 && supplies === 0 && prisoners.length === 0) return '輸送するものを選んでください'
   if (troops > soldiersLeft(state, from)) return '兵が足りません'
   if (supplies > suppliesLeft(state, from)) return '物資が足りません'
-  return null
+  return prisonersProblem(state, from, prisoners)
 }
 
 /** Adds a transport to this turn's orders */
 export function addTransportOrder(state: GameState, draft: Omit<TransportOrder, 'id'>): GameState {
   const problem = transportOrderProblem(state, draft)
   if (problem) throw new GameRuleError(problem)
-  const order: TransportOrder = { ...draft, id: `transport-${state.serial}` }
+  const order: TransportOrder = {
+    ...draft, ...(draft.prisoners && draft.prisoners.length > 0 && { prisoners: [...draft.prisoners] }), id: `transport-${state.serial}`,
+  }
   return { ...state, transportOrders: [...state.transportOrders, order], serial: state.serial + 1 }
 }
 
@@ -170,7 +193,7 @@ export function cancelTransportOrder(state: GameState, orderId: string): GameSta
 }
 
 /** The faction's city nearest to `from` along the roads (`from` itself when it is one), or null when it has none */
-function nearestCity(state: GameState, factionId: FactionId, from: CityId): CityId | null {
+export function nearestCity(state: GameState, factionId: FactionId, from: CityId): CityId | null {
   const seen = new Set([from])
   const queue = [from]
   for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
@@ -214,9 +237,31 @@ function monthOf(movement: Movement): { leg: CityId[]; next: Movement } {
 function returnOf(state: GameState, transport: Movement): Movement | null {
   const route = moveRoute(state, transport.factionId, transport.to, transport.from)
   if (!route || route.length < 2) return null
+  // Unloaded: no soldiers, supplies or prisoners
+  const { id, factionId, knights, troopMorale } = transport
   return {
-    ...transport, kind: 'return', from: transport.to, to: transport.from, troops: 0, supplies: 0, solo: true,
+    id, kind: 'return', factionId, from: transport.to, to: transport.from, knights, troops: 0, supplies: 0, solo: true, troopMorale,
     route, monthsLeft: moveMonths(route.length - 1, true),
+  }
+}
+
+/**
+ * A prisoner set free (escaping, or let go) at `at`: riding alone (as 単騎移動) to the nearest city of their
+ * faction, serving nowhere on the way (an 'escape' movement, `id`); straight into it when `at` is one. Unaffiliated
+ * (在野) when the faction has no city left
+ */
+export function escapeOf(state: GameState, characterId: CharacterId, at: CityId, id: string): { character: CharacterState; movement: Movement | null } {
+  const factionId = state.characters[characterId]?.factionId
+  const to = factionId ? nearestCity(state, factionId, at) : null
+  const route = factionId && to ? moveRoute(state, factionId, at, to) : null
+  if (!factionId || !to || !route) return { character: { cityId: null, factionId: null }, movement: null }
+  if (route.length < 2) return { character: { cityId: to, factionId }, movement: null }
+  return {
+    character: { cityId: null, factionId },
+    movement: {
+      id, kind: 'escape', factionId, from: at, to, knights: [characterId], troops: 0, supplies: 0, solo: true, troopMorale: 0,
+      route, monthsLeft: moveMonths(route.length - 1, true),
+    },
   }
 }
 
@@ -232,10 +277,12 @@ function setOut(state: GameState, random: () => number = Math.random): { state: 
   /** Cities whose lord moves away */
   const lordless = new Set<CityId>()
   const transports = state.transportOrders.map(({ knight, ...order }): [MoveOrder, MovementKind] => [{ ...order, knights: [knight], solo: false }, 'transport'])
-  for (const [order, kind] of [...state.moveOrders.map((o): [MoveOrder, MovementKind] => [o, 'move']), ...transports]) {
+  for (const [{ prisoners: ordered = [], ...order }, kind] of [...state.moveOrders.map((o): [MoveOrder, MovementKind] => [o, 'move']), ...transports]) {
     const { factionId, from, to } = order
     if (ownerOf(state, from) !== factionId) continue
-    const knights = order.knights.filter((id) => characters[id]?.cityId === from && characters[id].factionId === factionId)
+    const knights = order.knights.filter((id) => characters[id]?.cityId === from && characters[id].factionId === factionId && !characters[id].prisoner)
+    // Prisoners still held there (they may have escaped)
+    const prisoners = ordered.filter((id) => characters[id]?.prisoner && characters[id].cityId === from && !prisonerMovementOf(state, id))
     const route = moveRoute(state, factionId, from, to)
     if (knights.length === 0 || !route) continue
     const city = cities[from]
@@ -250,8 +297,8 @@ function setOut(state: GameState, random: () => number = Math.random): { state: 
     }
     cities[from] = { ...city, troops: city.troops - troops, storedSupplies: city.storedSupplies - supplies, assignments }
     movements.push({
-      ...order, ...(kind !== 'move' && { kind }), knights, troops, supplies, troopMorale: city.troopMorale, route,
-      monthsLeft: moveMonths(route.length - 1, order.solo),
+      ...order, ...(kind !== 'move' && { kind }), knights, troops, supplies, ...(prisoners.length > 0 && { prisoners }),
+      troopMorale: city.troopMorale, route, monthsLeft: moveMonths(route.length - 1, order.solo),
     })
   }
   // Not the lord: knights moving away now or on a move already (serving in the city they set out from until they
@@ -277,7 +324,7 @@ export function movementLegs(state: GameState): MoveLeg[] {
     const { leg, next } = monthOf(movement)
     return [{
       id: m.id, ...(m.kind && { kind: m.kind }), factionId: m.factionId, from: m.from, solo: m.solo, knights: m.knights, route: leg, to: next.to,
-      arrives: next.monthsLeft === 0,
+      arrives: next.monthsLeft === 0, ...(m.prisoners && { prisoners: m.prisoners }),
     }]
   })
 }
@@ -288,20 +335,26 @@ export function movementLegs(state: GameState): MoveLeg[] {
  * moving away is followed by another, their soldiers and supplies are taken from it), then every
  * movement goes a month's way. Those arriving join their city: the knights serve there (the head of the faction,
  * 君主, moving in becomes its lord in place of the one there), the soldiers join its own (their morale mixing) and
- * the supplies its store. A transport's knight does not stay: they ride back alone
+ * the supplies its store, the prisoners it takes along are held there. A transport's knight does not stay: they ride back alone
  * to the city they set out from (serving there all the while), from the next month (returnOf). A movement whose city was lost heads for the
- * faction's nearest city instead; when the faction has no city left, its knights become unaffiliated
- * and its soldiers and supplies are lost.
+ * faction's nearest city instead; when the faction has no city left, its knights become unaffiliated,
+ * its soldiers and supplies are lost and its prisoners are set free (escapeOf).
  */
 export function runMovements(state: GameState, random: () => number = Math.random): GameState {
   const { state: departed, movements: setOff } = setOut(state, random)
   const characters: Record<string, CharacterState> = { ...departed.characters }
   const cities: Record<string, CityState> = { ...departed.cities }
   const movements: Movement[] = []
+  let serial = departed.serial
   for (const m of [...departed.movements, ...setOff]) {
     const movement = heading(departed, m)
     if (!movement) {
       for (const id of m.knights) characters[id] = { cityId: null, factionId: null }
+      for (const id of m.prisoners ?? []) {
+        const escape = escapeOf(departed, id, m.route[0], `escape-${serial++}`)
+        characters[id] = escape.character
+        if (escape.movement) movements.push(escape.movement)
+      }
       continue
     }
     const { next } = monthOf(movement)
@@ -316,15 +369,17 @@ export function runMovements(state: GameState, random: () => number = Math.rando
       troopMorale: mixMorale(city.troops, city.troopMorale, next.troops, next.troopMorale),
       storedSupplies: city.storedSupplies + next.supplies,
     }
+    for (const id of next.prisoners ?? []) characters[id] = { ...characters[id], cityId: next.to }
     const back = next.kind === 'transport' ? returnOf(departed, next) : null
     if (back) movements.push(back)
     else for (const id of next.knights) characters[id] = { ...characters[id], cityId: next.to }
-    // The head of the faction (君主) moving in becomes the lord of the city
-    const head = next.kind ? undefined : next.knights.find((id) => CHARACTER_MAP[id]?.isPatriarch && characters[id].factionId === next.factionId)
+    // The head of the faction (君主) moving in (or escaping back) becomes the lord of the city
+    const head = next.kind && next.kind !== 'escape'
+      ? undefined : next.knights.find((id) => CHARACTER_MAP[id]?.isPatriarch && characters[id].factionId === next.factionId)
     if (head) cities[next.to] = { ...cities[next.to], assignments: withGovernor(cities[next.to].assignments, head) }
   }
   return {
-    ...departed, characters, cities, movements,
+    ...departed, characters, cities, movements, serial,
     ...(departed.march && { march: { ...departed.march, moved: true } }),
   }
 }

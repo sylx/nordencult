@@ -58,8 +58,13 @@ export interface CharacterState {
    * the city they set out from, away from it (movementOf), until they get where they are going; null when that city was lost
    */
   cityId: CityId | null
-  /** Faction they serve; null when unaffiliated */
+  /** Faction they serve; null when unaffiliated. A prisoner's: the faction they served when captured (null once it fell) */
   factionId: FactionId | null
+  /**
+   * 捕虜: held prisoner in `cityId` (a city of another faction), not serving there. They may escape in a progress
+   * phase (runEscapes) and be taken to another city of its faction on a move or a transport (MoveOrder.prisoners)
+   */
+  prisoner?: boolean
 }
 
 /** A building under construction in a city */
@@ -231,6 +236,8 @@ export interface MoveOrder {
   supplies: number
   /** 単騎移動: the knights alone, faster (moveMonths) */
   solo: boolean
+  /** Prisoners held in `from` taken along, as soldiers and supplies are; none when omitted or riding alone */
+  prisoners?: readonly CharacterId[]
 }
 
 /**
@@ -246,13 +253,16 @@ export interface TransportOrder {
   knight: CharacterId
   troops: number
   supplies: number
+  /** Prisoners held in `from` taken along and left in `to`; none when omitted */
+  prisoners?: readonly CharacterId[]
 }
 
 /**
  * What a movement is: a move; a transport on its way there (unloading in `to`, then going back to `from` as a
- * 'return'); a transport's knight riding back alone (its `from` is where they unloaded)
+ * 'return'); a transport's knight riding back alone (its `from` is where they unloaded); a prisoner who escaped
+ * riding alone to the nearest city of their faction ('escape': they serve nowhere until they get there)
  */
-export type MovementKind = 'move' | 'transport' | 'return'
+export type MovementKind = 'move' | 'transport' | 'return' | 'escape'
 
 /** A move or a transport under way: where it is and the months it still takes */
 export interface Movement extends MoveOrder {
@@ -281,6 +291,8 @@ export interface MoveLeg {
   /** Where it is going (another city of the faction when the one it set out for was lost) */
   to: CityId
   arrives: boolean
+  /** Prisoners it takes along; none when omitted */
+  prisoners?: readonly CharacterId[]
 }
 
 /**
@@ -379,8 +391,7 @@ export type BattleEndReason = 'eliminated' | 'stronghold' | 'commander' | 'comma
 /**
  * A unit that left the battlefield by retreating, as the battle screen reports
  * it (battle-runtime's RetreatReport). The retreat may fail: the knight is then
- * taken prisoner by the other side. What happens to prisoners is not decided
- * yet; for now they stay where they were and are only listed in the report.
+ * taken prisoner by the other side (BattleReport.prisoners).
  */
 export interface BattleRetreat {
   side: BattleSide
@@ -432,6 +443,12 @@ export interface CharacterMove {
   to: CityId | null
 }
 
+/** A knight taken prisoner in a battle, and the city they are held in */
+export interface Imprisonment {
+  characterId: CharacterId
+  cityId: CityId
+}
+
 /** A knight made the lord (governor) of a city after a battle */
 export interface GovernorAppointment {
   cityId: CityId
@@ -453,6 +470,10 @@ export interface BattleReport {
   governors: readonly GovernorAppointment[]
   /** Knights captured in a city taken without a battle (undefended) */
   captives: readonly CharacterId[]
+  /** Knights taken prisoner (captured retreating, wiped out or in a city taken), and where they are held */
+  prisoners: readonly Imprisonment[]
+  /** Prisoners of the attacker's faction held in the city captured, set free: they serve there now */
+  freed: readonly CharacterId[]
   /** Soldiers each city got after the battle, in the order they got there */
   soldiers: readonly SoldierReturn[]
 }

@@ -58,20 +58,40 @@ export function turnOrder(state: GameState): FactionId[] {
 export const citiesOf = (state: GameState, factionId: FactionId): CityId[] =>
   CITY_IDS.filter((id) => state.cityOwners[id] === factionId)
 
-/** Characters serving in a city, in id order, those away on a move or a transport included */
+/** Characters serving in a city, in id order, those away on a move or a transport included (not its prisoners) */
 export function charactersIn(state: GameState, cityId: CityId): CharacterId[] {
-  return Object.keys(state.characters).filter((id) => state.characters[id].cityId === cityId).sort()
+  return Object.keys(state.characters).filter((id) => state.characters[id].cityId === cityId && !state.characters[id].prisoner).sort()
 }
+
+/** A character held prisoner (捕虜) */
+export const isPrisoner = (state: GameState, characterId: CharacterId): boolean => Boolean(state.characters[characterId]?.prisoner)
+
+/** Prisoners held in a city, in id order, those being taken away on a move or a transport included */
+export function prisonersIn(state: GameState, cityId: CityId): CharacterId[] {
+  return Object.keys(state.characters).filter((id) => state.characters[id].cityId === cityId && state.characters[id].prisoner).sort()
+}
+
+/** The move or transport a prisoner is being taken along on, if any */
+export const prisonerMovementOf = (state: GameState, characterId: CharacterId): Movement | undefined =>
+  state.movements.find((m) => m.prisoners?.includes(characterId))
+
+/** The move or transport ordered this turn a prisoner is to be taken along on, if any */
+export const prisonerOrderOf = (state: GameState, characterId: CharacterId): MoveOrder | TransportOrder | undefined =>
+  [...state.moveOrders, ...state.transportOrders].find((o) => o.prisoners?.includes(characterId))
+
+/** Prisoners in a city not being taken away, nor to be this turn */
+export const availablePrisoners = (state: GameState, cityId: CityId): CharacterId[] =>
+  prisonersIn(state, cityId).filter((id) => !prisonerMovementOf(state, id) && !prisonerOrderOf(state, id))
 
 /** The move or transport (there or riding back) a character is away on, if any */
 export const movementOf = (state: GameState, characterId: CharacterId): Movement | undefined =>
   state.movements.find((m) => m.knights.includes(characterId))
 
-/** 移動中 or 輸送中 (a transport's knight riding back too) for a character away on a movement, or null */
+/** 移動中, 輸送中 (a transport's knight riding back too) or 脱走中 for a character away on a movement, or null */
 export function awayReason(state: GameState, characterId: CharacterId): string | null {
   const movement = movementOf(state, characterId)
   if (!movement) return null
-  return movement.kind ? '輸送中' : '移動中'
+  return movement.kind === 'escape' ? '脱走中' : movement.kind ? '輸送中' : '移動中'
 }
 
 /** Characters in a city now, in id order: those serving there and not away (they defend it) */

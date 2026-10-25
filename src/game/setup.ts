@@ -50,6 +50,11 @@ export function createInitialState(playerFactions: readonly FactionId[] = [DEFAU
     // Characters without a faction of their own serve the faction of their city, except mercenaries:
     // they wait to be hired (the mercenary market is open to every city for now, so their city is dropped)
     const mercenary = Boolean(CHARACTER_MAP[start.id]?.mercenaryInfo)
+    // A prisoner is held in a city of another faction (one of the city's own is just its knight)
+    if (start.isPrisoner && cityOwners[start.cityId] && start.factionId !== cityOwners[start.cityId]) {
+      characters[start.id] = { cityId: start.cityId, factionId: start.factionId ?? null, prisoner: true }
+      continue
+    }
     const factionId = start.factionId ?? (mercenary ? null : cityOwners[start.cityId] ?? null)
     characters[start.id] = { cityId: factionId ? start.cityId : null, factionId }
     // The lord of a city starts as its governor

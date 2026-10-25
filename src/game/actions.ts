@@ -4,13 +4,15 @@ import { defenderArmy } from './defense'
 import { successorLord, withGovernor, withoutAssignee } from './economy/domestic'
 import { runEconomy } from './economy/runEconomy'
 import { GameRuleError } from './errors'
-import { runMovements } from './movement'
+import { escapeOf, runMovements } from './movement'
+import { runEscapes } from './prisoners'
 import {
-  commandRank, defenseProblem, isPlayerFaction, leadingKnight, movementOf, orderProblem, ownerOf, retreatCities, stationedIn, turnOrder,
+  commandRank, defenseProblem, isPlayerFaction, leadingKnight, movementOf, orderProblem, ownerOf, prisonerMovementOf, retreatCities, stationedIn, turnOrder,
 } from './queries'
 import type {
   ArmyUnit, Battle, BattleEndReason, BattleReport, BattleRetreat, BattleSide, BattleSurvivor, BattleWinner, BattleWipeout, CharacterId,
-  CharacterMove, CharacterState, CityId, CityState, DefenseDraft, Entry, FactionDestroyed, FactionId, GameState, GovernorAppointment, InvasionOrder, SoldierReturn,
+  CharacterMove, CharacterState, CityId, CityState, DefenseDraft, Entry, FactionDestroyed, FactionId, GameState, GovernorAppointment, Imprisonment,
+  InvasionOrder, Movement, SoldierReturn,
 } from './types'
 import { neighbours } from './world'
 
@@ -42,8 +44,9 @@ export function cancelOrder(state: GameState, orderId: string): GameState {
  * after the last one the progress phase (進行フェーズ, 'march') starts with every
  * order queued in the factions' turn order (by 国力), each faction's in the order they were made.
  * Its moves come first (the move part: runMovements), then the invasions one by one (the invasion part).
+ * As it starts the prisoners may escape (runEscapes), riding off in its moves.
  */
-export function endFactionTurn(state: GameState): GameState {
+export function endFactionTurn(state: GameState, random: () => number = Math.random): GameState {
   if (state.phase !== 'strategy' || !state.activeFaction) throw new GameRuleError('戦略フェーズではありません')
   const order = turnOrder(state)
   const next = order[order.indexOf(state.activeFaction) + 1]
@@ -52,7 +55,7 @@ export function endFactionTurn(state: GameState): GameState {
   // Stable sort: one faction's orders keep the order they were made in
   const queue = [...state.orders].sort((a, b) => rank(a.factionId) - rank(b.factionId)).map((o) => o.id)
   return {
-    ...state, phase: 'march', activeFaction: null,
+    ...runEscapes(state, random), phase: 'march', activeFaction: null,
     march: { moved: false, queue, owners: state.cityOwners, current: null, entry: null, decision: null, confirmed: [] },
   }
 }
@@ -253,13 +256,16 @@ function startTurn(state: GameState): GameState {
  *   (in ROAD_LINKS order), or become unaffiliated when there is none.
  * - The defender wins: the attacking knights go back where they set out from.
  * - A city taken without a battle (undefended): the attacker wins, and the knights in the city are captured
- *   (they stay as they are for now, like other prisoners; the report lists them as captives).
+ *   (the report lists them as captives).
  * - Knights who retreated from the battlefield (`retreats`) go to the city they
  *   chose instead, whoever wins (an attacker retreating to where they set out
- *   from goes back there). Knights captured retreating stay as they are for now
- *   (prisoners are not decided yet); the report lists them.
- * - Knights of units wiped out (`wipeouts`) who were captured stay as they are
- *   too, like those captured retreating; those who got away go with their side.
+ *   from goes back there).
+ * - Knights captured (retreating, wiped out, or in a city taken) by the side that won are its prisoners
+ *   (CharacterState.prisoner), held in the city fought over. Those the losing side captured are set free and go back
+ *   where they were: an attacker to the city they set out from, a defender staying in their city.
+ *   Knights of units wiped out who got away go with their side.
+ * - Prisoners of the attacker's faction held in the city it takes are set free and serve there; those of other
+ *   factions are the attacker's prisoners now. Those being taken away on a move or a transport go on.
  * Soldiers: units retreating take theirs to the city they retreat to (lost when captured). The units still on the
  * battlefield (`survivors`; omitted: every unit not retreated or wiped out, with the soldiers it started with) go
  * with their knights: the winner's into the city fought over (the attacker's joining the soldiers the defender did
@@ -296,11 +302,25 @@ export function resolveBattle(
     if (!retreatCities(state, battle, r.side).includes(r.to)) throw new GameRuleError(`${r.to} へは退却できません`)
   }
   const captives = battle.undefended ? [...defender.knights] : []
-  /** Knights who left the battlefield by retreating (or were captured trying), or were captured wiped out or in a city taken */
+  // Where the defender's knights retreat out of the city lost, and their soldiers go when it holds
+  const refuge = defender.factionId
+    ? neighbours(cityId).find((id) => state.cityOwners[id] === defender.factionId)
+    : undefined
+  /** Knights captured, and their side */
+  const captured = new Map<CharacterId, BattleSide>([
+    ...retreats.flatMap((r) => (r.captured && r.knightId ? [[r.knightId, r.side] as const] : [])),
+    ...wipeouts.flatMap((w) => (w.captured && w.knightId ? [[w.knightId, w.side] as const] : [])),
+    ...captives.map((id) => [id, 'defender'] as const),
+  ])
+  // Only the side that won keeps those it captured, held in the city fought over
+  const prisoners: Imprisonment[] = [...captured].flatMap(([characterId, side]) => (side === winner ? [] : [{ characterId, cityId }]))
+  // The losing side's captures come to nothing: the attackers it took go back where they set out from (the defenders it took are in their city)
+  const released = [...captured].flatMap(([id, side]) => (side === winner && side === 'attacker' ? [id] : []))
+  /** Knights who left the battlefield by retreating, were taken prisoner, or were set free and go back */
   const left = new Set([
-    ...retreats.flatMap((r) => r.knightId ?? []),
-    ...wipeouts.flatMap((w) => (w.captured && w.knightId) || []),
-    ...captives,
+    ...retreats.flatMap((r) => (r.knightId && !r.captured ? [r.knightId] : [])),
+    ...prisoners.map((p) => p.characterId),
+    ...released,
   ])
   const characters: Record<string, CharacterState> = { ...state.characters }
   const cityOwners = { ...state.cityOwners }
@@ -325,6 +345,14 @@ export function resolveBattle(
   const startedWith = (side: BattleSide, knightId: CharacterId | null) =>
     battle[side].units.find((u) => u.knightId !== null && u.knightId === knightId)?.soldiers ?? 0
 
+  // Prisoners leave their assignments in the city they served in
+  for (const { characterId, cityId: held } of prisoners) {
+    const before = characters[characterId]
+    const served = before.cityId ? cities[before.cityId] : undefined
+    if (served) cities[before.cityId!] = { ...served, assignments: withoutAssignee(served.assignments, characterId) }
+    characters[characterId] = { cityId: held, factionId: before.factionId, prisoner: true }
+  }
+
   for (const r of retreats) {
     if (r.captured) continue
     addSoldiers(r.to, r.soldiers ?? startedWith(r.side, r.knightId), battle[r.side].morale)
@@ -336,24 +364,34 @@ export function resolveBattle(
     }
   }
 
-  const refuge = defender.factionId
-    ? neighbours(cityId).find((id) => cityOwners[id] === defender.factionId)
-    : undefined
+  const freed: CharacterId[] = []
   if (winner === 'attacker') {
     cityOwners[cityId] = attacker.factionId
     cities[cityId] = { ...cities[cityId], assignments: { officers: {} } }
     for (const id of attacker.knights) if (!left.has(id)) move(id, 'enter', cityId)
+    for (const id of released) move(id, 'return', attacker.from)
     // The defender's knights in the city, those not in its army too (only those still there: another battle may have moved them)
-    const garrison = Object.keys(characters).sort()
-      .filter((id) => characters[id].cityId === cityId && characters[id].factionId === defender.factionId && !movementOf(state, id))
+    const garrison = Object.keys(characters).sort().filter((id) => {
+      const c = characters[id]
+      return c.cityId === cityId && c.factionId === defender.factionId && !c.prisoner && !movementOf(state, id)
+    })
     for (const id of garrison) {
       if (left.has(id)) continue
       move(id, refuge ? 'retreat' : 'wander', refuge ?? null)
     }
-    // Knights away on a move or a transport no longer serve in the city lost: they go on to where they were heading
-    for (const id of Object.keys(characters)) {
-      if (characters[id].cityId === cityId && characters[id].factionId !== attacker.factionId && movementOf(state, id)) {
-        characters[id] = { ...characters[id], cityId: null }
+    for (const id of Object.keys(characters).sort()) {
+      const c = characters[id]
+      if (c.cityId !== cityId) continue
+      if (c.prisoner) {
+        // Prisoners being taken away go on, held nowhere until they get there; the attacker's own held there are free
+        if (prisonerMovementOf(state, id)) characters[id] = { ...c, cityId: null }
+        else if (c.factionId === attacker.factionId) {
+          characters[id] = { cityId, factionId: c.factionId }
+          freed.push(id)
+        }
+      // Knights away on a move or a transport no longer serve in the city lost: they go on to where they were heading
+      } else if (c.factionId !== attacker.factionId && movementOf(state, id)) {
+        characters[id] = { ...c, cityId: null }
       }
     }
   } else {
@@ -390,7 +428,7 @@ export function resolveBattle(
     const owner = cityOwners[target]
     if (!city || !owner || city.assignments.governor) return
     const here = Object.keys(characters)
-      .filter((id) => characters[id].cityId === target && characters[id].factionId === owner && !movementOf(state, id))
+      .filter((id) => characters[id].cityId === target && characters[id].factionId === owner && !characters[id].prisoner && !movementOf(state, id))
     if (here.length === 0) return
     const commander = battle[side].commander
     const governor = commander && here.includes(commander) ? commander : here[Math.floor(random() * here.length)]
@@ -407,7 +445,7 @@ export function resolveBattle(
 
   const report: BattleReport = {
     battle, winner, reason, cityCaptured: winner === 'attacker', moves, retreats: [...retreats], wipeouts: [...wipeouts], governors,
-    captives, soldiers,
+    captives, prisoners, freed, soldiers,
   }
   const resolved: GameState = { ...state, cityOwners, characters, cities, march: { ...state.march, current: null }, lastBattle: report }
   const lost = defender.factionId
@@ -418,18 +456,32 @@ export function resolveBattle(
 
 /**
  * A faction that lost its last city (`cityId`, to `by`) is destroyed: every knight of it (`knights`, as the battle
- * started: some went unaffiliated in it) becomes unaffiliated (在野), prisoners and those on a move or a transport
- * too (their movements end), and the event is told (FactionDestroyed)
+ * started: some went unaffiliated in it) becomes unaffiliated (在野), those on a move or a transport too (their
+ * movements end), and the event is told (FactionDestroyed). Its knights held prisoner stay prisoners, of no faction
+ * (they no longer escape); the prisoners it was taking along on its moves and transports are set free where they are (escapeOf)
  */
 function destroyFaction(state: GameState, factionId: FactionId, cityId: CityId, by: FactionId, served: readonly CharacterId[]): GameState {
   const knights = [...served].sort()
   const characters: Record<string, CharacterState> = { ...state.characters }
-  for (const id of Object.keys(characters)) if (characters[id].factionId === factionId) characters[id] = { cityId: null, factionId: null }
-  const event: FactionDestroyed = { id: `event-${state.serial}`, kind: 'factionDestroyed', turn: state.turn, factionId, cityId, by, knights }
-  return {
-    ...state, characters, movements: state.movements.filter((m) => m.factionId !== factionId),
-    events: [...state.events, event], serial: state.serial + 1,
+  for (const id of Object.keys(characters)) {
+    const c = characters[id]
+    if (c.factionId === factionId) characters[id] = c.prisoner ? { ...c, factionId: null } : { cityId: null, factionId: null }
   }
+  const event: FactionDestroyed = { id: `event-${state.serial}`, kind: 'factionDestroyed', turn: state.turn, factionId, cityId, by, knights }
+  let serial = state.serial + 1
+  const movements: Movement[] = []
+  for (const m of state.movements) {
+    if (m.factionId !== factionId) {
+      movements.push(m)
+      continue
+    }
+    for (const id of m.prisoners ?? []) {
+      const escape = escapeOf({ ...state, characters }, id, m.route[0], `escape-${serial++}`)
+      characters[id] = escape.character
+      if (escape.movement) movements.push(escape.movement)
+    }
+  }
+  return { ...state, characters, movements, events: [...state.events, event], serial }
 }
 
 /** The event told to the player is dropped */

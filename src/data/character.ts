@@ -65,6 +65,8 @@ export interface CharacterStart {
   factionId?: string
   /** Lord of the city */
   isLord?: boolean
+  /** Held prisoner in the city (捕虜); `factionId` is the faction they served (omitted: none) */
+  isPrisoner?: boolean
 }
 
 export const CHARACTER_LIST: readonly Character[] = characterData as Character[]

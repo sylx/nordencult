@@ -349,7 +349,7 @@ describe('battle results', () => {
     expect(neighbours(AMBARIA)).toEqual(expect.arrayContaining([...retreatCities(marching, battle, 'defender'), FLUEN]))
   })
 
-  it('knights who retreated go where they chose; captured ones stay and are reported', () => {
+  it('knights who retreated go where they chose; those the losing side captured go back where they were', () => {
     const retreats: BattleRetreat[] = [
       { side: 'attacker', knightId: '016', to: FLUEN, captured: false },
       { side: 'attacker', knightId: '015', to: FLUEN, captured: true },
@@ -359,11 +359,14 @@ describe('battle results', () => {
     const state = resolveBattle(marching, marching.march!.current!.id, 'attacker', retreats)
     expect(state.cityOwners[AMBARIA]).toBe('carta')
     const moves = state.lastBattle!.moves
+    // 015, captured by the defender who lost, is set free and goes back to フルーエン
     expect(moves.filter((m) => m.characterId === '015' || m.characterId === '016')).toEqual([
       { characterId: '016', kind: 'return', from: FLUEN, to: FLUEN },
+      { characterId: '015', kind: 'return', from: FLUEN, to: FLUEN },
     ])
     expect(moves).toContainEqual({ characterId: '013', kind: 'retreat', from: AMBARIA, to: VERSTA })
-    expect(state.characters['015']).toEqual(marching.characters['015'])
+    expect(state.characters['015']).toEqual({ cityId: FLUEN, factionId: 'carta' })
+    expect(state.lastBattle?.prisoners).toEqual([])
     expect(state.lastBattle?.retreats).toEqual(retreats)
   })
 
@@ -375,14 +378,15 @@ describe('battle results', () => {
     expect(resolveBattle(marching, id, 'defender').lastBattle?.reason).toBeNull()
   })
 
-  it('knights captured when wiped out stay and are reported; those who got away go with their side', () => {
+  it('knights captured when wiped out are held in the city of the side that won; those who got away go with their side', () => {
     const wipeouts: BattleWipeout[] = [
       { side: 'attacker', knightId: '015', captured: true },
       { side: 'attacker', knightId: '016', captured: false },
     ]
     const marching = startNextBattle(endStrategyPhase(invadeAmbaria()))
     const state = resolveBattle(marching, marching.march!.current!.id, 'defender', [], null, wipeouts)
-    expect(state.characters['015']).toEqual(marching.characters['015'])
+    expect(state.characters['015']).toEqual({ cityId: AMBARIA, factionId: 'carta', prisoner: true })
+    expect(state.lastBattle?.prisoners).toEqual([{ characterId: '015', cityId: AMBARIA }])
     expect(state.lastBattle!.moves.filter((m) => m.characterId === '015' || m.characterId === '016')).toEqual([
       { characterId: '016', kind: 'return', from: FLUEN, to: FLUEN },
     ])
@@ -624,8 +628,9 @@ describe('soldiers and defense', () => {
     // The city's soldiers and supplies are the attacker's now, the army's soldiers joining them
     expect(troops(taken, AMBARIA)).toBe(troops(marching, AMBARIA) + 500)
     expect(taken.cities[AMBARIA].storedSupplies).toBe(marching.cities[AMBARIA].storedSupplies)
-    // Prisoners stay as they are for now
-    expect(taken.characters['013']).toEqual({ cityId: AMBARIA, factionId: 'leonis' })
+    // Prisoners of the attacker, held in the city
+    expect(taken.characters['013']).toEqual({ cityId: AMBARIA, factionId: 'leonis', prisoner: true })
+    expect(taken.lastBattle?.prisoners.map((p) => p.cityId)).toEqual(AMBARIA_KNIGHTS.map(() => AMBARIA))
     expect(taken.characters['015']).toMatchObject({ cityId: AMBARIA, factionId: 'carta' })
   })
 

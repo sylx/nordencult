@@ -17,7 +17,8 @@ import { UNIT_TYPES } from '../../data/unitTypes'
 import {
   assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
   FUNDED_ROLES, governorOf, officerTraining,
-  MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, seasonOf, tierOf, transportOrderOf, treasuryForecast, turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type AssignmentRole, type CityLogStat,
+  MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportOrderOf, treasuryForecast,
+  turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type AssignmentRole, type CityLogStat,
   type GameEvent, type GameState, type Season,
 } from '../../game'
 
@@ -102,6 +103,10 @@ export function knightView(game: GameState, id: string): KnightView {
   const movement = movementOf(game, id)
   const away = awayReason(game, id)
   const assignment = assignmentOf(game, id)
+  const prisoner = game.characters[id]?.prisoner
+  // A prisoner being taken away, or to be this turn
+  const carried = prisonerMovementOf(game, id)
+  const carriedOrder = prisonerOrderOf(game, id)
   return {
     id,
     name: character.name,
@@ -113,6 +118,9 @@ export function knightView(game: GameState, id: string): KnightView {
     biography: character.biography,
     subtitle: [
       CHARACTER_TYPE_LABELS[character.type],
+      ...(prisoner ? ['捕虜'] : []),
+      ...(carriedOrder ? [`${cityName(carriedOrder.to)}へ移送予約中`] : []),
+      ...(carried ? [`${cityName(carried.to)}へ移送中`] : []),
       ...(assignment ? [ASSIGNMENT_LABELS[assignment]] : []),
       ...(order ? [`${cityName(order.to)}へ侵攻予約中`] : []),
       ...(moveOrder ? [`${cityName(moveOrder.to)}へ移動予約中`] : []),
@@ -134,7 +142,8 @@ export function knightView(game: GameState, id: string): KnightView {
     defaultUnitType: defaultUnitType(id),
     unitTypes: unitTypesOf(id),
     commandRank: commandRank(game, id),
-    unavailableReason: away ?? (order ? '侵攻予約中' : moveOrder ? '移動予約中' : transportOrder ? '輸送予約中' : undefined),
+    unavailableReason: away ?? (order ? '侵攻予約中' : moveOrder ? '移動予約中' : transportOrder ? '輸送予約中'
+      : carried ? '移送中' : carriedOrder ? '移送予約中' : undefined),
   }
 }
 
@@ -189,6 +198,7 @@ export function cityView(game: GameState, id: string): CityView {
     },
     tags: city.tags,
     knights: knights.map((knight) => knightView(game, knight)),
+    prisoners: prisonersIn(game, id).map((prisoner) => knightView(game, prisoner)),
     history: (game.cityHistory[id] ?? []).map(({ turn, population, market, production, log }) => ({
       turn, population, market, production,
       log: log.map(({ stat, ...line }) => ({ ...line, label: CITY_LOG_LABELS[stat] })),

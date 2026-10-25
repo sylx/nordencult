@@ -37,13 +37,15 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
     )
   }
 
-  const { battle, winner, reason, cityCaptured, moves, retreats, wipeouts, governors, soldiers } = report
-  // Knights captured retreating, wiped out or in a city taken without a battle (what happens to them is not decided yet), and how
-  const captives = new Map([
-    ...retreats.flatMap((r) => (r.captured && r.knightId ? [[r.knightId, '退却に失敗し捕虜に'] as const] : [])),
-    ...wipeouts.flatMap((w) => (w.captured && w.knightId ? [[w.knightId, '殲滅され捕虜に'] as const] : [])),
-    ...report.captives.map((id) => [id, '捕縛され捕虜に'] as const),
+  const { battle, winner, reason, cityCaptured, moves, retreats, wipeouts, governors, soldiers, prisoners, freed } = report
+  // Knights captured retreating, wiped out or in a city taken without a battle, how, and where they are held
+  // (those the losing side captured are set free: they are not prisoners)
+  const how = new Map([
+    ...retreats.flatMap((r) => (r.captured && r.knightId ? [[r.knightId, '退却に失敗し'] as const] : [])),
+    ...wipeouts.flatMap((w) => (w.captured && w.knightId ? [[w.knightId, '殲滅され'] as const] : [])),
+    ...report.captives.map((id) => [id, '捕縛され'] as const),
   ])
+  const captives = new Map(prisoners.map((p) => [p.characterId, `${how.get(p.characterId) ?? ''}${cityName(p.cityId)}で捕虜に`]))
   const winnerFaction = winner === 'attacker' ? battle.attacker.factionId : battle.defender.factionId
   const city = cityName(battle.cityId)
   const kinds = (Object.keys(MOVE_LABELS) as MoveKind[]).filter((k) => moves.some((m) => m.kind === k))
@@ -111,6 +113,13 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
           <section className="battle-result__section">
             <h2>捕虜</h2>
             <KnightList ids={[...captives.keys()]} compact aside={(id) => captives.get(id)} />
+          </section>
+        )}
+
+        {freed.length > 0 && (
+          <section className="battle-result__section">
+            <h2>捕虜の解放</h2>
+            <KnightList ids={freed} compact aside={() => `${city}で解放され、そのまま仕える`} />
           </section>
         )}
 

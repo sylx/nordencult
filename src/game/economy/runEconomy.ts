@@ -22,7 +22,8 @@ function snapshot(city: CityState, cityId: CityId): CitySnapshot {
 export function treasuryForecast(state: GameState, factionId: FactionId): FactionEconomy {
   const income = CITY_IDS.filter((id) => state.cityOwners[id] === factionId)
     .reduce((sum, id) => sum + outputOf(state.cities[id], id).income, 0)
-  const knights = Object.values(state.characters).filter((c) => c.factionId === factionId).length
+  // Its knights held prisoner are paid nothing
+  const knights = Object.values(state.characters).filter((c) => c.factionId === factionId && !c.prisoner).length
   const before = state.gold[factionId] ?? 0
   const salary = Math.min(before + income, knights * SALARY)
   return { income, salary, before, after: before + income - salary }

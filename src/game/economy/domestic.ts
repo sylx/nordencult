@@ -69,7 +69,7 @@ export function successorLord(
   const owner = ownerOf(state, cityId)
   const candidates = Object.keys(state.characters).sort().filter((id) => {
     const character = state.characters[id]
-    return character.cityId === cityId && character.factionId === owner && !excluded.has(id)
+    return character.cityId === cityId && character.factionId === owner && !character.prisoner && !excluded.has(id)
   })
   const politics = (id: CharacterId) => CHARACTER_MAP[id]?.politics ?? 0
   const best = Math.max(...candidates.map(politics))
@@ -85,7 +85,7 @@ export function assignmentProblem(state: GameState, cityId: CityId, characterId:
   const problem = commandProblem(state, cityId)
   if (problem) return problem
   const character = state.characters[characterId]
-  if (character?.cityId !== cityId || character.factionId !== ownerOf(state, cityId)) return `${characterId} はこの都市の騎士ではありません`
+  if (character?.cityId !== cityId || character.factionId !== ownerOf(state, cityId) || character.prisoner) return `${characterId} はこの都市の騎士ではありません`
   const away = awayReason(state, characterId)
   if (away) return `${away}です`
   if (orderOf(state, characterId)) return '出撃予約中です'

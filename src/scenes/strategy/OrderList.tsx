@@ -40,10 +40,13 @@ function invasionItem(game: GameState, order: InvasionOrder): Item {
   }
 }
 
-/** The soldiers and supplies a move or a transport takes */
-function cargo(troops: number, supplies: number, solo: boolean): ActionOrderDetail[] {
+/** The soldiers, supplies and prisoners a move or a transport takes */
+function cargo(troops: number, supplies: number, solo: boolean, prisoners: readonly string[] = []): ActionOrderDetail[] {
   if (solo) return [{ label: '兵・物資', value: 'なし（単騎）' }]
-  return [{ label: '兵', value: troops.toLocaleString() }, { label: '物資', value: supplies.toLocaleString() }]
+  return [
+    { label: '兵', value: troops.toLocaleString() }, { label: '物資', value: supplies.toLocaleString() },
+    ...(prisoners.length > 0 ? [{ label: '捕虜', value: prisoners.map(knightName).join('・') }] : []),
+  ]
 }
 
 /** Months a transport's knight takes riding back alone from where they unload */
@@ -58,7 +61,7 @@ function orderDetails(game: GameState, order: MoveOrder | TransportOrder): Actio
   const route = moveRoute(game, order.factionId, order.from, order.to) ?? [order.from, order.to]
   const months = moveMonths(route.length - 1, solo)
   return [
-    ...cargo(order.troops, order.supplies, solo),
+    ...cargo(order.troops, order.supplies, solo, order.prisoners),
     { label: '到着', value: `${months}ヶ月後` },
     ...('knight' in order ? [{ label: '帰還', value: `${months + backMonths(game, order.factionId, order.from, order.to)}ヶ月後` }] : []),
   ]
@@ -68,8 +71,9 @@ function orderDetails(game: GameState, order: MoveOrder | TransportOrder): Actio
 function movementDetails(game: GameState, m: Movement): ActionOrderDetail[] {
   const where = [{ label: '現在地', value: cityName(m.route[0]) }]
   if (m.kind === 'return') return [{ label: '積荷', value: '下ろし済み' }, ...where, { label: '帰還', value: `あと${m.monthsLeft}ヶ月` }]
+  if (m.kind === 'escape') return [...where, { label: '帰参', value: `あと${m.monthsLeft}ヶ月` }]
   return [
-    ...cargo(m.troops, m.supplies, m.solo),
+    ...cargo(m.troops, m.supplies, m.solo, m.prisoners),
     ...where,
     { label: '到着', value: `あと${m.monthsLeft}ヶ月` },
     ...(m.kind === 'transport' ? [{ label: '帰還', value: `あと${m.monthsLeft + backMonths(game, m.factionId, m.from, m.to)}ヶ月` }] : []),
@@ -79,13 +83,14 @@ function movementDetails(game: GameState, m: Movement): ActionOrderDetail[] {
 /** When an order was made: the serial its id ends with (order-12, move-13, transport-14; a movement keeps its order's id) */
 const orderedAt = (id: string) => Number(id.slice(id.lastIndexOf('-') + 1))
 
-/** A transport there and its knight riding back are both 輸送 on the list */
-const kindOf = (kind: MovementKind = 'move'): Item['kind'] => (kind === 'move' ? 'move' : 'transport')
+/** A transport there and its knight riding back are both 輸送 on the list; a prisoner escaping goes as a move */
+const kindOf = (kind: MovementKind = 'move'): Item['kind'] => (kind === 'move' || kind === 'escape' ? 'move' : 'transport')
 
 /** What a movement does this month, in the progress phase */
 function legStatus(kind: MovementKind = 'move', solo: boolean, arrives: boolean) {
   if (kind === 'transport') return arrives ? '荷下ろし' : '輸送中'
   if (kind === 'return') return arrives ? '帰還' : '帰還中'
+  if (kind === 'escape') return arrives ? '脱走・帰参' : '脱走中'
   return `${solo ? '単騎・' : ''}${arrives ? '到着' : '移動中'}`
 }
 
@@ -110,7 +115,8 @@ export function OrderList({ game, onCancel, onCancelMove, onCancelTransport, onS
             id: leg.id, kind: kindOf(leg.kind), faction: factionView(leg.factionId), city: leg.from, from: cityName(leg.from), to: cityName(leg.to),
             knights: leg.knights.map(knightName), status: legStatus(leg.kind, leg.solo, leg.arrives),
             members: members(game, leg.knights),
-            details: leg.kind === 'return' ? [{ label: '積荷', value: '下ろし済み' }] : source ? cargo(source.troops, source.supplies, leg.solo) : [],
+            details: leg.kind === 'return' ? [{ label: '積荷', value: '下ろし済み' }] : leg.kind === 'escape' ? []
+              : source ? cargo(source.troops, source.supplies, leg.solo, leg.prisoners) : [],
           }
         }),
         ...game.orders
@@ -134,7 +140,8 @@ export function OrderList({ game, onCancel, onCancelMove, onCancelTransport, onS
         // Set out in an earlier month: no taking back
         ...game.movements.filter((m) => m.factionId === faction).map((m): Item => ({
           id: m.id, kind: kindOf(m.kind), city: m.from, from: cityName(m.from), to: cityName(m.to), knights: m.knights.map(knightName),
-          status: `${m.kind === 'return' ? '帰還・' : ''}あと${m.monthsLeft}ヶ月`, members: members(game, m.knights), details: movementDetails(game, m),
+          status: `${m.kind === 'return' ? '帰還・' : m.kind === 'escape' ? '脱走・' : ''}あと${m.monthsLeft}ヶ月`, members: members(game, m.knights),
+          details: movementDetails(game, m),
         })),
       ].sort((a, b) => orderedAt(a.id) - orderedAt(b.id))
   if (items.length === 0) return null

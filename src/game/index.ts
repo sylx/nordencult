@@ -6,6 +6,7 @@ export { MAX_MORALE, MAX_SOLDIERS, MAX_UNITS, defaultUnitType, INDIRECT_ABILITY_
 export * from './economy'
 export { INITIAL_MORALE } from './economy/balance'
 export { defenderArmy } from './defense'
+export { ESCAPE_RATE, ESCAPE_RATE_MOVING, escapeChance, runEscapes } from './prisoners'
 export { DEFAULT_PLAYER_FACTION, createInitialState, readPlayerFactions } from './setup'
 export { createGameStore, type GameStore } from './store'
 export { GameContext, useGame } from './gameContext'

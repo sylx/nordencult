@@ -11,7 +11,7 @@ import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
   charactersIn, citiesOf, decideInvasion, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn,
-  moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction,
+  moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction, prisonersIn,
   runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, stationedIn, suppliesLeft, transportFromProblem,
   transportOrderProblem, dismissEvent, useGame, viewFaction, type CityId, type DefenseDraft, type FactionId, type GameState, type InvasionOrder,
   type MoveOrder, type TransportOrder,
@@ -77,7 +77,7 @@ const draftOrder = (factionId: FactionId, from: CityId, to: CityId, draft: Invas
 
 /** The move screen's draft as an order */
 const draftMove = (factionId: FactionId, from: CityId, to: CityId, draft: MoveDraft): Omit<MoveOrder, 'id'> => ({
-  factionId, from, to, knights: draft.knights, troops: draft.troops, supplies: draft.supplies, solo: draft.solo,
+  factionId, from, to, knights: draft.knights, troops: draft.troops, supplies: draft.supplies, solo: draft.solo, prisoners: draft.prisoners,
 })
 
 /** The defense screen's draft (the screen does not confirm one without a commander) */
@@ -85,7 +85,7 @@ const draftDefense = (draft: InvasionDraft): DefenseDraft => ({ commander: draft
 
 /** The transport screen's draft as an order */
 const draftTransport = (factionId: FactionId, from: CityId, to: CityId, draft: TransportDraft): Omit<TransportOrder, 'id'> => ({
-  factionId, from, to, knight: draft.knight, troops: draft.troops, supplies: draft.supplies,
+  factionId, from, to, knight: draft.knight, troops: draft.troops, supplies: draft.supplies, prisoners: draft.prisoners,
 })
 
 /** The room (px) the city window on the left and the 行動予約 list on the right take from the map, for focusing on cities */
@@ -257,7 +257,7 @@ export default function StrategyScene() {
     if (transportOrder) {
       roads.push(...routeRoads(moveRoute(game, transportOrder.factionId, transportOrder.from, transportOrder.to) ?? [], TRANSPORT_COLOR))
     }
-    if (movement) roads.push(...routeRoads(movement.route, movement.kind ? TRANSPORT_COLOR : MOVE_COLOR, !movement.solo))
+    if (movement) roads.push(...routeRoads(movement.route, movement.kind && movement.kind !== 'escape' ? TRANSPORT_COLOR : MOVE_COLOR, !movement.solo))
     map.setCityHighlights(cities)
     const missing = map.setRoadHighlights(roads)
     if (missing.length > 0) console.warn('街道が見つかりません', missing)
@@ -490,6 +490,7 @@ export default function StrategyScene() {
               months={moveMonths(route.length - 1, false)} soloMonths={moveMonths(route.length - 1, true)}
               knights={charactersIn(game, from).map((id) => knightView(game, id))}
               soldierPool={soldiersLeft(game, from)} supplyPool={suppliesLeft(game, from)}
+              prisoners={prisonersIn(game, from).map((id) => knightView(game, id))}
               validate={(draft) => moveOrderProblem(game, draftMove(faction, from, to, draft))}
               onCancel={nav.pop}
               onConfirm={(draft) => order((s) => addMoveOrder(s, draftMove(viewFaction(s), from, to, draft)), (s) => s.moveOrders)} />
@@ -505,6 +506,7 @@ export default function StrategyScene() {
               months={moveMonths(route.length - 1, false)} returnMonths={moveMonths(route.length - 1, true)}
               knights={charactersIn(game, from).map((id) => knightView(game, id))}
               soldierPool={soldiersLeft(game, from)} supplyPool={suppliesLeft(game, from)}
+              prisoners={prisonersIn(game, from).map((id) => knightView(game, id))}
               validate={(draft) => transportOrderProblem(game, draftTransport(faction, from, to, draft))}
               onCancel={nav.pop}
               onConfirm={(draft) => order((s) => addTransportOrder(s, draftTransport(viewFaction(s), from, to, draft)), (s) => s.transportOrders)} />
