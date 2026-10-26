@@ -1,7 +1,8 @@
 // テストページの「LLM 作成曲」タブ。src/songs の曲を選んで聞く
 
-import { SONGS, barAt, compileSong, type CompiledSong } from './songs/index.ts'
-import { Sequencer, type Channel, type Synth, type Track } from './synth/index.ts'
+import { SONGS, compileSong, type CompiledSong } from './songs/index.ts'
+import { SongPlayer } from './songs/player.ts'
+import type { Synth } from './synth/index.ts'
 
 const STORAGE_KEY = 'norden-synth:song'
 
@@ -32,10 +33,9 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): void {
   const songs = SONGS.map(compileSong)
   let current = songs.find((c) => c.song.id === loadSelection()) ?? songs[0]
   let loop = true
-  const seq = new Sequencer(synth.ctx, { tempo: current.song.tempo })
-  // 曲 id → パート id → チャンネル。曲を切り替えても作り直さない
-  const channels = new Map<string, Map<string, Channel>>()
-  const tracks = new Map<string, Track>()
+  // 曲 id → プレイヤー。曲を切り替えても作り直さない
+  const players = new Map<string, SongPlayer>()
+  let player: SongPlayer | undefined
   const muted = new Set<string>()
 
   root.innerHTML = `
@@ -82,7 +82,7 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): void {
       label.querySelector('input')!.addEventListener('change', (e) => {
         if ((e.target as HTMLInputElement).checked) muted.delete(part.id)
         else muted.add(part.id)
-        const track = tracks.get(part.id)
+        const track = player?.tracks.get(part.id)
         if (track) track.muted = muted.has(part.id)
       })
       partList.append(label)
@@ -91,10 +91,9 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): void {
   }
 
   function select(c: CompiledSong) {
-    const wasPlaying = seq.playing
-    seq.stop()
-    for (const track of tracks.values()) seq.removeTrack(track)
-    tracks.clear()
+    const wasPlaying = !!player?.playing
+    player?.stop()
+    player = undefined
     muted.clear()
     current = c
     saveSelection(c.song.id)
@@ -106,72 +105,36 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): void {
 
   // --- 再生 ---
 
-  // 小節ごとに最初に呼ばれる。拍子を決め、リタルダンドの後はテンポを戻す
-  let ramped = false
-  seq.conductor = (bar) => {
-    const b = barAt(current, bar.index, loop)
-    if (b) bar.timeSignature = b.timeSignature
-    if (ramped) {
-      bar.setTempo(current.song.tempo)
-      ramped = false
-    }
-    const rit = b?.section.ritardando
-    if (rit && b.barInSection === b.section.chords.length - 1) {
-      bar.rampTempo(current.song.tempo * rit, 0, bar.beats)
-      ramped = true
-    }
-  }
-
-  async function load(c: CompiledSong): Promise<Map<string, Channel>> {
-    let map = channels.get(c.song.id)
-    if (map) return map
-    const instruments = await Promise.all(c.song.parts.map((p) => synth.loadInstrument(p.instrument)))
-    map = new Map(
-      c.song.parts.map((part, i) => {
-        const ch = synth.createChannel(instruments[i])
-        ch.volume = part.volume
-        ch.pan = part.pan
-        return [part.id, ch]
-      }),
-    )
-    channels.set(c.song.id, map)
-    return map
-  }
-
   async function play() {
     const c = current
     message.textContent = '音色を読み込み中…'
     message.classList.remove('error')
-    let map: Map<string, Channel>
+    let p: SongPlayer
     try {
       await synth.resume()
-      map = await load(c)
+      p = players.get(c.song.id) ?? (await SongPlayer.load(synth, c))
     } catch (err) {
       message.textContent = `読み込みに失敗: ${err}`
       message.classList.add('error')
       return
     }
+    players.set(c.song.id, p)
     // 読み込み中に別の曲が選ばれた
     if (c !== current) return
     message.textContent = ''
-    if (tracks.size === 0) {
-      for (const part of c.song.parts) {
-        const track = seq.addTrack(map.get(part.id)!, (bar) => {
-          for (const n of barAt(c, bar.index, loop)?.notes.get(part.id) ?? []) bar.note(n.beat, n.key, n.velocity, n.duration)
-        })
-        track.muted = muted.has(part.id)
-        tracks.set(part.id, track)
-      }
-    }
-    ramped = false
-    seq.tempo = c.song.tempo
-    seq.start()
+    for (const [id, track] of p.tracks) track.muted = muted.has(id)
+    p.loop = loop
+    player = p
+    p.start()
   }
 
   $('#song-play').addEventListener('click', play)
-  $('#song-stop').addEventListener('click', () => seq.stop())
+  $('#song-stop').addEventListener('click', () => player?.stop())
   const loopInput = $<HTMLInputElement>('#song-loop')
-  loopInput.addEventListener('change', () => (loop = loopInput.checked))
+  loopInput.addEventListener('change', () => {
+    loop = loopInput.checked
+    if (player) player.loop = loop
+  })
 
   // --- 今鳴っている位置 ---
 
@@ -183,11 +146,12 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): void {
 
   let shown = ''
   function update() {
-    const pos = seq.position()
-    const b = pos && barAt(current, pos.bar, loop)
+    const at = player?.position()
+    const pos = at?.position
+    const b = at?.bar
     const { song, bars } = current
     // ループしないときは最後の小節を過ぎたら止める
-    if (pos && !b && seq.playing) seq.stop()
+    if (pos && !b && player?.playing) player.stop()
     // 構成の中で今鳴っているセクション (intro と loop を並べた位置)
     const form = [...song.intro, ...song.loop]
     let active = -1

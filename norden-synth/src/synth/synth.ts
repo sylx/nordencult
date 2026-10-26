@@ -8,13 +8,27 @@ export interface SynthOptions {
   indexUrl?: string
   // 同時発音数の上限。超えたら古いボイスから止める
   maxVoices?: number
+  // 音量とリバーブの初期値。書いていない項目は DEFAULT_MIX
+  mix?: Partial<MixSettings>
 }
 
 export type ReverbSettings = Required<ReverbOptions>
 
+// マスター・原音・リバーブの戻りの量と、リバーブの残響
+export interface MixSettings extends ReverbSettings {
+  master: number
+  dry: number
+  wet: number
+}
+
+// ゲームで鳴らすときのミックス。サンプルの音色は素のままだと薄いので、原音を絞って深めのリバーブで包む
+export const DEFAULT_MIX: MixSettings = { master: 1.5, dry: 0.25, wet: 3.45, duration: 3.1, preDelay: 0.008, damping: 0.7 }
+
 export class Synth {
   readonly ctx: AudioContext
   readonly master: GainNode
+  // コンプレッサの後の最終的な音量 (ゲームの音量設定用)。既定 1
+  readonly output: GainNode
   // チャンネルのリバーブ送りの行き先
   readonly reverb: GainNode
   // リバーブの戻りの量 (全体のリバーブの深さ)
@@ -24,7 +38,7 @@ export class Synth {
   readonly maxVoices: number
   private readonly convolvers: { node: ConvolverNode; input: GainNode }[]
   private activeConvolver = 0
-  private reverbOptions: ReverbSettings = { duration: 2.4, preDelay: 0.02, damping: 0.6 }
+  private reverbOptions: ReverbSettings
   private readonly indexUrl: URL
   private index?: Promise<InstrumentIndexEntry[]>
   private readonly instruments = new Map<string, Promise<Instrument>>()
@@ -34,18 +48,21 @@ export class Synth {
     this.ctx = ctx
     this.indexUrl = new URL(options.indexUrl ?? 'instruments/index.json', location.href)
     this.maxVoices = options.maxVoices ?? 96
+    const { master, dry, wet, ...reverb } = { ...DEFAULT_MIX, ...options.mix }
+    this.reverbOptions = reverb
 
     // dry と reverb をまとめて、リミッタ代わりのコンプレッサを通して出力する
     const compressor = new DynamicsCompressorNode(ctx, { threshold: -6, knee: 6, ratio: 8, attack: 0.003, release: 0.25 })
-    this.master = new GainNode(ctx, { gain: 0.5 })
-    this.master.connect(compressor).connect(ctx.destination)
+    this.master = new GainNode(ctx, { gain: master })
+    this.output = new GainNode(ctx)
+    this.master.connect(compressor).connect(this.output).connect(ctx.destination)
 
-    this.dry = new GainNode(ctx)
+    this.dry = new GainNode(ctx, { gain: dry })
     this.dry.connect(this.master)
 
     // インパルス応答を差し替えるときに残響が途切れないよう、コンボルバを 2 つ用意して入力を切り替える
     this.reverb = new GainNode(ctx)
-    this.reverbReturn = new GainNode(ctx, { gain: 0.6 })
+    this.reverbReturn = new GainNode(ctx, { gain: wet })
     this.reverbReturn.connect(this.master)
     this.convolvers = [0, 1].map((i) => {
       const input = new GainNode(ctx, { gain: i === 0 ? reverbGain(this.reverbOptions.duration) : 0 })
@@ -111,8 +128,13 @@ export class Synth {
     return loading
   }
 
-  createChannel(instrument: Instrument): Channel {
-    return new Channel(this, instrument, this.dry, this.reverb)
+  // bus を渡すと、そのバスを通して出力する (曲ごとにまとめてフェードするときなど)
+  createChannel(instrument: Instrument, bus?: Bus): Channel {
+    return bus ? new Channel(this, instrument, bus.dryIn, bus.wetIn) : new Channel(this, instrument, this.dry, this.reverb)
+  }
+
+  createBus(): Bus {
+    return new Bus(this)
   }
 
   allNotesOff(time = this.ctx.currentTime): void {
@@ -172,6 +194,44 @@ export class Synth {
 // 残響時間に応じて少し持ち上げる (2.4 秒で 1 倍、12 秒で約 1.5 倍)
 function reverbGain(duration: number): number {
   return (duration / 2.4) ** 0.25
+}
+
+// 複数のチャンネルをまとめて音量を変える。原音とリバーブ送りの両方に掛けるので、
+// フェードアウトしても鳴っている残響はそのまま減衰する
+//
+//   channels → dryIn → Synth の dry
+//   channels → wetIn → Synth の reverb
+export class Bus {
+  readonly synth: Synth
+  readonly dryIn: GainNode
+  readonly wetIn: GainNode
+
+  constructor(synth: Synth) {
+    this.synth = synth
+    this.dryIn = new GainNode(synth.ctx)
+    this.wetIn = new GainNode(synth.ctx)
+    this.dryIn.connect(synth.dry)
+    this.wetIn.connect(synth.reverb)
+  }
+
+  get gain(): number {
+    return this.dryIn.gain.value
+  }
+
+  // 今から duration 秒かけて、from (既定は今の値) から gain まで直線で変える。duration が 0 ならすぐ
+  fade(gain: number, duration: number, from = this.gain): void {
+    const time = this.synth.currentTime
+    for (const param of [this.dryIn.gain, this.wetIn.gain]) {
+      param.cancelScheduledValues(time)
+      param.setValueAtTime(duration > 0 ? from : gain, time)
+      if (duration > 0) param.linearRampToValueAtTime(gain, time + duration)
+    }
+  }
+
+  disconnect(): void {
+    this.dryIn.disconnect()
+    this.wetIn.disconnect()
+  }
 }
 
 // 1 つの楽器を鳴らすパート。音量・パン・リバーブ量を持つ

@@ -1,5 +1,4 @@
 import './style.css'
-import { setupBgmPage } from './bgm-page.ts'
 import { setupMixer } from './mixer-panel.ts'
 import { setupSongsPage } from './songs-page.ts'
 import { Synth, type Channel, type Instrument, type InstrumentIndexEntry } from './synth/index.ts'
@@ -17,9 +16,8 @@ app.innerHTML = `
   </header>
 
   <nav class="tabs">
-    <a href="#bgm" data-tab="bgm">BGM 生成</a>
-    <a href="#instrument" data-tab="instrument">音源チェック</a>
     <a href="#songs" data-tab="songs">LLM 作成曲</a>
+    <a href="#instrument" data-tab="instrument">音源チェック</a>
   </nav>
 
   <section id="mixer" class="mixer"></section>
@@ -62,27 +60,20 @@ app.innerHTML = `
       <div id="songs"></div>
     </section>
   </div>
-
-  <div data-page="bgm">
-    <section>
-      <h2>プロシージャル BGM</h2>
-      <div id="bgm"></div>
-    </section>
-  </div>
 `
 
 const $ = <T extends HTMLElement>(sel: string) => app.querySelector<T>(sel)!
 
 // --- タブ ---
-// URL のハッシュで開くページを決める (#bgm / #instrument / #songs)。既定は BGM 生成
+// URL のハッシュで開くページを決める (#songs / #instrument)。既定は LLM 作成曲
 
-const pages = ['bgm', 'instrument', 'songs'] as const
+const pages = ['songs', 'instrument'] as const
 type Page = (typeof pages)[number]
-let page: Page = 'bgm'
+let page: Page = 'songs'
 
 function showPage() {
   const hash = location.hash.slice(1)
-  page = pages.find((p) => p === hash) ?? 'bgm'
+  page = pages.find((p) => p === hash) ?? 'songs'
   for (const el of app.querySelectorAll<HTMLElement>('[data-page]')) el.hidden = el.dataset.page !== page
   for (const el of app.querySelectorAll<HTMLElement>('[data-tab]')) el.classList.toggle('selected', el.dataset.tab === page)
   // 別のページに移ったら鍵盤で押しっぱなしの音を離す
@@ -273,7 +264,6 @@ window.addEventListener('keyup', (e) => {
 
 setBaseKey(baseKey)
 setupSongsPage(synth, $('#songs'))
-setupBgmPage(synth, $('#bgm'))
 setupMixer(synth, $('#mixer'))
 showPage()
 

@@ -1,4 +1,4 @@
-export { Channel, Synth, type ReverbSettings, type SynthOptions } from './synth.ts'
+export { Bus, Channel, DEFAULT_MIX, Synth, type MixSettings, type ReverbSettings, type SynthOptions } from './synth.ts'
 export type { ReverbOptions } from './reverb.ts'
 export { Instrument, loadInstrument } from './instrument.ts'
 export {

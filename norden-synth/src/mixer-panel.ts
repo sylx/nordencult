@@ -1,14 +1,11 @@
 // テストページ全体の音量とリバーブ。どのタブからも使う
 
-import type { ReverbSettings, Synth } from './synth/index.ts'
+import { DEFAULT_MIX, type MixSettings, type Synth } from './synth/index.ts'
 
-interface MixerSettings extends ReverbSettings {
-  master: number
-  dry: number
-  wet: number
-}
-
-const PRESETS: { name: string; settings: MixerSettings }[] = [
+// master は withMaster のプリセットだけが変える
+const PRESETS: { name: string; settings: MixSettings; withMaster?: boolean }[] = [
+  // ゲームで鳴らすときの既定値 (シンセの既定値)
+  { name: 'ゲーム', settings: DEFAULT_MIX, withMaster: true },
   { name: '部屋', settings: { master: 0.5, dry: 1, wet: 0.4, duration: 1, preDelay: 0.008, damping: 0.7 } },
   { name: 'ホール', settings: { master: 0.5, dry: 1, wet: 0.6, duration: 2.4, preDelay: 0.02, damping: 0.6 } },
   { name: '大聖堂', settings: { master: 0.5, dry: 0.9, wet: 1.2, duration: 6, preDelay: 0.04, damping: 0.45 } },
@@ -16,7 +13,7 @@ const PRESETS: { name: string; settings: MixerSettings }[] = [
   { name: '霧の中', settings: { master: 0.5, dry: 0.45, wet: 2.6, duration: 15, preDelay: 0.1, damping: 0.5 } },
 ]
 
-const CONTROLS: { key: keyof MixerSettings; label: string; min: number; max: number; step: number; unit?: string }[] = [
+const CONTROLS: { key: keyof MixSettings; label: string; min: number; max: number; step: number; unit?: string }[] = [
   { key: 'master', label: '音量', min: 0, max: 1.5, step: 0.05 },
   { key: 'dry', label: '原音', min: 0, max: 1.5, step: 0.05 },
   { key: 'wet', label: 'リバーブ量', min: 0, max: 4, step: 0.05 },
@@ -31,7 +28,7 @@ const fmt = (v: number) => String(Math.round(v * 1000) / 1000)
 export function setupMixer(synth: Synth, root: HTMLElement): void {
   // AudioParam の値は float32 なので丸めておく (プリセットとの比較のため)
   const round = (v: number) => Math.round(v * 1000) / 1000
-  const initial: MixerSettings = {
+  const initial: MixSettings = {
     master: round(synth.master.gain.value),
     dry: round(synth.dry.gain.value),
     wet: round(synth.reverbReturn.gain.value),
@@ -39,7 +36,7 @@ export function setupMixer(synth: Synth, root: HTMLElement): void {
   }
   let settings = initial
   try {
-    settings = { ...initial, ...(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<MixerSettings>) }
+    settings = { ...initial, ...(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<MixSettings>) }
   } catch {
     // 保存した設定が読めなければ既定値のまま
   }
@@ -57,7 +54,7 @@ export function setupMixer(synth: Synth, root: HTMLElement): void {
     </div>
   `
   const inputs = new Map(
-    [...root.querySelectorAll<HTMLInputElement>('input[data-key]')].map((el) => [el.dataset.key as keyof MixerSettings, el]),
+    [...root.querySelectorAll<HTMLInputElement>('input[data-key]')].map((el) => [el.dataset.key as keyof MixSettings, el]),
   )
 
   // インパルス応答の作り直しは重いので、スライダーを動かしている間は間引く
@@ -84,8 +81,8 @@ export function setupMixer(synth: Synth, root: HTMLElement): void {
       ;(input.nextElementSibling as HTMLOutputElement).textContent = fmt(settings[key])
     }
     for (const b of root.querySelectorAll<HTMLButtonElement>('[data-preset]')) {
-      const p = PRESETS[Number(b.dataset.preset)].settings
-      b.classList.toggle('selected', CONTROLS.every((c) => c.key === 'master' || p[c.key] === settings[c.key]))
+      const p = PRESETS[Number(b.dataset.preset)]
+      b.classList.toggle('selected', CONTROLS.every((c) => (c.key === 'master' && !p.withMaster) || p.settings[c.key] === settings[c.key]))
     }
   }
 
@@ -107,8 +104,8 @@ export function setupMixer(synth: Synth, root: HTMLElement): void {
   }
   for (const b of root.querySelectorAll<HTMLButtonElement>('[data-preset]')) {
     b.addEventListener('click', () => {
-      // 音量はプリセットで変えない
-      settings = { ...PRESETS[Number(b.dataset.preset)].settings, master: settings.master }
+      const p = PRESETS[Number(b.dataset.preset)]
+      settings = { ...p.settings, master: p.withMaster ? p.settings.master : settings.master }
       apply(true)
       show()
       save()
