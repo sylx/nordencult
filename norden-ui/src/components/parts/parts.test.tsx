@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import ChoiceGroup from './ChoiceGroup'
 import KnightChip from './KnightChip'
 import QuantityInput from './QuantityInput'
+import VolumeSlider from './VolumeSlider'
 import ThinFrameWithTitle from './ThinFrameWithTitle'
 
 function Choice() {
@@ -52,6 +53,18 @@ describe('QuantityInput', () => {
     expect(onChange).toHaveBeenLastCalledWith(300)
     rerender(<QuantityInput label="予算" value={300} max={1000} cap={300} onChange={onChange} />)
     expect(screen.getByRole('button', { name: '予算を増やす' })).toBeDisabled()
+  })
+})
+
+describe('VolumeSlider', () => {
+  it('shows 0..1 as a percentage and reports the new volume', () => {
+    const onChange = vi.fn()
+    render(<VolumeSlider label="BGM" value={0.8} onChange={onChange} />)
+    const slider = screen.getByRole('slider', { name: 'BGM' })
+    expect(slider).toHaveValue('80')
+    expect(slider).toHaveAttribute('aria-valuetext', '80%')
+    fireEvent.change(slider, { target: { value: '35' } })
+    expect(onChange).toHaveBeenLastCalledWith(0.35)
   })
 })
 

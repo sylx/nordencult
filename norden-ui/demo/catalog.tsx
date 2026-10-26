@@ -83,7 +83,7 @@ export const CATALOG: CatalogGroup[] = [
         description: 'エンブレムが浮かぶ球と金属彫刻の専用バー。球をドラッグして移動。金と増減・総生産・総兵力・都市の切り替え' },
       { id: 'action-orders', label: '行動予約', name: 'ActionOrders', Component: ActionOrdersEntry,
         description: '侵攻・移動・輸送の予約の一覧。侵攻は侵攻元→侵攻先と軍団長以下の人数、移動と輸送は出発した拠点→行き先と担当の騎士。取消は今月の予約だけで、出発済みの移動・輸送は残りの月数を出す' },
-      { id: 'parts', label: 'UIパーツ', name: 'Button / ChoiceGroup / QuantityInput …', Component: PartsEntry,
+      { id: 'parts', label: 'UIパーツ', name: 'Button / ChoiceGroup / QuantityInput / VolumeSlider …', Component: PartsEntry,
         description: '画面を組み立てる小さな部品。ボタン、単一選択、数量、騎士カード、勢力、案内の帯' },
     ],
   },

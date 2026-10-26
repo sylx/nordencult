@@ -289,6 +289,19 @@
 .norden-quantity-max { grid-area: max; font-size: 12px; color: #8a7050; white-space: nowrap; }
 .norden-quantity :focus-visible { outline: 2px solid #765b9a; outline-offset: 2px; }
 
+/* VolumeSlider: on dark panels (the turn bar's settings, dialogs); the text takes the surface's color */
+.norden-volume {
+  display: grid;
+  grid-template-columns: 5.5em minmax(80px, 1fr) 3.2em;
+  align-items: center;
+  column-gap: 10px;
+  color: inherit;
+  font-size: 14px;
+}
+.norden-volume-label { white-space: nowrap; }
+.norden-volume-value { text-align: right; font-variant-numeric: tabular-nums; opacity: .85; }
+.norden-volume-range:focus-visible { outline: 2px solid #f4d987; outline-offset: 2px; }
+
 .norden-card {
   position: relative;
   isolation: isolate;

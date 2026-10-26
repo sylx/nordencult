@@ -4,7 +4,7 @@
 
 | 層 | 内容 | 場所 |
 | --- | --- | --- |
-| 基本部品 | ウィンドウ（`InfoWindow` / `InfoWindowWithTabs`）、確認・お知らせのダイアログ（`ConfirmDialog` / OK だけの `AlertDialog`）、ツールバー（`CommandToolbar`）、ターン情報（`DateBar`）、勢力の情報（`FactionBar`）、行動予約（`ActionOrders`）、UIパーツ（`Button`・`ChoiceGroup`・`QuantityInput`・`KnightCard`・`KnightChip` など） | `src/components/` |
+| 基本部品 | ウィンドウ（`InfoWindow` / `InfoWindowWithTabs`）、確認・お知らせ・設定のダイアログ（`ConfirmDialog` / OK だけの `AlertDialog` / 閉じるボタン付きの `SettingsDialog`）、ツールバー（`CommandToolbar`）、ターン情報（`DateBar`）、勢力の情報（`FactionBar`）、行動予約（`ActionOrders`）、UIパーツ（`Button`・`ChoiceGroup`・`QuantityInput`・`VolumeSlider`・`KnightCard`・`KnightChip` など） | `src/components/` |
 | 画面 | 基本部品を組み合わせた1画面分のUI。都市コマンド画面・地図で選ぶステップ・侵攻画面 | `src/screens/` |
 | 画面スタック | 画面の階層。都市コマンド → 侵攻先の選択 → 侵攻画面と積み、Escで1段戻る | `src/navigation/` |
 
@@ -61,6 +61,20 @@ import { WindowFrame } from 'norden-ui'
 <WindowFrame aria-label="施設の詳細" onClose={onClose} style={{ width: 480, height: 320 }}>
   <p>ウィンドウの内容</p>
 </WindowFrame>
+```
+
+### 設定のダイアログと音量
+
+`SettingsDialog` は設定の内容（`children`）と「閉じる」を出すモーダルです。閉じるボタン・Esc・外側のクリックで `onClose` を呼び、Esc は下の画面に届きません。
+`VolumeSlider` は 0〜1 の音量を 5% 刻みのスライダーと百分率で出します。文字の色は置いた面の色を継ぐので、暗い面（`SettingsDialog`・`DateBar` の設定）に置きます。
+
+```tsx
+import { SettingsDialog, VolumeSlider } from 'norden-ui'
+
+<SettingsDialog onClose={close}>
+  <VolumeSlider label="BGM" value={bgm} onChange={setBgm} />
+  <VolumeSlider label="効果音" value={se} onChange={setSe} />
+</SettingsDialog>
 ```
 
 ### 画面スタック

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ButtonProps } from '../../src'
-import { Banner, Button, Card, ChoiceGroup, FactionMark, InfoWindow, KnightCard, KnightChip, QuantityInput, SectionFrame, ThinFrameWithTitle } from '../../src'
+import { Banner, Button, Card, ChoiceGroup, FactionMark, InfoWindow, KnightCard, KnightChip, QuantityInput, SectionFrame, SettingsDialog, ThinFrameWithTitle, VolumeSlider } from '../../src'
 import { repositoryCharacters, RepositoryPortrait } from '../repositoryCharacters'
 import { FACTIONS, KNIGHTS, UNIT_TYPES } from '../mock/data'
 import { Log, useLog, Workbench } from '../Workbench'
@@ -9,6 +9,8 @@ export default function PartsEntry() {
   const [log, add] = useLog()
   const [unit, setUnit] = useState('infantry')
   const [soldiers, setSoldiers] = useState(240)
+  const [volume, setVolume] = useState({ bgm: 0.8, se: 1 })
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [selected, setSelected] = useState(true)
   const [characterId, setCharacterId] = useState(repositoryCharacters[0]?.id ?? '')
   const character = repositoryCharacters.find(item => item.id === characterId)
@@ -71,11 +73,20 @@ export default function PartsEntry() {
           <strong style={{ display: 'block', fontSize: 14, color: '#f6e7c5', marginBottom: 4 }}>SectionFrame</strong>
           <span style={{ fontSize: 12, color: '#cbb282' }}>革の上に箔押ししたセクション区切り枠</span>
         </div>
+        <div style={{ display: 'grid', gap: 8, width: 280, color: '#f3ead7' }}>
+          <VolumeSlider label="BGM" value={volume.bgm} onChange={bgm => setVolume(v => ({ ...v, bgm }))} />
+          <VolumeSlider label="効果音" value={volume.se} onChange={se => setVolume(v => ({ ...v, se }))} />
+          <Button size="small" onClick={() => setSettingsOpen(true)}>SettingsDialog を開く</Button>
+        </div>
       </div>
+      {settingsOpen && <SettingsDialog onClose={() => { setSettingsOpen(false); add('設定を閉じる') }}>
+        <VolumeSlider label="BGM" value={volume.bgm} onChange={bgm => setVolume(v => ({ ...v, bgm }))} />
+        <VolumeSlider label="効果音" value={volume.se} onChange={se => setVolume(v => ({ ...v, se }))} />
+      </SettingsDialog>}
     </>}
     controls={<>
       <h2>UIパーツ</h2>
-      <p>ChoiceGroup は矢印キーで選択を移動できます。QuantityInput はスライダー・± ボタン・数値入力が連動し、範囲外の値は丸めます。</p>
+      <p>ChoiceGroup は矢印キーで選択を移動できます。QuantityInput はスライダー・± ボタン・数値入力が連動し、範囲外の値は丸めます。VolumeSlider は 0〜1 の音量を 5% 刻みで選び、暗い面（ターン情報の設定・SettingsDialog）に置きます。</p>
       <h3>ボタンの寸法</h3>
       <label htmlFor="button-metal">四隅の装飾</label>
       <select id="button-metal" value={buttonMetal} onChange={event => setButtonMetal(event.target.value as NonNullable<ButtonProps['metal']>)}>
