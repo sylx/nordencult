@@ -359,6 +359,8 @@ bgm.dispose()                      // AudioContext を閉じる
 
 - 読み込み中に別の曲が指定されたら、後から指定した曲だけを鳴らす (読み込み終わった方は捨てる)
 - ブラウザの自動再生制限で AudioContext が止まっていれば、最初のクリック・キー入力で再開する (それまでに始めた曲はその時点で曲頭から鳴る)
+- タブが裏に回るか、ウィンドウのフォーカスが外れている間は AudioContext ごと一時停止する (`pauseWhenInactive: false` で無効)。
+  曲の位置も止まるので、戻ると続きから鳴る。止めるときは 0.15 秒で絞り、戻るときは 0.4 秒で音量を戻す。`bgm.inactive` で一時停止中かがわかる
 - 曲はループで鳴らす。ミックスは `DEFAULT_MIX`
 
 楽器データ (`public/instruments/`) は `tools/vite-plugin-instruments.ts` の `instrumentsPlugin()` で、
