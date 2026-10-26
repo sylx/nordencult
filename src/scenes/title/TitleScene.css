@@ -196,7 +196,9 @@
 
 .title-scene__menu {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
   animation: title-menu-in 0.8s ease-out 3s both;
 }
 

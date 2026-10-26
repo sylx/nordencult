@@ -1,3 +1,6 @@
+import { useState } from 'react'
+import { SettingsDialog } from 'norden-ui'
+import { SoundSettings } from '../../components/SoundSettings'
 import { useScene } from '../sceneContext'
 import logoUrl from '../../assets/logo.png'
 import { TitleFog } from './TitleFog'
@@ -5,6 +8,7 @@ import './TitleScene.css'
 
 export default function TitleScene() {
   const { goTo } = useScene()
+  const [settingsOpen, setSettingsOpen] = useState(false)
   return (
     <main className="title-scene">
       {/* シームレス羊皮紙タイル背景 */}
@@ -25,8 +29,15 @@ export default function TitleScene() {
         </h1>
         <nav className="title-scene__menu" aria-label="タイトルメニュー">
           <button type="button" onClick={() => goTo('strategy')}>はじめる</button>
+          <button type="button" onClick={() => setSettingsOpen(true)}>設定</button>
         </nav>
       </div>
+
+      {settingsOpen && (
+        <SettingsDialog onClose={() => setSettingsOpen(false)}>
+          <SoundSettings />
+        </SettingsDialog>
+      )}
     </main>
   )
 }

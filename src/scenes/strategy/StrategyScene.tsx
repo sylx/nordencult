@@ -5,6 +5,7 @@ import {
   type MoveDraft, type TransportDraft,
 } from 'norden-ui'
 import { MapView, type CityHighlight, type FocusInset, type RoadHighlight, type StrategyMap } from 'norden-strategy'
+import { SoundSettings } from '../../components/SoundSettings'
 import { CHARACTER_MAP } from '../../data/character'
 import { FACTION_MAP, factionColor, factionName } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
@@ -468,7 +469,12 @@ export default function StrategyScene() {
                 else if (id === 'domestic' && !domesticOpen) nav.push('domestic', { cityId })
               }}
               onEndTurn={endTurn} endTurnDisabled={!playerTurn}
-              turnMenu={<p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(faction)} /></p>}>
+              turnMenu={
+                <div className="strategy-scene__settings">
+                  <p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(faction)} /></p>
+                  <SoundSettings />
+                </div>
+              }>
               <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))}
                 onCancelMove={(id) => update((s) => cancelMoveOrder(s, id))}
                 onCancelTransport={(id) => update((s) => cancelTransportOrder(s, id))} onSelectCity={showCity}
