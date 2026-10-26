@@ -1,4 +1,6 @@
-import { Suspense, useMemo, useState, type ComponentType } from 'react'
+import { Suspense, useEffect, useMemo, useState, type ComponentType } from 'react'
+import { playBgm } from '../audio/bgm'
+import { SCENE_BGM } from '../audio/sceneBgm'
 import { SCENES } from './registry'
 import { SceneContext } from './sceneContext'
 import type { GoTo, SceneEntry, SceneNavigator } from './types'
@@ -17,6 +19,11 @@ export function SceneManager({ initial }: Props) {
   }, [current])
   // The registry pairs each id with its own props type; TypeScript cannot follow that through the union
   const Scene = SCENES[current.id] as ComponentType<{ params: SceneEntry['params'] }>
+
+  useEffect(() => {
+    const song = SCENE_BGM[current.id]
+    if (song !== undefined) playBgm(song)
+  }, [current.id])
 
   return (
     <SceneContext value={navigator}>
