@@ -185,7 +185,7 @@ export interface CityLogLine {
   stat: CityLogStat
   before: number
   after: number
-  /** e.g. max(1, 金 120 × 能力 85.3 / 100 × 0.033) = 3.38 → 3 */
+  /** e.g. 金 120 × 能力 85.3 / 100 × 0.033 = 3.38 → 3（端数は確率で切り上げ） */
   formula: string
 }
 

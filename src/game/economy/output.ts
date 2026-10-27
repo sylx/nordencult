@@ -101,16 +101,23 @@ export function officerPower(officers: CityAssignments['officers']): OfficerPowe
   return { commerce: power('commerce'), production: power('production'), training: power('training'), recruitment: power('recruitment') }
 }
 
+/** The base 商業・生産 a funded role's officers of this power raise spending this much gold, before rounding: spent × X/100 × GROWTH_COEF_* */
+export function affairsGrowth(role: Exclude<FundedRole, 'recruitment'>, power: number, spent: number): number {
+  if (spent <= 0 || power <= 0) return 0
+  return spent * (power / 100) * (role === 'commerce' ? GROWTH_COEF_COMMERCE : GROWTH_COEF_PRODUCTION)
+}
+
 /**
- * What a funded role's officers of this power raise spending this much gold: base 商業・生産 by
- * max(1, spent × X/100 × GROWTH_COEF_*), or as many soldiers as spent × X/100 (with the buildings' 募兵 bonus).
- * Nothing when they spend nothing
+ * What a funded role's officers of this power raise spending this much gold: base 商業・生産 by affairsGrowth, its fraction
+ * rounded up by that chance (0.22: +1 when `random` rolls below 0.22), so that a little gold does as much on average;
+ * or as many soldiers as spent × X/100 (with the buildings' 募兵 bonus). Nothing when they spend nothing
  */
-export function affairsGain(role: FundedRole, power: number, spent: number, recruitPct = 0): number {
+export function affairsGain(role: FundedRole, power: number, spent: number, recruitPct = 0, random: () => number = Math.random): number {
   if (spent <= 0 || power <= 0) return 0
   if (role === 'recruitment') return Math.floor(spent * (power / 100) * (1 + recruitPct))
-  const coef = role === 'commerce' ? GROWTH_COEF_COMMERCE : GROWTH_COEF_PRODUCTION
-  return Math.round(Math.max(1, spent * (power / 100) * coef))
+  const growth = affairsGrowth(role, power, spent)
+  const whole = Math.floor(growth)
+  return whole + (random() < growth - whole ? 1 : 0)
 }
 
 /** Morale the 訓練 officers of this power add a turn: max(1, X × GROWTH_COEF_TRAINING), none without officers */
@@ -183,8 +190,9 @@ export function outputOf(city: CityState, cityId: CityId): CityOutput {
     if (officers[role] <= 0) continue
     const budget = city.affairsBudget[role] ?? 0
     const spend = [Math.min(budget, AFFAIRS_BUDGET_MIN), Math.min(budget, AFFAIRS_BUDGET_MAX)] as const
-    const gain = (spent: number) => affairsGain(role, officers[role], spent, buildings.recruitPct)
-    affairs[role] = { spend, gain: [gain(spend[0]), gain(spend[1])] }
+    // The least rounds the fraction down (a roll of 1 is never below it), the most up
+    const gain = (spent: number, roll: number) => affairsGain(role, officers[role], spent, buildings.recruitPct, () => roll)
+    affairs[role] = { spend, gain: [gain(spend[0], 1), gain(spend[1], 0)] }
   }
   const growth = populationGrowth(city)
   const fixedScale = hasFixedScale(cityId)

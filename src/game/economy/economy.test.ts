@@ -3,7 +3,7 @@ import { BUILDING_MAP } from '../../data/buildings'
 import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import {
-  addOrder, affairsBudgetProblem, affairsGain, assign, assignmentOf, assignmentProblem, BALANCE, buildingBonus, buildingLocked, cancelConstruction,
+  addOrder, affairsBudgetProblem, affairsGain, affairsGrowth, assign, assignmentOf, assignmentProblem, BALANCE, buildingBonus, buildingLocked, cancelConstruction,
   cityOutput, commandRank, constructionProblem, constructionTurns, endFactionTurn, GameRuleError,
   governorBonus, governorOf, maxAffairsBudget, maxRecruit, MAX_MORALE, mixMorale, officerAbility, officerPower, officerTraining, recruit,
   recruitCost, recruitLeft, recruitProblem, runEconomy, setAffairsBudget, slotsOf, setOfficers, startConstruction, startNextBattle,
@@ -81,11 +81,18 @@ describe('city output', () => {
     expect(officerPower({})).toEqual({ commerce: 0, production: 0, training: 0, recruitment: 0 })
   })
 
-  it('raises the base by the gold spent and the power, by 1 at least, and trains by the power', () => {
-    expect(affairsGain('commerce', 150, 100)).toBe(Math.round(100 * 1.5 * BALANCE.GROWTH_COEF_COMMERCE))
-    expect(affairsGain('production', 150, 100)).toBe(Math.round(100 * 1.5 * BALANCE.GROWTH_COEF_PRODUCTION))
-    expect(affairsGain('commerce', 10, 10)).toBe(1)
-    expect(affairsGain('commerce', 150, 0)).toBe(0)
+  it('raises the base by the gold spent and the power, its fraction rounded up by that chance, and trains by the power', () => {
+    const growth = 100 * 1.5 * BALANCE.GROWTH_COEF_COMMERCE
+    expect(affairsGrowth('commerce', 150, 100)).toBeCloseTo(growth)
+    expect(affairsGrowth('production', 150, 100)).toBeCloseTo(100 * 1.5 * BALANCE.GROWTH_COEF_PRODUCTION)
+    // The fraction is rounded up when the roll is below it
+    const fraction = growth - Math.floor(growth)
+    expect(affairsGain('commerce', 150, 100, 0, () => fraction - 0.01)).toBe(Math.ceil(growth))
+    expect(affairsGain('commerce', 150, 100, 0, () => fraction + 0.01)).toBe(Math.floor(growth))
+    // A little gold raises it now and then: as much on average as its share of more gold
+    const rolls = Array.from({ length: 1000 }, (_, i) => affairsGain('commerce', 66, 40, 0, () => i / 1000))
+    expect(Math.abs(rolls.reduce((sum, gain) => sum + gain, 0) - affairsGrowth('commerce', 66, 40) * 1000)).toBeLessThanOrEqual(1)
+    expect(affairsGain('commerce', 150, 0, 0, () => 0)).toBe(0)
     expect(affairsGain('recruitment', 150, 100)).toBe(150)
     expect(affairsGain('recruitment', 150, 100, 0.5)).toBe(225)
     expect(officerTraining(150)).toBeCloseTo(150 * BALANCE.GROWTH_COEF_TRAINING)
@@ -101,7 +108,8 @@ describe('city output', () => {
     state = setAffairsBudget(state, FLUEN, 'commerce', 400)
     const { AFFAIRS_BUDGET_MIN: min, AFFAIRS_BUDGET_MAX: max } = BALANCE
     expect(cityOutput(state, FLUEN).affairs.commerce).toEqual({
-      spend: [min, max], gain: [affairsGain('commerce', power, min), affairsGain('commerce', power, max)],
+      // The least rounded down, the most up
+      spend: [min, max], gain: [Math.floor(affairsGrowth('commerce', power, min)), Math.ceil(affairsGrowth('commerce', power, max))],
     })
     state = setAffairsBudget(state, FLUEN, 'commerce', min + 10)
     expect(cityOutput(state, FLUEN).affairs.commerce?.spend).toEqual([min, min + 10])
@@ -201,11 +209,11 @@ describe('economy run', () => {
     state = setAffairsBudget(setAffairsBudget(state, FLUEN, 'commerce', 200), FLUEN, 'production', 200)
     const gold = state.gold.carta
     const { AFFAIRS_BUDGET_MIN: min, AFFAIRS_BUDGET_MAX: max } = BALANCE
-    // The first roll (商業) is the least, the second (生産) the most
-    const rolls = [0, 0.9999]
+    // Each role rolls the gold, then the rounding: 商業 spends the least, rounded down, 生産 the most, rounded up
+    const rolls = [0, 0.9999, 0.9999, 0]
     const next = runEconomy(state, 2, () => rolls.shift()!)
-    const commerce = affairsGain('commerce', officerAbility('016', 'commerce'), min)
-    const production = affairsGain('production', officerAbility('027', 'production'), max)
+    const commerce = Math.floor(affairsGrowth('commerce', officerAbility('016', 'commerce'), min))
+    const production = Math.ceil(affairsGrowth('production', officerAbility('027', 'production'), max))
     expect(next.cities[FLUEN]).toMatchObject({
       market: state.cities[FLUEN].market + commerce,
       production: state.cities[FLUEN].production + production,
@@ -234,7 +242,7 @@ describe('economy run', () => {
     const { spent, gain } = next.lastEconomy!.cities[FLUEN].affairs.commerce!
     expect(line('baseMarket')).toMatchObject({ before: state.cities[FLUEN].market, after: state.cities[FLUEN].market + gain })
     expect(line('baseMarket').formula).toContain(`金 ${spent}`)
-    expect(line('baseMarket').formula).toMatch(new RegExp(`→ ${gain}$`))
+    expect(line('baseMarket').formula).toContain(`→ ${gain}（端数は確率で切り上げ）`)
     expect(line('baseProduction').formula).toBe('担当官なし')
     const population = line('population')
     expect(population).toMatchObject({ before: state.cities[FLUEN].population, after: next.cities[FLUEN].population })
@@ -290,7 +298,8 @@ describe('economy run', () => {
     let state = withCity(playing('carta'), FLUEN, { construction: null })
     state = setAffairsBudget(setOfficers(state, FLUEN, 'commerce', ['015']), FLUEN, 'commerce', 300)
     const city = state.cities[FLUEN]
-    const gain = cityOutput(state, FLUEN).affairs.commerce!.gain[0]
+    // The least gold, its fraction rounded up
+    const gain = Math.ceil(affairsGrowth('commerce', officerAbility('015', 'commerce'), BALANCE.AFFAIRS_BUDGET_MIN))
     const next = runEconomy(state, 2, () => 0).cities[FLUEN]
     expect(next.market).toBe(city.market + gain)
     const lord = CHARACTER_MAP[city.assignments.governor!]

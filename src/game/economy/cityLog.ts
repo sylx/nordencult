@@ -4,7 +4,7 @@ import {
   GROWTH_COEF_COMMERCE, GROWTH_COEF_PRODUCTION, POP_GROWTH_COEF_MARKET, POP_GROWTH_COEF_PRODUCTION, POP_GROWTH_FACILITY_BASE,
   POP_GROWTH_GOVERNOR_DIVISOR,
 } from './balance'
-import { outputOf, type CityOutput, type PopulationGrowth } from './output'
+import { affairsGrowth, outputOf, type CityOutput, type PopulationGrowth } from './output'
 
 /**
  * The record of a city's numbers kept each turn (GameState.cityHistory), and the log of how an economy
@@ -20,7 +20,7 @@ export function cityRecord(city: CityState, cityId: CityId, turn: number, log: r
   return { turn, population: city.population, market, production, baseMarket, baseProduction, log }
 }
 
-/** The base 商業・生産 the officers raised: max(1, spent × X/100 × GROWTH_COEF_*), rounded (affairsGain) */
+/** The base 商業・生産 the officers raised: spent × X/100 × GROWTH_COEF_*, its fraction rounded up by that chance (affairsGain) */
 function baseLine(
   role: 'commerce' | 'production', before: CityState, after: CityState, output: CityOutput, result: AffairsResult | undefined,
 ): CityLogLine {
@@ -29,7 +29,7 @@ function baseLine(
     : ['baseProduction', 'production', GROWTH_COEF_PRODUCTION] as const
   const power = output.officers[role]
   const formula = result
-    ? `担当官: max(1, 金 ${num(result.spent)} × 能力 ${num(power)} / 100 × ${coef}) = ${num(Math.max(1, result.spent * power / 100 * coef))} → ${result.gain}`
+    ? `担当官: 金 ${num(result.spent)} × 能力 ${num(power)} / 100 × ${coef} = ${num(affairsGrowth(role, power, result.spent))} → ${result.gain}（端数は確率で切り上げ）`
     : power > 0 ? '担当官: 予算なし' : '担当官なし'
   return { stat, before: before[key], after: after[key], formula }
 }

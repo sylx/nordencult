@@ -31,7 +31,8 @@ export function treasuryForecast(state: GameState, factionId: FactionId): Factio
 
 /**
  * The officers' work: each funded role with officers spends a random AFFAIRS_BUDGET_MIN..MAX of its budget
- * (what is left at most; a role with no budget left does nothing), the 訓練 officers train for nothing
+ * (what is left at most; a role with no budget left does nothing) and rolls again to round what it raises (affairsGain),
+ * the 訓練 officers train for nothing
  */
 function runAffairs(city: CityState, cityId: CityId, random: () => number) {
   const output = outputOf(city, cityId)
@@ -43,7 +44,7 @@ function runAffairs(city: CityState, cityId: CityId, random: () => number) {
     const rolled = AFFAIRS_BUDGET_MIN + Math.floor(random() * (AFFAIRS_BUDGET_MAX - AFFAIRS_BUDGET_MIN + 1))
     const spent = Math.min(budget, rolled)
     affairsBudget[role] = budget - spent
-    affairs[role] = { spent, gain: affairsGain(role, output.officers[role], spent, output.buildings.recruitPct) }
+    affairs[role] = { spent, gain: affairsGain(role, output.officers[role], spent, output.buildings.recruitPct, random) }
   }
   if (output.officers.training > 0 && city.troops > 0) affairs.training = { spent: 0, gain: Math.round(officerTraining(output.officers.training)) }
   return { affairs, affairsBudget }
