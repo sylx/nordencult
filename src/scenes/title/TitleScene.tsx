@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { SettingsDialog } from 'norden-ui'
 import { SoundSettings } from '../../components/SoundSettings'
 import { useScene } from '../sceneContext'
-import logoUrl from '../../assets/logo.png'
+import logoUrl from '../../assets/logo.webp'
 import { TitleFog } from './TitleFog'
 import './TitleScene.css'
 
