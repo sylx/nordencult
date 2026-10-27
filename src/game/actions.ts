@@ -77,7 +77,8 @@ export function endFactionTurn(state: GameState, random: () => number = Math.ran
  * The army's soldiers are taken from the city it sets out from (as many as it has left), entering or invading.
  * With no order left the next turn starts. Does nothing while a battle, an entry or a decision is under way, so
  * calling it twice is harmless.
- * A lord setting out on the invasion is followed by another in their city (setOutLord), as one moving away is.
+ * Knights setting out on the invasion leave their assignments, and a lord is followed by another in their city
+ * (setOutArmy), as those moving away are.
  */
 export function startNextBattle(state: GameState, random: () => number = Math.random): GameState {
   if (state.phase !== 'march' || !state.march) throw new GameRuleError('進行フェーズではありません')
@@ -97,7 +98,7 @@ export function startNextBattle(state: GameState, random: () => number = Math.ra
         id: `entry-${state.serial}`, orderId: order.id, factionId, from, to, knights,
         soldiers: sumSoldiers(units), morale: state.cities[from].troopMorale,
       }
-      const departed = withTroops(setOutLord(state, from, knights, queue, random), from, -entry.soldiers)
+      const departed = withTroops(setOutArmy(state, from, knights, queue, random), from, -entry.soldiers)
       return { ...departed, march: { ...march, moved: true, queue, entry }, serial: state.serial + 1 }
     }
     if (owner !== march.owners[to] && isPlayerFaction(state, factionId) && !march.confirmed.includes(order.id)) {
@@ -105,7 +106,7 @@ export function startNextBattle(state: GameState, random: () => number = Math.ra
     }
     const battle = createBattle(state, order, army)
     const left = queue.filter((q) => state.orders.find((o) => o.id === q)?.from !== to)
-    let departed = withTroops(setOutLord(state, from, knights, left, random), from, -sumSoldiers(battle.attacker.units))
+    let departed = withTroops(setOutArmy(state, from, knights, left, random), from, -sumSoldiers(battle.attacker.units))
     departed = withTroops(departed, to, -sumSoldiers(battle.defender.units))
     return { ...departed, march: { ...march, moved: true, queue: left, current: battle }, serial: state.serial + 1 }
   }
@@ -160,23 +161,25 @@ export function finishEntry(state: GameState, entryId: string): GameState {
 }
 
 /**
- * An invasion's army sets out: when the lord of the city it sets out from is among its knights, they are lord no
- * longer and another follows them (successorLord): not one of the army, nor of the invasions still to come, nor
- * one on a move
+ * An invasion's army sets out: its knights leave their assignments in the city it sets out from, as knights moving
+ * away do (they do not get them back when they come back). When the lord is among them, another follows them
+ * (successorLord): not one of the army, nor of the invasions still to come, nor one on a move
  */
-function setOutLord(
+function setOutArmy(
   state: GameState, from: CityId, knights: readonly CharacterId[], queue: readonly string[], random: () => number,
 ): GameState {
   const city = state.cities[from]
   const lord = city.assignments.governor
-  if (!lord || !knights.includes(lord)) return state
-  const excluded = new Set([
-    ...knights,
-    ...state.orders.filter((o) => queue.includes(o.id)).flatMap((o) => o.knights),
-    ...state.movements.flatMap((m) => (m.kind ? [] : m.knights)),
-  ])
-  const assignments = withGovernor(withoutAssignee(city.assignments, lord), successorLord(state, from, excluded, random))
-  return { ...state, cities: { ...state.cities, [from]: { ...city, assignments } } }
+  let assignments = knights.reduce(withoutAssignee, city.assignments)
+  if (lord && knights.includes(lord)) {
+    const excluded = new Set([
+      ...knights,
+      ...state.orders.filter((o) => queue.includes(o.id)).flatMap((o) => o.knights),
+      ...state.movements.flatMap((m) => (m.kind ? [] : m.knights)),
+    ])
+    assignments = withGovernor(assignments, successorLord(state, from, excluded, random))
+  }
+  return assignments === city.assignments ? state : { ...state, cities: { ...state.cities, [from]: { ...city, assignments } } }
 }
 
 const sumSoldiers = (units: readonly ArmyUnit[]) => units.reduce((sum, u) => sum + u.soldiers, 0)

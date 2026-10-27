@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addOrder, availableKnights, BALANCE, cancelOrder, charactersIn, commandRank, createInitialState, dateOf, defenderArmy,
+  addOrder, assignmentOf, availableKnights, BALANCE, cancelOrder, charactersIn, commandRank, createInitialState, dateOf, defenderArmy,
   endFactionTurn, GameRuleError, governorOf,
   INITIAL_MORALE, invadeFromProblem, invasionTargets, MAX_SOLDIERS, neighbours, orderProblem, readPlayerFactions,
   resolveBattle, retreatCities, seasonOf, soldiersLeft, startNextBattle, turnOrder, unitAbilities, type ArmyUnit,
   decideInvasion, defaultUnitType, defenseKnights, defenseProblem, factionPower, finishEntry, formDefense, isPlayerTurn,
-  addMoveOrder, dismissEvent, type InvasionOrder, type BattleSurvivor,
+  addMoveOrder, dismissEvent, setOfficers, type InvasionOrder, type BattleSurvivor,
   type BattleRetreat, type BattleWipeout, type GameState,
 } from '.'
 import { playing } from './testing'
@@ -484,6 +484,16 @@ describe('battle results', () => {
     const lost = fight('defender', addOrder(playing('leonis'), order))
     expect(lost.characters['046']).toMatchObject({ cityId: AMBARIA })
     expect(governorOf(lost, AMBARIA)).not.toBe('046')
+  })
+
+  it('officers setting out on an invasion leave their roles, win or lose', () => {
+    const officers = setOfficers(playing('carta'), FLUEN, 'commerce', ['015', '016'])
+    const marching = startNextBattle(endStrategyPhase(addOrder(officers, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015'] })))
+    expect(marching.cities[FLUEN].assignments.officers.commerce).toEqual(['016'])
+    const lost = fight('defender', addOrder(officers, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015'] }))
+    expect(lost.characters['015']).toMatchObject({ cityId: FLUEN })
+    expect(assignmentOf(lost, '015')).toBeNull()
+    expect(assignmentOf(lost, '016')).toBe('commerce')
   })
 
   it('does not make a knight of the army setting out the lord', () => {
