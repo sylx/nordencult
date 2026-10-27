@@ -347,7 +347,7 @@ describe('assignments', () => {
     state = assign(state, FLUEN, '016', 'governor')
     expect(state.cities[FLUEN].assignments).toEqual({ governor: '016', officers: { training: ['027'] } })
     expect(assignmentOf(state, '029')).toBeNull()
-    expect(commandRank(state, '016')).toBe(1)
+    expect(commandRank(state, '016')).toBe(0) // a lord need not lead the invasions they join
     state = unassign(state, FLUEN, '016')
     expect(governorOf(state, FLUEN)).toBeUndefined()
     expect(unassign(state, FLUEN, '016')).toBe(state)

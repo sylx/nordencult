@@ -150,13 +150,11 @@ export const governorOf = (state: GameState, cityId: CityId): CharacterId | unde
   state.cities[cityId]?.assignments.governor
 
 /**
- * Who must lead an invasion they join: 君主 (2) over 領主 (1, the governor of their city); 0 for anyone else.
+ * Who must lead an invasion they join: 君主 (1); 0 for anyone else, 領主 included.
  * The commander of an invasion is a knight of its highest rank.
  */
-export function commandRank(state: GameState, id: CharacterId): number {
-  if (CHARACTER_MAP[id]?.isPatriarch) return 2
-  const cityId = state.characters[id]?.cityId
-  return cityId && governorOf(state, cityId) === id ? 1 : 0
+export function commandRank(_state: GameState, id: CharacterId): number {
+  return CHARACTER_MAP[id]?.isPatriarch ? 1 : 0
 }
 
 /** The knight of the highest commandRank, the first of them on a tie */

@@ -105,12 +105,12 @@ describe('orders', () => {
     expect(() => addOrder(ordered, draft)).toThrow(GameRuleError)
   })
 
-  it('needs a commander among the knights; the lord or the head of the faction leads when they go', () => {
+  it('needs a commander among the knights; the head of the faction leads when they go, the lord does not', () => {
     const state = playing('carta')
     const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '016', knights: ['015', '016'] }
     expect(orderProblem(state, draft)).toBeNull()
     expect(orderProblem(state, { ...draft, commander: '027' })).toBe('軍団長が出撃する騎士にいません')
-    expect(commandRank(state, '029')).toBe(2) // head of カルタ書院 (and lord of フルーエン)
+    expect(commandRank(state, '029')).toBe(1) // head of カルタ書院 (and lord of フルーエン)
     expect(commandRank(state, '016')).toBe(0)
     expect(orderProblem(state, { ...draft, knights: ['015', '016', '029'] })).toBe('029 が出撃するときは軍団長になります')
     expect(orderProblem(state, { ...draft, commander: '029', knights: ['015', '016', '029'] })).toBeNull()
@@ -471,7 +471,7 @@ describe('battle results', () => {
     expect(successor && CHARACTER_MAP[successor].politics).toBe(best)
     // …and, as the commander, becomes the lord of the city taken
     expect(governorOf(state, AMBARIA)).toBe('029')
-    expect(commandRank(state, '029')).toBe(2) // still the head of カルタ書院
+    expect(commandRank(state, '029')).toBe(1) // still the head of カルタ書院
     // The head comes back as the lord (a head going back to a city becomes its lord)
     const lost = fight('defender', invadeAmbaria(['029']))
     expect(lost.characters['029']).toMatchObject({ cityId: FLUEN })
@@ -707,8 +707,8 @@ describe('soldiers and defense', () => {
     expect(defenseKnights(invaded, pending)).toEqual(AMBARIA_KNIGHTS)
 
     const unit = (knightId: string, soldiers = 100): ArmyUnit => ({ knightId, unitType: defaultUnitType(knightId), soldiers })
-    // コンラート (046) is the lord of アンバリア: they lead when they defend
-    expect(defenseProblem(invaded, pending, { commander: '013', units: [unit('013'), unit('046')] })).toBe('046 が防衛するときは軍団長になります')
+    // コンラート (046) is the lord of アンバリア: another knight may lead them
+    expect(defenseProblem(invaded, pending, { commander: '013', units: [unit('013'), unit('046')] })).toBeNull()
     expect(defenseProblem(invaded, pending, { commander: '015', units: [unit('015')] })).toBe('015 はこの拠点で防衛できる騎士ではありません')
     expect(defenseProblem(invaded, pending, { commander: '046', units: [unit('046', troops(invaded, AMBARIA) + 10)] })).not.toBeNull()
 
