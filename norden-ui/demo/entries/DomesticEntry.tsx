@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { DomesticScreen } from '../../src'
 import type {
-  BuildingView, CityView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, KnightView,
+  BuildingView, CityView, ConstructionView, DomesticBudgetsView, DomesticForecastView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, KnightView,
 } from '../../src'
 import {
   BUILDINGS, CITIES, CITY_MAP, buildOptionsFor, cityView, domesticStatsFor, knightsIn, lordView, playerCities, populationGrowthFor, withCompleted,
@@ -49,6 +49,15 @@ function officerPowers(officers: DomesticOfficersView, knights: readonly KnightV
 function affairsGain(role: DomesticFundedRole, power: number, spent: number) {
   if (spent <= 0 || power <= 0) return 0
   return role === 'recruitment' ? Math.floor(spent * power / 100) : Math.round(Math.max(1, spent * power / 100 * GROWTH_COEF))
+}
+
+/** The city's gold (its 商業, GOLD_PER_MARKET 1) and supplies next turn, with what its officers spend of their budgets */
+function forecastFor(market: number, production: number, state: CityDomesticState, knights: readonly KnightView[]): DomesticForecastView {
+  const powers = officerPowers(state.officers, knights)
+  const spending = FUNDED_ROLES.filter(role => powers[role] > 0 && (state.budgets[role] ?? 0) > 0).map(role => state.budgets[role]!)
+  const spend = [BUDGET_MIN, BUDGET_MAX].map(most => spending.reduce((sum, budget) => sum + Math.min(budget, most), 0)) as [number, number]
+  const building = Boolean(state.construction && !state.construction.paused)
+  return { income: market, spend: spending.length > 0 ? spend : undefined, supplies: production, suppliesTo: building ? 'construction' : 'store' }
 }
 
 const officerTraining = (power: number) => (power > 0 ? Math.round(Math.max(1, power * TRAINING_COEF)) : 0)
@@ -270,6 +279,7 @@ export default function DomesticEntry() {
         buildOptions={options}
         gold={gold}
         populationGrowth={populationGrowthFor(city)}
+        forecast={forecastFor(stats?.find(stat => stat.label === '商業')?.value ?? 0, production, current, knights)}
         stats={domesticStatsFor(city)}
         onBuild={handleBuild}
         onDemolish={handleDemolish}

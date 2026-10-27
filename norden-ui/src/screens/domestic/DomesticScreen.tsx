@@ -6,8 +6,8 @@ import KnightCard from '../../components/parts/KnightCard'
 import ConfirmDialog from '../../components/window/ConfirmDialog'
 import WindowFrame from '../../components/window/WindowFrame'
 import type {
-  BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole,
-  DomesticOfficersView, KnightView, PopulationGrowthView,
+  BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView, DomesticBudgetsView, DomesticForecastView, DomesticFundedRole,
+  DomesticOfficerRole, DomesticOfficersView, KnightView, PopulationGrowthView,
 } from '../types'
 import DomesticOfficers, { ABILITY_LABELS, KnightFace, OFFICER_ROLES, OFFICERS_PER_ROLE, knightAbility, roleAptitude, weightsLabel } from './DomesticOfficers'
 import DomesticStatus from './DomesticStatus'
@@ -26,6 +26,8 @@ export interface DomesticScreenProps {
   gold?: number
   /** The population's growth next turn and the turns until the next tier (a forecast), shown under the population */
   populationGrowth?: PopulationGrowthView
+  /** The city's gold and supplies next turn, shown at the bottom-left */
+  forecast?: DomesticForecastView
   /** Bars at the top (e.g. 商業・生産・練度・新兵の練度) with the buildings' boosts stacked on them; city.stats when omitted */
   stats?: readonly CityStatView[]
   /** Start constructing a building in the active empty slot, or an upgrade over the building it replaces */
@@ -71,13 +73,14 @@ const panelKey = (panel: SidePanel) =>
  * Domestic screen: full-screen window with the city's lord (face, and a button to replace them) and its state
  * (stats with their boosts, population, supplies, gold) at the top-left, its building slots (their pictures shown whole)
  * below, its domestic officers below them, and a panel on the right (350px) of the buildings to add or upgrade to,
- * or of the knights to pick as lord or officers.
+ * or of the knights to pick as lord or officers; along the bottom, the city's gold and supplies next turn and the button back.
  */
 export default function DomesticScreen({
   city,
   buildOptions = [],
   gold,
   populationGrowth,
+  forecast,
   stats = city.stats ?? [],
   onBuild,
   onDemolish,
@@ -199,255 +202,201 @@ export default function DomesticScreen({
         aria-label={`${city.name}の内政`}
         onClose={onClose}
       >
-        <div className="norden-window-screen-layout">
-          <div className="norden-domestic-left norden-window-scroll">
-            <div className="norden-domestic-status-frame">
-              <SectionFrame />
-              <div className="norden-domestic-status-row">
-                <section className={`norden-domestic-lord ${showLordPanel ? 'is-selected' : ''}`} aria-label="領主">
-                  <span className="norden-domestic-lord-face">
-                    <KnightFace
-                      knight={lordKnight}
-                      fallback={lord?.imageSrc ? <img src={lord.imageSrc} alt="" /> : lord?.image ?? (
-                        <span className="norden-knight-initial">{lord?.name.slice(0, 1) ?? '－'}</span>
+        <div className="norden-domestic-layout">
+          <div className="norden-window-screen-layout">
+            <div className="norden-domestic-left norden-window-scroll">
+              <div className="norden-domestic-status-frame">
+                <SectionFrame />
+                <div className="norden-domestic-status-row">
+                  <section className={`norden-domestic-lord ${showLordPanel ? 'is-selected' : ''}`} aria-label="領主">
+                    <span className="norden-domestic-lord-face">
+                      <KnightFace
+                        knight={lordKnight}
+                        fallback={lord?.imageSrc ? <img src={lord.imageSrc} alt="" /> : lord?.image ?? (
+                          <span className="norden-knight-initial">{lord?.name.slice(0, 1) ?? '－'}</span>
+                        )}
+                      />
+                    </span>
+                    <div className="norden-domestic-lord-info">
+                      <span className="norden-domestic-lord-label">領主</span>
+                      <strong className="norden-domestic-lord-name">{lord?.name ?? '不在'}</strong>
+                      {lordKnight && (
+                        <span className="norden-domestic-lord-abilities">
+                          {(['politics', 'charm'] as const).map(ability => (
+                            <span key={ability}>{ABILITY_LABELS[ability]} <b>{knightAbility(lordKnight, ability) ?? '—'}</b></span>
+                          ))}
+                        </span>
                       )}
-                    />
-                  </span>
-                  <div className="norden-domestic-lord-info">
-                    <span className="norden-domestic-lord-label">領主</span>
-                    <strong className="norden-domestic-lord-name">{lord?.name ?? '不在'}</strong>
-                    {lordKnight && (
-                      <span className="norden-domestic-lord-abilities">
-                        {(['politics', 'charm'] as const).map(ability => (
-                          <span key={ability}>{ABILITY_LABELS[ability]} <b>{knightAbility(lordKnight, ability) ?? '—'}</b></span>
-                        ))}
-                      </span>
-                    )}
-                    <Button
-                      size="small"
-                      variant="primary"
-                      aria-label="領主を交代"
-                      aria-pressed={showLordPanel}
-                      disabled={lordCandidates.length === 0}
-                      title={lordCandidates.length === 0 ? '交代できる騎士がいません' : '領地の騎士から新しい領主を選びます'}
-                      onClick={() => togglePanel({ kind: 'lord' })}
-                    >
-                      交代
-                    </Button>
-                  </div>
-                </section>
-                <DomesticStatus
-                  stats={stats}
-                  population={city.population}
-                  populationGrowth={populationGrowth}
-                  tier={city.tier}
-                  supplies={city.supplies}
-                  gold={gold}
-                />
+                      <Button
+                        size="small"
+                        variant="primary"
+                        aria-label="領主を交代"
+                        aria-pressed={showLordPanel}
+                        disabled={lordCandidates.length === 0}
+                        title={lordCandidates.length === 0 ? '交代できる騎士がいません' : '領地の騎士から新しい領主を選びます'}
+                        onClick={() => togglePanel({ kind: 'lord' })}
+                      >
+                        交代
+                      </Button>
+                    </div>
+                  </section>
+                  <DomesticStatus
+                    stats={stats}
+                    population={city.population}
+                    populationGrowth={populationGrowth}
+                    tier={city.tier}
+                    supplies={city.supplies}
+                    gold={gold}
+                  />
+                </div>
               </div>
-            </div>
 
-            <section className="norden-window-section" data-testid="domestic-frame" aria-label="都市の施設">
-              <SectionFrame />
-              <header className="norden-window-section-header">
-                <h2 className="norden-window-section-title">
-                  施設
-                  <span className="norden-window-section-count">{built.length} / {slots}</span>
-                </h2>
-              </header>
+              <section className="norden-window-section" data-testid="domestic-frame" aria-label="都市の施設">
+                <SectionFrame />
+                <header className="norden-window-section-header">
+                  <h2 className="norden-window-section-title">
+                    施設
+                    <span className="norden-window-section-count">{built.length} / {slots}</span>
+                  </h2>
+                </header>
 
-              <ul className="norden-domestic-slots" aria-label={`施設スロット ${built.length} / ${slots}`}>
-                {built.slice(0, slots).map(building => {
-                  if (construction && building.id === upgradingId) {
+                <ul className="norden-domestic-slots" aria-label={`施設スロット ${built.length} / ${slots}`}>
+                  {built.slice(0, slots).map(building => {
+                    if (construction && building.id === upgradingId) {
+                      return (
+                        <li key={building.id} className="norden-domestic-slot-item">
+                          {renderConstruction(construction, building)}
+                        </li>
+                      )
+                    }
+                    const upgrades = upgradesOf(building.id)
+                    const isUpgradeSelected = showBuildPanel && upgradeBase?.id === building.id
                     return (
                       <li key={building.id} className="norden-domestic-slot-item">
-                        {renderConstruction(construction, building)}
-                      </li>
-                    )
-                  }
-                  const upgrades = upgradesOf(building.id)
-                  const isUpgradeSelected = showBuildPanel && upgradeBase?.id === building.id
-                  return (
-                    <li key={building.id} className="norden-domestic-slot-item">
-                      <div className={`norden-domestic-slot is-built ${isUpgradeSelected ? 'is-selected' : ''}`}>
-                        <BuildingImage building={building} className="norden-domestic-slot-image" />
-                        <div className="norden-domestic-slot-body">
-                          <span className="norden-domestic-slot-name">{building.name}</span>
-                          {building.effects && building.effects.length > 0 && (
-                            <span className="norden-domestic-slot-effects">{building.effects.join('・')}</span>
-                          )}
-                        </div>
-                        <div className="norden-domestic-slot-actions">
-                          {upgrades.length > 0 && (
-                            <Button
-                              size="small"
-                              variant="primary"
-                              aria-label={`${building.name}をアップグレード`}
-                              aria-pressed={isUpgradeSelected}
-                              disabled={Boolean(construction)}
-                              title={construction ? 'ほかの施設を建設中です' : `${upgrades.map(option => option.name).join('・')}にアップグレードできます`}
-                              onClick={() => togglePanel({ kind: 'upgrade', building })}
-                            >
-                              アップグレード
-                            </Button>
-                          )}
-                          <button
-                            type="button"
-                            className="norden-domestic-slot-delete"
-                            aria-label={`${building.name}を削除`}
-                            title={`${building.name}を取り壊す`}
-                            onClick={() => setDemolishTarget(building)}
-                          >
-                            削除
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  )
-                })}
-
-                {construction && !upgradingId && built.length < slots && (
-                  <li key={`construction-${construction.building.id}`} className="norden-domestic-slot-item">
-                    {renderConstruction(construction)}
-                  </li>
-                )}
-
-                {Array.from({ length: emptyCount }, (_, index) => {
-                  const isAddableSlot = index === 0 && !construction
-                  return (
-                    <li key={`empty-${index}`} className="norden-domestic-slot-item">
-                      {isAddableSlot ? (
-                        <button
-                          type="button"
-                          className={`norden-domestic-slot is-empty is-addable ${showBuildPanel && !upgradeBase ? 'is-selected' : ''}`}
-                          aria-label="施設を追加"
-                          aria-pressed={showBuildPanel && !upgradeBase}
-                          onClick={() => togglePanel({ kind: 'add' })}
-                        >
-                          <span className="norden-domestic-slot-plus" aria-hidden="true">+</span>
-                          <span className="norden-domestic-slot-add-label">施設を追加</span>
-                        </button>
-                      ) : (
-                        <div className="norden-domestic-slot is-empty" aria-label="空きスロット">
-                          <span className="norden-domestic-slot-empty-label">空き</span>
-                        </div>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            </section>
-
-            <DomesticOfficers
-              knights={knights}
-              officers={officers}
-              effects={officerEffects}
-              budgets={budgets}
-              gold={gold}
-              onChangeBudget={onChangeBudget}
-              selectedRole={panel?.kind === 'officers' ? panel.role : undefined}
-              onSelectRole={role => togglePanel({ kind: 'officers', role })}
-              onDismiss={(role, knightId) => assignOfficer(role, knightId, false)}
-            />
-          </div>
-
-          {showLordPanel && (
-            <aside className="norden-window-section norden-domestic-build-panel" aria-label="領主の交代">
-              <SectionFrame />
-              {renderPanelHeader('領主の交代', '騎士一覧を閉じる')}
-              {knights.length === 0 ? (
-                <p className="norden-window-section-empty">領地に騎士がいません。</p>
-              ) : (
-                <ul className="norden-domestic-build-list norden-window-scroll norden-domestic-knight-list">
-                  {knights.map(knight => {
-                    const isLord = knight.id === lordKnight?.id
-                    return (
-                      <li key={knight.id}>
-                        <KnightCard
-                          compact
-                          current={isLord}
-                          className={knight.unavailableReason && !isLord ? 'is-disabled' : ''}
-                          knight={{
-                            ...knight,
-                            stats: (['politics', 'charm'] as const).map(ability => ({
-                              label: ABILITY_LABELS[ability],
-                              value: knightAbility(knight, ability) ?? '—',
-                            })),
-                          }}
-                          aside={isLord ? <span className="norden-domestic-knight-badge">現領主</span> : (
-                            <span className="norden-domestic-knight-pick">
-                              {knight.unavailableReason
-                                ? <span>{knight.unavailableReason}</span>
-                                : roleOf(knight.id) && <span>{roleOf(knight.id)!.label}担当官から外れます</span>}
+                        <div className={`norden-domestic-slot is-built ${isUpgradeSelected ? 'is-selected' : ''}`}>
+                          <BuildingImage building={building} className="norden-domestic-slot-image" />
+                          <div className="norden-domestic-slot-body">
+                            <span className="norden-domestic-slot-name">{building.name}</span>
+                            {building.effects && building.effects.length > 0 && (
+                              <span className="norden-domestic-slot-effects">{building.effects.join('・')}</span>
+                            )}
+                          </div>
+                          <div className="norden-domestic-slot-actions">
+                            {upgrades.length > 0 && (
                               <Button
                                 size="small"
                                 variant="primary"
-                                aria-label={`${knight.name}を領主にする`}
-                                disabled={Boolean(knight.unavailableReason)}
-                                onClick={() => {
-                                  setPanel(null)
-                                  onChangeLord?.(knight.id)
-                                }}
+                                aria-label={`${building.name}をアップグレード`}
+                                aria-pressed={isUpgradeSelected}
+                                disabled={Boolean(construction)}
+                                title={construction ? 'ほかの施設を建設中です' : `${upgrades.map(option => option.name).join('・')}にアップグレードできます`}
+                                onClick={() => togglePanel({ kind: 'upgrade', building })}
                               >
-                                任命
+                                アップグレード
                               </Button>
-                            </span>
-                          )}
-                        />
+                            )}
+                            <button
+                              type="button"
+                              className="norden-domestic-slot-delete"
+                              aria-label={`${building.name}を削除`}
+                              title={`${building.name}を取り壊す`}
+                              onClick={() => setDemolishTarget(building)}
+                            >
+                              削除
+                            </button>
+                          </div>
+                        </div>
+                      </li>
+                    )
+                  })}
+
+                  {construction && !upgradingId && built.length < slots && (
+                    <li key={`construction-${construction.building.id}`} className="norden-domestic-slot-item">
+                      {renderConstruction(construction)}
+                    </li>
+                  )}
+
+                  {Array.from({ length: emptyCount }, (_, index) => {
+                    const isAddableSlot = index === 0 && !construction
+                    return (
+                      <li key={`empty-${index}`} className="norden-domestic-slot-item">
+                        {isAddableSlot ? (
+                          <button
+                            type="button"
+                            className={`norden-domestic-slot is-empty is-addable ${showBuildPanel && !upgradeBase ? 'is-selected' : ''}`}
+                            aria-label="施設を追加"
+                            aria-pressed={showBuildPanel && !upgradeBase}
+                            onClick={() => togglePanel({ kind: 'add' })}
+                          >
+                            <span className="norden-domestic-slot-plus" aria-hidden="true">+</span>
+                            <span className="norden-domestic-slot-add-label">施設を追加</span>
+                          </button>
+                        ) : (
+                          <div className="norden-domestic-slot is-empty" aria-label="空きスロット">
+                            <span className="norden-domestic-slot-empty-label">空き</span>
+                          </div>
+                        )}
                       </li>
                     )
                   })}
                 </ul>
-              )}
-            </aside>
-          )}
+              </section>
 
-          {officerSpec && (() => {
-            const assigned = officers[officerSpec.role] ?? []
-            const isFull = assigned.length >= OFFICERS_PER_ROLE
-            // The ablest first, by the abilities the role weighs
-            const candidates = [...knights].sort((a, b) => (roleAptitude(b, officerSpec) ?? -1) - (roleAptitude(a, officerSpec) ?? -1))
-            return (
-              <aside className="norden-window-section norden-domestic-build-panel" aria-label={`${officerSpec.label}担当官の任命`}>
+              <DomesticOfficers
+                knights={knights}
+                officers={officers}
+                effects={officerEffects}
+                budgets={budgets}
+                gold={gold}
+                onChangeBudget={onChangeBudget}
+                selectedRole={panel?.kind === 'officers' ? panel.role : undefined}
+                onSelectRole={role => togglePanel({ kind: 'officers', role })}
+                onDismiss={(role, knightId) => assignOfficer(role, knightId, false)}
+              />
+            </div>
+
+            {showLordPanel && (
+              <aside className="norden-window-section norden-domestic-build-panel" aria-label="領主の交代">
                 <SectionFrame />
-                {renderPanelHeader(
-                  `${officerSpec.label}担当官の任命`,
-                  '騎士一覧を閉じる',
-                  `${Math.min(assigned.length, OFFICERS_PER_ROLE)} / ${OFFICERS_PER_ROLE}`,
-                )}
-                <p className="norden-domestic-build-desc norden-domestic-panel-desc">
-                  {officerSpec.description}（適性は{weightsLabel(officerSpec)}の比。{OFFICERS_PER_ROLE}人までで、2人の適性は合算）
-                </p>
-                {candidates.length === 0 ? (
+                {renderPanelHeader('領主の交代', '騎士一覧を閉じる')}
+                {knights.length === 0 ? (
                   <p className="norden-window-section-empty">領地に騎士がいません。</p>
                 ) : (
                   <ul className="norden-domestic-build-list norden-window-scroll norden-domestic-knight-list">
-                    {candidates.map(knight => {
-                      const selected = assigned.includes(knight.id)
-                      const otherRole = selected ? undefined : roleOf(knight.id)
-                      // The lord governs the city and serves as no officer
-                      const reason = selected
-                        ? undefined
-                        : knight.id === lordKnight?.id ? '領主'
-                          : otherRole ? `${otherRole.label}担当官`
-                            : knight.unavailableReason ?? (isFull ? `${OFFICERS_PER_ROLE}人まで` : undefined)
+                    {knights.map(knight => {
+                      const isLord = knight.id === lordKnight?.id
                       return (
                         <li key={knight.id}>
                           <KnightCard
                             compact
+                            current={isLord}
+                            className={knight.unavailableReason && !isLord ? 'is-disabled' : ''}
                             knight={{
                               ...knight,
-                              stats: [
-                                ...officerSpec.weights.map(([ability]) => ({ label: ABILITY_LABELS[ability], value: knightAbility(knight, ability) ?? '—' })),
-                                { label: '適性', value: roleAptitude(knight, officerSpec) ?? '—' },
-                              ],
+                              stats: (['politics', 'charm'] as const).map(ability => ({
+                                label: ABILITY_LABELS[ability],
+                                value: knightAbility(knight, ability) ?? '—',
+                              })),
                             }}
-                            selection={{
-                              selected,
-                              disabled: Boolean(reason),
-                              onToggle: () => assignOfficer(officerSpec.role, knight.id, !selected),
-                            }}
-                            aside={reason && <span className="norden-domestic-knight-reason">{reason}</span>}
+                            aside={isLord ? <span className="norden-domestic-knight-badge">現領主</span> : (
+                              <span className="norden-domestic-knight-pick">
+                                {knight.unavailableReason
+                                  ? <span>{knight.unavailableReason}</span>
+                                  : roleOf(knight.id) && <span>{roleOf(knight.id)!.label}担当官から外れます</span>}
+                                <Button
+                                  size="small"
+                                  variant="primary"
+                                  aria-label={`${knight.name}を領主にする`}
+                                  disabled={Boolean(knight.unavailableReason)}
+                                  onClick={() => {
+                                    setPanel(null)
+                                    onChangeLord?.(knight.id)
+                                  }}
+                                >
+                                  任命
+                                </Button>
+                              </span>
+                            )}
                           />
                         </li>
                       )
@@ -455,66 +404,153 @@ export default function DomesticScreen({
                   </ul>
                 )}
               </aside>
-            )
-          })()}
+            )}
 
-          {showBuildPanel && (
-            <aside className="norden-window-section norden-domestic-build-panel" aria-label={panelTitle}>
-              <SectionFrame />
-              {renderPanelHeader(panelTitle, '施設一覧を閉じる')}
-              {panelOptions.length === 0 ? (
-                <p className="norden-window-section-empty">{upgradeBase ? 'アップグレード先はありません。' : '追加できる施設はありません。'}</p>
-              ) : (
-                <ul className="norden-domestic-build-list norden-window-scroll">
-                  {panelOptions.map(option => (
-                    <li
-                      key={option.id}
-                      className={`norden-domestic-build-item ${option.unavailableReason ? 'is-unavailable' : ''}`}
-                    >
-                      <BuildingImage building={option} className="norden-domestic-build-image" />
-                      <div className="norden-domestic-build-info">
-                        <div className="norden-domestic-build-heading">
-                          <strong className="norden-domestic-build-name">{option.name}</strong>
-                          {option.effects && option.effects.length > 0 && (
-                            <span className="norden-domestic-build-effects">{option.effects.join('・')}</span>
+            {officerSpec && (() => {
+              const assigned = officers[officerSpec.role] ?? []
+              const isFull = assigned.length >= OFFICERS_PER_ROLE
+              // The ablest first, by the abilities the role weighs
+              const candidates = [...knights].sort((a, b) => (roleAptitude(b, officerSpec) ?? -1) - (roleAptitude(a, officerSpec) ?? -1))
+              return (
+                <aside className="norden-window-section norden-domestic-build-panel" aria-label={`${officerSpec.label}担当官の任命`}>
+                  <SectionFrame />
+                  {renderPanelHeader(
+                    `${officerSpec.label}担当官の任命`,
+                    '騎士一覧を閉じる',
+                    `${Math.min(assigned.length, OFFICERS_PER_ROLE)} / ${OFFICERS_PER_ROLE}`,
+                  )}
+                  <p className="norden-domestic-build-desc norden-domestic-panel-desc">
+                    {officerSpec.description}（適性は{weightsLabel(officerSpec)}の比。{OFFICERS_PER_ROLE}人までで、2人の適性は合算）
+                  </p>
+                  {candidates.length === 0 ? (
+                    <p className="norden-window-section-empty">領地に騎士がいません。</p>
+                  ) : (
+                    <ul className="norden-domestic-build-list norden-window-scroll norden-domestic-knight-list">
+                      {candidates.map(knight => {
+                        const selected = assigned.includes(knight.id)
+                        const otherRole = selected ? undefined : roleOf(knight.id)
+                        // The lord governs the city and serves as no officer
+                        const reason = selected
+                          ? undefined
+                          : knight.id === lordKnight?.id ? '領主'
+                            : otherRole ? `${otherRole.label}担当官`
+                              : knight.unavailableReason ?? (isFull ? `${OFFICERS_PER_ROLE}人まで` : undefined)
+                        return (
+                          <li key={knight.id}>
+                            <KnightCard
+                              compact
+                              knight={{
+                                ...knight,
+                                stats: [
+                                  ...officerSpec.weights.map(([ability]) => ({ label: ABILITY_LABELS[ability], value: knightAbility(knight, ability) ?? '—' })),
+                                  { label: '適性', value: roleAptitude(knight, officerSpec) ?? '—' },
+                                ],
+                              }}
+                              selection={{
+                                selected,
+                                disabled: Boolean(reason),
+                                onToggle: () => assignOfficer(officerSpec.role, knight.id, !selected),
+                              }}
+                              aside={reason && <span className="norden-domestic-knight-reason">{reason}</span>}
+                            />
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </aside>
+              )
+            })()}
+
+            {showBuildPanel && (
+              <aside className="norden-window-section norden-domestic-build-panel" aria-label={panelTitle}>
+                <SectionFrame />
+                {renderPanelHeader(panelTitle, '施設一覧を閉じる')}
+                {panelOptions.length === 0 ? (
+                  <p className="norden-window-section-empty">{upgradeBase ? 'アップグレード先はありません。' : '追加できる施設はありません。'}</p>
+                ) : (
+                  <ul className="norden-domestic-build-list norden-window-scroll">
+                    {panelOptions.map(option => (
+                      <li
+                        key={option.id}
+                        className={`norden-domestic-build-item ${option.unavailableReason ? 'is-unavailable' : ''}`}
+                      >
+                        <BuildingImage building={option} className="norden-domestic-build-image" />
+                        <div className="norden-domestic-build-info">
+                          <div className="norden-domestic-build-heading">
+                            <strong className="norden-domestic-build-name">{option.name}</strong>
+                            {option.effects && option.effects.length > 0 && (
+                              <span className="norden-domestic-build-effects">{option.effects.join('・')}</span>
+                            )}
+                          </div>
+                          {option.description && (
+                            <p className="norden-domestic-build-desc">{option.description}</p>
+                          )}
+                          {option.unavailableReason && (
+                            <span className="norden-domestic-build-reason">{option.unavailableReason}</span>
                           )}
                         </div>
-                        {option.description && (
-                          <p className="norden-domestic-build-desc">{option.description}</p>
-                        )}
-                        {option.unavailableReason && (
-                          <span className="norden-domestic-build-reason">{option.unavailableReason}</span>
-                        )}
-                      </div>
-                      {/* The costs and the button below the text, leaving the text the whole width */}
-                      <div className="norden-domestic-build-footer">
-                        <div className="norden-domestic-build-costs">
-                          <span>物資 <b>{option.supplies.toLocaleString()}</b></span>
-                          <span>金 <b>{option.gold.toLocaleString()}</b></span>
-                          {option.turns !== undefined && (
-                            <span>{option.turns === null ? '完成見込みなし' : `約${option.turns}ターン`}</span>
-                          )}
+                        {/* The costs and the button below the text, leaving the text the whole width */}
+                        <div className="norden-domestic-build-footer">
+                          <div className="norden-domestic-build-costs">
+                            <span>物資 <b>{option.supplies.toLocaleString()}</b></span>
+                            <span>金 <b>{option.gold.toLocaleString()}</b></span>
+                            {option.turns !== undefined && (
+                              <span>{option.turns === null ? '完成見込みなし' : `約${option.turns}ターン`}</span>
+                            )}
+                          </div>
+                          <Button
+                            size="small"
+                            variant="primary"
+                            disabled={Boolean(option.unavailableReason)}
+                            title={option.unavailableReason}
+                            aria-label={upgradeBase ? `${option.name}にアップグレード` : `${option.name}を建設`}
+                            onClick={() => {
+                              setPanel(null)
+                              onBuild?.(option.id)
+                            }}
+                          >
+                            {upgradeBase ? 'アップグレード' : '建設'}
+                          </Button>
                         </div>
-                        <Button
-                          size="small"
-                          variant="primary"
-                          disabled={Boolean(option.unavailableReason)}
-                          title={option.unavailableReason}
-                          aria-label={upgradeBase ? `${option.name}にアップグレード` : `${option.name}を建設`}
-                          onClick={() => {
-                            setPanel(null)
-                            onBuild?.(option.id)
-                          }}
-                        >
-                          {upgradeBase ? 'アップグレード' : '建設'}
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </aside>
-          )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </aside>
+            )}
+          </div>
+
+          <footer className="norden-domestic-footer">
+            {forecast && (
+              <section className="norden-domestic-forecast" aria-label="次のターンの見込み">
+                <span className="norden-domestic-forecast-title">次のターン</span>
+                <dl>
+                  <div>
+                    <dt>金</dt>
+                    <dd>
+                      <b>+{forecast.income.toLocaleString()}</b>
+                      {forecast.spend && (
+                        <span className="norden-domestic-forecast-note">
+                          担当官が予算から {forecast.spend[0] === forecast.spend[1]
+                            ? forecast.spend[0].toLocaleString()
+                            : `${forecast.spend[0].toLocaleString()}〜${forecast.spend[1].toLocaleString()}`}
+                        </span>
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>物資</dt>
+                    <dd>
+                      <b>+{forecast.supplies.toLocaleString()}</b>
+                      <span className="norden-domestic-forecast-note">{forecast.suppliesTo === 'construction' ? '建設へ' : '備蓄へ'}</span>
+                    </dd>
+                  </div>
+                </dl>
+              </section>
+            )}
+            <Button className="norden-domestic-back" onClick={onClose}>戻る</Button>
+          </footer>
         </div>
       </WindowFrame>
 

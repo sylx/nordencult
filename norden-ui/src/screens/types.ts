@@ -112,6 +112,18 @@ export type DomesticFundedRole = Exclude<DomesticOfficerRole, 'training'>
 /** Gold the city has set aside for each funded role */
 export type DomesticBudgetsView = Partial<Record<DomesticFundedRole, number>>
 
+/** What a city brings and spends in the next turn, a forecast */
+export interface DomesticForecastView {
+  /** Gold its 商業 brings the treasury */
+  income: number
+  /** Gold its officers spend of their budgets, the least and the most (a roll between them); omitted when none do */
+  spend?: readonly [number, number]
+  /** Supplies its 生産 puts out */
+  supplies: number
+  /** Where the supplies go: into the construction going on, or the store */
+  suppliesTo: 'construction' | 'store'
+}
+
 /** Ids of the knights holding each domestic officer role */
 export type DomesticOfficersView = Partial<Record<DomesticOfficerRole, readonly string[]>>
 

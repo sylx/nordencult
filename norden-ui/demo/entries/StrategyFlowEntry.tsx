@@ -88,7 +88,7 @@ export default function StrategyFlowEntry() {
     stage={<>
       <MockMap selected={selected} onSelect={selectCity}
         candidates={top.screen === 'pickTarget' ? openTargets(top.params.from) : undefined} routes={routes} />
-      <ScreenHost nav={nav} overlays={['domestic']} screens={{
+      <ScreenHost nav={nav} screens={{
         cityCommand: ({ cityId }) => {
           const index = playerCities.indexOf(cityId)
           const problem = invadeProblem(cityId)
@@ -98,12 +98,8 @@ export default function StrategyFlowEntry() {
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
               onPrevCity={() => step(cityId, -1)} onNextCity={() => step(cityId, 1)}
               commandState={{ invade: problem ? { disabled: true, reason: problem } : undefined }}
-              activeCommand={top.screen === 'domestic' ? 'domestic' : undefined}
               onCommand={id => {
-                // 内政 again closes the domestic window drawn over this screen; other commands close it first
-                const domesticOpen = top.screen === 'domestic'
-                nav.popTo('cityCommand')
-                if (id === 'domestic') { if (!domesticOpen) nav.push('domestic', { cityId }) }
+                if (id === 'domestic') nav.push('domestic', { cityId })
                 else if (id === 'invade') nav.push('pickTarget', { from: cityId })
                 else add(`${COMMAND_LABELS[id]}（未実装）`)
               }}
