@@ -14,9 +14,12 @@ export interface ToolbarCommand {
   title?: string
   /** `accent` stands out from the others (e.g. ending the turn). */
   tone?: 'normal' | 'accent'
-  /** Sub-commands opened above the toolbar when the command is pressed. */
+  /** Sub-commands opened above the toolbar when the command is pressed. The command is disabled when all of them are. */
   children?: readonly ToolbarCommand[]
 }
+
+const isDisabled = (command: ToolbarCommand) =>
+  Boolean(command.disabled || command.children?.every(child => child.disabled))
 
 export interface CommandToolbarProps {
   commands: readonly ToolbarCommand[]
@@ -48,7 +51,7 @@ export default function CommandToolbar({
   const flyoutRef = useRef<HTMLDivElement>(null)
   const buttonRefs = useRef(new Map<string, HTMLButtonElement>())
   const flyoutId = useId()
-  const open = commands.find(command => command.id === openId && command.children && !command.disabled)
+  const open = commands.find(command => command.id === openId && command.children && !isDisabled(command))
   const openedId = open?.id
 
   // Keyed by id: the commands are usually rebuilt on every render of the parent
@@ -160,7 +163,7 @@ export default function CommandToolbar({
               ref={element => { if (element) buttonRefs.current.set(command.id, element); else buttonRefs.current.delete(command.id) }}
               type="button"
               className={`norden-command-toolbar-button ${command.tone === 'accent' ? 'is-accent' : ''}`}
-              disabled={command.disabled}
+              disabled={isDisabled(command)}
               aria-pressed={hasChildren ? undefined : command.active}
               aria-expanded={hasChildren ? expanded : undefined}
               aria-controls={expanded ? flyoutId : undefined}

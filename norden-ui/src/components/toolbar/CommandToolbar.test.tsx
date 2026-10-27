@@ -63,6 +63,15 @@ describe('CommandToolbar', () => {
     expect(screen.queryByRole('group')).not.toBeInTheDocument()
   })
 
+  it('disables a command whose sub-commands are all disabled', () => {
+    render(<CommandToolbar commands={[
+      { id: 'military', label: '軍事', children: [{ id: 'move', label: '移動', disabled: true }, { id: 'invade', label: '侵攻', disabled: true }] },
+      { id: 'domestic', label: '内政', children: [{ id: 'build', label: '建設', disabled: true }, { id: 'tax', label: '徴税' }] },
+    ]} />)
+    expect(screen.getByRole('button', { name: '軍事' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '内政' })).toBeEnabled()
+  })
+
   it('hides the drag handles when not movable', () => {
     render(<CommandToolbar commands={[{ id: 'a', label: 'A' }]} movable={false} />)
     expect(screen.queryByRole('button', { name: /を移動/ })).not.toBeInTheDocument()
