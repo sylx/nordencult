@@ -45,10 +45,15 @@ function officerPowers(officers: DomesticOfficersView, knights: readonly KnightV
   }
 }
 
-/** What a funded role's officers of this power raise spending this much gold */
-function affairsGain(role: DomesticFundedRole, power: number, spent: number) {
+/**
+ * What a funded role's officers of this power raise spending this much gold, the fraction of 商業・生産 rounded up
+ * when `roll` is below it (Math.random() for a turn; 1 for the least, 0 for the most)
+ */
+function affairsGain(role: DomesticFundedRole, power: number, spent: number, roll: number) {
   if (spent <= 0 || power <= 0) return 0
-  return role === 'recruitment' ? Math.floor(spent * power / 100) : Math.round(Math.max(1, spent * power / 100 * GROWTH_COEF))
+  if (role === 'recruitment') return Math.floor(spent * power / 100)
+  const growth = spent * power / 100 * GROWTH_COEF
+  return Math.floor(growth) + (roll < growth - Math.floor(growth) ? 1 : 0)
 }
 
 const officerTraining = (power: number) => (power > 0 ? Math.round(Math.max(1, power * TRAINING_COEF)) : 0)
@@ -65,7 +70,7 @@ function officerEffectsFor(officers: DomesticOfficersView, budgets: DomesticBudg
     const budget = budgets[role] ?? 0
     const [low, high] = [Math.min(budget, BUDGET_MIN), Math.min(budget, BUDGET_MAX)]
     effects[role] = budget > 0
-      ? `${AFFAIRS_LABELS[role]} +${affairsGain(role, powers[role], low)}〜${affairsGain(role, powers[role], high)}/ターン（金 ${low}〜${high}）`
+      ? `${AFFAIRS_LABELS[role]} +${affairsGain(role, powers[role], low, 1)}〜${affairsGain(role, powers[role], high, 0)}/ターン（金 ${low}〜${high}）`
       : '予算なし'
   }
   if (powers.training) effects.training = `練度 +${officerTraining(powers.training)}/ターン`
@@ -198,7 +203,7 @@ export default function DomesticEntry() {
       if (!powers[role] || budget <= 0) continue
       const spent = Math.min(budget, BUDGET_MIN + Math.floor(Math.random() * (BUDGET_MAX - BUDGET_MIN + 1)))
       budgets[role] = budget - spent
-      gains[role] = affairsGain(role, powers[role], spent)
+      gains[role] = affairsGain(role, powers[role], spent, Math.random())
       lines.push(`${OFFICER_LABELS[role]}担当官: 金 ${spent} を使い${AFFAIRS_LABELS[role]} +${gains[role]}（予算の残り ${budgets[role]}）`)
     }
     // The soldiers train, then the recruits join at the recruits' morale
