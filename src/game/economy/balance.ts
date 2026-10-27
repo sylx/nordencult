@@ -57,7 +57,7 @@ export const AFFAIRS_BUDGET_MAX = 150
 export const AFFAIRS_BUDGET_LIMIT = 1000
 export const GROWTH_COEF_COMMERCE = 0.033
 export const GROWTH_COEF_PRODUCTION = 0.033
-export const GROWTH_COEF_TRAINING = 0.2
+export const GROWTH_COEF_TRAINING = 0.1
 
 /**
  * Population growth a turn, from the base 商業・生産 after the officers raised them:
