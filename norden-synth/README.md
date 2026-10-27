@@ -353,7 +353,7 @@ const bgm = new BgmPlayer({ indexUrl: `${import.meta.env.BASE_URL}instruments/in
 await bgm.play('mist-pilgrim')     // 音色を読み込んでから切り替える。同じ曲が鳴っていれば何もしない
 await bgm.play('battle-cry', 3)    // 3 秒でクロスフェード (既定は bgm.fade = 1.5 秒)
 bgm.play(null)                     // フェードアウトして止める (bgm.stop() と同じ)
-bgm.volume = 0.5                   // 最終的な音量 (ミックスとは別)
+bgm.volume = 0.5                   // 最終的な音量 (ミックスとは別)。0 で AudioContext ごと止める
 await bgm.preload(['battle-cry'])  // 先に音色を読み込んでおく
 bgm.dispose()                      // AudioContext を閉じる
 ```
@@ -361,7 +361,8 @@ bgm.dispose()                      // AudioContext を閉じる
 - 読み込み中に別の曲が指定されたら、後から指定した曲だけを鳴らす (読み込み終わった方は捨てる)
 - ブラウザの自動再生制限で AudioContext が止まっていれば、最初のクリック・キー入力で再開する (それまでに始めた曲はその時点で曲頭から鳴る)
 - タブが裏に回るか、ウィンドウのフォーカスが外れている間は AudioContext ごと一時停止する (`pauseWhenInactive: false` で無効)。
-  曲の位置も止まるので、戻ると続きから鳴る。止めるときは 0.15 秒で絞り、戻るときは 0.4 秒で音量を戻す。`bgm.inactive` で一時停止中かがわかる
+  曲の位置も止まるので、戻ると続きから鳴る。止めるときは 0.15 秒で絞り、戻るときは 0.4 秒で音量を戻す。`bgm.inactive` で非アクティブかがわかる
+- `bgm.volume = 0` の間も同じように AudioContext ごと止めて、シンセの処理を軽くする。音量を戻すと続きから鳴る。`bgm.suspended` で止めているか (非アクティブか音量 0) がわかる
 - 曲はループで鳴らす。ミックスは `DEFAULT_MIX`
 
 楽器データ (`public/instruments/`) は `tools/vite-plugin-instruments.ts` の `instrumentsPlugin()` で、

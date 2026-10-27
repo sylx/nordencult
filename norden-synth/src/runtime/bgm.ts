@@ -23,6 +23,9 @@ export class BgmPlayer {
   private requested?: string
   private level = 1
   private readonly pauseWhenInactive: boolean
+  // タブが裏に回っているか、ウィンドウのフォーカスが外れている
+  private away = false
+  // AudioContext を止めている (away か、音量が 0)
   private paused = false
   private suspendTimer?: ReturnType<typeof setTimeout>
   private readonly unlock = () => {
@@ -33,11 +36,8 @@ export class BgmPlayer {
     })
   }
   private readonly updateActive = () => {
-    const active = document.visibilityState === 'visible' && document.hasFocus()
-    if (active === !this.paused) return
-    this.paused = !active
-    if (this.paused) this.suspend()
-    else this.resumeFromPause()
+    this.away = !(document.visibilityState === 'visible' && document.hasFocus())
+    this.updatePause()
   }
 
   constructor(options: BgmPlayerOptions = {}) {
@@ -48,8 +48,9 @@ export class BgmPlayer {
     this.pauseWhenInactive = pauseWhenInactive
     // ブラウザの自動再生制限で AudioContext は止まった状態で始まることがある。最初のユーザー操作で再開する
     for (const type of UNLOCK_EVENTS) window.addEventListener(type, this.unlock, { capture: true })
+    // 一時停止 (非アクティブ・音量 0) から動き出したら音量を戻す
+    this.synth.ctx.addEventListener('statechange', this.onRunning)
     if (pauseWhenInactive) {
-      this.synth.ctx.addEventListener('statechange', this.onRunning)
       document.addEventListener('visibilitychange', this.updateActive)
       window.addEventListener('blur', this.updateActive)
       window.addEventListener('focus', this.updateActive)
@@ -62,21 +63,29 @@ export class BgmPlayer {
     return this.requested
   }
 
-  // 0..1 程度。ミックスとは別の最終的な音量
+  // 0..1 程度。ミックスとは別の最終的な音量。0 の間は AudioContext ごと止めて、処理を軽くする
+  // (曲の位置も止まるので、音量を戻すと続きから鳴る)
   get volume(): number {
     return this.level
   }
 
   set volume(value: number) {
     this.level = value
-    if (this.paused) return
-    const gain = this.synth.output.gain
-    gain.cancelScheduledValues(this.synth.currentTime)
-    gain.value = value
+    if (!this.paused && value > 0) {
+      const gain = this.synth.output.gain
+      gain.cancelScheduledValues(this.synth.currentTime)
+      gain.value = value
+    }
+    this.updatePause()
   }
 
   // 非アクティブで一時停止しているか
   get inactive(): boolean {
+    return this.away
+  }
+
+  // AudioContext を止めているか (非アクティブか、音量が 0)
+  get suspended(): boolean {
     return this.paused
   }
 
@@ -131,6 +140,14 @@ export class BgmPlayer {
     this.player?.dispose()
     this.player = undefined
     void this.synth.ctx.close()
+  }
+
+  private updatePause(): void {
+    const pause = this.away || this.level === 0
+    if (pause === this.paused) return
+    this.paused = pause
+    if (pause) this.suspend()
+    else this.resumeFromPause()
   }
 
   private release(fade: number): void {
