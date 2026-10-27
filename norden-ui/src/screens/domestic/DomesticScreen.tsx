@@ -44,6 +44,8 @@ export interface DomesticScreenProps {
   officerEffects?: Partial<Record<DomesticOfficerRole, string>>
   /** Gold set aside for the 商業・生産・募兵 officers to spend (the slider's most is BUDGET_LIMIT, or what `gold` allows) */
   budgets?: DomesticBudgetsView
+  /** Gold a funded role's officers spend in a turn, the least and the most: a budget below the most is marked as short */
+  budgetPerTurn?: readonly [number, number]
   /** Set the gold set aside for a funded role (the host moves the difference from or back to the treasury) */
   onChangeBudget?: (role: DomesticFundedRole, amount: number) => void
   /** Make another of the city's knights its lord (the lord holds no officer role, so the host drops them from `officers`) */
@@ -87,6 +89,7 @@ export default function DomesticScreen({
   officers = {},
   officerEffects,
   budgets,
+  budgetPerTurn,
   onChangeBudget,
   onChangeLord,
   onAssignOfficers,
@@ -344,6 +347,7 @@ export default function DomesticScreen({
                 officers={officers}
                 effects={officerEffects}
                 budgets={budgets}
+                budgetPerTurn={budgetPerTurn}
                 gold={gold}
                 onChangeBudget={onChangeBudget}
                 selectedRole={panel?.kind === 'officers' ? panel.role : undefined}

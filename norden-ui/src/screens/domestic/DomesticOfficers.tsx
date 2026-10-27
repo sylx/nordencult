@@ -70,6 +70,11 @@ export interface DomesticOfficersProps {
   budgets?: DomesticBudgetsView
   /** The treasury, which a budget can take from (unlimited when omitted) */
   gold?: number
+  /**
+   * Gold a funded role's officers spend in a turn, the least and the most (a roll between them): a budget below the most
+   * is marked as short of the next turn's work. Omitted: only a budget used up is marked
+   */
+  budgetPerTurn?: readonly [number, number]
   /** Sets the gold set aside for a funded role; omitted: the budgets are only shown */
   onChangeBudget?: (role: DomesticFundedRole, amount: number) => void
   /** The role whose knight list is open */
@@ -83,11 +88,24 @@ export interface DomesticOfficersProps {
 /**
  * The third row of the domestic screen: the four officer roles, each with two posts
  * holding a knight (face, name and their aptitude for the role) or empty, the gold set aside
- * for it (a slider, for the funded roles) and what its officers bring
+ * for it (a slider, for the funded roles) and what its officers bring.
+ * A funded role with officers whose budget is used up, or short of a turn's work, is marked
  */
 export default function DomesticOfficers({
-  knights, officers, effects, budgets = {}, gold, onChangeBudget, selectedRole, onSelectRole, onDismiss,
+  knights, officers, effects, budgets = {}, gold, budgetPerTurn, onChangeBudget, selectedRole, onSelectRole, onDismiss,
 }: DomesticOfficersProps) {
+  /** What is wrong with the budget of a role whose officers would spend it: used up, or short of the next turn's work */
+  const budgetAlert = (budget: number) => {
+    if (budget <= 0) return { kind: 'empty', label: '予算切れ', title: '予算がないため、次のターンは働きません' }
+    if (!budgetPerTurn || budget >= budgetPerTurn[1]) return undefined
+    const [least, most] = budgetPerTurn
+    return {
+      kind: 'short',
+      label: '予算不足',
+      title: `1ターンに${least.toLocaleString()}〜${most.toLocaleString()}使うところ、残り${budget.toLocaleString()}です（残りの分だけ働きます）`,
+    }
+  }
+
   return (
     <section className="norden-window-section norden-domestic-officers" aria-label="内政担当官">
       <SectionFrame />
@@ -102,10 +120,18 @@ export default function DomesticOfficers({
           const isSelected = selectedRole === spec.role
           const funded = spec.funded ? spec.role as DomesticFundedRole : undefined
           const budget = funded ? budgets[funded] ?? 0 : 0
+          const alert = funded && assigned.length > 0 ? budgetAlert(budget) : undefined
           return (
-            <li key={spec.role} className={`norden-domestic-officer-role ${isSelected ? 'is-selected' : ''}`} aria-label={`${spec.label}担当官`}>
+            <li
+              key={spec.role}
+              className={`norden-domestic-officer-role ${isSelected ? 'is-selected' : ''} ${alert ? `has-budget-${alert.kind}` : ''}`}
+              aria-label={`${spec.label}担当官`}
+            >
               <div className="norden-domestic-officer-heading">
-                <strong className="norden-domestic-officer-title">{spec.label}</strong>
+                <strong className="norden-domestic-officer-title">
+                  {spec.label}
+                  {alert && <span className="norden-domestic-officer-alert" title={alert.title}>{alert.label}</span>}
+                </strong>
                 <span className="norden-domestic-officer-ability">{weightsLabel(spec)}</span>
               </div>
               <p className="norden-domestic-officer-desc">{spec.description}</p>

@@ -369,4 +369,33 @@ describe('DomesticScreen', () => {
     await userEvent.click(within(officers).getByRole('button', { name: '商業の予算を減らす' }))
     expect(onChangeBudget).toHaveBeenLastCalledWith('commerce', 890)
   })
+
+  it('marks the roles whose officers have no budget left or too little for a turn', () => {
+    render(
+      <DomesticScreen
+        city={{ id: 'P012', name: 'フルーエン', knights }}
+        officers={{ commerce: ['k1'], production: ['k3'], recruitment: ['k2'] }}
+        budgets={{ commerce: 0, production: 40, recruitment: 150 }}
+        budgetPerTurn={[80, 150]}
+        onClose={vi.fn()}
+      />,
+    )
+    const role = (name: string) => screen.getByRole('listitem', { name })
+    expect(role('商業担当官')).toHaveClass('has-budget-empty')
+    expect(within(role('商業担当官')).getByText('予算切れ')).toHaveAttribute('title', '予算がないため、次のターンは働きません')
+    expect(role('生産担当官')).toHaveClass('has-budget-short')
+    expect(within(role('生産担当官')).getByText('予算不足')).toHaveAttribute('title', '1ターンに80〜150使うところ、残り40です（残りの分だけ働きます）')
+    // Enough for the most a turn takes; no officers, nothing to spend it
+    expect(within(role('募兵担当官')).queryByText(/^予算(切れ|不足)$/)).not.toBeInTheDocument()
+    expect(within(role('訓練担当官')).queryByText('予算切れ')).not.toBeInTheDocument()
+  })
+
+  it('marks only a budget used up without the gold a turn takes', () => {
+    render(
+      <DomesticScreen city={{ id: 'P012', name: 'フルーエン', knights }} officers={{ commerce: ['k1'], production: ['k3'] }}
+        budgets={{ production: 40 }} onClose={vi.fn()} />,
+    )
+    expect(screen.getByRole('listitem', { name: '商業担当官' })).toHaveClass('has-budget-empty')
+    expect(screen.getByRole('listitem', { name: '生産担当官' })).not.toHaveClass('has-budget-short')
+  })
 })

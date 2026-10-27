@@ -278,6 +278,7 @@ export default function DomesticEntry() {
         officers={current.officers}
         officerEffects={officerEffectsFor(current.officers, current.budgets, knights)}
         budgets={current.budgets}
+        budgetPerTurn={[BUDGET_MIN, BUDGET_MAX]}
         onChangeBudget={handleChangeBudget}
         onChangeLord={handleChangeLord}
         onAssignOfficers={handleAssignOfficers}
