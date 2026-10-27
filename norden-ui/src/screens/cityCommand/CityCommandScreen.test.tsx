@@ -86,6 +86,25 @@ describe('CityCommandScreen', () => {
     expect(within(screen.getByRole('group', { name: 'ターン情報' })).queryByText('620')).not.toBeInTheDocument()
   })
 
+  it('shows an upgrade under construction in the slot of the building it upgrades', () => {
+    setup({
+      city: {
+        ...city,
+        buildings: {
+          slots: 4,
+          built: [{ id: 'market', name: '市場' }, { id: 'farm', name: '農場' }, { id: 'well', name: '井戸' }, { id: 'mill', name: '水車' }],
+          construction: { building: { id: 'bazaar', name: '大市場', upgradeFrom: 'market' }, invested: 100, required: 600, turnsLeft: 3 },
+        },
+      },
+    })
+    const slots = screen.getByRole('list', { name: '施設 4 / 4' })
+    expect(within(slots).getAllByRole('listitem')).toHaveLength(4)
+    expect(within(slots).queryByText('市場')).not.toBeInTheDocument()
+    expect(within(slots).getByText('大市場')).toBeInTheDocument()
+    expect(within(slots).getByText('アップグレード中')).toBeInTheDocument()
+    expect(within(slots).queryByText('空き')).not.toBeInTheDocument()
+  })
+
   it('lists the knights with all their abilities, the lord first', async () => {
     setup({
       city: {

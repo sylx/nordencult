@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { BuildingView, CityBuildingsView } from '../../screens/types'
+import type { BuildingView, CityBuildingsView, ConstructionView } from '../../screens/types'
 import './BuildingSlots.css'
 
 export interface BuildingSlotsProps {
@@ -52,37 +52,39 @@ export function ConstructionProgress({ invested, required, turnsLeft }: { invest
 
 /**
  * A city's building slots in order: the buildings standing, the one under
- * construction (with its progress) and the empty slots
+ * construction (with its progress) and the empty slots. An upgrade under construction
+ * is built over the building it upgrades, in its slot (taking no slot of its own)
  */
 export default function BuildingSlots({ buildings, onSelect, selectedId, className = '' }: BuildingSlotsProps) {
   const { slots, built, construction } = buildings
-  const empty = Math.max(0, slots - built.length - (construction ? 1 : 0))
+  const upgradingId = construction?.building.upgradeFrom && built.some(building => building.id === construction.building.upgradeFrom)
+    ? construction.building.upgradeFrom
+    : undefined
+  const empty = Math.max(0, slots - built.length - (construction && !upgradingId ? 1 : 0))
   const tile = (building: BuildingView, body: ReactNode, extra = '') => {
     const classes = `norden-building-slot ${extra} ${selectedId === building.id ? 'is-selected' : ''}`
     return onSelect
       ? <button type="button" className={classes} title={building.description} onClick={() => onSelect(building.id)}>{body}</button>
       : <div className={classes} title={building.description}>{body}</div>
   }
+  const constructionTile = (current: ConstructionView, upgradedFrom?: BuildingView) =>
+    tile(current.building, <>
+      <BuildingImage building={current.building} />
+      <span className="norden-building-slot-name">{current.building.name}</span>
+      <span className="norden-building-slot-badge">{upgradedFrom ? 'アップグレード中' : '建設中'}</span>
+      <ConstructionProgress invested={current.invested} required={current.required} turnsLeft={current.turnsLeft} />
+    </>, 'is-building')
   return (
     <ul className={`norden-building-slots ${className}`} aria-label={`施設 ${built.length} / ${slots}`}>
       {built.map(building => (
         <li key={building.id}>
-          {tile(building, <>
+          {construction && building.id === upgradingId ? constructionTile(construction, building) : tile(building, <>
             <BuildingImage building={building} />
             <span className="norden-building-slot-name">{building.name}</span>
           </>)}
         </li>
       ))}
-      {construction && (
-        <li>
-          {tile(construction.building, <>
-            <BuildingImage building={construction.building} />
-            <span className="norden-building-slot-name">{construction.building.name}</span>
-            <span className="norden-building-slot-badge">建設中</span>
-            <ConstructionProgress invested={construction.invested} required={construction.required} turnsLeft={construction.turnsLeft} />
-          </>, 'is-building')}
-        </li>
-      )}
+      {construction && !upgradingId && <li>{constructionTile(construction)}</li>}
       {Array.from({ length: empty }, (_, index) => (
         <li key={`empty-${index}`}><div className="norden-building-slot is-empty"><span>空き</span></div></li>
       ))}
