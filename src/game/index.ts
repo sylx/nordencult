@@ -13,5 +13,6 @@ export { GameContext, useGame } from './gameContext'
 export { neighbours } from './world'
 export {
   addMoveOrder, addTransportOrder, cancelMoveOrder, cancelTransportOrder, MOVE_HOPS_PER_MONTH, moveFromProblem, moveMonths, moveOrderProblem, moveRoute,
-  moveTargets, movementLegs, runMovements, SOLO_HOPS_PER_MONTH, SOLO_MAX_MONTHS, transportFromProblem, transportOrderProblem,
+  moveTargets, movementLegs, runMovements, SOLO_HOPS_PER_MONTH, SOLO_MAX_MONTHS, transportFromProblem, transportKnightProblem, transportKnights,
+  transportOrderProblem,
 } from './movement'

@@ -1,7 +1,7 @@
 // The cities' economy: what they put out, the run at the start of each turn, and the domestic commands
 export * as BALANCE from './balance'
 export {
-  affairsBudgetProblem, assign, assignmentOf, assignmentProblem, buildingLocked, OFFICER_ROLES, setOfficers, buildingProblem, cancelConstruction, commandProblem as domesticProblem,
+  affairsBudgetProblem, assign, assignmentLabel, assignmentOf, assignmentProblem, buildingLocked, OFFICER_ROLES, setOfficers, buildingProblem, cancelConstruction, commandProblem as domesticProblem,
   constructionProblem,
   constructionTurns, demolishBuilding, maxAffairsBudget, maxRecruit, pauseConstruction, recruit, recruitCost, recruitLeft, recruitProblem, setAffairsBudget, startConstruction,
   successorLord, unassign, withGovernor, withoutAssignee,

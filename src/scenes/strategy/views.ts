@@ -15,10 +15,10 @@ import { FACTION_MAP, factionEmblem } from '../../data/faction'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
-  assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
-  FUNDED_ROLES, governorOf, officerTraining,
-  MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportOrderOf, treasuryForecast,
-  turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type AssignmentRole, type CityLogStat,
+  assignmentLabel, assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
+  engagementOf, FUNDED_ROLES, governorOf, officerTraining,
+  MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportKnightProblem, transportOrderOf, treasuryForecast,
+  turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type CityLogStat,
   type GameEvent, type GameState, type Season,
 } from '../../game'
 
@@ -59,10 +59,6 @@ export function mapCities(game: GameState): MapCity[] {
   return Object.keys(game.cities).map((id) => ({
     id, name: CITY_MAP[id]?.name ?? id, type: placeTypeOf(game, id), belongTo: ownerOf(game, id),
   }))
-}
-
-const ASSIGNMENT_LABELS: Readonly<Record<AssignmentRole, string>> = {
-  governor: '領主', commerce: '商業担当官', production: '生産担当官', training: '訓練担当官', recruitment: '募兵担当官',
 }
 
 
@@ -121,7 +117,7 @@ export function knightView(game: GameState, id: string): KnightView {
       ...(prisoner ? ['捕虜'] : []),
       ...(carriedOrder ? [`${cityName(carriedOrder.to)}へ移送予約中`] : []),
       ...(carried ? [`${cityName(carried.to)}へ移送中`] : []),
-      ...(assignment ? [ASSIGNMENT_LABELS[assignment]] : []),
+      ...(assignment ? [assignmentLabel(assignment)] : []),
       ...(order ? [`${cityName(order.to)}へ侵攻予約中`] : []),
       ...(moveOrder ? [`${cityName(moveOrder.to)}へ移動予約中`] : []),
       ...(transportOrder ? [`${cityName(transportOrder.to)}へ輸送予約中`] : []),
@@ -142,10 +138,13 @@ export function knightView(game: GameState, id: string): KnightView {
     defaultUnitType: defaultUnitType(id),
     unitTypes: unitTypesOf(id),
     commandRank: commandRank(game, id),
-    unavailableReason: away ?? (order ? '侵攻予約中' : moveOrder ? '移動予約中' : transportOrder ? '輸送予約中'
-      : carried ? '移送中' : carriedOrder ? '移送予約中' : undefined),
+    unavailableReason: engagementOf(game, id) ?? (carried ? '移送中' : carriedOrder ? '移送予約中' : undefined),
   }
 }
+
+/** A knight on the transport screen: an officer cannot take a transport (transportKnightProblem) */
+export const transportKnightView = (game: GameState, id: string): KnightView =>
+  ({ ...knightView(game, id), unavailableReason: transportKnightProblem(game, id) ?? undefined })
 
 const CITY_LOG_LABELS: Readonly<Record<CityLogStat, string>> = {
   population: '人口', baseMarket: '商業（基礎）', baseProduction: '生産（基礎）', market: '商業', production: '生産',

@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { CHARACTER_MAP } from '../data/character'
 import {
   defaultUnitType, defenseKnights, formDefense,
-  addMoveOrder, addOrder, addTransportOrder, availableKnights, cancelMoveOrder, cancelTransportOrder, charactersIn, endFactionTurn,
-  awayReason, GameRuleError, governorOf, moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, orderProblem, resolveBattle, runMovements, soldiersLeft,
-  startNextBattle, suppliesLeft, transportFromProblem, transportOrderProblem, type GameState, type MoveOrder, type TransportOrder,
+  addMoveOrder, addOrder, addTransportOrder, assign, assignmentProblem, availableKnights, cancelMoveOrder, cancelTransportOrder, charactersIn, endFactionTurn,
+  awayReason, GameRuleError, governorOf, moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, orderProblem, resolveBattle, runMovements, setOfficers, soldiersLeft,
+  startNextBattle, suppliesLeft, transportFromProblem, transportKnightProblem, transportKnights, transportOrderProblem, unassign, type GameState, type MoveOrder, type TransportOrder,
 } from '.'
 import { playing } from './testing'
 
@@ -166,8 +166,9 @@ describe('transport orders', () => {
     expect(availableKnights(state, AMBARIA)).toEqual(['046', '087'])
     expect(soldiersLeft(state, AMBARIA)).toBe(start().cities[AMBARIA].troops - 300)
     expect(suppliesLeft(state, AMBARIA)).toBe(start().cities[AMBARIA].storedSupplies - 100)
-    expect(moveOrderProblem(state, move())).toBe('013 は輸送を予約しています')
-    expect(orderProblem(state, { factionId: 'leonis', from: AMBARIA, to: FLUEN, commander: '013', knights: ['013'] })).toBe('013 は輸送を予約しています')
+    expect(moveOrderProblem(state, move())).toBe('013 は輸送予約中です')
+    expect(orderProblem(state, { factionId: 'leonis', from: AMBARIA, to: FLUEN, commander: '013', knights: ['013'] })).toBe('013 は輸送予約中です')
+    expect(assignmentProblem(state, AMBARIA, '013', 'commerce')).toBe('輸送予約中です')
     const cancelled = cancelTransportOrder(state, state.transportOrders[0].id)
     expect(cancelled.transportOrders).toEqual([])
     expect(availableKnights(cancelled, AMBARIA)).toEqual(['013', '046', '087'])
@@ -186,7 +187,20 @@ describe('transport orders', () => {
     expect(transportOrderProblem(state, transport({ supplies: state.cities[AMBARIA].storedSupplies + 10 }))).toBe('物資が足りません')
     expect(() => addTransportOrder(state, transport({ to: FLUEN }))).toThrow(GameRuleError)
     const moving = addMoveOrder(state, move())
-    expect(transportOrderProblem(moving, transport())).toBe('013 は移動を予約しています')
+    expect(transportOrderProblem(moving, transport())).toBe('013 は移動予約中です')
+  })
+
+  it('is not taken by an officer, who stays at their work (a lord may take one)', () => {
+    const state = assign(start(), AMBARIA, '013', 'commerce')
+    expect(transportKnightProblem(state, '013')).toBe('商業担当官')
+    expect(transportOrderProblem(state, transport())).toBe('013 は商業担当官です')
+    expect(() => addTransportOrder(state, transport())).toThrow(GameRuleError)
+    expect(transportKnights(state, AMBARIA)).toEqual(['046', '087'])
+    expect(transportOrderProblem(state, transport({ knight: '046' }))).toBeNull()
+    // Off the role, they may
+    expect(transportOrderProblem(unassign(state, AMBARIA, '013'), transport())).toBeNull()
+    // Moves and invasions are open to officers (they leave their roles when they go)
+    expect(moveOrderProblem(state, move())).toBeNull()
   })
 
   it('is open from a city with knights, soldiers or supplies and another city of the faction', () => {
@@ -194,6 +208,8 @@ describe('transport orders', () => {
     expect(transportFromProblem(start(), FLUEN)).toBe('自勢力の都市ではありません')
     const everyone = addMoveOrder(start(), move({ knights: ['013', '046', '087'] }))
     expect(transportFromProblem(everyone, AMBARIA)).toBe('輸送を担当できる騎士がいません')
+    const officers = setOfficers(addMoveOrder(start(), move({ knights: ['046'] })), AMBARIA, 'commerce', ['013', '087'])
+    expect(transportFromProblem(officers, AMBARIA)).toBe('輸送を担当できる騎士がいません')
   })
 })
 

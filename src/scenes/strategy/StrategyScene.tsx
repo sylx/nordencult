@@ -22,7 +22,7 @@ import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import {
   UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
-  eventView, mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, turnView, unitPower,
+  eventView, mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, transportKnightView, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
 
@@ -522,7 +522,7 @@ export default function StrategyScene() {
           return (
             <TransportScreen from={cityView(game, from)} to={cityView(game, to)} route={route.map(cityName)}
               months={moveMonths(route.length - 1, false)} returnMonths={moveMonths(route.length - 1, true)}
-              knights={charactersIn(game, from).map((id) => knightView(game, id))}
+              knights={charactersIn(game, from).map((id) => transportKnightView(game, id))}
               soldierPool={soldiersLeft(game, from)} supplyPool={suppliesLeft(game, from)}
               prisoners={prisonersIn(game, from).map((id) => knightView(game, id))}
               validate={(draft) => transportOrderProblem(game, draftTransport(faction, from, to, draft))}

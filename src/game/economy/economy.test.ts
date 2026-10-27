@@ -370,7 +370,7 @@ describe('assignments', () => {
     expect(assignmentProblem(state, AMBARIA, '013', 'commerce')).toBe('自勢力の都市ではありません')
     expect(assignmentProblem(endFactionTurn(state), FLUEN, '015', 'commerce')).toBe('自勢力の都市ではありません')
     const ordered = addOrder(state, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015'] })
-    expect(assignmentProblem(ordered, FLUEN, '015', 'commerce')).toBe('出撃予約中です')
+    expect(assignmentProblem(ordered, FLUEN, '015', 'commerce')).toBe('侵攻予約中です')
     expect(() => assign(ordered, FLUEN, '015', 'commerce')).toThrow(GameRuleError)
     // The lord serves as no officer, and a role takes two at most
     expect(assignmentProblem(state, FLUEN, '029', 'commerce')).toBe('領主は担当官になれません')

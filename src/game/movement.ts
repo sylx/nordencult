@@ -1,10 +1,10 @@
 import { CHARACTER_MAP } from '../data/character'
 import { mixMorale } from './army'
-import { successorLord, withGovernor, withoutAssignee } from './economy/domestic'
+import { assignmentLabel, assignmentOf, successorLord, withGovernor, withoutAssignee } from './economy/domestic'
 import { GameRuleError } from './errors'
 import {
-  availableKnights, availablePrisoners, awayReason, citiesOf, isPrisoner, moveOrderOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, soldiersLeft,
-  suppliesLeft, transportOrderOf,
+  availableKnights, availablePrisoners, citiesOf, engagementOf, isPrisoner, ownerOf, prisonerMovementOf, prisonerOrderOf, soldiersLeft, stationedIn,
+  suppliesLeft,
 } from './queries'
 import type { CharacterId, CharacterState, CityId, CityState, FactionId, GameState, MoveLeg, MoveOrder, Movement, MovementKind, TransportOrder } from './types'
 import { neighbours } from './world'
@@ -103,11 +103,8 @@ export function moveOrderProblem(state: GameState, draft: Omit<MoveOrder, 'id'>)
   for (const id of knights) {
     const character = state.characters[id]
     if (!character || character.cityId !== from || character.factionId !== factionId) return `${id} は出発拠点の騎士ではありません`
-    const away = awayReason(state, id)
-    if (away) return `${id} は${away}です`
-    if (orderOf(state, id)) return `${id} は侵攻を予約しています`
-    if (moveOrderOf(state, id)) return `${id} はすでに移動を予約しています`
-    if (transportOrderOf(state, id)) return `${id} は輸送を予約しています`
+    const engaged = engagementOf(state, id)
+    if (engaged) return `${id} は${engaged}です`
   }
   if (![troops, supplies].every((n) => Number.isInteger(n) && n >= 0)) return '数が正しくありません'
   if (solo && (troops > 0 || supplies > 0)) return '単騎移動では兵と物資を運べません'
@@ -137,11 +134,24 @@ export function cancelMoveOrder(state: GameState, orderId: string): GameState {
   return { ...state, moveOrders: state.moveOrders.filter((o) => o.id !== orderId) }
 }
 
+/**
+ * What keeps a knight from taking a transport now: what keeps them from any order (engagementOf), or their officer
+ * role (e.g. 商業担当官: an officer stays at their work); null when they can. A lord may go, staying the lord
+ */
+export function transportKnightProblem(state: GameState, characterId: CharacterId): string | null {
+  const role = assignmentOf(state, characterId)
+  return engagementOf(state, characterId) ?? (role && role !== 'governor' ? assignmentLabel(role) : null)
+}
+
+/** Knights in a city who can take a transport now */
+export const transportKnights = (state: GameState, cityId: CityId): CharacterId[] =>
+  stationedIn(state, cityId).filter((id) => !transportKnightProblem(state, id))
+
 /** Why the active faction cannot start a transport from the city, or null when it can */
 export function transportFromProblem(state: GameState, cityId: CityId): string | null {
   if (state.phase !== 'strategy' || !state.activeFaction) return '手番ではありません'
   if (ownerOf(state, cityId) !== state.activeFaction) return '自勢力の都市ではありません'
-  if (availableKnights(state, cityId).length === 0) return '輸送を担当できる騎士がいません'
+  if (transportKnights(state, cityId).length === 0) return '輸送を担当できる騎士がいません'
   if (soldiersLeft(state, cityId) <= 0 && suppliesLeft(state, cityId) <= 0 && availablePrisoners(state, cityId).length === 0) {
     return '輸送できる兵も物資もありません'
   }
@@ -160,11 +170,8 @@ export function transportOrderProblem(state: GameState, draft: Omit<TransportOrd
   if (!knight) return '担当の騎士を選んでください'
   const character = state.characters[knight]
   if (!character || character.cityId !== from || character.factionId !== factionId) return `${knight} は出発拠点の騎士ではありません`
-  const away = awayReason(state, knight)
-  if (away) return `${knight} は${away}です`
-  if (orderOf(state, knight)) return `${knight} は侵攻を予約しています`
-  if (moveOrderOf(state, knight)) return `${knight} は移動を予約しています`
-  if (transportOrderOf(state, knight)) return `${knight} はすでに輸送を予約しています`
+  const unable = transportKnightProblem(state, knight)
+  if (unable) return `${knight} は${unable}です`
   if (![troops, supplies].every((n) => Number.isInteger(n) && n >= 0)) return '数が正しくありません'
   if (troops === 0 && supplies === 0 && prisoners.length === 0) return '輸送するものを選んでください'
   if (troops > soldiersLeft(state, from)) return '兵が足りません'

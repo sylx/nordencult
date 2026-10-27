@@ -110,9 +110,22 @@ export const moveOrderOf = (state: GameState, characterId: CharacterId): MoveOrd
 export const transportOrderOf = (state: GameState, characterId: CharacterId): TransportOrder | undefined =>
   state.transportOrders.find((o) => o.knight === characterId)
 
+/**
+ * What keeps a character from being given an order or an assignment now: away on a movement (awayReason), or sent on
+ * an invasion, a move or a transport this turn (侵攻予約中, 移動予約中, 輸送予約中); null when free.
+ * A knight's assignment (領主・内政担当官) does not keep them from an order, but an officer cannot take a transport
+ * (transportKnightProblem)
+ */
+export function engagementOf(state: GameState, characterId: CharacterId): string | null {
+  return awayReason(state, characterId)
+    ?? (orderOf(state, characterId) ? '侵攻予約中'
+      : moveOrderOf(state, characterId) ? '移動予約中'
+      : transportOrderOf(state, characterId) ? '輸送予約中' : null)
+}
+
 /** Characters in a city not yet sent on an invasion, a move or a transport */
 export const availableKnights = (state: GameState, cityId: CityId): CharacterId[] =>
-  stationedIn(state, cityId).filter((id) => !orderOf(state, id) && !moveOrderOf(state, id) && !transportOrderOf(state, id))
+  stationedIn(state, cityId).filter((id) => !engagementOf(state, id))
 
 /** Cities a faction can invade from a city: joined by a road and not its own (neutral ones too) */
 export function invasionTargets(state: GameState, from: CityId): CityId[] {
@@ -199,11 +212,8 @@ export function orderProblem(state: GameState, draft: Omit<InvasionOrder, 'id'>)
     if (!character || character.cityId !== from || character.factionId !== factionId) {
       return `${id} は出発拠点の騎士ではありません`
     }
-    const away = awayReason(state, id)
-    if (away) return `${id} は${away}です`
-    if (orderOf(state, id)) return `${id} はすでに別の侵攻に加わっています`
-    if (moveOrderOf(state, id)) return `${id} は移動を予約しています`
-    if (transportOrderOf(state, id)) return `${id} は輸送を予約しています`
+    const engaged = engagementOf(state, id)
+    if (engaged) return `${id} は${engaged}です`
   }
   if (!knights.includes(commander)) return '軍団長が出撃する騎士にいません'
   const leader = leadingKnight(state, knights)!

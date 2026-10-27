@@ -3,7 +3,7 @@ import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { mixMorale } from '../army'
 import { GameRuleError } from '../errors'
-import { awayReason, moveOrderOf, orderOf, ownerOf, transportOrderOf } from '../queries'
+import { engagementOf, ownerOf } from '../queries'
 import type { AssignmentRole, CharacterId, CityAssignments, CityId, CityState, FundedRole, GameState, OfficerRole } from '../types'
 import { AFFAIRS_BUDGET_LIMIT, OFFICERS_PER_ROLE, RECRUIT_GOLD } from './balance'
 import { cityOutput } from './output'
@@ -33,6 +33,9 @@ const check = (problem: string | null) => {
 export const OFFICER_ROLES: readonly OfficerRole[] = ['commerce', 'production', 'training', 'recruitment']
 
 const OFFICER_LABELS: Readonly<Record<OfficerRole, string>> = { commerce: '商業', production: '生産', training: '訓練', recruitment: '募兵' }
+
+/** 領主, or the officer of the role (e.g. 商業担当官) */
+export const assignmentLabel = (role: AssignmentRole): string => (role === 'governor' ? '領主' : `${OFFICER_LABELS[role]}担当官`)
 
 const officerRoleOf = (assignments: CityAssignments, characterId: CharacterId) =>
   OFFICER_ROLES.find((role) => assignments.officers[role]?.includes(characterId))
@@ -86,12 +89,10 @@ export function assignmentProblem(state: GameState, cityId: CityId, characterId:
   if (problem) return problem
   const character = state.characters[characterId]
   if (character?.cityId !== cityId || character.factionId !== ownerOf(state, cityId) || character.prisoner) return `${characterId} はこの都市の騎士ではありません`
-  const away = awayReason(state, characterId)
-  if (away) return `${away}です`
-  if (orderOf(state, characterId)) return '出撃予約中です'
-  if (moveOrderOf(state, characterId)) return '移動予約中です'
-  if (transportOrderOf(state, characterId)) return '輸送予約中です'
-  if (assignmentOf(state, characterId) === role) return role === 'governor' ? 'すでに領主です' : `すでに${OFFICER_LABELS[role]}担当官です`
+  // A knight on a transport cannot be made an officer, as an officer cannot take one (transportKnightProblem)
+  const engaged = engagementOf(state, characterId)
+  if (engaged) return `${engaged}です`
+  if (assignmentOf(state, characterId) === role) return `すでに${assignmentLabel(role)}です`
   if (role === 'governor') return null
   const assignments = state.cities[cityId].assignments
   if (assignments.governor === characterId) return '領主は担当官になれません'
