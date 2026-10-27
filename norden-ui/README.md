@@ -77,6 +77,24 @@ import { SettingsDialog, VolumeSlider } from 'norden-ui'
 </SettingsDialog>
 ```
 
+### 効果音
+
+norden-ui は音を鳴らしません。効果音の名前を伝えるだけで、鳴らすのはゲームです（`setSoundPlayer`）。プレイヤーが無い間（カタログ）は鳴りません。
+
+- `playSound(name)`: 名前の効果音を鳴らす。norden-ui の上に作るもの（norden-battle）もこれを使う
+- `installClickSound(target = document)`: ボタン・リンク・タブ・選択肢（`role="radio"`）・チェックボックスのクリックで `click` を鳴らす。無効のもの（`disabled`・`aria-disabled="true"`）は鳴らない。
+  キャプチャで拾うので、伝播を止めるダイアログの中でも鳴る。戻り値で外す
+- `data-sound`: その要素（または囲む要素）のクリックで鳴らす音の名前。`none` で無音（ドラッグで動かす取っ手・リサイズ）。ボタン以外の要素（リストの項目など）も付けると鳴る
+
+```tsx
+import { installClickSound, setSoundPlayer } from 'norden-ui'
+
+setSoundPlayer(name => mySePlayer.play(name))
+installClickSound()
+
+<Button data-sound="cancel" onClick={back}>戻る</Button>
+```
+
 ### 画面スタック
 
 ```tsx

@@ -112,7 +112,7 @@ export default function WindowFrame({
       )}
       {title !== undefined && title !== null && (
         <div className={`norden-window-frame-title ${draggable ? 'is-draggable' : ''}`}
-          role={draggable ? 'button' : undefined} tabIndex={draggable ? 0 : undefined}
+          role={draggable ? 'button' : undefined} tabIndex={draggable ? 0 : undefined} data-sound="none"
           aria-label={draggable ? 'ウィンドウを移動' : undefined}
           title={draggable ? 'タイトルをドラッグ、または矢印キーで移動（Shiftで微調整・Homeで元の位置）' : undefined}
           onPointerDown={start} onPointerMove={move} onPointerUp={end}

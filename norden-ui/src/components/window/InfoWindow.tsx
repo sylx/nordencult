@@ -153,7 +153,7 @@ export default function InfoWindow({
         </div>
       </div>
       {chrome}
-      {canResize && <button type="button" className="norden-info-window-resize" aria-label="ウィンドウのサイズ変更"
+      {canResize && <button type="button" className="norden-info-window-resize" data-sound="none" aria-label="ウィンドウのサイズ変更"
         onPointerDown={event => start(event, 'resize')} onPointerMove={move}
         onPointerUp={end} onPointerCancel={end} onLostPointerCapture={end}
         onKeyDown={event => {

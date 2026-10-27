@@ -105,7 +105,7 @@ export default function FactionBar({ faction, summary, cityName, onPrevCity, onN
   return (
     <div className={`norden-faction-bar ${dragging ? 'is-dragging' : ''} ${className}`} role="group" aria-label="勢力"
       style={{ ...style, translate: `${offset.x}px ${offset.y}px` }}>
-      <button type="button" className="norden-faction-bar-orb" disabled={!movable}
+      <button type="button" className="norden-faction-bar-orb" disabled={!movable} data-sound="none"
         aria-label={`${faction?.name ?? '勢力'}のバーを移動`}
         title={`${faction?.name ?? '勢力'}：球をドラッグ、または矢印キーで移動（Shiftで微調整・Homeで元の位置）`}
         onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end} onLostPointerCapture={end}

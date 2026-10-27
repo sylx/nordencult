@@ -137,6 +137,7 @@ export default function CommandToolbar({
         <button
           key={side}
           type="button"
+          data-sound="none"
           className={`norden-command-toolbar-drag-handle norden-command-toolbar-drag-handle--${side}`}
           aria-label={`${label}を移動（${side === 'left' ? '左端' : '右端'}）`}
           title="ドラッグまたは矢印キーで移動（Shift＋矢印キーで微調整）"

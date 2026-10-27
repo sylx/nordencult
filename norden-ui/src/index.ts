@@ -56,6 +56,10 @@ export type { StatBarProps, StatBarSegment } from './components/parts/StatBar'
 export { default as BuildingSlots, BuildingImage, ConstructionProgress } from './components/parts/BuildingSlots'
 export type { BuildingSlotsProps } from './components/parts/BuildingSlots'
 
+// Sound effects: the game plays them (setSoundPlayer); components only name them
+export { installClickSound, playSound, setSoundPlayer } from './sound/sound'
+export type { SoundPlayer } from './sound/sound'
+
 // Screen stack
 export { useScreenStack } from './navigation/useScreenStack'
 export { useBrowseHistory } from './hooks/useBrowseHistory'
