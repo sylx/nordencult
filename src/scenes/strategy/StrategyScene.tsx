@@ -92,6 +92,8 @@ const draftTransport = (factionId: FactionId, from: CityId, to: CityId, draft: T
 
 /** The room (px) the city window on the left and the 行動予約 list on the right take from the map, for focusing on cities */
 const FOCUS_INSET: FocusInset = { left: 360, right: 200 }
+/** The room the guide banner of the map pick screens covers at the top of the map */
+const PICK_INSET: FocusInset = { top: 150 }
 
 /** The roads between each pair of neighbouring cities along a route */
 const routeRoads = (route: readonly string[], color: string, flow?: boolean): RoadHighlight[] =>
@@ -282,6 +284,16 @@ export default function StrategyScene() {
     // After MapView's focusPlace of the city shown (its effect runs first), clear of the windows over the map
     map.focusPlaces([from, to], { inset: FOCUS_INSET })
   }, [map, focusKey])
+
+  // Choosing where to move or transport: the camera takes in the city and all the cities it can go to.
+  // Keyed by the cities so that the camera stays put as the game changes while choosing
+  const pickKey = top.screen === 'pickMoveTarget' || top.screen === 'pickTransportTarget'
+    ? [top.params.from, ...(top.screen === 'pickMoveTarget' ? moveDestinations : transportDestinations)].join(':')
+    : null
+  useEffect(() => {
+    if (!map || !pickKey) return
+    map.focusPlaces(pickKey.split(':'), { inset: PICK_INSET })
+  }, [map, pickKey])
 
   // CPU factions pass their turn (M001 has no CPU yet)
   useEffect(() => {
