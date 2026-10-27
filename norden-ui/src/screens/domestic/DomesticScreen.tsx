@@ -506,6 +506,7 @@ export default function DomesticScreen({
                             disabled={Boolean(option.unavailableReason)}
                             title={option.unavailableReason}
                             aria-label={upgradeBase ? `${option.name}にアップグレード` : `${option.name}を建設`}
+                            data-sound="develop"
                             onClick={() => {
                               setPanel(null)
                               onBuild?.(option.id)
