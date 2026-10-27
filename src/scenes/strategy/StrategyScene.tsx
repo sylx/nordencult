@@ -5,6 +5,7 @@ import {
   type MoveDraft, type TransportDraft,
 } from 'norden-ui'
 import { MapView, type CityHighlight, type FocusInset, type RoadHighlight, type StrategyMap } from 'norden-strategy'
+import { playSe } from '../../audio/se'
 import { SoundSettings } from '../../components/SoundSettings'
 import { CHARACTER_MAP } from '../../data/character'
 import { FACTION_MAP, factionColor, factionName } from '../../data/faction'
@@ -190,18 +191,21 @@ export default function StrategyScene() {
     } else if (top.screen === 'pickTransportTarget') {
       if (transportDestinations.includes(id)) nav.push('transport', { from: top.params.from, to: id })
     } else if (top.screen === 'cityCommand') {
-      nav.replace('cityCommand', { cityId: id })
+      switchCity(id)
     }
   }
 
-  const showCity = (id: string) => {
-    if (top.screen === 'cityCommand') nav.replace('cityCommand', { cityId: id })
+  /** Shows another city on the city command screen, with a whoosh */
+  const switchCity = (id: string) => {
+    if (top.screen !== 'cityCommand' || id === top.params.cityId) return
+    playSe('whoosh')
+    nav.replace('cityCommand', { cityId: id })
   }
 
   const stepCity = (cityId: string, delta: number) => {
     const index = playerCities.indexOf(cityId)
     const next = index < 0 ? 0 : (index + delta + playerCities.length) % playerCities.length
-    nav.replace('cityCommand', { cityId: playerCities[next] })
+    switchCity(playerCities[next])
   }
 
   const selected = 'cityId' in top.params ? top.params.cityId : top.params.from
@@ -473,7 +477,7 @@ export default function StrategyScene() {
               }>
               <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))}
                 onCancelMove={(id) => update((s) => cancelMoveOrder(s, id))}
-                onCancelTransport={(id) => update((s) => cancelTransportOrder(s, id))} onSelectCity={showCity}
+                onCancelTransport={(id) => update((s) => cancelTransportOrder(s, id))} onSelectCity={switchCity}
                 activeId={activeOrder} onActiveChange={setActiveOrder} />
               {notice && <div className="norden-screen-top-center norden-screen-banner"><Banner>{notice}</Banner></div>}
             </CityCommandScreen>
