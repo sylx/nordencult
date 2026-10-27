@@ -20,7 +20,7 @@ import {
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import {
-  UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticForecast, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
+  UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
   eventView, mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
@@ -520,7 +520,6 @@ export default function StrategyScene() {
             buildOptions={buildOptions(game, cityId)}
             gold={game.gold[faction]}
             populationGrowth={populationGrowthView(game, cityId)}
-            forecast={domesticForecast(game, cityId)}
             stats={domesticStats(game, cityId)}
             onBuild={(buildingId) => update((s) => startConstruction(s, cityId, buildingId))}
             onDemolish={(buildingId) => update((s) => demolishBuilding(s, cityId, buildingId))}
