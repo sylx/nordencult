@@ -128,10 +128,7 @@ export default function DomesticOfficers({
               aria-label={`${spec.label}担当官`}
             >
               <div className="norden-domestic-officer-heading">
-                <strong className="norden-domestic-officer-title">
-                  {spec.label}
-                  {alert && <span className="norden-domestic-officer-alert" title={alert.title}>{alert.label}</span>}
-                </strong>
+                <strong className="norden-domestic-officer-title">{spec.label}</strong>
                 <span className="norden-domestic-officer-ability">{weightsLabel(spec)}</span>
               </div>
               <p className="norden-domestic-officer-desc">{spec.description}</p>
@@ -202,6 +199,7 @@ export default function DomesticOfficers({
               <span className={`norden-domestic-officer-effect ${effects?.[spec.role] ? '' : 'is-none'}`}>
                 {effects?.[spec.role] ?? (assigned.length > 0 ? '' : '担当官なし')}
               </span>
+              {alert && <span className="norden-domestic-officer-alert" title={alert.title}>{alert.label}</span>}
             </li>
           )
         })}

@@ -725,13 +725,14 @@
 .norden-domestic-officer-role.has-budget-short { border-color: #e0b04a; background: rgb(224 176 74 / 0.08); }
 .norden-domestic-officer-role.is-selected.has-budget-empty,
 .norden-domestic-officer-role.is-selected.has-budget-short { box-shadow: 0 0 0 2px #c9963c80; }
+/* At the bottom of the role, under what its officers bring */
 .norden-domestic-officer-alert {
-  margin-left: 8px;
+  align-self: flex-start;
   padding: 1px 6px;
   border-radius: 3px;
   font-size: 11px;
   font-weight: 700;
-  vertical-align: 2px;
+  white-space: nowrap;
   cursor: help;
 }
 .has-budget-empty .norden-domestic-officer-alert { color: #fff4e8; background: #b8402c; }
