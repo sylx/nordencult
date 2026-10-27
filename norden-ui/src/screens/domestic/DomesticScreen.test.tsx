@@ -14,21 +14,11 @@ describe('DomesticScreen', () => {
     expect(onClose).toHaveBeenCalledOnce()
   })
 
-  it('shows the next turn at the bottom-left and goes back with the button at the bottom-right', async () => {
+  it('goes back with the button at the bottom-right', async () => {
     const onClose = vi.fn()
-    const { rerender } = render(
-      <DomesticScreen city={{ id: 'P012', name: 'フルーエン' }} forecast={{ income: 520, spend: [80, 150], supplies: 180, suppliesTo: 'construction' }}
-        onClose={onClose} />,
-    )
-    const forecast = screen.getByRole('region', { name: '次のターンの見込み' })
-    expect(forecast).toHaveTextContent('金+520担当官が予算から 80〜150')
-    expect(forecast).toHaveTextContent('物資+180建設へ')
+    render(<DomesticScreen city={{ id: 'P012', name: 'フルーエン' }} onClose={onClose} />)
     await userEvent.click(screen.getByRole('button', { name: '戻る' }))
     expect(onClose).toHaveBeenCalledOnce()
-
-    rerender(<DomesticScreen city={{ id: 'P012', name: 'フルーエン' }} forecast={{ income: 520, supplies: 180, suppliesTo: 'store' }} onClose={onClose} />)
-    expect(forecast).not.toHaveTextContent('担当官')
-    expect(forecast).toHaveTextContent('物資+180備蓄へ')
   })
 
   it('shows built slots on the left, a single + slot, and opens the right build list to construct', async () => {

@@ -962,7 +962,7 @@
   font-weight: 700;
 }
 
-/* The window split into the panels above and, along the bottom, the city's next turn and the button back */
+/* The window split into the panels above and, along the bottom, the button back (at the right, the left left empty for now) */
 .norden-domestic-layout { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 14px; height: 100%; min-height: 0; }
 .norden-domestic-footer {
   display: flex;
@@ -973,12 +973,4 @@
   white-space: nowrap;
   border-top: 1px solid #cbb2824d;
 }
-.norden-domestic-forecast { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 20px; min-width: 0; }
-.norden-domestic-forecast-title { font-size: 12px; font-weight: 700; color: #c8b490; }
-.norden-domestic-forecast dl { display: contents; }
-.norden-domestic-forecast dl > div { display: inline-flex; align-items: baseline; gap: 6px; }
-.norden-domestic-forecast dt { font-size: 15px; }
-.norden-domestic-forecast dd { display: inline-flex; align-items: baseline; gap: 8px; margin: 0; }
-.norden-domestic-forecast b { font-size: 22px; color: #ffe08a; font-variant-numeric: tabular-nums; }
-.norden-domestic-forecast-note { font-size: 12px; color: #c8b490; }
 .norden-domestic-back { margin-left: auto; }

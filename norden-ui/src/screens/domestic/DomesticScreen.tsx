@@ -6,8 +6,8 @@ import KnightCard from '../../components/parts/KnightCard'
 import ConfirmDialog from '../../components/window/ConfirmDialog'
 import WindowFrame from '../../components/window/WindowFrame'
 import type {
-  BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView, DomesticBudgetsView, DomesticForecastView, DomesticFundedRole,
-  DomesticOfficerRole, DomesticOfficersView, KnightView, PopulationGrowthView,
+  BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole,
+  DomesticOfficersView, KnightView, PopulationGrowthView,
 } from '../types'
 import DomesticOfficers, { ABILITY_LABELS, KnightFace, OFFICER_ROLES, OFFICERS_PER_ROLE, knightAbility, roleAptitude, weightsLabel } from './DomesticOfficers'
 import DomesticStatus from './DomesticStatus'
@@ -26,8 +26,6 @@ export interface DomesticScreenProps {
   gold?: number
   /** The population's growth next turn and the turns until the next tier (a forecast), shown under the population */
   populationGrowth?: PopulationGrowthView
-  /** The city's gold and supplies next turn, shown at the bottom-left */
-  forecast?: DomesticForecastView
   /** Bars at the top (e.g. 商業・生産・練度・新兵の練度) with the buildings' boosts stacked on them; city.stats when omitted */
   stats?: readonly CityStatView[]
   /** Start constructing a building in the active empty slot, or an upgrade over the building it replaces */
@@ -73,14 +71,13 @@ const panelKey = (panel: SidePanel) =>
  * Domestic screen: full-screen window with the city's lord (face, and a button to replace them) and its state
  * (stats with their boosts, population, supplies, gold) at the top-left, its building slots (their pictures shown whole)
  * below, its domestic officers below them, and a panel on the right (350px) of the buildings to add or upgrade to,
- * or of the knights to pick as lord or officers; along the bottom, the city's gold and supplies next turn and the button back.
+ * or of the knights to pick as lord or officers; along the bottom, the button back.
  */
 export default function DomesticScreen({
   city,
   buildOptions = [],
   gold,
   populationGrowth,
-  forecast,
   stats = city.stats ?? [],
   onBuild,
   onDemolish,
@@ -522,33 +519,6 @@ export default function DomesticScreen({
           </div>
 
           <footer className="norden-domestic-footer">
-            {forecast && (
-              <section className="norden-domestic-forecast" aria-label="次のターンの見込み">
-                <span className="norden-domestic-forecast-title">次のターン</span>
-                <dl>
-                  <div>
-                    <dt>金</dt>
-                    <dd>
-                      <b>+{forecast.income.toLocaleString()}</b>
-                      {forecast.spend && (
-                        <span className="norden-domestic-forecast-note">
-                          担当官が予算から {forecast.spend[0] === forecast.spend[1]
-                            ? forecast.spend[0].toLocaleString()
-                            : `${forecast.spend[0].toLocaleString()}〜${forecast.spend[1].toLocaleString()}`}
-                        </span>
-                      )}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>物資</dt>
-                    <dd>
-                      <b>+{forecast.supplies.toLocaleString()}</b>
-                      <span className="norden-domestic-forecast-note">{forecast.suppliesTo === 'construction' ? '建設へ' : '備蓄へ'}</span>
-                    </dd>
-                  </div>
-                </dl>
-              </section>
-            )}
             <Button className="norden-domestic-back" onClick={onClose}>戻る</Button>
           </footer>
         </div>
