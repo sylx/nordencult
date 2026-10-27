@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react'
 /** Volumes 0..1, kept in the browser between plays */
 export interface Volumes {
   bgm: number
-  /** Sound effects (none yet; read it with getVolumes().se when they come) */
+  /** Sound effects (src/audio/se.ts) */
   se: number
 }
 

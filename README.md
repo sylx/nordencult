@@ -91,7 +91,16 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 
 再生は `src/audio/bgm.ts`（`playBgm(songId)`。プレイヤーは `getBgm()` で 1 つだけ作る）。ブラウザの自動再生制限があるので、最初のクリックかキー入力までは音が出ません。タブが裏に回るか、ウィンドウのフォーカスが外れている間は一時停止し、戻ると続きから鳴ります。音量とリバーブはシンセの既定値（`DEFAULT_MIX`）です。曲を書く・聴くのは norden-synth 単体のテストページ（`cd norden-synth && npm run dev`）で行います。
 
-BGM と効果音の音量（0〜1）は `src/audio/volume.ts` が持ち、ブラウザに保存します（`localStorage` の `nordencult:volume`）。戦略画面の右上の設定（ターン情報の歯車）と、タイトルの「設定」で変えられます（`src/components/SoundSettings.tsx`。norden-ui の `VolumeSlider`・`SettingsDialog`）。スライダーの値は 2 乗して音量の倍率にします（`volumeGain`。中央で約 -12dB）。効果音はまだ無く、作るときは `getVolumes().se` を使います。
+BGM と効果音の音量（0〜1）は `src/audio/volume.ts` が持ち、ブラウザに保存します（`localStorage` の `nordencult:volume`）。戦略画面の右上の設定（ターン情報の歯車）と、タイトルの「設定」で変えられます（`src/components/SoundSettings.tsx`。norden-ui の `VolumeSlider`・`SettingsDialog`）。スライダーの値は 2 乗して音量の倍率にします（`volumeGain`。中央で約 -12dB）。効果音は `getVolumes().se` の音量で鳴らします。
+
+## 効果音
+
+効果音のエンジンはルートの `src/audio/se.ts` の 1 つだけです。norden-ui と norden-battle は鳴らす効果音の名前を伝えるだけで、音を鳴らす処理は持ちません。
+
+- 音のファイルは `src/assets/se/<名前>.ogg`（`.mp3`・`.wav` も可）に置きます。置くだけで読み込まれます（`import.meta.glob`）。名前と鳴る場面の一覧は `src/assets/se/README.md`
+- `src/main.tsx` の `installSe()` が、norden-ui の `setSoundPlayer` に `playSe` を渡します。norden-ui・norden-battle の中から `playSound('名前')` を呼ぶと、ここで鳴ります。プレイヤーを渡していない所（norden-ui のカタログ、battle-editor）では鳴りません
+- UI のクリック音は norden-ui の `installClickSound()` が鳴らします。ボタン・タブ・選択肢・チェックボックス（無効のものは除く）のクリックを document でまとめて拾い、`click` を鳴らします。各部品に音の処理は要りません。`data-sound="名前"` で別の音、`data-sound="none"` で無音にできます（ボタン以外の要素も `data-sound` を付けると鳴ります）
+- AudioContext は BGM とは別です。最初のクリックかキー入力で作り、その時にすべての効果音を読み込みます。音量は設定の効果音（`getVolumes().se`）で、変えるとすぐに反映します
 
 ## ゲームの状態
 
