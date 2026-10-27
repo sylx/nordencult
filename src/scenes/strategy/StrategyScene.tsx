@@ -10,7 +10,7 @@ import { CHARACTER_MAP } from '../../data/character'
 import { FACTION_MAP, factionColor, factionName } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
-  MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
+  BALANCE, MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
   charactersIn, citiesOf, decideInvasion, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn,
   moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction, prisonersIn,
   runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, stationedIn, suppliesLeft, transportFromProblem,
@@ -528,6 +528,7 @@ export default function StrategyScene() {
             officers={officersView(game, cityId)}
             officerEffects={officerEffects(game, cityId)}
             budgets={budgetsView(game, cityId)}
+            budgetPerTurn={[BALANCE.AFFAIRS_BUDGET_MIN, BALANCE.AFFAIRS_BUDGET_MAX]}
             onChangeBudget={(role, amount) => update((s) => setAffairsBudget(s, cityId, role, amount))}
             onChangeLord={(knightId) => update((s) => assign(s, cityId, knightId, 'governor'))}
             onAssignOfficers={(role, knightIds) => update((s) => setOfficers(s, cityId, role, knightIds))}
