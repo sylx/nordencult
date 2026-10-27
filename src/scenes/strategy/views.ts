@@ -2,7 +2,7 @@ import { createElement } from 'react'
 import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import type {
-  BuildOptionView, BuildingView, CityStatView, CityView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, EventDetail, FactionSummaryView, FactionView,
+  BuildOptionView, BuildingView, CityStatView, CityView, DomesticBudgetsView, DomesticForecastView, DomesticOfficerRole, DomesticOfficersView, EventDetail, FactionSummaryView, FactionView,
   InvasionAssignment, KnightView, PopulationGrowthView, TurnView, UnitTypeView,
 } from 'norden-ui'
 import type { MapCity, MapSeason, PlaceType } from 'norden-strategy'
@@ -292,6 +292,27 @@ export function officersView(game: GameState, cityId: string): DomesticOfficersV
 /** Gold the city has set aside for its officers to spend, for the domestic screen */
 export function budgetsView(game: GameState, cityId: string): DomesticBudgetsView {
   return game.cities[cityId].affairsBudget
+}
+
+/**
+ * The city's gold and supplies next turn: what its 商業 brings the treasury, what its officers spend of their budgets
+ * and its 生産, into its construction (unless paused) or its store
+ */
+export function domesticForecast(game: GameState, cityId: string): DomesticForecastView {
+  const output = cityOutput(game, cityId)
+  const spending = FUNDED_ROLES.flatMap((role) => {
+    const affairs = output.affairs[role]
+    return affairs && affairs.spend[1] > 0 ? [affairs.spend] : []
+  })
+  const construction = game.cities[cityId].construction
+  return {
+    income: output.income,
+    spend: spending.length > 0
+      ? [spending.reduce((sum, [low]) => sum + low, 0), spending.reduce((sum, [, high]) => sum + high, 0)]
+      : undefined,
+    supplies: output.production,
+    suppliesTo: construction && !construction.paused ? 'construction' : 'store',
+  }
 }
 
 const AFFAIRS_LABELS = { commerce: '商業', production: '生産', recruitment: '兵' } as const

@@ -20,7 +20,7 @@ import {
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import {
-  UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
+  UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticForecast, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
   eventView, mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
@@ -447,7 +447,7 @@ export default function StrategyScene() {
     <div className={`strategy-scene${ready ? '' : ' strategy-scene--loading'}`}>
       <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false} showStats={false} copyClickPoint={false}
         cities={placedCities} season={mapSeason(game.turn)} />
-      <ScreenHost nav={nav} overlays={['domestic']} escapeToPop={top.screen !== 'defense'} screens={{
+      <ScreenHost nav={nav} escapeToPop={top.screen !== 'defense'} screens={{
         cityCommand: ({ cityId }) => {
           const index = playerCities.indexOf(cityId)
           return (
@@ -458,15 +458,11 @@ export default function StrategyScene() {
               onPrevCity={playerCities.length > 0 ? () => stepCity(cityId, -1) : undefined}
               onNextCity={playerCities.length > 0 ? () => stepCity(cityId, 1) : undefined}
               commandState={commandState(cityId)}
-              activeCommand={top.screen === 'domestic' ? 'domestic' : undefined}
               onCommand={(id) => {
-                // 内政 again closes the domestic window drawn over this screen; other commands close it first
-                const domesticOpen = top.screen === 'domestic'
-                popTo('cityCommand')
                 if (id === 'invade') nav.push('pickTarget', { from: cityId })
                 else if (id === 'move') nav.push('pickMoveTarget', { from: cityId })
                 else if (id === 'transport') nav.push('pickTransportTarget', { from: cityId })
-                else if (id === 'domestic' && !domesticOpen) nav.push('domestic', { cityId })
+                else if (id === 'domestic') nav.push('domestic', { cityId })
               }}
               onEndTurn={endTurn} endTurnDisabled={!playerTurn}
               turnMenu={
@@ -524,6 +520,7 @@ export default function StrategyScene() {
             buildOptions={buildOptions(game, cityId)}
             gold={game.gold[faction]}
             populationGrowth={populationGrowthView(game, cityId)}
+            forecast={domesticForecast(game, cityId)}
             stats={domesticStats(game, cityId)}
             onBuild={(buildingId) => update((s) => startConstruction(s, cityId, buildingId))}
             onDemolish={(buildingId) => update((s) => demolishBuilding(s, cityId, buildingId))}
