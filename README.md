@@ -93,6 +93,8 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 
 BGM と効果音の音量（0〜1）は `src/audio/volume.ts` が持ち、ブラウザに保存します（`localStorage` の `nordencult:volume`）。戦略画面の右上の設定（ターン情報の歯車）と、タイトルの「設定」で変えられます（`src/components/SoundSettings.tsx`。norden-ui の `VolumeSlider`・`SettingsDialog`）。スライダーの値は 2 乗して音量の倍率にします（`volumeGain`。中央で約 -12dB）。効果音は `getVolumes().se` の音量で鳴らします。
 
+BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止めます（曲の位置も止まり、戻すと続きから鳴ります）。起動したときから 0 なら norden-synth と音色を読み込まず、音量を上げた時に読み込んで、その時のシーンの曲を鳴らします。
+
 ## 効果音
 
 効果音のエンジンはルートの `src/audio/se.ts` の 1 つだけです。norden-ui と norden-battle は鳴らす効果音の名前を伝えるだけで、音を鳴らす処理は持ちません。
