@@ -986,7 +986,8 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 10px 4px 0;
+  /* Room for a pressed button moving down (translate), which would otherwise overflow the window and bring up its scrollbar */
+  padding: 10px 4px 4px;
   color: #f2e6c8;
   white-space: nowrap;
   border-top: 1px solid #cbb2824d;
