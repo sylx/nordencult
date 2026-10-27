@@ -68,6 +68,7 @@ src/songs/                  LLM が書いた曲
   mist-pilgrim.ts             『霧の巡礼』 (タイトル)
   winter-council.ts           『雪原の評議』 (冬の戦略画面)
   masked-passepied.ts         『仮面たちのパスピエ』 (ドビュッシー「パスピエ」による変奏。素材は source_midi/passepied.mid)
+  condor-board.ts             『コンドルの盤上』 (アンデス風の戦略画面)
 src/runtime/bgm.ts          ゲームの BGM (BgmPlayer)
 src/index.ts                ゲーム本体から使う公開 API
 src/main.ts                 テストページ

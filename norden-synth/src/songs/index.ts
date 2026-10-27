@@ -1,5 +1,6 @@
 // LLM が作った曲の一覧。新しい曲はファイルを足してここに並べる
 import { battleCry } from './battle-cry.ts'
+import { condorBoard } from './condor-board.ts'
 import { crookedPendulum } from './crooked-pendulum.ts'
 import { fairyRing } from './fairy-ring.ts'
 import { glassRipples } from './glass-ripples.ts'
@@ -20,4 +21,4 @@ import type { Song } from './song.ts'
 
 export { barAt, compileSong, type CompiledSong, type Song, type SongBar, type SongNote, type SongPart, type SongSection } from './song.ts'
 
-export const SONGS: Song[] = [hokuten, fairyRing, imperialTriumph, wanderingBird, northernOath, tundraMarch, goldenSails, starReader, whiteSanctum, holdingBreath, battleCry, mistPilgrim, winterCouncil, glassRipples, crookedPendulum, spiralCurrent, maskedPassepied]
+export const SONGS: Song[] = [hokuten, fairyRing, imperialTriumph, wanderingBird, northernOath, tundraMarch, goldenSails, starReader, whiteSanctum, holdingBreath, battleCry, mistPilgrim, winterCouncil, glassRipples, crookedPendulum, spiralCurrent, maskedPassepied, condorBoard]
