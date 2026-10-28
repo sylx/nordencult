@@ -2,14 +2,14 @@ import characterData from './characterData.json'
 import characterStart from './characterStart.json'
 import type { PersonalityTag, VoiceToneId } from './characterVoice'
 
-/** 騎士・学者・政治家・魔法使い・狩人・ライフル兵・砲兵・ランツクネヒト */
+/** 騎士・学者・政治家・魔術師・狩人・ライフル兵・砲兵・ランツクネヒト */
 export type CharacterType = 'knight' | 'scholar' | 'politician' | 'magician' | 'hunter' | 'rifleman' | 'artillery' | 'landsknecht'
 
 export const CHARACTER_TYPE_LABELS: Readonly<Record<CharacterType, string>> = {
   knight: '騎士',
   scholar: '学者',
   politician: '政治家',
-  magician: '魔法使い',
+  magician: '魔術師',
   hunter: '狩人',
   rifleman: 'ライフル兵',
   artillery: '砲兵',
