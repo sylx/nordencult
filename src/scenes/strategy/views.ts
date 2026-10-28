@@ -100,6 +100,8 @@ export function knightView(game: GameState, id: string): KnightView {
   const away = awayReason(game, id)
   const assignment = assignmentOf(game, id)
   const prisoner = game.characters[id]?.prisoner
+  // The head of a faction goes by its title (e.g. レオニス帝国皇帝) in place of 領主
+  const headOf = character.isPatriarch ? FACTION_MAP[game.characters[id]?.factionId ?? ''] : undefined
   // A prisoner being taken away, or to be this turn
   const carried = prisonerMovementOf(game, id)
   const carriedOrder = prisonerOrderOf(game, id)
@@ -117,7 +119,8 @@ export function knightView(game: GameState, id: string): KnightView {
       ...(prisoner ? ['捕虜'] : []),
       ...(carriedOrder ? [`${cityName(carriedOrder.to)}へ移送予約中`] : []),
       ...(carried ? [`${cityName(carried.to)}へ移送中`] : []),
-      ...(assignment ? [assignmentLabel(assignment)] : []),
+      ...(headOf ? [`${headOf.name}${headOf.patriarchLabel}`] : []),
+      ...(assignment && !(headOf && assignment === 'governor') ? [assignmentLabel(assignment)] : []),
       ...(order ? [`${cityName(order.to)}へ侵攻予約中`] : []),
       ...(moveOrder ? [`${cityName(moveOrder.to)}へ移動予約中`] : []),
       ...(transportOrder ? [`${cityName(transportOrder.to)}へ輸送予約中`] : []),
