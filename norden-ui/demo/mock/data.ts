@@ -26,7 +26,7 @@ const characterIds: Record<string, string> = { k1: '029', k2: '016', k3: '011', 
 const characterFor = (id: string) => repositoryCharacters.find(character => character.id === characterIds[id])
 
 // The game's rule: anyone can lead 歩兵, and each class one more unit type
-const classUnitTypes: Record<string, string[]> = { 騎士: ['infantry', 'cavalry'], 狩人: ['infantry', 'archer'], 魔法使い: ['infantry', 'mage'] }
+const classUnitTypes: Record<string, string[]> = { 騎士: ['infantry', 'cavalry'], 狩人: ['infantry', 'archer'], 魔術師: ['infantry', 'mage'] }
 
 // 政治・魅力, which the domestic screen weighs its lord and officers by
 const domesticAbilities: Record<string, [politics: number, charm: number]> = {
@@ -65,12 +65,12 @@ export const KNIGHTS: MockKnight[] = [
   knight('k1', 'マルクス・カルタ', 'P012', '政治家 / 領主', 62, 40, 88),
   knight('k2', 'エルネスト・ヴァイス', 'P012', '騎士', 84, 86, 52, 'cavalry'),
   knight('k3', 'リディア・ハーン', 'P012', '狩人', 70, 74, 60, 'archer'),
-  knight('k4', 'セラフィナ・ルクス', 'P012', '魔法使い', 73, 9, 95, 'mage'),
+  knight('k4', 'セラフィナ・ルクス', 'P012', '魔術師', 73, 9, 95, 'mage'),
   knight('k5', 'オスカー・ブラント', 'P010', '騎士 / 領主', 78, 80, 45),
   knight('k6', 'ミラ・ゼーフェルト', 'P010', '学者', 40, 22, 90),
   knight('k7', 'グレゴール・アイゼン', 'P004', '騎士 / 領主', 81, 88, 40),
   knight('k8', 'ハインツ・ヴォルフ', 'P006', '騎士 / 領主', 75, 79, 58),
-  knight('k9', 'ルチア・ベルネ', 'P021', '魔法使い / 領主', 66, 15, 92),
+  knight('k9', 'ルチア・ベルネ', 'P021', '魔術師 / 領主', 66, 15, 92),
 ]
 
 /** Prisoners (捕虜) held in the player's cities: knights of other factions, with the faction they served */

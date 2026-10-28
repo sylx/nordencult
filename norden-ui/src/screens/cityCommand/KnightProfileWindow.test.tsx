@@ -6,7 +6,7 @@ import { biographyParts } from './KnightProfileWindow'
 import type { CityView, KnightView } from '../types'
 
 const seraphina: KnightView = {
-  id: '001', name: 'セラフィナ・ルクス', subtitle: '魔法使い', faction: { name: 'エスハラ法王府' },
+  id: '001', name: 'セラフィナ・ルクス', subtitle: '魔術師', faction: { name: 'エスハラ法王府' },
   abilities: { leadership: 73, strength: 9, intelligence: 95, politics: 97, charm: 90 },
   location: '聖都',
   biography: '灰座に仕える巫女魔法師。弟子のイルーナ（002）とは反りが合わない。',
