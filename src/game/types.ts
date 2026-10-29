@@ -27,6 +27,8 @@ export interface GameState {
   cities: Readonly<Record<CityId, CityState>>
   /** Each faction's treasury */
   gold: Readonly<Record<FactionId, number>>
+  /** Each faction's research (研究) of the technology tree */
+  research: Readonly<Record<FactionId, FactionResearch>>
   /** What the latest economy run (at the start of the turn) did, for showing the cities grow; null on turn 1 */
   lastEconomy: EconomyReport | null
   /** Each city's numbers at the start of every turn so far (oldest first), with how the economy run got there */
@@ -67,6 +69,24 @@ export interface CharacterState {
   prisoner?: boolean
 }
 
+/**
+ * A faction's research. Its research points are not stored: each economy run puts them into the technology it
+ * researches, or, researching none, into `carry` until it chooses one (setResearch)
+ */
+export interface FactionResearch {
+  /** The technology it researches; null: none chosen yet, or one just completed */
+  current: string | null
+  /** Research points put into each technology so far (kept when it researches another) */
+  progress: Readonly<Record<string, number>>
+  /** The technologies it has researched, in the order it completed them */
+  researched: readonly string[]
+  /**
+   * Research points 宙に浮いた: those of turns it researched nothing and the surplus of a technology completed,
+   * put into the next technology it chooses
+   */
+  carry: number
+}
+
 /** A building under construction in a city */
 export interface CityConstruction {
   buildingId: string
@@ -79,10 +99,11 @@ export interface CityConstruction {
 
 /**
  * 内政担当官, at work in the economy run: 商業・生産 (by 政治 2 : 知力 1) spend gold of the city's budget
- * raising its base 商業・生産, 訓練 (by 武力 2 : 統率 1) trains its soldiers for nothing and
- * 募兵 (by 魅力 3 : 武力 1) spends gold of the budget on new soldiers
+ * raising its base 商業・生産, 訓練 (by 武力 2 : 統率 1) trains its soldiers for nothing,
+ * 募兵 (by 魅力 3 : 武力 1) spends gold of the budget on new soldiers and
+ * 研究 (by 知力) spends gold of the budget on research points for the faction
  */
-export type OfficerRole = 'commerce' | 'production' | 'training' | 'recruitment'
+export type OfficerRole = 'commerce' | 'production' | 'training' | 'recruitment' | 'research'
 
 /** The officer roles spending gold, each from its own budget of the city */
 export type FundedRole = Exclude<OfficerRole, 'training'>
@@ -148,7 +169,7 @@ export interface FactionEconomy {
   after: number
 }
 
-/** What a role's officers did in an economy run: the gold they spent and what it raised (商業・生産, soldiers, 練度) */
+/** What a role's officers did in an economy run: the gold they spent and what it raised (商業・生産, soldiers, 練度, research points) */
 export interface AffairsResult {
   spent: number
   gain: number
@@ -189,11 +210,25 @@ export interface CityLogLine {
   formula: string
 }
 
+/** A faction's research points of an economy run and where they went */
+export interface FactionResearchResult {
+  /** From its research buildings (with the branch bonus) and its 研究 officers, and the sum */
+  buildings: number
+  officers: number
+  total: number
+  /** The technology they went into; null: none researched, they went into `carry` (or were lost, nothing being left to research) */
+  techId: string | null
+  /** The technology completed by them */
+  completed: string | null
+}
+
 /** What an economy run did */
 export interface EconomyReport {
   /** The turn it started */
   turn: number
   factions: Readonly<Record<FactionId, FactionEconomy>>
+  /** Each faction's research (runResearch) */
+  research: Readonly<Record<FactionId, FactionResearchResult>>
   cities: Readonly<Record<CityId, CityEconomy>>
 }
 
@@ -495,4 +530,13 @@ export interface FactionDestroyed {
   knights: readonly CharacterId[]
 }
 
-export type GameEvent = FactionDestroyed
+/** A faction the player plays completed researching a technology (in the economy run starting the turn) */
+export interface TechCompleted {
+  id: string
+  kind: 'techCompleted'
+  turn: number
+  factionId: FactionId
+  techId: string
+}
+
+export type GameEvent = FactionDestroyed | TechCompleted

@@ -6,6 +6,7 @@ import { runEconomy } from './economy/runEconomy'
 import { GameRuleError } from './errors'
 import { escapeOf, runMovements } from './movement'
 import { runEscapes } from './prisoners'
+import { mustChooseResearch } from './research/research'
 import {
   commandRank, defenseProblem, isPlayerFaction, leadingKnight, movementOf, orderProblem, ownerOf, prisonerMovementOf, retreatCities, stationedIn, turnOrder,
 } from './queries'
@@ -39,15 +40,23 @@ export function cancelOrder(state: GameState, orderId: string): GameState {
   return { ...state, orders: state.orders.filter((o) => o.id !== orderId) }
 }
 
+/** Why the active faction cannot end its strategy phase now, or null: a faction the player plays has research points 宙に浮いた (mustChooseResearch) */
+export function endFactionTurnProblem(state: GameState): string | null {
+  if (state.phase !== 'strategy' || !state.activeFaction) return '戦略フェーズではありません'
+  if (isPlayerFaction(state, state.activeFaction) && mustChooseResearch(state, state.activeFaction)) return '研究先を選んでください'
+  return null
+}
+
 /**
- * The active faction ends its strategy phase: the next faction plays, or
+ * The active faction ends its strategy phase (endFactionTurnProblem): the next faction plays, or
  * after the last one the progress phase (進行フェーズ, 'march') starts with every
  * order queued in the factions' turn order (by 国力), each faction's in the order they were made.
  * Its moves come first (the move part: runMovements), then the invasions one by one (the invasion part).
  * As it starts the prisoners may escape (runEscapes), riding off in its moves.
  */
 export function endFactionTurn(state: GameState, random: () => number = Math.random): GameState {
-  if (state.phase !== 'strategy' || !state.activeFaction) throw new GameRuleError('戦略フェーズではありません')
+  const problem = endFactionTurnProblem(state)
+  if (problem || !state.activeFaction) throw new GameRuleError(problem ?? '戦略フェーズではありません')
   const order = turnOrder(state)
   const next = order[order.indexOf(state.activeFaction) + 1]
   if (next) return { ...state, activeFaction: next }

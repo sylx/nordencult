@@ -45,9 +45,10 @@ export const OFFICERS_PER_ROLE = 2
 
 /**
  * 内政担当官. A role's power X is the sum of its officers' weighted abilities
- * (商業・生産: (政治×2 + 知力) / 3, 訓練: (武力×2 + 統率) / 3, 募兵: (魅力×3 + 武力) / 4).
- * Each turn the 商業・生産・募兵 officers spend a random AFFAIRS_BUDGET_MIN..MAX of their budget (what is left of it at most):
+ * (商業・生産: (政治×2 + 知力) / 3, 訓練: (武力×2 + 統率) / 3, 募兵: (魅力×3 + 武力) / 4, 研究: 知力).
+ * Each turn the 商業・生産・募兵・研究 officers spend a random AFFAIRS_BUDGET_MIN..MAX of their budget (what is left of it at most):
  * - 商業・生産: base + spent × X/100 × GROWTH_COEF_*, its fraction rounded up by that chance (0.22: 22% of the turns)
+ * - 研究: research points for the faction, spent × X/100 × GROWTH_COEF_RESEARCH rounded as 商業・生産
  * - 募兵: soldiers + spent × X/100 (joining at the recruits' morale)
  * - 訓練 (no gold): 練度 + max(1, X × GROWTH_COEF_TRAINING)
  */
@@ -58,6 +59,13 @@ export const AFFAIRS_BUDGET_LIMIT = 1000
 export const GROWTH_COEF_COMMERCE = 0.033
 export const GROWTH_COEF_PRODUCTION = 0.033
 export const GROWTH_COEF_TRAINING = 0.1
+export const GROWTH_COEF_RESEARCH = 0.15
+
+/**
+ * The research buildings' points (their researchPoints effect) are × (1 + RESEARCH_BRANCH_BONUS) while the
+ * faction researches a technology of their branch (物理文明・魔法文明); the officers' have no branch
+ */
+export const RESEARCH_BRANCH_BONUS = 0.5
 
 /**
  * Population growth a turn, from the base 商業・生産 after the officers raised them:

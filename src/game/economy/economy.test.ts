@@ -77,8 +77,9 @@ describe('city output', () => {
     expect(officerAbility('029', 'production')).toBeCloseTo((c('029').politics * 2 + c('029').intelligence) / 3)
     expect(officerAbility('027', 'training')).toBeCloseTo((c('027').strength * 2 + c('027').leadership) / 3)
     expect(officerAbility('016', 'recruitment')).toBeCloseTo((c('016').charm * 3 + c('016').strength) / 4)
+    expect(officerAbility('029', 'research')).toBe(c('029').intelligence)
     expect(officerPower({ training: ['016', '027'] }).training).toBeCloseTo(officerAbility('016', 'training') + officerAbility('027', 'training'))
-    expect(officerPower({})).toEqual({ commerce: 0, production: 0, training: 0, recruitment: 0 })
+    expect(officerPower({})).toEqual({ commerce: 0, production: 0, training: 0, recruitment: 0, research: 0 })
   })
 
   it('raises the base by the gold spent and the power, its fraction rounded up by that chance, and trains by the power', () => {

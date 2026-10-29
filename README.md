@@ -7,7 +7,7 @@
 | `norden-strategy` | three.js の戦略マップ |
 | `norden-ui` | React UI ライブラリ（基本部品・画面・画面スタック。カタログで各画面を作り込む） |
 | `norden-battle` | 戦闘。`battle-runtime`（戦闘画面 `BattleScreen`。地形・戦闘記録・行動メニューは norden-ui の部品）・`map-runtime`（HEX マップの描画）・`assets/maps/`（戦闘マップ）を使う |
-| `norden-data` | 拠点データ・勢力データ・騎士データ・施設データ・セリフのエディタ（`src/data/`・`src/assets/` などに書き出す。開発時だけ使う） |
+| `norden-data` | 拠点データ・勢力データ・騎士データ・施設データ・技術データ・セリフのエディタ（`src/data/`・`src/assets/` などに書き出す。開発時だけ使う） |
 | `norden-synth` | BGM。SoundFont から取り出した音色で鳴らすシンセと、LLM が書いた曲（`src/songs/`）。`BgmPlayer` で曲を切り替えて鳴らす |
 
 ```sh
@@ -73,7 +73,7 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | `src/scenes/SceneManager.tsx` | 現在のシーンの表示・切り替え |
 | `src/scenes/sceneContext.ts` | `useScene()` |
 | `src/scenes/strategy/StrategyScene.tsx` | 地図と画面スタック（`cityCommand` / `pickTarget` / `invasion` / `pickMoveTarget` / `move` / `pickTransportTarget` / `transport` / `domestic`）。地図の強調は表示中の画面（`nav.top`）から決める。進行フェーズの移動と輸送の演出（`movementLegs` を地図の `march()` で動かし、着いたら `runMovements`） |
-| `src/scenes/strategy/views.ts` | ゲームの状態 → norden-ui のview型（`CityView`・`KnightView`・`TurnView`・`BuildingView`）。施設の画像は `src/assets/buildings.webp` 上の位置（`buildingSprite.json`）で渡す |
+| `src/scenes/strategy/views.ts` | ゲームの状態 → norden-ui のview型（`CityView`・`KnightView`・`TurnView`・`BuildingView`・`TechTreeView`）。施設・技術の画像は `src/assets/buildings.webp`・`techs.webp` 上の位置（`buildingSprite.json`・`techSprite.json`）で渡す |
 | `src/scenes/strategy/OrderList.tsx` | 行動予約（侵攻予約・移動予約・輸送予約・移動中と輸送中の騎士）と進行フェーズの一覧。norden-ui の `ActionOrders` に渡す（都市コマンド画面に重ねるHUD） |
 | `src/scenes/battle/BattleScene.tsx` | 戦闘マップを読み込み、battle-runtime の `BattleScreen` に渡す（アンマウントで破棄）。ユニットはまだ置かない（置くときはマップの `units` と `statuses` で渡す）。退却先の拠点（`retreatCities`）を軍ごとに渡し、退却した・捕虜になった部隊（`RetreatReport`）を `BattleRetreat`（退却したときの兵数を含む）に、決着のときに戦場に残っていた部隊（`BattleOutcome.remaining`）を `BattleSurvivor` にして、決着（`onEnd`）またはデバッグの勝敗のボタンで `resolveBattle` に渡し、結果の画面へ進む |
 | `src/scenes/battle/battleMap.ts` | 戦闘マップの選択。攻撃元と目標の街道マップ `road-<小さい ID>-<大きい ID>.json` から目標の範囲（`battleAreas[目標]`）を切り出す。無ければ `fluen.json` 全体（コンソールに警告） |
@@ -106,7 +106,7 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 
 ## ゲームの状態
 
-`src/game/` にゲームの状態（ターン・フェーズ・都市の所属・都市の状態・勢力の金・キャラクターの所属・侵攻予約・移動予約・輸送予約と移動中の騎士・行軍・直近の戦闘と内政処理）と、それを変える純粋な関数（状態 → 新しい状態）をまとめます。React と地図からは独立しています。
+`src/game/` にゲームの状態（ターン・フェーズ・都市の所属・都市の状態・勢力の金と研究・キャラクターの所属・侵攻予約・移動予約・輸送予約と移動中の騎士・行軍・直近の戦闘と内政処理）と、それを変える純粋な関数（状態 → 新しい状態）をまとめます。React と地図からは独立しています。
 
 | ファイル | 役割 |
 | --- | --- |
@@ -116,9 +116,10 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 | `src/game/army.ts` | 兵の仮の規則（1部隊の兵数の上限・既定の兵科・間接指揮部隊は軍団長の能力の半分・練度の加重平均） |
 | `src/game/actions.ts` | 予約の追加・取消、手番の終了、侵攻パートの次の侵攻（`startNextBattle`。その前に移動パートを済ませる）・侵攻の継続の判断（`decideInvasion`）・自勢力の都市への入城（`finishEntry`）、`resolveBattle`（戦後処理）、次のターンの開始（内政処理を含む） |
 | `src/game/movement.ts` | 移動と輸送: 経路（`moveRoute`）と月数（`moveMonths`）、行き先（`moveTargets`）、予約の追加・取消と条件、進行フェーズの移動と輸送（`runMovements`）とその演出用の1ヶ月分の道のり（`movementLegs`） |
-| `src/game/economy/balance.ts` | 内政の定数（金・俸禄・Tier の閾値とスロット・領主の補正・担当官の予算と係数・人口の成長・募兵・出撃の費用）。すべて仮の値 |
-| `src/game/economy/output.ts` | `cityOutput`: 都市の Tier・スロット・実効の商業と生産・領主と施設の補正・担当官の能力と次のターンの見込み・収入・成長・訓練・募兵の上限（内政処理と画面の見込みで共有） |
-| `src/game/economy/runEconomy.ts` | `runEconomy`: 毎ターンの内政処理（金と俸禄 → 担当官の内政 → 物資と建設 → 練度と募兵 → 人口と Tier）と、演出用の結果 `lastEconomy` |
+| `src/game/economy/balance.ts` | 内政の定数（金・俸禄・Tier の閾値とスロット・領主の補正・担当官の予算と係数・人口の成長・募兵・出撃の費用・研究の係数と系統の割増）。すべて仮の値 |
+| `src/game/economy/output.ts` | `cityOutput`: 都市の Tier・スロット・実効の商業と生産・領主と施設と技術の補正・担当官の能力と次のターンの見込み・収入・成長・訓練・募兵の上限（内政処理と画面の見込みで共有） |
+| `src/game/economy/runEconomy.ts` | `runEconomy`: 毎ターンの内政処理（金と俸禄 → 担当官の内政 → 物資と建設 → 練度と募兵 → 人口と Tier → 研究）と、演出用の結果 `lastEconomy` |
+| `src/game/research/` | 研究（技術ツリー）: 研究できるか・見え方（`techStatus`・`researchProblem`）、研究ポイントの見込み（`researchOutput`）と完了までのターン数、研究先の選択（`setResearch`）、内政処理の中の投入（`runResearch`）、CPU の研究先、技術の効果（`techBonus`） |
 | `src/game/economy/domestic.ts` | 内政の操作（担当の割り当て・解除、担当官の予算、着工・中止、募兵）と、できない理由を返す `…Problem` |
 | `src/game/store.ts`, `gameContext.ts` | `App` に置くストアと `useGame()`（シーンを切り替えても状態が残る） |
 | `src/game/world.ts` | 都市・勢力・街道のつながり（`ROAD_LINKS` から） |
@@ -193,9 +194,19 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 
 都市の状態（`GameState.cities` の `CityState`: 人口・基礎の商業と生産・備蓄物資・兵数・練度・施設・建設中・担当・担当官の予算）と勢力の金（`GameState.gold`）を持ちます。都市のマスターデータ（`src/data/city.ts`）は初期値（基礎の商業・生産を含む）だけを持ちます。Tier と施設のスロット数は人口から求めます（`tierOf`・`slotsOf`）。規模の表示（Tier 1 は小さな町、Tier 2 は大きな街、Tier 3 は大都市）と地図の絵も Tier に合わせて変わります。聖地・要塞（拠点データの `image`）は規模と絵が変わらず、施設のスロットは Tier によらず `FIXED_SLOTS`（4）です。
 
-- 担当: 領主（1人。`commandRank` の「領主」）と内政担当官（商業・生産・訓練・募兵にそれぞれ2人まで。能力は役職ごとの重みで平均し、2人なら合算する。領主は担当官になれない）。初期の領主は `characterStart.json` の `isLord` の騎士。騎士が都市を離れると担当から外れ、攻め落とされた都市の担当は空になります
+- 担当: 領主（1人。`commandRank` の「領主」）と内政担当官（商業・生産・訓練・募兵・研究にそれぞれ2人まで。能力は役職ごとの重みで平均し、2人なら合算する。領主は担当官になれない）。初期の領主は `characterStart.json` の `isLord` の騎士。騎士が都市を離れると担当から外れ、攻め落とされた都市の担当は空になります
 - 毎ターンの内政処理（`runEconomy`）は、進行フェーズを解決しきって次のターンの戦略フェーズに入る直前に、全勢力の全都市をまとめて行います。領主の能力で商業・生産が伸びます（実効値への補正）。人口は、担当官が上げたあとの基礎の商業・生産、建っている施設の数、領主の政治と魅力から伸び（`populationGrowth`。係数は `balance.ts` の `POP_GROWTH_*`）、Tier と施設のスロットも人口に応じて上がります（10000 で Tier 2、30000 で Tier 3）。商業・生産・募兵の担当官は、都市が役職ごとに割り当てた予算（`CityState.affairsBudget`。1000まで。割り当てたときに国庫から移し、減らすと戻る。`setAffairsBudget`）から毎ターン 80〜150 の乱数の金を使い、商業・生産の基礎値を上げ（政治2・知力1）、兵を集めます（魅力3・武力1。新兵の練度で混ざる）。訓練担当官は金を使わずに練度を上げます（武力2・統率1）。式と係数は `balance.ts` の `AFFAIRS_*`・`GROWTH_COEF_*`。施設の効果でも各値が伸びます
 - 施設のマスターデータは `src/data/buildingData.json`（`src/data/buildings.ts`）。1都市に同じ施設は1つ、建設中は1件だけで、建設中は都市の生産をすべて建設に回します
+
+### 研究
+
+勢力ごとの研究（`GameState.research` の `FactionResearch`: 研究中の技術・技術ごとの投入済みのポイント・研究済み・宙に浮いたポイント `carry`）を持ちます。技術のマスターデータは `src/data/techData.json`（`src/data/techs.ts`）で、前提（`requires`。全部要る）を複数持てる技術ツリーです。根は物理文明・魔法文明。画像は全技術を並べた `src/assets/techs.webp`（大きさは `src/data/techSprite.json`。施設と同じ 256×384 のセル）で、どれも norden-data の「ゲームに書き出す」で作ります（いまの画像は仮）。
+
+- 研究ポイントは研究施設（施設の効果 `researchPoints`。図書館系は物理文明、魔術学院系は魔法文明の系統）と研究担当官（内政担当官の役職 `research`。知力、予算制）だけから出ます。研究中の技術と同じ系統の施設の分は × (1 + `RESEARCH_BRANCH_BONUS`)。担当官の分は予算から使った金 × 知力の合計 / 100 × `GROWTH_COEF_RESEARCH`。端数はどちらも確率で切り上げます
+- 研究ポイントはためられません。内政処理の最後（`runResearch`）に勢力の合計を研究中の技術へ入れ、必要なポイントに届くと研究済みにして、余りは `carry`（宙に浮いたポイント）に入ります。研究中の技術が無いターンのポイントも `carry` に入り、研究先を選んだ（`setResearch`）ときにその技術へ入ります。研究できる技術が残っていなければ消えます。研究中の技術は途中で変えてよく、進捗は技術ごとに残ります
+- プレイヤーの勢力は、ポイントが宙に浮いているあいだ（`mustChooseResearch`）ターンを終えられず（`endFactionTurnProblem`）、戦略画面はターンの初めに技術画面を閉じられない状態で開きます。研究を終えたターンは先に完成の通知（`GameState.events` の `TechCompleted`）を出します。CPU の勢力は研究先が無ければ、研究できる技術のうち必要なポイントが一番少ないものを自動で選びます（`chooseResearchForCpu`）
+- 研究し終えた技術の効果（商業・生産・人口の伸び・訓練・募兵数・新兵の練度。施設の効果と同じ種類）は、勢力の全都市の見込み（`cityOutput` の `tech`）にすぐ乗り、次の内政処理から効きます。施設の `requiredTech` の技術を研究し終えていない勢力の都市では、その施設を建てられません（建てられる施設にも出ない）。それ以外の効果（一斉攻撃・魔法・遺物の修復など）は文言（`etc`）だけです
+- 技術画面は都市コマンドの「研究」＞「技術」か、`FactionBar` の研究の表示で開きます。ターン情報の設定メニューの「デバッグ: 研究」で、研究ポイントを足す・研究中の技術を完了にする・CPU 勢力の研究を見ることができます
 
 戦闘からの退却: 戦闘画面では、部隊は戦場の拠点に街道でつながる自勢力の拠点（`retreatCities`。攻撃側には出撃元も入る）へ退却でき、隣接する敵の数に応じて失敗すると捕虜になります。戦闘画面は結果を部隊ごとに知らせ（battle-runtime の `RetreatReport`）、戦闘シーンが `BattleRetreat`（陣営・騎士・退却先・捕虜になったか）にして `resolveBattle` に渡します。退却した騎士は勝敗に関わらず選んだ拠点へ移り、捕虜になった騎士は相手の陣営の捕虜になります（捕虜を参照。戦闘の結果は `BattleReport.retreats`）。いまの戦闘の部隊は騎士と結び付いていない仮の部隊なので、騎士は null になります（部隊の ID を騎士の ID で作れば結び付きます）。
 
@@ -207,11 +218,11 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 
 勢力のマスターデータ（名前・紋章・当主の呼び名・色・初期の金）は `src/data/factionData.json`（`src/data/faction.ts`）です。一覧の順が国力の同じ勢力の手番の順で、初期の金を省略した勢力は `INITIAL_GOLD`（`src/game/economy/balance.ts`）で始まります。地図の紋章は `norden-strategy` の `FACTION_LIST`（ID・名前・紋章だけの写し）を使います。食い違うと `src/data/faction.test.ts` が落ちるので、勢力の ID・名前・紋章・並び順を変えたら写しも直してください。紋章の画像は `norden-strategy/data` の `emblemImage`（番号で引く）です。
 
-施設のマスターデータは `src/data/buildingData.json`（`src/data/buildings.ts`）、画像は全施設を並べた `src/assets/buildings.webp`（大きさは `src/data/buildingSprite.json`）です。どれも norden-data の「ゲームに書き出す」で作ります。
+施設のマスターデータは `src/data/buildingData.json`（`src/data/buildings.ts`）、画像は全施設を並べた `src/assets/buildings.webp`（大きさは `src/data/buildingSprite.json`）です。どれも norden-data の「ゲームに書き出す」で作ります。技術のマスターデータ（`src/data/techData.json`・`techSprite.json`・`src/assets/techs.webp`）も同じです。
 
 キャラクターのマスターデータは `src/data/characterData.json`、初期配置は `src/data/characterStart.json`、顔・全身の画像は `src/components/CharacterImage.tsx`（`src/assets/character.webp` のスプライト。大きさは `src/data/characterSprite.json`）です。
 
-これらのデータは `norden-data` のエディタで編集します（`cd norden-data && npm install && npm run dev`）。拠点データ・施設データはエディタが直接読み書きし（施設の画像は元画像から切り抜いて書き出す）、キャラクターのデータは `norden-data/characters/characters.json` から書き出します。
+これらのデータは `norden-data` のエディタで編集します（`cd norden-data && npm install && npm run dev`）。拠点データはエディタが直接読み書きし、施設データ・技術データは `norden-data/buildings/buildings.json`・`norden-data/techs/techs.json` から書き出し（画像は元画像から切り抜く）、キャラクターのデータは `norden-data/characters/characters.json` から書き出します。
 
 `npm test` で `src/` の単体テスト（Vitest）を実行します。
 
@@ -223,3 +234,4 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 | --- | --- |
 | [m001.md](docs/milestones/m001.md) | プレイヤーの侵攻（ターン・侵攻予約・行軍・戦闘シーン・結果の反映） |
 | [m002.md](docs/milestones/m002.md) | 内政（都市の状態・担当・施設・毎ターンの内政処理・成長の演出） |
+| [m003.md](docs/milestones/m003.md) | 研究（技術ツリー・研究ポイント・研究担当官・技術の効果） |

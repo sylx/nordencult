@@ -201,8 +201,9 @@
     "gold": 150,
     "effects": [
       {
-        "kind": "etc",
-        "value": "魔術関連研究施設"
+        "kind": "researchPoints",
+        "value": 5,
+        "branch": "arcane"
       }
     ],
     "sprite": {
@@ -217,10 +218,12 @@
     "supplies": 1100,
     "gold": 350,
     "upgradeFrom": "witchs_cottage",
+    "requiredTech": "arcane_civ",
     "effects": [
       {
-        "kind": "etc",
-        "value": "魔術関連研究施設"
+        "kind": "researchPoints",
+        "value": 10,
+        "branch": "arcane"
       }
     ],
     "sprite": {
@@ -237,8 +240,9 @@
     "upgradeFrom": "mage_academy",
     "effects": [
       {
-        "kind": "etc",
-        "value": "魔術関連研究施設"
+        "kind": "researchPoints",
+        "value": 20,
+        "branch": "arcane"
       }
     ],
     "sprite": {
@@ -254,8 +258,9 @@
     "gold": 150,
     "effects": [
       {
-        "kind": "etc",
-        "value": "科学関係研究施設"
+        "kind": "researchPoints",
+        "value": 5,
+        "branch": "physical"
       }
     ],
     "sprite": {
@@ -270,10 +275,12 @@
     "supplies": 1200,
     "gold": 350,
     "upgradeFrom": "library",
+    "requiredTech": "physical_civ",
     "effects": [
       {
-        "kind": "etc",
-        "value": "科学関係研究施設"
+        "kind": "researchPoints",
+        "value": 10,
+        "branch": "physical"
       }
     ],
     "sprite": {
@@ -290,8 +297,9 @@
     "upgradeFrom": "great_archive",
     "effects": [
       {
-        "kind": "etc",
-        "value": "科学関係研究施設"
+        "kind": "researchPoints",
+        "value": 20,
+        "branch": "physical"
       }
     ],
     "sprite": {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Banner, CITY_COMMAND_GROUPS, CUT_IMAGES, CUTIN_TEMPLATES, CityCommandScreen, ConfirmDialog, CutInLayer, DomesticScreen, EventScreen, FactionMark,
-  InvasionScreen, KnightChip, MapPickScreen, MoveScreen, ScreenHost, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
+  Banner, BuildingImage, CITY_COMMAND_GROUPS, CUT_IMAGES, CUTIN_TEMPLATES, CityCommandScreen, ConfirmDialog, CutInLayer, DomesticScreen, EventScreen, FactionMark,
+  InvasionScreen, KnightChip, MapPickScreen, MoveScreen, ScreenHost, TechScreen, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
   type MoveDraft, type TransportDraft,
 } from 'norden-ui'
 import { MapView, type CityHighlight, type FocusInset, type RoadHighlight, type StrategyMap } from 'norden-strategy'
@@ -12,7 +12,8 @@ import { FACTION_MAP, factionColor, factionName } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   BALANCE, MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
-  charactersIn, citiesOf, decideInvasion, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn,
+  charactersIn, citiesOf, decideInvasion, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn,
+  endFactionTurnProblem, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn, mustChooseResearch, researchOf, setResearch,
   moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction, prisonersIn,
   runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, stationedIn, suppliesLeft, transportFromProblem,
   transportOrderProblem, dismissEvent, useGame, viewFaction, type CityId, type DefenseDraft, type FactionId, type GameState, type InvasionOrder,
@@ -20,9 +21,11 @@ import {
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
+import { ResearchDebug } from './ResearchDebug'
 import {
   UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
-  eventView, mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, transportKnightView, turnView, unitPower,
+  eventView, mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, researchPerTurn, researchPointDetails, techTreesView,
+  transportKnightView, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
 
@@ -65,6 +68,8 @@ type StrategyScreens = {
   domestic: { cityId: string }
   /** Forming the army defending `cityId` (a city of a faction the player plays) in the battle `battleId`; no going back */
   defense: { cityId: string; battleId: string }
+  /** The technology screen (研究＞技術), opened over the city command screen of `cityId` */
+  tech: { cityId: string }
 }
 
 /** Commands not made yet */
@@ -174,6 +179,16 @@ export default function StrategyScene() {
   useEffect(() => {
     if (!playerTurn) popTo('cityCommand')
   }, [playerTurn, popTo])
+
+  // Research points 宙に浮いた (none researched, or one just completed): once the notices are told, the technology
+  // screen opens and stays until something is chosen
+  const mustChoose = playerTurn && mustChooseResearch(game, faction)
+  const { push: pushScreen } = nav
+  useEffect(() => {
+    if (!ready || announcing || event || !mustChoose || top.screen === 'tech') return
+    popTo('cityCommand')
+    pushScreen('tech', { cityId: 'cityId' in top.params ? top.params.cityId : top.params.from })
+  }, [ready, announcing, event, mustChoose, top, popTo, pushScreen])
 
   // Playing more than one faction: each one's turn opens on a city of its own
   const lastPlayed = useRef(game.playerFactions[0])
@@ -433,7 +448,7 @@ export default function StrategyScene() {
 
   const endTurn = () => {
     popTo('cityCommand')
-    update((s) => (isPlayerTurn(s) ? endFactionTurn(s) : s))
+    update((s) => (isPlayerTurn(s) && !endFactionTurnProblem(s) ? endFactionTurn(s) : s))
   }
 
   const commandState = (cityId: string): Partial<Record<CityCommandId, CommandState>> => {
@@ -446,6 +461,7 @@ export default function StrategyScene() {
     state.transport = transport ? { disabled: true, reason: transport } : {}
     const domestic = playerTurn ? domesticProblem(game, cityId) : '手番ではありません'
     state.domestic = domestic ? { disabled: true, reason: domestic } : {}
+    state.tech = playerTurn ? {} : { disabled: true, reason: '手番ではありません' }
     return state
   }
 
@@ -463,7 +479,7 @@ export default function StrategyScene() {
     <div className={`strategy-scene${ready ? '' : ' strategy-scene--loading'}`}>
       <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false} showStats={false} copyClickPoint={false}
         cities={placedCities} season={mapSeason(game.turn)} />
-      <ScreenHost nav={nav} escapeToPop={top.screen !== 'defense'} screens={{
+      <ScreenHost nav={nav} escapeToPop={top.screen !== 'defense' && !(top.screen === 'tech' && mustChoose)} screens={{
         cityCommand: ({ cityId }) => {
           const index = playerCities.indexOf(cityId)
           return (
@@ -479,12 +495,16 @@ export default function StrategyScene() {
                 else if (id === 'move') nav.push('pickMoveTarget', { from: cityId })
                 else if (id === 'transport') nav.push('pickTransportTarget', { from: cityId })
                 else if (id === 'domestic') nav.push('domestic', { cityId })
+                else if (id === 'tech') nav.push('tech', { cityId })
               }}
-              onEndTurn={endTurn} endTurnDisabled={!playerTurn}
+              onOpenResearch={playerTurn ? () => nav.push('tech', { cityId }) : undefined}
+              onEndTurn={endTurn} endTurnDisabled={!playerTurn || Boolean(endFactionTurnProblem(game))}
+              endTurnReason={playerTurn ? endFactionTurnProblem(game) ?? undefined : undefined}
               turnMenu={
                 <div className="strategy-scene__settings">
                   <p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(faction)} /></p>
                   <SoundSettings />
+                  <ResearchDebug />
                 </div>
               }>
               <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))}
@@ -551,6 +571,12 @@ export default function StrategyScene() {
             onClose={nav.pop}
           />
         ),
+        tech: () => (
+          <TechScreen trees={techTreesView(game, faction)} perTurn={researchPerTurn(game, faction)}
+            pointDetails={researchPointDetails(game, faction)} carry={researchOf(game, faction).carry} mustChoose={mustChoose}
+            onResearch={playerTurn ? (techId) => update((s) => setResearch(s, viewFaction(s), techId)) : undefined}
+            onClose={nav.pop} />
+        ),
         defense: ({ cityId, battleId }) => {
           const defended = battle?.id === battleId ? battle : null
           if (!defended) return null
@@ -586,8 +612,9 @@ export default function StrategyScene() {
           onConfirm={() => update((s) => (s.march?.decision === decision.id ? decideInvasion(s, decision.id, true) : s))}
           onCancel={() => update((s) => (s.march?.decision === decision.id ? decideInvasion(s, decision.id, false) : s))} />
       )}
-      {event && told && eventCut === event.id && (
-        <EventScreen image={CUT_IMAGES[told.cut] ?? ''} title={told.title} message={told.message} details={told.details}
+      {event && told && (eventCut === event.id || !told.cutIn) && (
+        <EventScreen image={told.cut ? CUT_IMAGES[told.cut] : undefined} picture={told.picture && <BuildingImage building={told.picture} />}
+          title={told.title} message={told.message} details={told.details}
           onClose={() => update((s) => dismissEvent(s, event.id))}>
           {told.knights.length > 0 && (
             <p className="norden-event-chips">{told.knights.map((id) => <KnightChip key={id} knight={knightView(game, id)} />)}</p>

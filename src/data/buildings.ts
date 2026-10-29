@@ -1,4 +1,5 @@
 import buildingData from './buildingData.json'
+import { TECH_BRANCH_LABELS, type TechBranch } from './techs'
 
 /** A city's size: 1 小さな町, 2 街, 3 大都市. Decides its building slots */
 export type CityTier = 1 | 2 | 3
@@ -19,6 +20,8 @@ export type BuildingEffect =
   | { kind: 'recruitMorale'; value: number }
   /** Trade routes +value (1–6; trade routes are not in the game yet, so no effect) */
   | { kind: 'tradeRoutes'; value: number }
+  /** Research points +value a turn for its faction, more while it researches a technology of the same branch (RESEARCH_BRANCH_BONUS) */
+  | { kind: 'researchPoints'; value: number; branch: TechBranch }
   /** An effect the game cannot do yet, written out and shown as it is */
   | { kind: 'etc'; value: string }
 
@@ -33,17 +36,19 @@ export const BUILDING_EFFECT_LABELS: Readonly<Record<BuildingEffectKind, string>
   recruitPct: '募兵数',
   recruitMorale: '新兵の練度',
   tradeRoutes: '交易路',
+  researchPoints: '研究',
   etc: 'その他',
 }
 
 /** Effects counted as they are, not as percentages */
-const COUNT_EFFECTS: ReadonlySet<BuildingEffectKind> = new Set(['recruitMorale', 'tradeRoutes'])
+const COUNT_EFFECTS: ReadonlySet<BuildingEffectKind> = new Set(['recruitMorale', 'tradeRoutes', 'researchPoints'])
 
-/** e.g. 商業 +15%, 新兵の練度 +10, 交易路 +2 (an etc effect is its text) */
+/** e.g. 商業 +15%, 新兵の練度 +10, 交易路 +2, 研究 +10（物理文明） (an etc effect is its text); a technology's effects too */
 export function describeEffect(effect: BuildingEffect): string {
   if (effect.kind === 'etc') return effect.value
   const label = BUILDING_EFFECT_LABELS[effect.kind]
-  return `${label} ${effect.value >= 0 ? '+' : ''}${effect.value}${COUNT_EFFECTS.has(effect.kind) ? '' : '%'}`
+  const text = `${label} ${effect.value >= 0 ? '+' : ''}${effect.value}${COUNT_EFFECTS.has(effect.kind) ? '' : '%'}`
+  return effect.kind === 'researchPoints' ? `${text}（${TECH_BRANCH_LABELS[effect.branch]}）` : text
 }
 
 /** Master data of a building (written by norden-data's building editor) */
@@ -61,6 +66,8 @@ export interface Building {
   upgradeFrom?: string
   /** Name of the relic the city's faction must hold (relics are not managed yet, so it is never met) */
   requiredRelic?: string
+  /** A technology (its id) the city's faction must have researched; omitted: none */
+  requiredTech?: string
   effects: BuildingEffect[]
   /** Top-left of its picture in src/assets/buildings.webp (pixels; the sizes in buildingSprite.json) */
   sprite?: { x: number; y: number }

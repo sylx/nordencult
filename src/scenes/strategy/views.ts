@@ -2,21 +2,24 @@ import { createElement } from 'react'
 import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import type {
-  BuildOptionView, BuildingView, CityStatView, CityView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, EventDetail, FactionSummaryView, FactionView,
-  InvasionAssignment, KnightView, PopulationGrowthView, TurnView, UnitTypeView,
+  BuildOptionView, BuildingView, CityStatView, CityView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, EventDetail, FactionResearchSummaryView,
+  FactionSummaryView, FactionView, InvasionAssignment, KnightView, PopulationGrowthView, SpriteImage, TechTreeView, TechView, TurnView, UnitTypeView,
 } from 'norden-ui'
 import type { MapCity, MapSeason, PlaceType } from 'norden-strategy'
 import buildingSheet from '../../assets/buildings.webp'
 import { CharacterImage } from '../../components/CharacterImage'
 import { BUILDING_LIST, BUILDING_MAP, describeEffect, type BuildingEffectKind, type CityTier } from '../../data/buildings'
 import buildingSprite from '../../data/buildingSprite.json'
+import techSheet from '../../assets/techs.webp'
+import techSprite from '../../data/techSprite.json'
+import { TECH_BRANCH_LABELS, TECH_LIST, TECH_MAP, techChildren, type TechBranch } from '../../data/techs'
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { FACTION_MAP, factionEmblem } from '../../data/faction'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
   assignmentLabel, assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
-  engagementOf, FUNDED_ROLES, governorOf, officerTraining,
+  engagementOf, FUNDED_ROLES, governorOf, officerTraining, researchOf, researchOutput, researchProblem, researchTurns, techStatus,
   MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportKnightProblem, transportOrderOf, treasuryForecast,
   turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type CityLogStat,
   type GameEvent, type GameState, type Season,
@@ -83,6 +86,72 @@ export function buildingView(id: string): BuildingView {
 }
 
 export const cityName = (id: string) => CITY_MAP[id]?.name ?? id
+
+/** A technology's picture on src/assets/techs.webp */
+export function techImage(id: string): SpriteImage | undefined {
+  const sprite = TECH_MAP[id]?.sprite
+  return sprite && {
+    src: techSheet, sheetWidth: techSprite.width, sheetHeight: techSprite.height, ...sprite, width: techSprite.cellWidth, height: techSprite.cellHeight,
+  }
+}
+
+/** A technology as the faction sees it (a hidden one shows only its place in the tree) */
+export function techView(game: GameState, factionId: string, id: string): TechView {
+  const tech = TECH_MAP[id]
+  const research = researchOf(game, factionId)
+  const known = techStatus(game, factionId, id)
+  const status = research.current === id ? 'researching' : known
+  if (!tech || status === 'hidden') return { id, status: 'hidden', requires: tech?.requires ?? [] }
+  return {
+    id,
+    status,
+    requires: tech.requires,
+    name: tech.name,
+    image: techImage(id),
+    description: tech.description,
+    effects: tech.effects.map(describeEffect),
+    cost: tech.cost,
+    progress: research.progress[id] ?? 0,
+    turns: researchTurns(game, factionId, id),
+    unavailableReason: known === 'researched' ? undefined : researchProblem(game, factionId, id) ?? undefined,
+  }
+}
+
+const TECH_BRANCHES: readonly TechBranch[] = ['physical', 'arcane']
+
+/** The technology screen's trees for the faction: 物理文明, then 魔法文明 */
+export const techTreesView = (game: GameState, factionId: string): TechTreeView[] => TECH_BRANCHES.map((branch) => ({
+  id: branch,
+  label: TECH_BRANCH_LABELS[branch],
+  techs: TECH_LIST.filter((t) => t.branch === branch).map((t) => techView(game, factionId, t.id)),
+}))
+
+/** How the faction's research points a turn are made up, e.g. 施設 +17.5（物理文明 5・魔法文明 10、研究中の系統 +50%） */
+export function researchPointDetails(game: GameState, factionId: string): string[] {
+  const forecast = researchOutput(game, factionId)
+  const { physical, arcane } = forecast.branches
+  const branch = researchOf(game, factionId).current ? TECH_MAP[researchOf(game, factionId).current!]?.branch : undefined
+  const bonus = branch ? `、研究中の${TECH_BRANCH_LABELS[branch]}の施設 +${BALANCE.RESEARCH_BRANCH_BONUS * 100}%` : ''
+  return [
+    `施設 +${Math.round(forecast.buildings * 10) / 10}（物理文明 ${physical}・魔法文明 ${arcane}${bonus}）`,
+    `研究担当官 ${range(forecast.officers)}`,
+  ]
+}
+
+/** The research points the faction gets next turn, least and most */
+export const researchPerTurn = (game: GameState, factionId: string): readonly [number, number] => researchOutput(game, factionId).total
+
+/** The faction's research on the faction bar */
+export function researchSummary(game: GameState, factionId: string): FactionResearchSummaryView {
+  const research = researchOf(game, factionId)
+  const tech = research.current ? TECH_MAP[research.current] : undefined
+  return {
+    perTurn: researchOutput(game, factionId).total,
+    tech: tech && {
+      name: tech.name, progress: research.progress[tech.id] ?? 0, cost: tech.cost, turns: researchTurns(game, factionId, tech.id),
+    },
+  }
+}
 
 /** undefined: neutral */
 export function factionView(factionId: string | null | undefined): FactionView | undefined {
@@ -296,7 +365,7 @@ export function budgetsView(game: GameState, cityId: string): DomesticBudgetsVie
   return game.cities[cityId].affairsBudget
 }
 
-const AFFAIRS_LABELS = { commerce: '商業', production: '生産', recruitment: '兵' } as const
+const AFFAIRS_LABELS = { commerce: '商業', production: '生産', recruitment: '兵', research: '研究' } as const
 
 /**
  * What each role's officers will do next turn, e.g. 商業 +4〜7/ターン（金 80〜150）or 練度 +15/ターン
@@ -326,10 +395,14 @@ export function dateLabel(turn: number) {
   return `灰歴${year}年${month}月 ${seasonOf(month)}`
 }
 
-/** How an event is told: the cut-in (its template and texts), then the notice (its cut, words and the knights it concerns) */
+/**
+ * How an event is told: the cut-in (its template and texts; none: the notice at once), then the notice (its cut or
+ * picture, words and the knights it concerns)
+ */
 export interface EventView {
-  cutIn: { template: string; text: string; subText: string }
-  cut: string
+  cutIn?: { template: string; text: string; subText: string }
+  cut?: string
+  picture?: BuildingView
   title: string
   message: string
   details: EventDetail[]
@@ -337,6 +410,20 @@ export interface EventView {
 }
 
 export function eventView(event: GameEvent): EventView {
+  if (event.kind === 'techCompleted') {
+    const tech = TECH_MAP[event.techId]
+    const name = tech?.name ?? event.techId
+    return {
+      picture: { id: event.techId, name, image: techImage(event.techId) },
+      title: '研究完了',
+      message: `${name}の研究が完了しました。`,
+      details: [
+        { label: '効果', value: tech && tech.effects.length > 0 ? tech.effects.map(describeEffect).join('・') : 'なし' },
+        { label: '新しく見えた技術', value: techChildren(event.techId).map((t) => t.name).join('・') || 'なし' },
+      ],
+      knights: [],
+    }
+  }
   const faction = FACTION_MAP[event.factionId]?.name ?? event.factionId
   return {
     cutIn: { template: 'faction_destruction', text: `${faction}滅亡`, subText: dateLabel(event.turn) },
@@ -368,7 +455,10 @@ export function turnView(game: GameState): TurnView {
   }
 }
 
-/** The player's faction shown (viewFaction) on the faction bar: the treasury and its change next turn, the 生産 and soldiers of its cities */
+/**
+ * The player's faction shown (viewFaction) on the faction bar: the treasury and its change next turn, the 生産 and
+ * soldiers of its cities, and its research
+ */
 export function factionSummary(game: GameState): FactionSummaryView {
   const treasury = treasuryForecast(game, viewFaction(game))
   const cities = citiesOf(game, viewFaction(game))
@@ -377,6 +467,7 @@ export function factionSummary(game: GameState): FactionSummaryView {
     goldForecast: treasury.after - treasury.before,
     production: cities.reduce((sum, id) => sum + cityOutput(game, id).production, 0),
     troops: cities.reduce((sum, id) => sum + game.cities[id].troops, 0),
+    research: researchSummary(game, viewFaction(game)),
   }
 }
 

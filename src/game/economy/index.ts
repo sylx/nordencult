@@ -7,8 +7,8 @@ export {
   successorLord, unassign, withGovernor, withoutAssignee,
 } from './domestic'
 export {
-  affairsGain, affairsGrowth, buildingBonus, cityOutput, FUNDED_ROLES, governorBonus, OFFICER_WEIGHTS, officerAbility, officerPower, officerTraining, populationGrowth,
-  hasFixedScale, slotsOf, tierOf, turnsToNextTier,
+  affairsGain, affairsGrowth, buildingBonus, cityOutput, cityTechBonus, FUNDED_ROLES, governorBonus, OFFICER_WEIGHTS, officerAbility, officerPower, officerTraining, populationGrowth,
+  hasFixedScale, researchedBonus, roundByChance, slotsOf, tierOf, turnsToNextTier,
   type AffairsForecast, type BuildingBonus, type CityOutput, type GovernorBonus, type OfficerPower, type PopulationGrowth,
 } from './output'
 export { runEconomy, treasuryForecast } from './runEconomy'

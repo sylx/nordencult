@@ -4,7 +4,7 @@ import {
   GROWTH_COEF_COMMERCE, GROWTH_COEF_PRODUCTION, POP_GROWTH_COEF_MARKET, POP_GROWTH_COEF_PRODUCTION, POP_GROWTH_FACILITY_BASE,
   POP_GROWTH_GOVERNOR_DIVISOR,
 } from './balance'
-import { affairsGrowth, outputOf, type CityOutput, type PopulationGrowth } from './output'
+import { affairsGrowth, outputOf, type BuildingBonus, type CityOutput, type PopulationGrowth } from './output'
 
 /**
  * The record of a city's numbers kept each turn (GameState.cityHistory), and the log of how an economy
@@ -15,8 +15,9 @@ import { affairsGrowth, outputOf, type CityOutput, type PopulationGrowth } from 
 const num = (value: number, digits = 2) => value.toLocaleString('ja-JP', { maximumFractionDigits: digits })
 const pct = (fraction: number) => `${num(fraction * 100)}%`
 
-export function cityRecord(city: CityState, cityId: CityId, turn: number, log: readonly CityLogLine[] = []): CityRecord {
-  const { market, production, baseMarket, baseProduction } = outputOf(city, cityId)
+/** `tech`: the bonuses of the technologies the city's faction has researched */
+export function cityRecord(city: CityState, cityId: CityId, turn: number, log: readonly CityLogLine[] = [], tech?: BuildingBonus): CityRecord {
+  const { market, production, baseMarket, baseProduction } = outputOf(city, cityId, tech)
   return { turn, population: city.population, market, production, baseMarket, baseProduction, log }
 }
 
@@ -50,28 +51,29 @@ function populationLine(before: CityState, after: CityState, growth: PopulationG
   }
 }
 
-/** The effective 商業・生産 of the new turn: round(base × (1 + governor's + buildings' bonus)) (outputOf) */
+/** The effective 商業・生産 of the new turn: round(base × (1 + governor's + buildings' + technologies' bonus)) (outputOf) */
 function effectiveLine(stat: 'market' | 'production', before: CityOutput, after: CityOutput): CityLogLine {
-  const [base, buildings] = stat === 'market'
-    ? [after.baseMarket, after.buildings.marketPct]
-    : [after.baseProduction, after.buildings.productionPct]
+  const [base, buildings, tech] = stat === 'market'
+    ? [after.baseMarket, after.buildings.marketPct, after.tech.marketPct]
+    : [after.baseProduction, after.buildings.productionPct, after.tech.productionPct]
   return {
     stat,
     before: before[stat],
     after: after[stat],
-    formula: `round(基礎 ${num(base)} × (1 + 領主 ${pct(after.governor[stat])} + 施設 ${pct(buildings)})) = ${num(after[stat])}`,
+    formula: `round(基礎 ${num(base)} × (1 + 領主 ${pct(after.governor[stat])} + 施設 ${pct(buildings)} + 技術 ${pct(tech)})) = ${num(after[stat])}`,
   }
 }
 
 /**
  * How a city's economy run changed its base 商業・生産 (the officers), its population and its effective 商業・生産.
- * `output` is the city's before the run, `growth` the population growth the run applied
+ * `output` is the city's before the run, `growth` the population growth the run applied, `tech` the bonuses of its
+ * faction's technologies after the run
  */
 export function explainCity(
   cityId: CityId, before: CityState, after: CityState, output: CityOutput,
-  affairs: Partial<Record<'commerce' | 'production', AffairsResult>>, growth: PopulationGrowth,
+  affairs: Partial<Record<'commerce' | 'production', AffairsResult>>, growth: PopulationGrowth, tech?: BuildingBonus,
 ): CityLogLine[] {
-  const next = outputOf(after, cityId)
+  const next = outputOf(after, cityId, tech)
   return [
     baseLine('commerce', before, after, output, affairs.commerce),
     baseLine('production', before, after, output, affairs.production),

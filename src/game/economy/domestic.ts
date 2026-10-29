@@ -1,6 +1,7 @@
 import { BUILDING_MAP, upgradesOf } from '../../data/buildings'
 import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
+import { TECH_MAP } from '../../data/techs'
 import { mixMorale } from '../army'
 import { GameRuleError } from '../errors'
 import { engagementOf, ownerOf } from '../queries'
@@ -30,9 +31,11 @@ const check = (problem: string | null) => {
 
 // ── Assignments ──
 
-export const OFFICER_ROLES: readonly OfficerRole[] = ['commerce', 'production', 'training', 'recruitment']
+export const OFFICER_ROLES: readonly OfficerRole[] = ['commerce', 'production', 'training', 'recruitment', 'research']
 
-const OFFICER_LABELS: Readonly<Record<OfficerRole, string>> = { commerce: '商業', production: '生産', training: '訓練', recruitment: '募兵' }
+const OFFICER_LABELS: Readonly<Record<OfficerRole, string>> = {
+  commerce: '商業', production: '生産', training: '訓練', recruitment: '募兵', research: '研究',
+}
 
 /** 領主, or the officer of the role (e.g. 商業担当官) */
 export const assignmentLabel = (role: AssignmentRole): string => (role === 'governor' ? '領主' : `${OFFICER_LABELS[role]}担当官`)
@@ -164,6 +167,14 @@ export function setAffairsBudget(state: GameState, cityId: CityId, role: FundedR
 
 // ── Construction ──
 
+/** The technology a building needs that the city's faction has not researched (a neutral city has researched none), or undefined */
+function missingTech(state: GameState, cityId: CityId, buildingId: string): string | undefined {
+  const tech = BUILDING_MAP[buildingId]?.requiredTech
+  if (!tech) return undefined
+  const owner = ownerOf(state, cityId)
+  return owner && state.research[owner]?.researched.includes(tech) ? undefined : tech
+}
+
 /** Why a building cannot be started in the city now, or null (the command's checks too) */
 export function buildingProblem(state: GameState, cityId: CityId, buildingId: string): string | null {
   const building = BUILDING_MAP[buildingId]
@@ -177,6 +188,8 @@ export function buildingProblem(state: GameState, cityId: CityId, buildingId: st
   if (building.requiredTags && !building.requiredTags.some((tag) => tags.includes(tag))) {
     return `${building.requiredTags.join('・')}の都市で建てられます`
   }
+  const tech = missingTech(state, cityId, buildingId)
+  if (tech) return `技術「${TECH_MAP[tech]?.name ?? tech}」の研究が必要です`
   if (building.requiredRelic) return `遺物「${building.requiredRelic}」が必要です`
   // An upgrade is built over the building it replaces, taking no slot of its own
   if (building.upgradeFrom) {
@@ -187,7 +200,7 @@ export function buildingProblem(state: GameState, cityId: CityId, buildingId: st
 }
 
 /**
- * Whether the city cannot build it at all yet: a tag or relic it needs is missing, the building it
+ * Whether the city cannot build it at all yet: a tag, technology or relic it needs is missing, the building it
  * upgrades is not standing, or it has been upgraded past (the screens leave such buildings unrevealed)
  */
 export function buildingLocked(state: GameState, cityId: CityId, buildingId: string): boolean {
@@ -197,6 +210,7 @@ export function buildingLocked(state: GameState, cityId: CityId, buildingId: str
   const tags = CITY_MAP[cityId]?.tags ?? []
   return upgradesOf(buildingId).some((id) => city.buildings.includes(id))
     || Boolean(building.requiredTags && !building.requiredTags.some((tag) => tags.includes(tag)))
+    || Boolean(missingTech(state, cityId, buildingId))
     || Boolean(building.requiredRelic)
     || Boolean(building.upgradeFrom && !city.buildings.includes(building.upgradeFrom))
 }
