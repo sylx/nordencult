@@ -23,12 +23,13 @@ interface CityDomesticState {
   troopMorale: number
 }
 
-const OFFICER_LABELS: Record<DomesticOfficerRole, string> = { commerce: '商業', production: '生産', training: '訓練', recruitment: '募兵' }
+const OFFICER_LABELS: Record<DomesticOfficerRole, string> = { commerce: '商業', production: '生産', training: '訓練', recruitment: '募兵', research: '研究' }
 
 // The game's rules of the officers (its balance.ts), for the demo
 const BUDGET_MIN = 80
 const BUDGET_MAX = 150
 const GROWTH_COEF = 0.033
+const GROWTH_COEF_RESEARCH = 0.15
 const TRAINING_COEF = 0.2
 const NATURAL_TRAINING = 1
 
@@ -42,24 +43,25 @@ function officerPowers(officers: DomesticOfficersView, knights: readonly KnightV
     production: power('production', id => (ability(id, 'politics') * 2 + ability(id, 'intelligence')) / 3),
     training: power('training', id => (ability(id, 'strength') * 2 + ability(id, 'leadership')) / 3),
     recruitment: power('recruitment', id => (ability(id, 'charm') * 3 + ability(id, 'strength')) / 4),
+    research: power('research', id => ability(id, 'intelligence')),
   }
 }
 
 /**
- * What a funded role's officers of this power raise spending this much gold, the fraction of 商業・生産 rounded up
+ * What a funded role's officers of this power raise spending this much gold, the fraction of 商業・生産・研究 rounded up
  * when `roll` is below it (Math.random() for a turn; 1 for the least, 0 for the most)
  */
 function affairsGain(role: DomesticFundedRole, power: number, spent: number, roll: number) {
   if (spent <= 0 || power <= 0) return 0
   if (role === 'recruitment') return Math.floor(spent * power / 100)
-  const growth = spent * power / 100 * GROWTH_COEF
+  const growth = spent * power / 100 * (role === 'research' ? GROWTH_COEF_RESEARCH : GROWTH_COEF)
   return Math.floor(growth) + (roll < growth - Math.floor(growth) ? 1 : 0)
 }
 
 const officerTraining = (power: number) => (power > 0 ? Math.round(Math.max(1, power * TRAINING_COEF)) : 0)
 
-const AFFAIRS_LABELS: Record<DomesticFundedRole, string> = { commerce: '商業', production: '生産', recruitment: '兵' }
-const FUNDED_ROLES: readonly DomesticFundedRole[] = ['commerce', 'production', 'recruitment']
+const AFFAIRS_LABELS: Record<DomesticFundedRole, string> = { commerce: '商業', production: '生産', recruitment: '兵', research: '研究' }
+const FUNDED_ROLES: readonly DomesticFundedRole[] = ['commerce', 'production', 'recruitment', 'research']
 
 /** What each role's officers will do next turn, the gold rolled 80〜150 */
 function officerEffectsFor(officers: DomesticOfficersView, budgets: DomesticBudgetsView, knights: readonly KnightView[]) {
@@ -197,7 +199,7 @@ export default function DomesticEntry() {
     const lines: string[] = []
     const powers = officerPowers(current.officers, knights)
     const budgets = { ...current.budgets }
-    const gains: Record<DomesticFundedRole, number> = { commerce: 0, production: 0, recruitment: 0 }
+    const gains: Record<DomesticFundedRole, number> = { commerce: 0, production: 0, recruitment: 0, research: 0 }
     for (const role of FUNDED_ROLES) {
       const budget = budgets[role] ?? 0
       if (!powers[role] || budget <= 0) continue

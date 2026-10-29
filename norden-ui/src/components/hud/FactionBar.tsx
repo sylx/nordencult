@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react'
 import iconGold from '../../assets/ui/icons/icon-gold.webp'
+import iconKnowledge from '../../assets/ui/icons/icon-knowledge.webp'
 import iconProduction from '../../assets/ui/icons/icon-production.webp'
 import iconTroops from '../../assets/ui/icons/icon-military.webp'
 import ribbon from '../../assets/ui/hud/faction-ribbon.webp'
@@ -10,8 +11,10 @@ import './FactionBar.css'
 export interface FactionBarProps {
   /** The faction whose emblem appears inside the orb. */
   faction?: FactionView
-  /** The player's faction: 金 (and its change next turn), 総生産 and 総兵力. Omitted: only the city switcher */
+  /** The player's faction: 金 (and its change next turn), 総生産, 総兵力 and 研究. Omitted: only the city switcher */
   summary?: FactionSummaryView
+  /** Opens the technology screen from the 研究 stat; omitted: the stat is only shown */
+  onOpenResearch?: () => void
   /** The city shown now */
   cityName: string
   /** ◀ ▶ are disabled when omitted */
@@ -28,6 +31,37 @@ export interface FactionBarProps {
 }
 
 const signed = (value: number) => `${value >= 0 ? '+' : '−'}${Math.abs(value).toLocaleString()}`
+
+const perTurnLabel = ([low, high]: readonly [number, number]) => (low === high ? `+${low}` : `+${low}〜${high}`)
+
+/**
+ * 研究: the points a turn and the technology researched with its progress and the turns left, or 研究先なし
+ * (dimmed while no points come in either). A button when it opens the technology screen
+ */
+function ResearchStat({ research, onOpen }: { research: NonNullable<FactionSummaryView['research']>; onOpen?: () => void }) {
+  const { perTurn, tech } = research
+  const idle = !tech && perTurn[1] <= 0
+  const turns = tech?.turns
+  const title = tech
+    ? `${tech.name} ${tech.progress.toLocaleString()} / ${tech.cost.toLocaleString()}${turns === undefined ? '' : turns === null ? '（完了の見込みなし）' : `（あと${turns}ターン）`}`
+    : '研究先なし'
+  const content = <>
+    <img className="norden-faction-bar-stat-icon" src={iconKnowledge} alt="" />
+    <span className="norden-faction-bar-stat-label">研究 {perTurnLabel(perTurn)}/ターン</span>
+    <span className="norden-faction-bar-stat-value norden-faction-bar-research">
+      {tech ? <>
+        {tech.name}
+        <span className="norden-faction-bar-research-progress">
+          {tech.progress.toLocaleString()}/{tech.cost.toLocaleString()}{typeof turns === 'number' && `・あと${turns}`}
+        </span>
+      </> : '研究先なし'}
+    </span>
+  </>
+  const className = `norden-faction-bar-stat is-research ${idle ? 'is-idle' : ''} ${!tech && !idle ? 'is-unset' : ''}`
+  return onOpen
+    ? <button type="button" className={className} aria-label={`研究：${title}`} title={title} onClick={onOpen}>{content}</button>
+    : <span className={className} role="group" aria-label="研究" title={title}>{content}</span>
+}
 
 /** Viewports into the supplied PNG: fixed-aspect caps and a stretchable plain middle. */
 function RibbonDecoration() {
@@ -55,7 +89,7 @@ function Stat({ label, icon, value, title, children }: { label: string; icon: st
 }
 
 /** A faction's crystal emblem, treasury and cities. Drag the orb to move the whole bar. */
-export default function FactionBar({ faction, summary, cityName, onPrevCity, onNextCity, cityPosition,
+export default function FactionBar({ faction, summary, onOpenResearch, cityName, onPrevCity, onNextCity, cityPosition,
   movable = true, position, onPositionChange, className = '', style }: FactionBarProps) {
   const x = position?.x ?? 0
   const y = position?.y ?? 0
@@ -125,6 +159,7 @@ export default function FactionBar({ faction, summary, cityName, onPrevCity, onN
             </Stat>
             <Stat label="総生産" icon={iconProduction} value={summary.production} />
             <Stat label="総兵力" icon={iconTroops} value={summary.troops} />
+            {summary.research && <ResearchStat research={summary.research} onOpen={onOpenResearch} />}
           </>}
           <span className="norden-faction-bar-city" role="group" aria-label="都市の切り替え">
             <button type="button" className="norden-faction-bar-step" aria-label="前の都市" disabled={!onPrevCity} onClick={onPrevCity}>◀</button>

@@ -1,0 +1,183 @@
+import { useMemo, useState, type ReactNode } from 'react'
+import { BuildingImage, ConstructionProgress } from '../../components/parts/BuildingSlots'
+import Button from '../../components/parts/Button'
+import SectionFrame from '../../components/parts/SectionFrame'
+import WindowFrame from '../../components/window/WindowFrame'
+import type { TechStatusView, TechTreeView, TechView } from '../types'
+import { layoutTechs } from './techLayout'
+import '../screens.css'
+import './TechScreen.css'
+
+export interface TechScreenProps {
+  /** The trees (物理文明・魔法文明), drawn one under the other */
+  trees: readonly TechTreeView[]
+  /** Research points the faction gets a turn, least and most */
+  perTurn?: readonly [number, number]
+  /** How they are made up, for their tooltip, e.g. 施設 +7.5 */
+  pointDetails?: readonly string[]
+  /** Research points 宙に浮いた, put into the technology chosen next */
+  carry?: number
+  /** The points are 宙に浮いた and the faction must choose what to research: the window cannot be closed */
+  mustChoose?: boolean
+  /** Researches a technology (in place of the one being researched, whose progress is kept) */
+  onResearch?: (techId: string) => void
+  /** Omitted (or while mustChoose): no close control */
+  onClose?: () => void
+  children?: ReactNode
+}
+
+const STATUS_LABELS: Readonly<Record<TechStatusView, string>> = {
+  researched: '研究済み', researching: '研究中', available: '研究できる', visible: '前提が足りない', hidden: '未知の技術',
+}
+
+/** Sizes of the tree (px): a column and a row, and a node in them */
+const COLUMN_WIDTH = 196
+const ROW_HEIGHT = 80
+const NODE_WIDTH = 164
+const NODE_HEIGHT = 64
+
+const range = ([low, high]: readonly [number, number]) => (low === high ? `+${low}` : `+${low}〜${high}`)
+
+const shownName = (tech: TechView) => (tech.status === 'hidden' ? '???' : tech.name ?? tech.id)
+
+function TechNode({ tech, selected, onSelect }: { tech: TechView; selected: boolean; onSelect: () => void }) {
+  const hidden = tech.status === 'hidden'
+  const ratio = tech.cost && tech.progress ? Math.min(1, tech.progress / tech.cost) : 0
+  return (
+    <button type="button" className={`norden-tech-node is-${tech.status} ${selected ? 'is-selected' : ''}`}
+      aria-label={`${shownName(tech)}（${STATUS_LABELS[tech.status]}）`} aria-pressed={selected} onClick={onSelect}>
+      {hidden
+        ? <span className="norden-tech-node-image is-hidden" aria-hidden="true">?</span>
+        : <BuildingImage building={{ id: tech.id, name: tech.name ?? tech.id, image: tech.image }} className="norden-tech-node-image" />}
+      <span className="norden-tech-node-body">
+        <span className="norden-tech-node-name">{shownName(tech)}</span>
+        {!hidden && tech.status !== 'researched' && tech.cost !== undefined && (
+          <span className="norden-tech-node-cost">{(tech.progress ?? 0).toLocaleString()} / {tech.cost.toLocaleString()}</span>
+        )}
+        {tech.status === 'researched' && <span className="norden-tech-node-cost">研究済み</span>}
+        {ratio > 0 && tech.status !== 'researched' && (
+          <span className="norden-tech-node-bar" aria-hidden="true"><span style={{ width: `${ratio * 100}%` }} /></span>
+        )}
+      </span>
+    </button>
+  )
+}
+
+function TechTree({ tree, selectedId, onSelect }: { tree: TechTreeView; selectedId?: string; onSelect: (id: string) => void }) {
+  const layout = useMemo(() => layoutTechs(tree.techs), [tree.techs])
+  const width = layout.columns * COLUMN_WIDTH
+  const height = layout.rows * ROW_HEIGHT
+  const at = (id: string) => {
+    const place = layout.places[id]!
+    return { left: place.column * COLUMN_WIDTH, top: place.row * ROW_HEIGHT }
+  }
+  return (
+    <section className="norden-tech-tree" aria-label={tree.label}>
+      <h3 className="norden-tech-tree-title">{tree.label}</h3>
+      <div className="norden-tech-tree-canvas" style={{ width, height }}>
+        <svg className="norden-tech-tree-lines" width={width} height={height} aria-hidden="true">
+          {tree.techs.flatMap(tech => tech.requires.filter(id => layout.places[id]).map(id => {
+            const from = at(id)
+            const to = at(tech.id)
+            const x1 = from.left + NODE_WIDTH
+            const y1 = from.top + NODE_HEIGHT / 2
+            const x2 = to.left
+            const y2 = to.top + NODE_HEIGHT / 2
+            const mid = (x1 + x2) / 2
+            const done = tree.techs.find(t => t.id === id)?.status === 'researched'
+            return <path key={`${id}-${tech.id}`} className={done ? 'is-open' : ''} d={`M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2},${y2}`} />
+          }))}
+        </svg>
+        {tree.techs.map(tech => (
+          <div key={tech.id} className="norden-tech-tree-cell" style={{ ...at(tech.id), width: NODE_WIDTH, height: NODE_HEIGHT }}>
+            <TechNode tech={tech} selected={tech.id === selectedId} onSelect={() => onSelect(tech.id)} />
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function TechDetails({ tech, onResearch }: { tech: TechView; onResearch?: (techId: string) => void }) {
+  if (tech.status === 'hidden') {
+    return (
+      <div className="norden-tech-details">
+        <span className="norden-tech-details-image is-hidden" aria-hidden="true">?</span>
+        <h3 className="norden-tech-details-name">???</h3>
+        <p className="norden-window-section-empty">前提の技術を研究すると分かります</p>
+      </div>
+    )
+  }
+  const researchable = tech.status === 'available' && !tech.unavailableReason
+  return (
+    <div className="norden-tech-details">
+      <BuildingImage building={{ id: tech.id, name: tech.name ?? tech.id, image: tech.image }} className="norden-tech-details-image" />
+      <h3 className="norden-tech-details-name">{tech.name ?? tech.id}</h3>
+      <span className={`norden-tech-details-status is-${tech.status}`}>{STATUS_LABELS[tech.status]}</span>
+      {tech.description && <p className="norden-tech-details-description">{tech.description}</p>}
+      {tech.effects && tech.effects.length > 0 && (
+        <ul className="norden-tech-details-effects" aria-label="効果">
+          {tech.effects.map(effect => <li key={effect}>{effect}</li>)}
+        </ul>
+      )}
+      {tech.cost !== undefined && tech.status !== 'researched' && (
+        <ConstructionProgress invested={tech.progress ?? 0} required={tech.cost} turnsLeft={tech.turns} />
+      )}
+      {tech.status === 'researched' && tech.cost !== undefined && <p className="norden-tech-details-cost">研究ポイント {tech.cost.toLocaleString()}</p>}
+      {tech.unavailableReason && <p className="norden-tech-details-reason" role="note">{tech.unavailableReason}</p>}
+      {onResearch && tech.status !== 'researched' && (
+        <Button variant="primary" disabled={!researchable} title={tech.unavailableReason}
+          aria-label={`${tech.name ?? tech.id}を研究する`} onClick={() => onResearch(tech.id)}>
+          {tech.status === 'researching' ? '研究中' : '研究する'}
+        </Button>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The technology screen (研究＞技術): a full-screen window with the trees drawn left to right (a column per depth,
+ * lines from the technologies required), each technology's picture and name (researched, researching with its progress,
+ * researchable, seen by name, or ??? with its picture hidden), and on the right the details of the one chosen and
+ * 研究する. At the top, the research points a turn and those 宙に浮いた; while they must go somewhere (mustChoose)
+ * the window cannot be closed
+ */
+export default function TechScreen({ trees, perTurn, pointDetails, carry = 0, mustChoose = false, onResearch, onClose, children }: TechScreenProps) {
+  const all = trees.flatMap(tree => tree.techs)
+  const [selectedId, setSelectedId] = useState<string | undefined>(
+    () => (all.find(t => t.status === 'researching') ?? all.find(t => t.status === 'available') ?? all[0])?.id,
+  )
+  const selected = all.find(tech => tech.id === selectedId)
+  return (
+    <div className="norden-screen norden-tech">
+      <WindowFrame className="norden-window-screen" title="技術" aria-label="技術" onClose={mustChoose ? undefined : onClose}>
+        <div className="norden-tech-layout">
+          <header className="norden-tech-header">
+            <span className="norden-tech-points" title={pointDetails?.join('\n')}>
+              研究ポイント <b>{perTurn ? range(perTurn) : '+0'}</b>/ターン
+            </span>
+            {carry > 0 && <span className="norden-tech-carry">宙に浮いた研究ポイント <b>{carry.toLocaleString()}</b></span>}
+            {mustChoose && (
+              <strong className="norden-tech-must-choose" role="status">研究先を選んでください（宙に浮いた研究ポイント {carry.toLocaleString()}）</strong>
+            )}
+          </header>
+          <div className="norden-window-screen-layout">
+            <section className="norden-window-section norden-tech-trees" aria-label="技術ツリー">
+              <SectionFrame />
+              <div className="norden-tech-trees-scroll">
+                {trees.map(tree => <TechTree key={tree.id} tree={tree} selectedId={selectedId} onSelect={setSelectedId} />)}
+              </div>
+            </section>
+            <section className="norden-window-section norden-tech-side" aria-label="技術の詳細">
+              <SectionFrame />
+              {selected
+                ? <TechDetails tech={selected} onResearch={onResearch} />
+                : <p className="norden-window-section-empty">技術を選んでください</p>}
+            </section>
+          </div>
+        </div>
+      </WindowFrame>
+      {children}
+    </div>
+  )
+}

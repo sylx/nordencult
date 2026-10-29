@@ -17,6 +17,21 @@ describe('FactionBar', () => {
     expect(troops.compareDocumentPosition(city) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('shows the research: the technology researched with its progress, or none, and opens the technology screen', async () => {
+    const onOpenResearch = vi.fn()
+    const summary = { gold: 0, production: 0, troops: 0 }
+    const { rerender } = render(<FactionBar cityName="フルーエン" onOpenResearch={onOpenResearch}
+      summary={{ ...summary, research: { perTurn: [12, 15], tech: { name: '兵法', progress: 40, cost: 200, turns: 12 } } }} />)
+    const research = screen.getByRole('button', { name: '研究：兵法 40 / 200（あと12ターン）' })
+    expect(research).toHaveTextContent('研究 +12〜15/ターン')
+    expect(research).toHaveTextContent('40/200・あと12')
+    await userEvent.click(research)
+    expect(onOpenResearch).toHaveBeenCalledOnce()
+    rerender(<FactionBar cityName="フルーエン" summary={{ ...summary, research: { perTurn: [0, 0] } }} />)
+    expect(screen.getByRole('group', { name: '研究' })).toHaveTextContent('研究先なし')
+    expect(screen.getByRole('group', { name: '研究' })).toHaveClass('is-idle')
+  })
+
   it('shows the position and disables the steps without handlers', async () => {
     const onNext = vi.fn()
     render(<FactionBar cityName="フルーエン" cityPosition={{ index: 1, count: 3 }} onNextCity={onNext} />)

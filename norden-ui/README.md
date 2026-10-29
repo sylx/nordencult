@@ -25,7 +25,7 @@ http://localhost:5173 でカタログを開きます。左の一覧から項目�
 | 区分 | 項目 |
 | --- | --- |
 | 画面フロー | 戦略画面（`#strategy-flow`、既定）: 都市コマンド → 軍事 → 侵攻 → 地図で侵攻先を選ぶ → 侵攻画面 → 予約。Escで1段ずつ戻る |
-| 画面 | 都市コマンド（`#city-command`）、地図で選ぶ（`#map-pick`）、侵攻（`#invasion`）、移動（`#move`）、輸送（`#transport`） |
+| 画面 | 都市コマンド（`#city-command`）、地図で選ぶ（`#map-pick`）、内政（`#domestic`）、技術（`#tech`）、侵攻（`#invasion`）、移動（`#move`）、輸送（`#transport`） |
 | 基本部品 | ウィンドウ（`#info-window`）、ウィンドウ（閉じるボタン付き）（`#window-frame`）、ツールバー（`#command-toolbar`）、ターン情報（`#date-bar`）、行動予約（`#action-orders`）、UIパーツ（`#parts`） |
 | 演出 | カットインエディタ（`#cutin-editor`）: テンプレートを作り、JSONで書き出す。`src/cutin/templates/` のJSONを開いて直せる。イベント通知（`#event`）: `EventScreen` を、カットイン `faction_destruction` のあとに出す流れで確かめる |
 
@@ -167,13 +167,14 @@ function BattleUi() {
 
 | 画面 | 構成 | 主なprops |
 | --- | --- | --- |
-| `CityCommandScreen` | 勢力の情報と都市の切り替え ◀ ▶（左上の `FactionBar`）、都市情報ウィンドウ（都市情報・騎士・街道タブ。騎士タブは所属する騎士のあと、区切りに続けて捕虜（`CityView.prisoners`。仕えていた勢力つき）。都市情報は領主・人口と Tier、兵数・練度・物資（大きな数字で横に並べる）、商業と生産（実効値と基礎値）、施設スロット）、ターン情報（右上）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `faction: FactionSummaryView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `activeCommand`（上に開いている画面のコマンド。押された状態で出す）, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `onSelectNeighbour`, `turnMenu`, `children`（ホストの追加HUD） |
+| `CityCommandScreen` | 勢力の情報と都市の切り替え ◀ ▶（左上の `FactionBar`）、都市情報ウィンドウ（都市情報・騎士・街道タブ。騎士タブは所属する騎士のあと、区切りに続けて捕虜（`CityView.prisoners`。仕えていた勢力つき）。都市情報は領主・人口と Tier、兵数・練度・物資（大きな数字で横に並べる）、商業と生産（実効値と基礎値）、施設スロット）、ターン情報（右上）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `faction: FactionSummaryView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `activeCommand`（上に開いている画面のコマンド。押された状態で出す）, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `endTurnReason`（ターン終了のツールチップ）, `onOpenResearch`（`FactionBar` の研究から技術画面を開く）, `onSelectNeighbour`, `turnMenu`, `children`（ホストの追加HUD） |
 | `MapPickScreen` | 案内の帯と「やめる」 | `message`, `onCancel`, `cancelLabel` |
-| `DomesticScreen` | 都市の内政。画面いっぱいのウィンドウに、領主（顔と「交代」）と都市の現状（人口の下に1ターンの伸びと次の Tier までのターン数の見込み）、施設スロット、内政担当官（商業・生産・訓練・募兵に2人まで）を並べ、右側に建設できる施設や任命する騎士の一覧を開く。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `city: CityView`, `buildOptions`, `gold`, `populationGrowth`, `stats`, `knights`, `officers`, `officerEffects`, `onBuild` などの施設の操作, `onChangeLord`, `onAssignOfficers`, `onClose` |
+| `DomesticScreen` | 都市の内政。画面いっぱいのウィンドウに、領主（顔と「交代」）と都市の現状（人口の下に1ターンの伸びと次の Tier までのターン数の見込み）、施設スロット、内政担当官（商業・生産・訓練・募兵・研究に2人まで）を並べ、右側に建設できる施設や任命する騎士の一覧を開く。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `city: CityView`, `buildOptions`, `gold`, `populationGrowth`, `stats`, `knights`, `officers`, `officerEffects`, `onBuild` などの施設の操作, `onChangeLord`, `onAssignOfficers`, `onClose` |
+| `TechScreen` | 技術（研究＞技術）。画面いっぱいのウィンドウに、物理文明・魔法文明のツリーを上下に、左から右へ段ごとの列で描き（前提を線でつなぐ。位置は `requires` から `layoutTechs` が決める）、右に選んだ技術の詳細（画像・説明・効果・進捗と完了までのターン数・足りない前提）と「研究する」。ノードは研究済み・研究中（進捗のバー）・研究できる・名前だけ・???（画像も伏せる）で描き分ける。上に研究ポイント（/ターン、内訳はツールチップ）と宙に浮いたポイント。`mustChoose` のあいだは閉じられず「研究先を選んでください」と出す | `trees: TechTreeView[]`, `perTurn`, `pointDetails`, `carry`, `mustChoose`, `onResearch(techId)`, `onClose` |
 | `InvasionScreen` | 侵攻。画面いっぱいのウィンドウに、出撃する騎士の一覧、軍団編成（部隊ごとの兵科と兵数）、編成した部隊の図を横に並べ、その下に合計兵数と「やめる / 予約」。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `from` / `to: CityView`, `defenders`, `knights: KnightView[]`, `unitTypes`, `indirectUnitTypes`, `maxUnits`, `soldierPool`, `maxSoldiers`, `morale`, `unitPower`, `soldierStep`, `validate(draft)`, `onConfirm(draft)`, `onCancel`（閉じるボタンも同じ。省くと「やめる」と閉じるボタンを出さない）, `mode`（`'defense'` で防衛軍団の編成: 見出し「〇〇の防衛」・「防衛する騎士」・確定ボタン「防衛する」。`knights`・`soldierPool` は防衛する拠点のもの） |
 | `MoveScreen` | 移動。画面いっぱいのウィンドウに、移動する騎士の一覧（チェックボックスで複数選ぶ）と、移動の内容（経路・到着までの月数・単騎移動・兵数・物資・連れて行く捕虜（複数。単騎移動では選べない））を横に並べ、その下に合計と「やめる / 予約」 | `from` / `to: CityView`, `route`（経路の都市名）, `months`, `soloMonths`, `knights`, `soldierPool`, `supplyPool`, `prisoners`（出発する拠点の捕虜。無ければ一覧を出さない）, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
 | `TransportScreen` | 輸送。移動画面と同じ形のウィンドウに、担当の騎士の一覧（ラジオボタンで1人選ぶ）と、輸送の内容（経路・到着までの月数と騎士の帰還までの月数・兵数・物資・連れて行く捕虜（複数）・繰り返し輸送（準備中のため無効））を横に並べ、その下に合計と「やめる / 予約」 | `from` / `to: CityView`, `route`, `months`（到着まで）, `returnMonths`（下ろしたあと単騎で戻る月数）, `knights`, `soldierPool`, `supplyPool`, `prisoners`, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
-| `EventScreen` | イベント通知（勢力の滅亡など）。ホスト全体を暗くして、カット画像（`CUT_IMAGES`: `src/assets/cut/*.webp` をファイル名で引く）とその下のメッセージウィンドウ（見出し・メッセージ・詳細の行・ホストの内容）を出す。閉じるボタン・Enter・Escで閉じ、Escは下の画面に届かない。騎士の顔を並べるときは `norden-event-chips` の中に `KnightChip` を置く | `image`, `title`, `message`, `details: { label, value }[]`, `children`, `onClose`, `closeLabel` |
+| `EventScreen` | イベント通知（勢力の滅亡など）。ホスト全体を暗くして、カット画像（`CUT_IMAGES`: `src/assets/cut/*.webp` をファイル名で引く）とその下のメッセージウィンドウ（見出し・メッセージ・詳細の行・ホストの内容）を出す。閉じるボタン・Enter・Escで閉じ、Escは下の画面に届かない。騎士の顔を並べるときは `norden-event-chips` の中に `KnightChip` を置く | `image`, `picture`（カットの代わりのホストの絵。技術の画像など）, `title`, `message`, `details: { label, value }[]`, `children`, `onClose`, `closeLabel` |
 
 アクションツールバーのコマンドは `CITY_COMMAND_GROUPS` に定義しています。内政、軍事（移動・侵攻・輸送・傭兵）、研究（探索・遺物・技術）、交渉（外交・捕虜・商人）、情報（勢力・傭兵・地理・遺物）と、最後にターン終了です。
 分類を押すと上にサブコマンドが開きます。`commandState={{ invade: { disabled: true, reason: '出撃できる騎士がいません' } }}` で無効にし、理由をツールチップに出します。
@@ -204,7 +205,7 @@ function BattleUi() {
 | `ActionOrders` | `orders: ActionOrderView[]`, `title?`（既定「行動予約」）, `onCancel?(id)`, `onSelect?(id)`, `activeId?`, `onDeactivate?()` | 侵攻（`kind: 'invasion'`）・移動（`'move'`）・輸送（`'transport'`）の予約を1行ずつ並べるHUDのパネル。経路（`from` → `to`、移動中の移動・輸送は出発した拠点から）と騎士（侵攻は「軍団長 〜 以下N名」、移動と輸送は「担当 〜・〜」）。`cancellable` の行に取消、`status`（「あと3ヶ月」など）を右に出す。`faction` で行頭に紋章、`current` で解決中の行を強調（進行フェーズの一覧）。`activeId` の行を選択中として強調して、その行の `members`（騎士の顔と名前。`KnightChip` で並べる）と `details`（`{ label, value }[]`。兵・物資・到着までの月数など）を行の下に開き、パネルの外を押すと `onDeactivate` を呼ぶ。行が多いと一覧がスクロールする |
 | `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `metal: 'gold' \| 'silver' \| 'none'`, `size`, `style` | 象牙の立体的なボタンに金／銀の四隅装飾、または装飾なし。生成画像を9分割で伸縮し、`style` で幅・高さを指定可能 |
 | `Banner` | `children`, `actions` | HUDの案内の帯（`role="status"`） |
-| `FactionBar` | `faction?: FactionView`, `summary?: FactionSummaryView`, `cityName`, `onPrevCity`, `onNextCity`, `cityPosition`, `movable`, `position`, `onPositionChange` | 左端の球に勢力のエンブレムを表示。球をドラッグしてバー全体を移動。矢印キーは10px、Shift併用は1px、Homeで元の位置。金（次のターンの増減）｜総生産｜総兵力｜◀ 都市名 ▶。`summary` が無ければ都市の切り替えだけ。ハンドラが無い方向は無効 |
+| `FactionBar` | `faction?: FactionView`, `summary?: FactionSummaryView`, `onOpenResearch`, `cityName`, `onPrevCity`, `onNextCity`, `cityPosition`, `movable`, `position`, `onPositionChange` | 左端の球に勢力のエンブレムを表示。球をドラッグしてバー全体を移動。矢印キーは10px、Shift併用は1px、Homeで元の位置。金（次のターンの増減）｜総生産｜総兵力｜研究（/ターンと研究中の技術・進捗・残りターン。研究先が無ければ「研究先なし」、ポイントも出ていなければ薄く。`onOpenResearch` があれば押せる）｜◀ 都市名 ▶。`summary` が無ければ都市の切り替えだけ。ハンドラが無い方向は無効 |
 | `ChoiceGroup` | `label`, `options`, `value`, `onChange` | 単一選択のボタン列。radiogroupとして矢印キーで移動し、無効な選択肢を飛ばす |
 | `QuantityInput` | `label`, `value`, `onChange`, `min`, `max`, `step`, `unit` | スライダー・± ボタン・数値入力。範囲外は丸める |
 | `Card` | `as`, `children`, `className`, `style` | 羊皮紙とインクで描いた汎用装飾枠。`as` は div / article / section / label |

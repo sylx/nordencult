@@ -6,6 +6,13 @@ import { Log, useLog, Workbench } from '../Workbench'
 
 const cities = ['フルーエン', 'ヴェステル', 'ミルデン']
 
+/** The 研究 stat: researching a technology, points but nothing researched, or nothing at all */
+const RESEARCH = {
+  researching: { perTurn: [12, 15], tech: { name: '兵法', progress: 40, cost: 200, turns: 12 } },
+  unset: { perTurn: [12, 15] },
+  idle: { perTurn: [0, 0] },
+} as const
+
 export default function FactionBarEntry() {
   const [log, add] = useLog()
   const [gold, setGold] = useState(500)
@@ -14,6 +21,7 @@ export default function FactionBarEntry() {
   const [troops, setTroops] = useState(4500)
   const [city, setCity] = useState(0)
   const [withSummary, setWithSummary] = useState(true)
+  const [research, setResearch] = useState<keyof typeof RESEARCH | 'none'>('researching')
   const [factionId, setFactionId] = useState(PLAYER)
   const [movable, setMovable] = useState(true)
   const [position, setPosition] = useState({ x: 0, y: 0 })
@@ -32,7 +40,8 @@ export default function FactionBarEntry() {
     stage={<div className="demo-top-left">
       <FactionBar faction={FACTIONS[factionId]} movable={movable} position={position} onPositionChange={setPosition}
         style={{ width: fitContent ? 'max-content' : barWidth, '--faction-bar-height': `${barHeight}px`, '--faction-orb-size': `${orbSize}px` } as CSSProperties}
-        summary={withSummary ? { gold, goldForecast: forecast, production, troops } : undefined}
+        summary={withSummary ? { gold, goldForecast: forecast, production, troops, research: research === 'none' ? undefined : RESEARCH[research] } : undefined}
+        onOpenResearch={() => add('研究: 技術画面を開く')}
         cityName={cities[city]!} cityPosition={{ index: city, count: cities.length }} onPrevCity={() => step(-1)} onNextCity={() => step(1)} />
     </div>}
     controls={<>
@@ -74,6 +83,13 @@ export default function FactionBarEntry() {
       <label htmlFor="faction-troops">総兵力</label>
       <input id="faction-troops" type="number" value={troops} onChange={event => setTroops(Number(event.target.value))} />
       <label className="checkbox"><input type="checkbox" checked={withSummary} onChange={event => setWithSummary(event.target.checked)} />勢力の情報を出す（外すと都市の切り替えだけ）</label>
+      <label htmlFor="faction-bar-research">研究</label>
+      <select id="faction-bar-research" value={research} onChange={event => setResearch(event.target.value as typeof research)}>
+        <option value="researching">研究中（兵法）</option>
+        <option value="unset">研究先なし（研究ポイントあり）</option>
+        <option value="idle">研究先なし（研究ポイントなし・目立たせない）</option>
+        <option value="none">出さない</option>
+      </select>
       <dl className="demo-readout"><div><dt>移動量</dt><dd>{Math.round(position.x)}, {Math.round(position.y)} px</dd></div></dl>
       <Log entries={log} />
     </>}

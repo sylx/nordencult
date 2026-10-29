@@ -30,6 +30,7 @@ export const OFFICER_ROLES: readonly OfficerRoleSpec[] = [
   { role: 'production', label: '生産', weights: [['politics', 2], ['intelligence', 1]], funded: true, description: '予算を使い、生産の基礎値を上げる' },
   { role: 'training', label: '訓練', weights: [['strength', 2], ['leadership', 1]], funded: false, description: '毎ターン兵の練度を上げる（金は使わない）' },
   { role: 'recruitment', label: '募兵', weights: [['charm', 3], ['strength', 1]], funded: true, description: '予算を使い、兵を集める（練度は下がる）' },
+  { role: 'research', label: '研究', weights: [['intelligence', 1]], funded: true, description: '予算を使い、研究ポイントを生む' },
 ]
 
 /** e.g. 政治2・知力1 */
@@ -86,7 +87,7 @@ export interface DomesticOfficersProps {
 }
 
 /**
- * The third row of the domestic screen: the four officer roles, each with two posts
+ * The third row of the domestic screen: the five officer roles, each with two posts
  * holding a knight (face, name and their aptitude for the role) or empty, the gold set aside
  * for it (a slider, for the funded roles) and what its officers bring.
  * A funded role with officers whose budget is used up, or short of a turn's work, is marked

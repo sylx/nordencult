@@ -102,9 +102,10 @@ export interface BuildOptionView extends BuildingView {
 /**
  * A city's domestic officers (内政担当官), up to two for each role:
  * 商業・生産 (by 政治 2 : 知力 1) spend the city's budget raising the base of those stats, 訓練 (by 武力 2 : 統率 1)
- * raises the soldiers' 練度 for nothing and 募兵 (by 魅力 3 : 武力 1) spends the budget on soldiers, each turn
+ * raises the soldiers' 練度 for nothing, 募兵 (by 魅力 3 : 武力 1) spends the budget on soldiers and
+ * 研究 (by 知力) spends it on research points for the faction, each turn
  */
-export type DomesticOfficerRole = 'commerce' | 'production' | 'training' | 'recruitment'
+export type DomesticOfficerRole = 'commerce' | 'production' | 'training' | 'recruitment' | 'research'
 
 /** The officer roles spending gold set aside for them */
 export type DomesticFundedRole = Exclude<DomesticOfficerRole, 'training'>
@@ -232,6 +233,47 @@ export interface FactionSummaryView {
   production: number
   /** 総兵力: the soldiers of all its cities */
   troops: number
+  /** Its research; omitted: not shown */
+  research?: FactionResearchSummaryView
+}
+
+/** A faction's research on the faction bar: its points a turn, and the technology it researches */
+export interface FactionResearchSummaryView {
+  /** Research points it gets a turn, least and most */
+  perTurn: readonly [number, number]
+  /** The technology it researches; omitted: none */
+  tech?: { name: string; progress: number; cost: number; turns?: number | null }
+}
+
+/** How a technology stands for the faction: researched, being researched, researchable, seen by name, or ??? */
+export type TechStatusView = 'researched' | 'researching' | 'available' | 'visible' | 'hidden'
+
+/** A technology of the tree (研究＞技術). A hidden one has only its id and the technologies it requires (its frame and lines are drawn) */
+export interface TechView {
+  id: string
+  status: TechStatusView
+  /** Ids of the technologies it requires (every one of them), drawn as lines into it; none for a root */
+  requires: readonly string[]
+  name?: string
+  /** Its picture on the game's technology sheet */
+  image?: SpriteImage
+  description?: string
+  /** e.g. 生産 +5% */
+  effects?: readonly string[]
+  /** Research points it takes, and those put in so far */
+  cost?: number
+  progress?: number
+  /** Turns to complete it researching it from now on; null: never at the points a turn now */
+  turns?: number | null
+  /** Why it cannot be researched now, e.g. 前提の技術（火魔法）が要ります */
+  unavailableReason?: string
+}
+
+/** A tree of the technology screen (物理文明・魔法文明): its technologies, in data order */
+export interface TechTreeView {
+  id: string
+  label: string
+  techs: readonly TechView[]
 }
 
 export interface UnitTypeView {

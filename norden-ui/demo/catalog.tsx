@@ -13,6 +13,7 @@ import InvasionEntry from './entries/InvasionEntry'
 import MoveEntry from './entries/MoveEntry'
 import TransportEntry from './entries/TransportEntry'
 import DomesticEntry from './entries/DomesticEntry'
+import TechEntry from './entries/TechEntry'
 import StrategyFlowEntry from './entries/StrategyFlowEntry'
 import CutInEditorEntry from './entries/CutInEditorEntry'
 import EventEntry from './entries/EventEntry'
@@ -49,6 +50,8 @@ export const CATALOG: CatalogGroup[] = [
         description: '地図上で都市などを選ぶステップ。案内の帯と「やめる」だけを出し、候補の強調と選択は呼び出し側の地図が行う' },
       { id: 'domestic', label: '内政', name: 'DomesticScreen', Component: DomesticEntry,
         description: '都市の内政ウィンドウ。左上の施設スロット（確認付き削除・建設の中断/取消・+で追加）と右側の建設候補一覧' },
+      { id: 'tech', label: '技術', name: 'TechScreen', Component: TechEntry,
+        description: '研究＞技術のツリー。研究済み・研究中・研究できる・名前だけ・???で描き分け、選ぶと右に詳細と「研究する」。研究ポイントが宙に浮くと閉じられず、研究先を選ばされる' },
       { id: 'invasion', label: '侵攻', name: 'InvasionScreen', Component: InvasionEntry,
         description: '出撃する騎士の選択と、騎士ごとの兵科・兵数。兵数の合計は出発都市の兵数まで' },
       { id: 'move', label: '移動', name: 'MoveScreen', Component: MoveEntry,

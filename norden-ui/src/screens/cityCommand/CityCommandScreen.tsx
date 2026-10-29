@@ -20,8 +20,10 @@ export interface CommandState {
 export interface CityCommandScreenProps {
   city: CityView
   turn: TurnView
-  /** The player's faction (金・総生産・総兵力), shown on the faction bar with the city switcher */
+  /** The player's faction (金・総生産・総兵力・研究), shown on the faction bar with the city switcher */
   faction?: FactionSummaryView
+  /** Opens the technology screen from the faction bar's 研究 */
+  onOpenResearch?: () => void
   /** The player's identity, even when inspecting another faction's city. */
   playerFaction?: FactionView
   /** ◀ ▶ are disabled when omitted */
@@ -35,6 +37,8 @@ export interface CityCommandScreenProps {
   onCommand: (id: CityCommandId) => void
   onEndTurn: () => void
   endTurnDisabled?: boolean
+  /** Why the turn cannot be ended, shown as its tooltip (e.g. 研究先を選んでください) */
+  endTurnReason?: string
   /** Contents of the settings menu on the turn bar */
   turnMenu?: ReactNode
   /** Finds any knight by id for the knight profile (e.g. one a 略歴 names); only the city's knights are found when omitted */
@@ -54,8 +58,8 @@ export function turnText(turn: TurnView) {
 
 /** City command screen: the faction bar with ◀ ▶ between cities and the city window (left), turn bar (top right) and the action toolbar (bottom) */
 export default function CityCommandScreen({
-  city, turn, faction, playerFaction, onPrevCity, onNextCity, cityPosition, commandState = {}, activeCommand, onCommand, onEndTurn, endTurnDisabled = false,
-  turnMenu, knightOf, windowPosition = { x: 56, y: 96 }, skin, children,
+  city, turn, faction, onOpenResearch, playerFaction, onPrevCity, onNextCity, cityPosition, commandState = {}, activeCommand, onCommand, onEndTurn,
+  endTurnDisabled = false, endTurnReason, turnMenu, knightOf, windowPosition = { x: 56, y: 96 }, skin, children,
 }: CityCommandScreenProps) {
   const command = (id: CityCommandId, label: string): ToolbarCommand => {
     const active = activeCommand === id
@@ -70,13 +74,14 @@ export default function CityCommandScreen({
         ? { id: group.id, label: group.label, icon, children: group.commands.map(item => command(item.id, item.label)) }
         : { ...command(group.id as CityCommandId, group.label), icon }
     }),
-    { id: 'end-turn', label: 'ターン終了', icon: <img src={iconEndTurn} alt="" />, tone: 'accent', disabled: endTurnDisabled, onClick: onEndTurn },
+    { id: 'end-turn', label: 'ターン終了', icon: <img src={iconEndTurn} alt="" />, tone: 'accent', disabled: endTurnDisabled, title: endTurnReason, onClick: onEndTurn },
   ]
 
   return (
     <div className="norden-screen norden-city-command">
       <div className="norden-screen-top-left">
-        <FactionBar faction={playerFaction} summary={faction} cityName={city.name} onPrevCity={onPrevCity} onNextCity={onNextCity} cityPosition={cityPosition} />
+        <FactionBar faction={playerFaction} summary={faction} onOpenResearch={onOpenResearch} cityName={city.name} onPrevCity={onPrevCity}
+          onNextCity={onNextCity} cityPosition={cityPosition} />
       </div>
       <div className="norden-screen-top-right">
         <DateBar phaseLabel={turn.phaseLabel} factionName={turn.activeFaction ? turn.activeFaction.name : turn.activeFaction}

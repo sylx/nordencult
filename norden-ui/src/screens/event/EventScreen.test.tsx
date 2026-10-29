@@ -21,6 +21,12 @@ describe('EventScreen', () => {
     expect(onClose).toHaveBeenCalledTimes(3)
   })
 
+  it('shows a picture of the host in place of the cut', () => {
+    render(<EventScreen picture={<span>兵法の画像</span>} title="研究完了" message="兵法の研究が完了しました。" onClose={() => {}} />)
+    expect(screen.getByText('兵法の画像')).toBeInTheDocument()
+    expect(screen.getByRole('dialog').querySelector('img')).toBeNull()
+  })
+
   it('has the cuts of src/assets/cut by name', () => {
     expect(CUT_IMAGES.faction_destruction).toMatch(/faction_destruction/)
   })

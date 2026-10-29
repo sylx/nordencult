@@ -159,3 +159,13 @@
   text-shadow: 0 2px 2px #000;
 }
 .norden-faction-bar-city-position { font-size: 10px; font-weight: 400; color: #c8b490; }
+
+/* 研究: a button when it opens the technology screen; dimmed while nothing is researched nor comes in */
+.norden-faction-bar-stat.is-research { color: inherit; font: inherit; background: transparent; border-top: 0; border-bottom: 0; border-left: 0; }
+button.norden-faction-bar-stat.is-research { cursor: pointer; }
+button.norden-faction-bar-stat.is-research:hover { background: #d1ab551a; }
+button.norden-faction-bar-stat.is-research:focus-visible { outline: 2px solid #f4d987; outline-offset: -3px; }
+.norden-faction-bar-stat.is-research.is-idle { opacity: .55; }
+.norden-faction-bar-stat.is-research.is-unset .norden-faction-bar-stat-value { color: #f0c08a; }
+.norden-faction-bar-research { font-family: inherit; font-size: 14px; font-weight: 700; }
+.norden-faction-bar-research-progress { margin-left: 6px; color: #c8b490; font-family: Georgia, 'Times New Roman', serif; font-size: 12px; font-weight: 400; }

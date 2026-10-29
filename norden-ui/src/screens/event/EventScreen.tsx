@@ -12,7 +12,9 @@ export interface EventDetail {
 
 export interface EventScreenProps {
   /** The cut (the event's picture) shown above the message window, e.g. CUT_IMAGES.faction_destruction */
-  image: string
+  image?: string
+  /** A picture of the host in place of the cut (e.g. a technology's picture cut from its sheet); omitted: `image` */
+  picture?: ReactNode
   /** Shown on the plaque of the message window, e.g. 勢力滅亡 */
   title: ReactNode
   /** What happened, e.g. カルタ書院は滅亡しました */
@@ -30,7 +32,7 @@ export interface EventScreenProps {
  * A notice of an event over the whole host: the cut (the event's picture) and below it a message window with what
  * happened and its details. It takes the pointer and the keys until it is closed (Esc does not reach the screen under it)
  */
-export default function EventScreen({ image, title, message, details = [], children, onClose, closeLabel = '閉じる' }: EventScreenProps) {
+export default function EventScreen({ image, picture, title, message, details = [], children, onClose, closeLabel = '閉じる' }: EventScreenProps) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' && event.key !== 'Enter') return
@@ -45,9 +47,11 @@ export default function EventScreen({ image, title, message, details = [], child
   return (
     <div className="norden-event" role="dialog" aria-modal="true" aria-label={typeof title === 'string' ? title : 'イベント'}>
       <div className="norden-event-body">
-        <figure className="norden-event-cut">
-          <img src={image} alt="" />
-        </figure>
+        {(picture || image) && (
+          <figure className={`norden-event-cut ${picture ? 'is-picture' : ''}`}>
+            {picture ?? <img src={image} alt="" />}
+          </figure>
+        )}
         <ThinFrameWithTitle as="div" title={title} className="norden-event-window">
           <p className="norden-event-message">{message}</p>
           {details.length > 0 && (
