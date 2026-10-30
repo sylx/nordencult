@@ -243,6 +243,8 @@ export interface FactionResearchSummaryView {
   perTurn: readonly [number, number]
   /** The technology it researches; omitted: none */
   tech?: { name: string; progress: number; cost: number; turns?: number | null }
+  /** Every technology researched: nothing is left to research */
+  complete?: boolean
 }
 
 /** How a technology stands for the faction: researched, being researched, researchable, seen by name, or ??? */
@@ -263,7 +265,7 @@ export interface TechView {
   /** Research points it takes, and those put in so far */
   cost?: number
   progress?: number
-  /** Turns to complete it researching it from now on; null: never at the points a turn now */
+  /** Turns to complete it researching it from now on (0: the points 宙に浮いた complete it as it is chosen); null: never at the points a turn now */
   turns?: number | null
   /** Why it cannot be researched now, e.g. 前提の技術（火魔法）が要ります */
   unavailableReason?: string

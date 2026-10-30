@@ -43,7 +43,7 @@ describe('TechScreen', () => {
     expect(within(details).getByRole('heading', { name: '兵法' })).toBeInTheDocument()
     expect(within(details).getByText('あと8ターン', { exact: false })).toBeInTheDocument()
     expect(within(details).getByRole('button', { name: '兵法を研究する' })).toBeDisabled()
-    await userEvent.click(screen.getByRole('button', { name: '火薬（研究できる）' }))
+    await userEvent.click(screen.getByRole('button', { name: '火薬（研究可能）' }))
     await userEvent.click(within(details).getByRole('button', { name: '火薬を研究する' }))
     expect(onResearch).toHaveBeenCalledWith('gunpowder')
   })
@@ -63,8 +63,31 @@ describe('TechScreen', () => {
     const { rerender } = render(<TechScreen trees={TREES} carry={30} mustChoose onClose={() => {}} />)
     expect(screen.getByRole('status')).toHaveTextContent('研究先を選んでください（宙に浮いた研究ポイント 30）')
     expect(screen.queryByRole('button', { name: '閉じる' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '戻る' })).toBeDisabled()
     rerender(<TechScreen trees={TREES} onClose={() => {}} />)
     expect(screen.getByRole('button', { name: '閉じる' })).toBeInTheDocument()
+  })
+
+  it('says a technology the points 宙に浮いた complete is completed as soon as it is researched', async () => {
+    const trees: TechTreeView[] = [{ id: 'physical', label: '物理文明', techs: [tech('phys', [], { status: 'available', name: '物理文明', cost: 100, progress: 0, turns: 0 })] }]
+    render(<TechScreen trees={trees} carry={130} mustChoose onResearch={() => {}} />)
+    const details = screen.getByRole('region', { name: '技術の詳細' })
+    expect(details).toHaveTextContent('研究するとすぐに完了します')
+    expect(details).not.toHaveTextContent('あと0ターン')
+  })
+
+  it('says every technology is researched', () => {
+    const trees: TechTreeView[] = [{ id: 'physical', label: '物理文明', techs: [tech('phys', [], { status: 'researched', name: '物理文明', cost: 100 })] }]
+    render(<TechScreen trees={trees} onClose={() => {}} />)
+    expect(screen.getByText('すべての技術を研究し終えました')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '戻る' })).toBeEnabled()
+  })
+
+  it('goes back with 戻る at the bottom too', async () => {
+    const onClose = vi.fn()
+    render(<TechScreen trees={TREES} onClose={onClose} />)
+    await userEvent.click(screen.getByRole('button', { name: '戻る' }))
+    expect(onClose).toHaveBeenCalled()
   })
 })
 

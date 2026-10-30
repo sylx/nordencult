@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react'
 import { BuildingImage, ConstructionProgress } from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
 import SectionFrame from '../../components/parts/SectionFrame'
@@ -27,7 +27,7 @@ export interface TechScreenProps {
 }
 
 const STATUS_LABELS: Readonly<Record<TechStatusView, string>> = {
-  researched: '研究済み', researching: '研究中', available: '研究できる', visible: '前提が足りない', hidden: '未知の技術',
+  researched: '研究済み', researching: '研究中', available: '研究可能', visible: '前提が足りない', hidden: '未知の技術',
 }
 
 /** Sizes of the tree (px): a column and a row, and a node in them */
@@ -73,7 +73,6 @@ function TechTree({ tree, selectedId, onSelect }: { tree: TechTreeView; selected
   }
   return (
     <section className="norden-tech-tree" aria-label={tree.label}>
-      <h3 className="norden-tech-tree-title">{tree.label}</h3>
       <div className="norden-tech-tree-canvas" style={{ width, height }}>
         <svg className="norden-tech-tree-lines" width={width} height={height} aria-hidden="true">
           {tree.techs.flatMap(tech => tech.requires.filter(id => layout.places[id]).map(id => {
@@ -98,13 +97,46 @@ function TechTree({ tree, selectedId, onSelect }: { tree: TechTreeView; selected
   )
 }
 
+/**
+ * Pans a scrolling element by dragging it with the mouse (touch scrolls it already), from anywhere but a technology
+ */
+function useDragPan() {
+  const dragRef = useRef<{ pointerId: number; x: number; y: number; left: number; top: number } | null>(null)
+  const [dragging, setDragging] = useState(false)
+  const onPointerDown = (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType === 'touch' || event.button !== 0 || !event.isPrimary) return
+    if ((event.target as Element).closest('.norden-tech-node')) return
+    const element = event.currentTarget
+    // Leaves the scrollbars to themselves
+    const rect = element.getBoundingClientRect()
+    if (event.clientX - rect.left >= element.clientLeft + element.clientWidth
+      || event.clientY - rect.top >= element.clientTop + element.clientHeight) return
+    event.preventDefault()
+    element.setPointerCapture(event.pointerId)
+    dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, left: element.scrollLeft, top: element.scrollTop }
+    setDragging(true)
+  }
+  const onPointerMove = (event: PointerEvent<HTMLElement>) => {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+    event.currentTarget.scrollLeft = drag.left - (event.clientX - drag.x)
+    event.currentTarget.scrollTop = drag.top - (event.clientY - drag.y)
+  }
+  const onPointerEnd = (event: PointerEvent<HTMLElement>) => {
+    if (dragRef.current?.pointerId !== event.pointerId) return
+    dragRef.current = null
+    setDragging(false)
+  }
+  return { dragging, onPointerDown, onPointerMove, onPointerUp: onPointerEnd, onPointerCancel: onPointerEnd }
+}
+
 function TechDetails({ tech, onResearch }: { tech: TechView; onResearch?: (techId: string) => void }) {
   if (tech.status === 'hidden') {
     return (
       <div className="norden-tech-details">
         <span className="norden-tech-details-image is-hidden" aria-hidden="true">?</span>
         <h3 className="norden-tech-details-name">???</h3>
-        <p className="norden-window-section-empty">前提の技術を研究すると分かります</p>
+        <p className="norden-window-section-empty">不明（前提の技術が必要）</p>
       </div>
     )
   }
@@ -121,7 +153,10 @@ function TechDetails({ tech, onResearch }: { tech: TechView; onResearch?: (techI
         </ul>
       )}
       {tech.cost !== undefined && tech.status !== 'researched' && (
-        <ConstructionProgress invested={tech.progress ?? 0} required={tech.cost} turnsLeft={tech.turns} />
+        <ConstructionProgress invested={tech.progress ?? 0} required={tech.cost} turnsLeft={tech.turns === 0 ? undefined : tech.turns} />
+      )}
+      {tech.turns === 0 && tech.status !== 'researched' && (
+        <p className="norden-tech-details-instant">宙に浮いた研究ポイントで、研究するとすぐに完了します</p>
       )}
       {tech.status === 'researched' && tech.cost !== undefined && <p className="norden-tech-details-cost">研究ポイント {tech.cost.toLocaleString()}</p>}
       {tech.unavailableReason && <p className="norden-tech-details-reason" role="note">{tech.unavailableReason}</p>}
@@ -139,8 +174,9 @@ function TechDetails({ tech, onResearch }: { tech: TechView; onResearch?: (techI
  * The technology screen (研究＞技術): a full-screen window with the trees drawn left to right (a column per depth,
  * lines from the technologies required), each technology's picture and name (researched, researching with its progress,
  * researchable, seen by name, or ??? with its picture hidden), and on the right the details of the one chosen and
- * 研究する. At the top, the research points a turn and those 宙に浮いた; while they must go somewhere (mustChoose)
- * the window cannot be closed
+ * 研究する (the trees and the details 7:3, the trees scrolling on their own and panned by dragging them). Along the
+ * bottom, the research points a turn and those 宙に浮いた (or that every technology is researched) at the left and
+ * 戻る at the right; while they must go somewhere (mustChoose) the window cannot be closed
  */
 export default function TechScreen({ trees, perTurn, pointDetails, carry = 0, mustChoose = false, onResearch, onClose, children }: TechScreenProps) {
   const all = trees.flatMap(tree => tree.techs)
@@ -148,23 +184,16 @@ export default function TechScreen({ trees, perTurn, pointDetails, carry = 0, mu
     () => (all.find(t => t.status === 'researching') ?? all.find(t => t.status === 'available') ?? all[0])?.id,
   )
   const selected = all.find(tech => tech.id === selectedId)
+  const complete = all.length > 0 && all.every(tech => tech.status === 'researched')
+  const { dragging, ...pan } = useDragPan()
   return (
     <div className="norden-screen norden-tech">
       <WindowFrame className="norden-window-screen" title="技術" aria-label="技術" onClose={mustChoose ? undefined : onClose}>
         <div className="norden-tech-layout">
-          <header className="norden-tech-header">
-            <span className="norden-tech-points" title={pointDetails?.join('\n')}>
-              研究ポイント <b>{perTurn ? range(perTurn) : '+0'}</b>/ターン
-            </span>
-            {carry > 0 && <span className="norden-tech-carry">宙に浮いた研究ポイント <b>{carry.toLocaleString()}</b></span>}
-            {mustChoose && (
-              <strong className="norden-tech-must-choose" role="status">研究先を選んでください（宙に浮いた研究ポイント {carry.toLocaleString()}）</strong>
-            )}
-          </header>
           <div className="norden-window-screen-layout">
             <section className="norden-window-section norden-tech-trees" aria-label="技術ツリー">
               <SectionFrame />
-              <div className="norden-tech-trees-scroll">
+              <div className={`norden-tech-trees-scroll ${dragging ? 'is-dragging' : ''}`} {...pan}>
                 {trees.map(tree => <TechTree key={tree.id} tree={tree} selectedId={selectedId} onSelect={setSelectedId} />)}
               </div>
             </section>
@@ -175,6 +204,20 @@ export default function TechScreen({ trees, perTurn, pointDetails, carry = 0, mu
                 : <p className="norden-window-section-empty">技術を選んでください</p>}
             </section>
           </div>
+          <footer className="norden-tech-footer">
+            <span className="norden-tech-points" title={pointDetails?.join('\n')}>
+              研究ポイント <b>{perTurn ? range(perTurn) : '+0'}</b>/ターン
+            </span>
+            {carry > 0 && <span className="norden-tech-carry">宙に浮いた研究ポイント <b>{carry.toLocaleString()}</b></span>}
+            {complete && <span className="norden-tech-complete">すべての技術を研究し終えました</span>}
+            {mustChoose && (
+              <strong className="norden-tech-must-choose" role="status">研究先を選んでください（宙に浮いた研究ポイント {carry.toLocaleString()}）</strong>
+            )}
+            {onClose && (
+              <Button className="norden-tech-back" disabled={mustChoose} title={mustChoose ? '研究先を選んでください' : undefined}
+                onClick={onClose}>戻る</Button>
+            )}
+          </footer>
         </div>
       </WindowFrame>
       {children}

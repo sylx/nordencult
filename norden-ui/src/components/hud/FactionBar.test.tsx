@@ -30,6 +30,9 @@ describe('FactionBar', () => {
     rerender(<FactionBar cityName="フルーエン" summary={{ ...summary, research: { perTurn: [0, 0] } }} />)
     expect(screen.getByRole('group', { name: '研究' })).toHaveTextContent('研究先なし')
     expect(screen.getByRole('group', { name: '研究' })).toHaveClass('is-idle')
+    rerender(<FactionBar cityName="フルーエン" summary={{ ...summary, research: { perTurn: [12, 15], complete: true } }} />)
+    expect(screen.getByRole('group', { name: '研究' })).toHaveTextContent('全技術研究済み')
+    expect(screen.getByRole('group', { name: '研究' })).toHaveClass('is-idle')
   })
 
   it('shows the position and disables the steps without handlers', async () => {

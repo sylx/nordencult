@@ -36,15 +36,16 @@ const perTurnLabel = ([low, high]: readonly [number, number]) => (low === high ?
 
 /**
  * 研究: the points a turn and the technology researched with its progress and the turns left, or 研究先なし
- * (dimmed while no points come in either). A button when it opens the technology screen
+ * (dimmed while no points come in either), or 全技術研究済み (dimmed). A button when it opens the technology screen
  */
 function ResearchStat({ research, onOpen }: { research: NonNullable<FactionSummaryView['research']>; onOpen?: () => void }) {
-  const { perTurn, tech } = research
-  const idle = !tech && perTurn[1] <= 0
+  const { perTurn, tech, complete = false } = research
+  const idle = !tech && (complete || perTurn[1] <= 0)
+  const none = complete ? '全技術研究済み' : '研究先なし'
   const turns = tech?.turns
   const title = tech
     ? `${tech.name} ${tech.progress.toLocaleString()} / ${tech.cost.toLocaleString()}${turns === undefined ? '' : turns === null ? '（完了の見込みなし）' : `（あと${turns}ターン）`}`
-    : '研究先なし'
+    : none
   const content = <>
     <img className="norden-faction-bar-stat-icon" src={iconKnowledge} alt="" />
     <span className="norden-faction-bar-stat-label">研究 {perTurnLabel(perTurn)}/ターン</span>
@@ -54,7 +55,7 @@ function ResearchStat({ research, onOpen }: { research: NonNullable<FactionSumma
         <span className="norden-faction-bar-research-progress">
           {tech.progress.toLocaleString()}/{tech.cost.toLocaleString()}{typeof turns === 'number' && `・あと${turns}`}
         </span>
-      </> : '研究先なし'}
+      </> : none}
     </span>
   </>
   const className = `norden-faction-bar-stat is-research ${idle ? 'is-idle' : ''} ${!tech && !idle ? 'is-unset' : ''}`

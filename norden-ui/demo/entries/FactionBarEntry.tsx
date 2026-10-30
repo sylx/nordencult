@@ -6,11 +6,12 @@ import { Log, useLog, Workbench } from '../Workbench'
 
 const cities = ['フルーエン', 'ヴェステル', 'ミルデン']
 
-/** The 研究 stat: researching a technology, points but nothing researched, or nothing at all */
+/** The 研究 stat: researching a technology, points but nothing researched, nothing at all, or every technology researched */
 const RESEARCH = {
   researching: { perTurn: [12, 15], tech: { name: '兵法', progress: 40, cost: 200, turns: 12 } },
   unset: { perTurn: [12, 15] },
   idle: { perTurn: [0, 0] },
+  complete: { perTurn: [12, 15], complete: true },
 } as const
 
 export default function FactionBarEntry() {
@@ -88,6 +89,7 @@ export default function FactionBarEntry() {
         <option value="researching">研究中（兵法）</option>
         <option value="unset">研究先なし（研究ポイントあり）</option>
         <option value="idle">研究先なし（研究ポイントなし・目立たせない）</option>
+        <option value="complete">全技術研究済み（目立たせない）</option>
         <option value="none">出さない</option>
       </select>
       <dl className="demo-readout"><div><dt>移動量</dt><dd>{Math.round(position.x)}, {Math.round(position.y)} px</dd></div></dl>
