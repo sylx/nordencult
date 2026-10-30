@@ -138,6 +138,27 @@ describe('putting the points in', () => {
     expect(state.research.carta.progress.p1).toBe(95 + points - 100)
   })
 
+  it('completes the technology chosen as soon as the points 宙に浮いた reach its cost, the rest for the next', () => {
+    let state = withResearch(playing('carta'), 'carta', { carry: 130 })
+    expect(researchTurns(state, 'carta', 'phys')).toBe(0)
+    state = setResearch(state, 'carta', 'phys')
+    expect(state.research.carta).toEqual({ current: null, progress: { phys: 100 }, researched: ['phys'], carry: 30 })
+    expect(state.events).toContainEqual(expect.objectContaining({ kind: 'techCompleted', factionId: 'carta', techId: 'phys', turn: state.turn }))
+    expect(mustChooseResearch(state, 'carta')).toBe(true)
+    state = setResearch(state, 'carta', 'p1')
+    expect(state.research.carta).toMatchObject({ current: 'p1', progress: { p1: 30 }, carry: 0 })
+    expect(mustChooseResearch(state, 'carta')).toBe(false)
+  })
+
+  it('loses what is left over completing the last technology, asking for nothing more', () => {
+    let state = withResearch(playing('carta'), 'carta', { carry: 500, researched: ['phys', 'arc', 'p1', 'p2', 'a1'] })
+    state = setResearch(state, 'carta', 'both')
+    expect(state.research.carta).toMatchObject({ current: null, carry: 0 })
+    expect(state.research.carta.researched).toHaveLength(6)
+    expect(mustChooseResearch(state, 'carta')).toBe(false)
+    expect(endFactionTurnProblem(state)).toBeNull()
+  })
+
   it('keeps each technology\'s progress when the research changes', () => {
     let state = setResearch(withLibrary(), 'carta', 'phys')
     state = runEconomy(state, 2, low)
@@ -222,6 +243,13 @@ describe('the CPU factions', () => {
     expect(state.research.leonis.progress.arc).toBe(99 + Math.ceil(5 * (1 + BALANCE.RESEARCH_BRANCH_BONUS)) - 100)
     // Not told to the player
     expect(state.events).toEqual([])
+  })
+
+  it('go on choosing while the points 宙に浮いた complete what they choose', () => {
+    let state = withResearch(playing('carta'), 'leonis', { carry: 260 })
+    state = runEconomy(state, 2, low)
+    // 物理 (100), 魔法 (100) and 火 (50) completed by them, 兵法 chosen with the 10 left
+    expect(state.research.leonis).toMatchObject({ current: 'p1', researched: ['phys', 'arc', 'a1'], carry: 0, progress: { p1: 10 } })
   })
 
   it('end their turns with points 宙に浮いた (only the player chooses)', () => {

@@ -19,7 +19,7 @@ import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
   assignmentLabel, assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
-  engagementOf, FUNDED_ROLES, governorOf, officerTraining, researchOf, researchOutput, researchProblem, researchTurns, techStatus,
+  availableTechs, engagementOf, FUNDED_ROLES, governorOf, officerTraining, researchOf, researchOutput, researchProblem, researchTurns, techStatus,
   MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportKnightProblem, transportOrderOf, treasuryForecast,
   turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type CityLogStat,
   type GameEvent, type GameState, type Season,
@@ -150,6 +150,7 @@ export function researchSummary(game: GameState, factionId: string): FactionRese
     tech: tech && {
       name: tech.name, progress: research.progress[tech.id] ?? 0, cost: tech.cost, turns: researchTurns(game, factionId, tech.id),
     },
+    complete: availableTechs(game, factionId).length === 0,
   }
 }
 

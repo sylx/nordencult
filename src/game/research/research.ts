@@ -3,8 +3,8 @@ import { TECH_LIST, TECH_MAP, type TechBranch } from '../../data/techs'
 import { RESEARCH_BRANCH_BONUS } from '../economy/balance'
 import { cityOutput, researchedBonus, type BuildingBonus } from '../economy/output'
 import { GameRuleError } from '../errors'
-import { citiesOf } from '../queries'
-import type { CityId, FactionId, FactionResearch, GameState } from '../types'
+import { citiesOf, isPlayerFaction } from '../queries'
+import type { CityId, FactionId, FactionResearch, GameState, TechCompleted } from '../types'
 
 /**
  * A faction's research of the technology tree (研究＞技術): what it can research, the points it gets a turn
@@ -53,21 +53,35 @@ export function setResearchProblem(state: GameState, factionId: FactionId, techI
   return researchProblem(state, factionId, techId)
 }
 
-/** The research with `techId` chosen: the points 宙に浮いた (carry) go into it */
-function choose(research: FactionResearch, techId: string): FactionResearch {
-  const progress = research.carry > 0 ? { ...research.progress, [techId]: (research.progress[techId] ?? 0) + research.carry } : research.progress
-  return { ...research, current: techId, progress, carry: 0 }
+/**
+ * The research with `techId` chosen: the points 宙に浮いた (carry) go into it. Should they reach its cost it is completed
+ * there and then (none researched now), the surplus 宙に浮いた for the next, or lost with nothing left to research
+ */
+function choose(state: GameState, factionId: FactionId, research: FactionResearch, techId: string): FactionResearch {
+  if (research.carry <= 0) return { ...research, current: techId }
+  const invested = (research.progress[techId] ?? 0) + research.carry
+  const cost = TECH_MAP[techId]?.cost ?? Infinity
+  if (invested < cost) return { ...research, current: techId, progress: { ...research.progress, [techId]: invested }, carry: 0 }
+  const done: FactionResearch = {
+    current: null, progress: { ...research.progress, [techId]: cost }, researched: [...research.researched, techId], carry: invested - cost,
+  }
+  return availableTechs(withResearch(state, factionId, done), factionId).length > 0 ? done : { ...done, carry: 0 }
 }
 
 /**
  * The faction researches the technology from now on (in place of the one it researched, whose progress is kept),
- * the points 宙に浮いた going into it. Should they reach its cost it is completed by the next economy run, not now
+ * the points 宙に浮いた going into it. Should they reach its cost it is completed now (a faction the player plays is
+ * told: TechCompleted), and what is left over 宙に浮いた for the next it chooses
  */
 export function setResearch(state: GameState, factionId: FactionId, techId: string): GameState {
   const problem = setResearchProblem(state, factionId, techId)
   if (problem) throw new GameRuleError(problem)
   const research = researchOf(state, factionId)
-  return research.current === techId ? state : withResearch(state, factionId, choose(research, techId))
+  if (research.current === techId) return state
+  const next = withResearch(state, factionId, choose(state, factionId, research, techId))
+  if (!next.research[factionId].researched.includes(techId) || !isPlayerFaction(state, factionId)) return next
+  const event: TechCompleted = { id: `event-${state.serial}`, kind: 'techCompleted', turn: state.turn, factionId, techId }
+  return { ...next, events: [...next.events, event], serial: state.serial + 1 }
 }
 
 /**
@@ -86,11 +100,18 @@ export function chooseResearchForCpu(state: GameState, factionId: FactionId): st
   return available.reduce((best, t) => (t.cost < best.cost ? t : best)).id
 }
 
-/** A CPU faction researching nothing chooses something (chooseResearchForCpu), the points 宙に浮いた going into it */
+/**
+ * A CPU faction researching nothing chooses something (chooseResearchForCpu), the points 宙に浮いた going into it;
+ * those completing it, the next too
+ */
 export function withCpuResearch(research: FactionResearch, state: GameState, factionId: FactionId): FactionResearch {
-  if (research.current !== null) return research
-  const techId = chooseResearchForCpu(withResearch(state, factionId, research), factionId)
-  return techId ? choose(research, techId) : research
+  let next = research
+  while (next.current === null) {
+    const techId = chooseResearchForCpu(withResearch(state, factionId, next), factionId)
+    if (!techId) break
+    next = choose(state, factionId, next, techId)
+  }
+  return next
 }
 
 /** The research points each branch of a city's research buildings gives a turn, before the branch bonus */
@@ -151,13 +172,15 @@ export function researchLeft(state: GameState, factionId: FactionId, techId: str
 
 /**
  * Economy runs until a technology is completed, researching it from now on at what the faction gets a turn (the
- * middle of researchOutput): 0 when researched, 1 at the next run when nothing is left to put in, null when it gets no points
+ * middle of researchOutput): 0 when researched or when the points 宙に浮いた complete it as it is chosen, 1 at the
+ * next run when nothing is left to put in, null when it gets no points
  */
 export function researchTurns(state: GameState, factionId: FactionId, techId: string | null = researchOf(state, factionId).current): number | null {
   if (!techId || !TECH_MAP[techId]) return null
-  if (researchOf(state, factionId).researched.includes(techId)) return 0
+  const research = researchOf(state, factionId)
+  if (research.researched.includes(techId)) return 0
   const left = researchLeft(state, factionId, techId)
-  if (left <= 0) return 1
+  if (left <= 0) return research.current !== techId && research.carry > 0 ? 0 : 1
   const [least, most] = researchOutput(state, factionId, techId).total
   const perTurn = (least + most) / 2
   return perTurn > 0 ? Math.max(1, Math.ceil(left / perTurn)) : null

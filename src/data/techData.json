@@ -321,11 +321,7 @@
         "kind": "productionPct",
         "value": 5
       }
-    ],
-    "sprite": {
-      "x": 256,
-      "y": 1152
-    }
+    ]
   },
   {
     "id": "lightning_magic",
@@ -341,11 +337,7 @@
         "kind": "etc",
         "value": "チェインライトニング"
       }
-    ],
-    "sprite": {
-      "x": 512,
-      "y": 1152
-    }
+    ]
   },
   {
     "id": "fire_magic",
@@ -361,11 +353,7 @@
         "kind": "etc",
         "value": "フレイムランス"
       }
-    ],
-    "sprite": {
-      "x": 768,
-      "y": 1152
-    }
+    ]
   },
   {
     "id": "dragon",
@@ -381,11 +369,7 @@
         "kind": "etc",
         "value": "ドラゴンの卵の修復"
       }
-    ],
-    "sprite": {
-      "x": 1024,
-      "y": 1152
-    }
+    ]
   },
   {
     "id": "artificial_dragon",
@@ -401,11 +385,7 @@
         "kind": "etc",
         "value": "ドラゴンを遺物なしで生産できる"
       }
-    ],
-    "sprite": {
-      "x": 0,
-      "y": 1536
-    }
+    ]
   },
   {
     "id": "water_magic",
@@ -421,11 +401,7 @@
         "kind": "etc",
         "value": "フロストノヴァ"
       }
-    ],
-    "sprite": {
-      "x": 256,
-      "y": 1536
-    }
+    ]
   },
   {
     "id": "earth_magic",
@@ -441,11 +417,7 @@
         "kind": "etc",
         "value": "アーススパイク"
       }
-    ],
-    "sprite": {
-      "x": 512,
-      "y": 1536
-    }
+    ]
   },
   {
     "id": "golem",
@@ -461,11 +433,7 @@
         "kind": "etc",
         "value": "ゴーレムの残骸の修復"
       }
-    ],
-    "sprite": {
-      "x": 768,
-      "y": 1536
-    }
+    ]
   },
   {
     "id": "artificial_golem",
@@ -481,11 +449,7 @@
         "kind": "etc",
         "value": "ゴーレムを遺物なしで生産できる"
       }
-    ],
-    "sprite": {
-      "x": 1024,
-      "y": 1536
-    }
+    ]
   },
   {
     "id": "archmage",
@@ -499,11 +463,7 @@
       "water_magic",
       "earth_magic"
     ],
-    "effects": [],
-    "sprite": {
-      "x": 0,
-      "y": 1920
-    }
+    "effects": []
   },
   {
     "id": "celestial_magic",
@@ -519,11 +479,7 @@
         "kind": "etc",
         "value": "メテオフォール"
       }
-    ],
-    "sprite": {
-      "x": 256,
-      "y": 1920
-    }
+    ]
   },
   {
     "id": "behemoth",
@@ -539,11 +495,7 @@
         "kind": "etc",
         "value": "ベヒーモスの残骸の修復"
       }
-    ],
-    "sprite": {
-      "x": 512,
-      "y": 1920
-    }
+    ]
   },
   {
     "id": "artificial_behemoth",
@@ -559,10 +511,6 @@
         "kind": "etc",
         "value": "ベヒーモスを遺物なしで生産できる"
       }
-    ],
-    "sprite": {
-      "x": 768,
-      "y": 1920
-    }
+    ]
   }
 ]
