@@ -21,7 +21,7 @@ describe('the technologies\' data', () => {
     const depths = techDepths()
     expect(depths.physical_civ).toBe(0)
     expect(depths.tactics).toBe(1)
-    expect(depths.gunship).toBe(Math.max(depths.flight, depths.rifle_production, depths.field_gun_production) + 1)
+    expect(depths.gunship).toBe(Math.max(depths.flight, depths.rifle_production) + 1)
   })
 
   it('has the pictures inside the sprite sheet, and the buildings need technologies there are', () => {
