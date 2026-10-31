@@ -175,7 +175,7 @@ export default function StrategyScene() {
     }
   }, [ready, announcing, eventId, eventCutIn, eventCut, cutInQueue])
 
-  // An event's sound, after the phase's cut-in and once for each event
+  // An event's sound, with its notice (after the phase's cut-in) and once for each event
   const eventSound = told?.sound
   const sounded = useRef<string | null>(null)
   useEffect(() => {
@@ -621,7 +621,7 @@ export default function StrategyScene() {
           onConfirm={() => update((s) => (s.march?.decision === decision.id ? decideInvasion(s, decision.id, true) : s))}
           onCancel={() => update((s) => (s.march?.decision === decision.id ? decideInvasion(s, decision.id, false) : s))} />
       )}
-      {event && told && (eventCut === event.id || !told.cutIn) && (
+      {event && told && ready && !announcing && (eventCut === event.id || !told.cutIn) && (
         <EventScreen image={told.cut ? CUT_IMAGES[told.cut] : undefined} picture={told.picture && <BuildingImage building={told.picture} />}
           title={told.title} message={told.message} details={told.details}
           onClose={() => update((s) => dismissEvent(s, event.id))}>
