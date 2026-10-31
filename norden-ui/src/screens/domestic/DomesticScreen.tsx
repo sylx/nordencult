@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { BuildingImage, ConstructionProgress } from '../../components/parts/BuildingSlots'
+import { BuildingImage, ConstructionProgress, isRelicWork, workBusyReason, workLabel } from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
 import SectionFrame from '../../components/parts/SectionFrame'
 import KnightCard from '../../components/parts/KnightCard'
@@ -7,7 +7,7 @@ import ConfirmDialog from '../../components/window/ConfirmDialog'
 import WindowFrame from '../../components/window/WindowFrame'
 import type {
   BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole,
-  DomesticOfficersView, KnightView, PopulationGrowthView,
+  DomesticOfficersView, KnightView, PopulationGrowthView, RelicOptionView,
 } from '../types'
 import DomesticOfficers, { ABILITY_LABELS, KnightFace, OFFICER_ROLES, OFFICERS_PER_ROLE, knightAbility, roleAptitude, weightsLabel } from './DomesticOfficers'
 import DomesticStatus from './DomesticStatus'
@@ -22,6 +22,8 @@ export interface DomesticScreenProps {
    * the others as upgrades of the building they replace. `locked` ones are not shown
    */
   buildOptions?: readonly BuildOptionView[]
+  /** Relics the city could repair or produce: listed with the buildings to add, but needing no slot */
+  relicOptions?: readonly RelicOptionView[]
   /** Faction treasury gold (shown alongside the city's population and stockpiled supplies) */
   gold?: number
   /** The population's growth next turn and the turns until the next tier (a forecast), shown under the population */
@@ -30,6 +32,8 @@ export interface DomesticScreenProps {
   stats?: readonly CityStatView[]
   /** Start constructing a building in the active empty slot, or an upgrade over the building it replaces */
   onBuild?: (buildingId: string) => void
+  /** Start repairing or producing a relic */
+  onRelicWork?: (option: RelicOptionView) => void
   /** Demolish a standing building (invoked after the confirmation dialog is accepted) */
   onDemolish?: (buildingId: string) => void
   /** Cancel the current construction (returns half of invested supplies to the city's stored supplies) */
@@ -72,16 +76,18 @@ const panelKey = (panel: SidePanel) =>
 /**
  * Domestic screen: full-screen window with the city's lord (face, and a button to replace them) and its state
  * (stats with their boosts, population, supplies, gold) at the top-left, its building slots (their pictures shown whole)
- * below, its domestic officers below them, and a panel on the right (350px) of the buildings to add or upgrade to,
- * or of the knights to pick as lord or officers; along the bottom, the button back.
+ * below, its domestic officers below them, and a panel on the right (350px) of the buildings to add or upgrade to
+ * and the relics to repair or produce, or of the knights to pick as lord or officers; along the bottom, the button back.
  */
 export default function DomesticScreen({
   city,
   buildOptions = [],
+  relicOptions = [],
   gold,
   populationGrowth,
   stats = city.stats ?? [],
   onBuild,
+  onRelicWork,
   onDemolish,
   onCancelConstruction,
   onPauseConstruction,
@@ -106,7 +112,8 @@ export default function DomesticScreen({
   const upgradingId = construction?.building.upgradeFrom && built.some(building => building.id === construction.building.upgradeFrom)
     ? construction.building.upgradeFrom
     : undefined
-  const occupiedCount = built.length + (construction && !upgradingId ? 1 : 0)
+  const inSlot = construction && !upgradingId && !isRelicWork(construction)
+  const occupiedCount = built.length + (inSlot ? 1 : 0)
   const emptyCount = Math.max(0, slots - occupiedCount)
   const canAdd = !construction && emptyCount > 0
   const cancelRefund = construction ? Math.floor(construction.invested / 2) : 0
@@ -116,10 +123,13 @@ export default function DomesticScreen({
   const addOptions = visibleOptions.filter(option => !option.upgradeFrom)
   const upgradesOf = (buildingId: string) => visibleOptions.filter(option => option.upgradeFrom === buildingId)
 
+  const visibleRelics = relicOptions.filter(option => !option.locked)
   const upgradeBase = panel?.kind === 'upgrade' && built.some(building => building.id === panel.building.id) ? panel.building : null
-  const showBuildPanel = panel?.kind === 'add' ? canAdd : panel?.kind === 'upgrade' && Boolean(upgradeBase) && !construction
-  const panelOptions = upgradeBase ? upgradesOf(upgradeBase.id) : addOptions
-  const panelTitle = upgradeBase ? `${upgradeBase.name}のアップグレード` : '追加できる施設'
+  // A relic takes no slot: its list opens with the slots full too, without the buildings
+  const showBuildPanel = panel?.kind === 'add' ? canAdd || (!construction && visibleRelics.length > 0) : panel?.kind === 'upgrade' && Boolean(upgradeBase) && !construction
+  const panelOptions = upgradeBase ? upgradesOf(upgradeBase.id) : canAdd ? addOptions : []
+  const panelRelics = upgradeBase ? [] : visibleRelics
+  const panelTitle = upgradeBase ? `${upgradeBase.name}のアップグレード` : canAdd ? '追加できる施設' : '遺物の修復・生産'
 
   const togglePanel = (next: SidePanel) => setPanel(current => (current && panelKey(current) === panelKey(next) ? null : next))
 
@@ -157,7 +167,7 @@ export default function DomesticScreen({
   const renderConstruction = (current: ConstructionView, upgradedFrom?: BuildingView) => (
     <div className={`norden-domestic-slot is-building ${current.paused ? 'is-paused' : ''}`}>
       <span className="norden-domestic-slot-badge">
-        {current.paused ? '中断中' : upgradedFrom ? 'アップグレード中' : '建設中'}
+        {current.paused ? '中断中' : upgradedFrom ? 'アップグレード中' : `${workLabel(current)}中`}
       </span>
       <BuildingImage building={current.building} className="norden-domestic-slot-image" />
       <div className="norden-domestic-slot-body">
@@ -177,15 +187,15 @@ export default function DomesticScreen({
       <div className="norden-domestic-slot-actions">
         <Button
           size="small"
-          aria-label={`${current.building.name}の建設を${current.paused ? '再開' : '中断'}`}
+          aria-label={`${current.building.name}の${workLabel(current)}を${current.paused ? '再開' : '中断'}`}
           onClick={() => onPauseConstruction?.(!current.paused)}
         >
           {current.paused ? '再開' : '中断'}
         </Button>
         <Button
           size="small"
-          aria-label={`${current.building.name}の建設を取り消す`}
-          title={`取り消すと費やした物資の半分（${cancelRefund.toLocaleString()}）が備蓄物資に戻ります`}
+          aria-label={`${current.building.name}の${workLabel(current)}を取り消す`}
+          title={`取り消すと費やした物資の半分（${cancelRefund.toLocaleString()}）が備蓄物資に戻ります${current.kind === 'relicRepair' ? '。遺物は壊れたままボックスに戻ります' : ''}`}
           onClick={() => onCancelConstruction?.()}
         >
           取消
@@ -258,6 +268,18 @@ export default function DomesticScreen({
                     施設
                     <span className="norden-window-section-count">{built.length} / {slots}</span>
                   </h2>
+                  {visibleRelics.length > 0 && (
+                    <Button
+                      size="small"
+                      variant="primary"
+                      aria-pressed={panel?.kind === 'add'}
+                      disabled={Boolean(construction)}
+                      title={construction ? workBusyReason(construction) : '修復・生産は施設の枠を使いません'}
+                      onClick={() => togglePanel({ kind: 'add' })}
+                    >
+                      遺物の修復・生産
+                    </Button>
+                  )}
                 </header>
 
                 <ul className="norden-domestic-slots" aria-label={`施設スロット ${built.length} / ${slots}`}>
@@ -289,7 +311,7 @@ export default function DomesticScreen({
                                 aria-label={`${building.name}をアップグレード`}
                                 aria-pressed={isUpgradeSelected}
                                 disabled={Boolean(construction)}
-                                title={construction ? 'ほかの施設を建設中です' : `${upgrades.map(option => option.name).join('・')}にアップグレードできます`}
+                                title={construction ? workBusyReason(construction) : `${upgrades.map(option => option.name).join('・')}にアップグレードできます`}
                                 onClick={() => togglePanel({ kind: 'upgrade', building })}
                               >
                                 アップグレード
@@ -310,7 +332,7 @@ export default function DomesticScreen({
                     )
                   })}
 
-                  {construction && !upgradingId && built.length < slots && (
+                  {construction && !upgradingId && (!inSlot || built.length < slots) && (
                     <li key={`construction-${construction.building.id}`} className="norden-domestic-slot-item">
                       {renderConstruction(construction)}
                     </li>
@@ -467,11 +489,14 @@ export default function DomesticScreen({
               <aside className="norden-window-section norden-domestic-build-panel" aria-label={panelTitle}>
                 <SectionFrame />
                 {renderPanelHeader(panelTitle, '施設一覧を閉じる')}
-                {panelOptions.length === 0 ? (
+                {panelOptions.length + panelRelics.length === 0 ? (
                   <p className="norden-window-section-empty">{upgradeBase ? 'アップグレード先はありません。' : '追加できる施設はありません。'}</p>
                 ) : (
                   <ul className="norden-domestic-build-list norden-window-scroll">
-                    {panelOptions.map(option => (
+                    {[...panelOptions, ...panelRelics].map(option => {
+                      const relic = 'kind' in option ? option as RelicOptionView : null
+                      const action = relic ? (relic.kind === 'relicRepair' ? '修復' : '生産') : upgradeBase ? 'アップグレード' : '建設'
+                      return (
                       <li
                         key={option.id}
                         className={`norden-domestic-build-item ${option.unavailableReason ? 'is-unavailable' : ''}`}
@@ -505,18 +530,20 @@ export default function DomesticScreen({
                             variant="primary"
                             disabled={Boolean(option.unavailableReason)}
                             title={option.unavailableReason}
-                            aria-label={upgradeBase ? `${option.name}にアップグレード` : `${option.name}を建設`}
+                            aria-label={upgradeBase ? `${option.name}にアップグレード` : `${option.name}を${action}`}
                             data-sound="develop"
                             onClick={() => {
                               setPanel(null)
-                              onBuild?.(option.id)
+                              if (relic) onRelicWork?.(relic)
+                              else onBuild?.(option.id)
                             }}
                           >
-                            {upgradeBase ? 'アップグレード' : '建設'}
+                            {action}
                           </Button>
                         </div>
                       </li>
-                    ))}
+                      )
+                    })}
                   </ul>
                 )}
               </aside>

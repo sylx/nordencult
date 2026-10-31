@@ -72,7 +72,7 @@ export type { ScreenHostProps, ScreenRenderers } from './navigation/ScreenHost'
 
 // Screens
 export type {
-  AssignmentRoleView, BuildOptionView, BuildingView, CityAssignmentsView, CityBuildingsView, CityHistoryView, CityLogLineView, CityStatView, CityView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, FactionResearchSummaryView, FactionSummaryView, FactionView, KnightAbilitiesView, KnightView, PopulationGrowthView, SpriteImage, StatBoostView, TechStatusView, TechView, TurnView, UnitTypeView,
+  AssignmentRoleView, BuildOptionView, BuildingView, CityAssignmentsView, CityBuildingsView, CityHistoryView, CityLogLineView, CityStatView, CityView, ConstructionKindView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, FactionResearchSummaryView, FactionSummaryView, FactionView, KnightAbilitiesView, KnightView, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicRarityView, RelicStatusView, RelicView, SpriteImage, StatBoostView, TechStatusView, TechView, TurnView, UnitTypeView,
 } from './screens/types'
 export { default as CityCommandScreen, turnText } from './screens/cityCommand/CityCommandScreen'
 export type { CityCommandScreenProps, CommandState } from './screens/cityCommand/CityCommandScreen'
@@ -94,6 +94,8 @@ export { default as TransportScreen } from './screens/transport/TransportScreen'
 export type { TransportDraft, TransportScreenProps } from './screens/transport/TransportScreen'
 export { default as TechScreen } from './screens/tech/TechScreen'
 export type { TechScreenProps } from './screens/tech/TechScreen'
+export { default as RelicScreen } from './screens/relic/RelicScreen'
+export type { RelicScreenProps } from './screens/relic/RelicScreen'
 export { layoutTechs } from './screens/tech/techLayout'
 export type { TechLayout, TechPlace } from './screens/tech/techLayout'
 export { default as EventScreen } from './screens/event/EventScreen'

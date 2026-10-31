@@ -33,6 +33,16 @@ export function BuildingImage({ building, className = '' }: { building: Building
   )
 }
 
+/** A relic repaired or produced: in the place of a building, but in no slot */
+export const isRelicWork = (construction: ConstructionView) => construction.kind === 'relicRepair' || construction.kind === 'relicProduction'
+
+/** What the work is called: 建設, 修復 or 生産 */
+export const workLabel = ({ kind }: ConstructionView) => (kind === 'relicRepair' ? '修復' : kind === 'relicProduction' ? '生産' : '建設')
+
+/** Why nothing else can be started in the city */
+export const workBusyReason = (construction: ConstructionView) =>
+  (isRelicWork(construction) ? `ほかの遺物を${workLabel(construction)}中です` : 'ほかの施設を建設中です')
+
 /** Progress of a construction: a bar of the supplies put in, and the turns left */
 export function ConstructionProgress({ invested, required, turnsLeft }: { invested: number; required: number; turnsLeft?: number | null }) {
   const ratio = required > 0 ? Math.min(1, invested / required) : 0
@@ -53,14 +63,16 @@ export function ConstructionProgress({ invested, required, turnsLeft }: { invest
 /**
  * A city's building slots in order: the buildings standing, the one under
  * construction (with its progress) and the empty slots. An upgrade under construction
- * is built over the building it upgrades, in its slot (taking no slot of its own)
+ * is built over the building it upgrades, in its slot (taking no slot of its own);
+ * a relic repaired or produced takes none either, drawn after the buildings
  */
 export default function BuildingSlots({ buildings, onSelect, selectedId, className = '' }: BuildingSlotsProps) {
   const { slots, built, construction } = buildings
   const upgradingId = construction?.building.upgradeFrom && built.some(building => building.id === construction.building.upgradeFrom)
     ? construction.building.upgradeFrom
     : undefined
-  const empty = Math.max(0, slots - built.length - (construction && !upgradingId ? 1 : 0))
+  const inSlot = construction && !upgradingId && !isRelicWork(construction)
+  const empty = Math.max(0, slots - built.length - (inSlot ? 1 : 0))
   const tile = (building: BuildingView, body: ReactNode, extra = '') => {
     const classes = `norden-building-slot ${extra} ${selectedId === building.id ? 'is-selected' : ''}`
     return onSelect
@@ -71,7 +83,7 @@ export default function BuildingSlots({ buildings, onSelect, selectedId, classNa
     tile(current.building, <>
       <BuildingImage building={current.building} />
       <span className="norden-building-slot-name">{current.building.name}</span>
-      <span className="norden-building-slot-badge">{upgradedFrom ? 'アップグレード中' : '建設中'}</span>
+      <span className="norden-building-slot-badge">{upgradedFrom ? 'アップグレード中' : `${workLabel(current)}中`}</span>
       <ConstructionProgress invested={current.invested} required={current.required} turnsLeft={current.turnsLeft} />
     </>, 'is-building')
   return (

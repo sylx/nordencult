@@ -1,13 +1,28 @@
 import { useState } from 'react'
 import { DomesticScreen } from '../../src'
 import type {
-  BuildingView, CityView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, KnightView,
+  BuildingView, CityView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, KnightView, RelicOptionView,
 } from '../../src'
 import {
   BUILDINGS, CITIES, CITY_MAP, buildOptionsFor, cityView, domesticStatsFor, knightsIn, lordView, playerCities, populationGrowthFor, withCompleted,
 } from '../mock/data'
 import MockMap from '../mock/MockMap'
+import { MOCK_RELICS, repositoryRelics } from '../repositoryRelics'
 import { Log, useLog, Workbench } from '../Workbench'
+
+const RELICS = repositoryRelics ?? MOCK_RELICS
+
+/** A broken relic of the box to repair, and a relic the faction has the technology to produce, in the place of a building */
+const RELIC_OPTIONS: readonly RelicOptionView[] = [
+  ...RELICS.filter(relic => relic.repair).slice(0, 1).map((relic): RelicOptionView => ({
+    id: `box-${relic.id}`, kind: 'relicRepair', name: relic.brokenName ?? relic.name, image: relic.brokenImage, description: relic.description,
+    supplies: relic.repair!.supplies, gold: relic.repair!.gold,
+  })),
+  ...RELICS.filter(relic => relic.production).slice(0, 1).map((relic): RelicOptionView => ({
+    id: relic.id, kind: 'relicProduction', name: relic.name, image: relic.image, description: relic.description,
+    supplies: relic.production!.supplies, gold: relic.production!.gold,
+  })),
+]
 
 interface CityDomesticState {
   slots: number
@@ -166,6 +181,21 @@ export default function DomesticEntry() {
     add(`${city.name}: 「${spec.name}」の建設を開始（金 -${spec.gold}）`)
   }
 
+  const handleRelicWork = (option: RelicOptionView) => {
+    setGold(prev => Math.max(0, prev - option.gold))
+    updateCity({
+      construction: {
+        kind: option.kind,
+        building: option,
+        invested: 0,
+        required: option.supplies,
+        turnsLeft: turnsFor(0, option.supplies),
+        paused: false,
+      },
+    })
+    add(`${city.name}: 「${option.name}」の${option.kind === 'relicRepair' ? '修復' : '生産'}を開始（金 -${option.gold}）`)
+  }
+
   const handleDemolish = (buildingId: string) => {
     const target = current.built.find(item => item.id === buildingId)
     updateCity({
@@ -229,7 +259,9 @@ export default function DomesticEntry() {
       if (nextInvested >= current.construction.required) {
         const surplus = nextInvested - current.construction.required
         const finished = current.construction.building
-        Object.assign(patch, { built: withCompleted(current.built, finished), construction: null, supplies: current.supplies + surplus })
+        // A relic goes into the box, not into the slots
+        const built = current.construction.kind && current.construction.kind !== 'building' ? current.built : withCompleted(current.built, finished)
+        Object.assign(patch, { built, construction: null, supplies: current.supplies + surplus })
         lines.push(`「${finished.name}」が完成！（余剰物資 +${surplus}）`)
       } else {
         patch.construction = { ...current.construction, invested: nextInvested }
@@ -275,10 +307,16 @@ export default function DomesticEntry() {
         key={cityId}
         city={city}
         buildOptions={options}
+        relicOptions={RELIC_OPTIONS.map(option => ({
+          ...option,
+          turns: turnsFor(0, option.supplies),
+          unavailableReason: current.construction ? '建設の枠が使われています' : gold < option.gold ? '金が足りません' : undefined,
+        }))}
         gold={gold}
         populationGrowth={populationGrowthFor(city)}
         stats={domesticStatsFor(city)}
         onBuild={handleBuild}
+        onRelicWork={handleRelicWork}
         onDemolish={handleDemolish}
         onCancelConstruction={handleCancelConstruction}
         onPauseConstruction={handlePauseConstruction}

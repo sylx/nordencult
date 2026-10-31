@@ -1,0 +1,64 @@
+/* The window split into the status along the top, the lists and the details (5:4), and the button back along the bottom */
+.norden-relic-layout { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; gap: 5px; height: 100%; min-height: 0; color: #f3ead7; }
+.norden-relic .norden-window-screen-layout { gap: 5px; }
+.norden-relic .norden-window-screen-layout > .norden-window-section { min-width: 0; min-height: 0; }
+
+.norden-relic-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 24px; padding: 2px 4px 6px; color: #cbb282; font-size: 14px; }
+.norden-relic-status b { color: #fff0bc; }
+.norden-relic-status .norden-construction-progress { flex: 0 1 280px; color: #f3ead7; }
+.norden-relic-gold { margin-left: auto; }
+.norden-relic-gold b { font-family: Georgia, 'Times New Roman', serif; font-size: 18px; font-variant-numeric: tabular-nums; }
+
+.norden-relic-lists { flex: 5 1 0; }
+.norden-relic-lists-scroll { display: grid; align-content: start; gap: 8px; flex: 1 1 auto; }
+.norden-relic-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+
+.norden-relic-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 64px;
+  padding: 4px 8px 4px 4px;
+  color: inherit;
+  text-align: left;
+  background: #2a2119;
+  border: 1px solid #6e5838;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+}
+.norden-relic-row:hover { border-color: #d6b268; }
+.norden-relic-row:focus-visible { outline: 2px solid #f4d987; outline-offset: 2px; }
+.norden-relic-row.is-selected { border-color: #f4d987; box-shadow: 0 0 0 2px #f4d98766; }
+.norden-relic-row.is-repaired { background: #3b3220; border-color: #b8944f; }
+.norden-relic-row.is-repairing,
+.norden-relic-row.is-producing,
+.norden-relic-row.is-papalRepair { background: #263424; border-color: #8fc06a; }
+.norden-relic-row.is-production { background: #2f271d; border-style: dashed; }
+.norden-relic-row-image.norden-building-image { flex: none; width: 38px; height: 56px; border-radius: 3px; }
+.norden-relic-row-body { display: grid; flex: 1 1 auto; gap: 3px; min-width: 0; }
+.norden-relic-row-name { overflow: hidden; font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.norden-relic-row-status { overflow: hidden; color: #cbb282; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+
+.norden-relic-rarity { flex: none; min-width: 1.5em; color: #1c1712; background: #cbb282; border-radius: 2px; font-size: 12px; font-weight: 700; line-height: 1.5; text-align: center; }
+.norden-relic-rarity.is-S { background: #f0a08a; }
+.norden-relic-rarity.is-A { background: #d6b0f0; }
+.norden-relic-rarity.is-B { background: #9cc8e6; }
+
+.norden-relic-side { flex: 4 1 0; max-width: 420px; }
+.norden-relic-details { flex: 1 1 auto; align-content: start; display: grid; justify-items: start; gap: 10px; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #94703b #211b14; }
+.norden-relic-details-image.norden-building-image { width: 160px; max-width: 100%; height: auto; border-radius: 4px; }
+.norden-relic-details-name { display: flex; align-items: center; gap: 8px; margin: 0; color: #f6e7c5; font-size: 20px; }
+.norden-relic-details-use { margin: 0; color: #cbb282; font-size: 13px; }
+.norden-relic-details-description { margin: 0; color: #e6d9bd; font-size: 14px; line-height: 1.6; }
+.norden-relic-details-status { padding: 1px 8px; color: #1c1712; background: #cbb282; border-radius: 2px; font-size: 12px; }
+.norden-relic-details-status.is-repairing,
+.norden-relic-details-status.is-producing,
+.norden-relic-details-status.is-papalRepair { background: #9fd07a; }
+.norden-relic-details-note { margin: 0; color: #fff0bc; font-size: 14px; }
+.norden-relic-action { display: grid; justify-items: start; gap: 2px; }
+.norden-relic-action-reason { margin: 0; color: #f0a08a; font-size: 13px; }
+
+.norden-relic-footer { display: flex; justify-content: flex-end; padding: 10px 4px 4px; }

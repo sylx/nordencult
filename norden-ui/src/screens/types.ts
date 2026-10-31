@@ -71,9 +71,15 @@ export interface BuildingView {
   upgradeFrom?: string
 }
 
-/** The building under construction in a city */
+/** What a city's 生産 goes into: a building, or a relic repaired or produced (which takes no building slot) */
+export type ConstructionKindView = 'building' | 'relicRepair' | 'relicProduction'
+
+/** What a city builds, repairs or produces */
 export interface ConstructionView {
+  /** The building, or the relic as a building to draw */
   building: BuildingView
+  /** Omitted: a building */
+  kind?: ConstructionKindView
   /** Supplies put in so far and needed in all */
   invested: number
   required: number
@@ -270,6 +276,52 @@ export interface TechView {
   /** Turns to complete it researching it from now on (0: the points 宙に浮いた complete it as it is chosen); null: never at the points a turn now */
   turns?: number | null
   /** Why it cannot be researched now, e.g. 前提の技術（火魔法）が要ります */
+  unavailableReason?: string
+}
+
+/** A relic the city could repair or produce (the 内政 screen lists them with the buildings); `id` is that of the host's relic to repair, or the relic's to produce */
+export interface RelicOptionView extends BuildOptionView {
+  kind: 'relicRepair' | 'relicProduction'
+}
+
+export type RelicRarityView = 'S' | 'A' | 'B' | 'C'
+
+/** A relic of the box: broken, being repaired in a city, being repaired by 法王府 or repaired; or being produced in a city */
+export type RelicStatusView = 'broken' | 'repairing' | 'producing' | 'papalRepair' | 'repaired'
+
+export interface RelicView {
+  /** Passed back to the screen's callbacks (a relic being repaired or produced has no actions) */
+  id: string
+  status: RelicStatusView
+  name: string
+  /** Its picture on the game's relic sheet, broken or repaired */
+  image?: SpriteImage
+  rarity: RelicRarityView
+  /** What it is for repaired, e.g. 施設 */
+  useLabel: string
+  description?: string
+  /** repairing, producing: the city doing it */
+  cityName?: string
+  /** Dismantling it: the research points it gives */
+  dismantle?: { points: number; unavailableReason?: string }
+  /** Repairing it in the city the screen is opened on */
+  repair?: { supplies: number; gold: number; turns?: number | null; unavailableReason?: string }
+  /** Asking 法王府 to repair it */
+  papalRepair?: { gold: number; unavailableReason?: string }
+}
+
+/** A relic the faction has the technology to produce */
+export interface RelicProductionView {
+  /** The relic's id */
+  id: string
+  name: string
+  image?: SpriteImage
+  rarity: RelicRarityView
+  useLabel: string
+  description?: string
+  supplies: number
+  gold: number
+  turns?: number | null
   unavailableReason?: string
 }
 

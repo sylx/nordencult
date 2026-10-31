@@ -162,6 +162,61 @@ describe('DomesticScreen', () => {
     expect(screen.getAllByLabelText('空きスロット')).toHaveLength(1)
   })
 
+  it('lists the relics with the buildings, and on their own with the slots full: a relic takes no slot', async () => {
+    const onRelicWork = vi.fn()
+    const repair = { id: 'item-1', kind: 'relicRepair', name: '壊れたバリスタ', supplies: 500, gold: 150, turns: 5 } as const
+    const city = (built: readonly string[]) => ({
+      id: 'P012', name: 'フルーエン', buildings: { slots: 2, built: built.map(id => ({ id, name: id })) },
+    })
+    const { rerender } = render(
+      <DomesticScreen city={city(['市場'])} buildOptions={[{ id: 'workshop', name: '工房', supplies: 400, gold: 120 }]} relicOptions={[repair]}
+        onRelicWork={onRelicWork} onClose={() => {}} />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: '施設を追加' }))
+    const panel = screen.getByRole('complementary', { name: '追加できる施設' })
+    expect(within(panel).getByRole('button', { name: '工房を建設' })).toBeInTheDocument()
+    await userEvent.click(within(panel).getByRole('button', { name: '壊れたバリスタを修復' }))
+    expect(onRelicWork).toHaveBeenCalledWith(repair)
+
+    rerender(
+      <DomesticScreen city={city(['市場', '倉庫'])} buildOptions={[{ id: 'workshop', name: '工房', supplies: 400, gold: 120 }]} relicOptions={[repair]}
+        onRelicWork={onRelicWork} onClose={() => {}} />,
+    )
+    expect(screen.queryByRole('button', { name: '施設を追加' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '遺物の修復・生産' }))
+    const relics = screen.getByRole('complementary', { name: '遺物の修復・生産' })
+    expect(within(relics).getByRole('button', { name: '壊れたバリスタを修復' })).toBeInTheDocument()
+    expect(within(relics).queryByRole('button', { name: '工房を建設' })).not.toBeInTheDocument()
+  })
+
+  it('shows a relic being repaired without taking a slot, with nothing else to start', async () => {
+    const onPauseConstruction = vi.fn()
+    const onCancelConstruction = vi.fn()
+    render(
+      <DomesticScreen
+        city={{
+          id: 'P012', name: 'フルーエン',
+          buildings: {
+            slots: 2,
+            built: [{ id: 'market', name: '市場' }],
+            construction: { kind: 'relicRepair', building: { id: 'golem', name: 'ゴーレムの残骸' }, invested: 100, required: 1000, turnsLeft: 9 },
+          },
+        }}
+        relicOptions={[{ id: 'item-1', kind: 'relicRepair', name: '壊れたバリスタ', supplies: 500, gold: 150, unavailableReason: 'ほかの遺物を修復中です' }]}
+        onPauseConstruction={onPauseConstruction} onCancelConstruction={onCancelConstruction} onClose={() => {}}
+      />,
+    )
+    expect(screen.getByText('修復中')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '遺物の修復・生産' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '遺物の修復・生産' })).toHaveAttribute('title', 'ほかの遺物を修復中です')
+    // The slot left stays empty
+    expect(screen.getByLabelText('空きスロット')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'ゴーレムの残骸の修復を中断' }))
+    expect(onPauseConstruction).toHaveBeenCalledWith(true)
+    await userEvent.click(screen.getByRole('button', { name: 'ゴーレムの残骸の修復を取り消す' }))
+    expect(onCancelConstruction).toHaveBeenCalled()
+  })
+
   it('shows population growth and the next city scale by name', () => {
     const { rerender } = render(
       <DomesticScreen
