@@ -3,7 +3,7 @@ import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import type {
   BuildOptionView, BuildingView, CityStatView, CityView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, EventDetail, FactionResearchSummaryView,
-  FactionSummaryView, FactionView, InvasionAssignment, KnightView, PopulationGrowthView, SpriteImage, TechTreeView, TechView, TurnView, UnitTypeView,
+  FactionSummaryView, FactionView, InvasionAssignment, KnightView, PopulationGrowthView, SpriteImage, TechView, TurnView, UnitTypeView,
 } from 'norden-ui'
 import type { MapCity, MapSeason, PlaceType } from 'norden-strategy'
 import buildingSheet from '../../assets/buildings.webp'
@@ -12,7 +12,7 @@ import { BUILDING_LIST, BUILDING_MAP, describeEffect, type BuildingEffectKind, t
 import buildingSprite from '../../data/buildingSprite.json'
 import techSheet from '../../assets/techs.webp'
 import techSprite from '../../data/techSprite.json'
-import { TECH_BRANCH_LABELS, TECH_LIST, TECH_MAP, techChildren, type TechBranch } from '../../data/techs'
+import { TECH_BRANCH_LABELS, TECH_LIST, TECH_MAP, techChildren } from '../../data/techs'
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { FACTION_MAP, factionEmblem } from '../../data/faction'
 import { CITY_MAP } from '../../data/city'
@@ -101,11 +101,12 @@ export function techView(game: GameState, factionId: string, id: string): TechVi
   const research = researchOf(game, factionId)
   const known = techStatus(game, factionId, id)
   const status = research.current === id ? 'researching' : known
-  if (!tech || status === 'hidden') return { id, status: 'hidden', requires: tech?.requires ?? [] }
+  if (!tech || status === 'hidden') return { id, status: 'hidden', requires: tech?.requires ?? [], alignWith: tech?.alignWith }
   return {
     id,
     status,
     requires: tech.requires,
+    alignWith: tech.alignWith,
     name: tech.name,
     image: techImage(id),
     description: tech.description,
@@ -117,14 +118,8 @@ export function techView(game: GameState, factionId: string, id: string): TechVi
   }
 }
 
-const TECH_BRANCHES: readonly TechBranch[] = ['physical', 'arcane']
-
-/** The technology screen's trees for the faction: 物理文明, then 魔法文明 */
-export const techTreesView = (game: GameState, factionId: string): TechTreeView[] => TECH_BRANCHES.map((branch) => ({
-  id: branch,
-  label: TECH_BRANCH_LABELS[branch],
-  techs: TECH_LIST.filter((t) => t.branch === branch).map((t) => techView(game, factionId, t.id)),
-}))
+/** The technology screen's technologies for the faction, in data order */
+export const techsView = (game: GameState, factionId: string): TechView[] => TECH_LIST.map((t) => techView(game, factionId, t.id))
 
 /** How the faction's research points a turn are made up, e.g. 施設 +17.5（物理文明 5・魔法文明 10、研究中の系統 +50%） */
 export function researchPointDetails(game: GameState, factionId: string): string[] {

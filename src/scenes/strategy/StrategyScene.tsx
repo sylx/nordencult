@@ -24,7 +24,7 @@ import { OrderList } from './OrderList'
 import { ResearchDebug } from './ResearchDebug'
 import {
   UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
-  eventView, mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, researchPerTurn, researchPointDetails, techTreesView,
+  eventView, mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, researchPerTurn, researchPointDetails, techsView,
   transportKnightView, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
@@ -572,7 +572,7 @@ export default function StrategyScene() {
           />
         ),
         tech: () => (
-          <TechScreen trees={techTreesView(game, faction)} perTurn={researchPerTurn(game, faction)}
+          <TechScreen techs={techsView(game, faction)} perTurn={researchPerTurn(game, faction)}
             pointDetails={researchPointDetails(game, faction)} carry={researchOf(game, faction).carry} mustChoose={mustChoose}
             onResearch={playerTurn ? (techId) => update((s) => setResearch(s, viewFaction(s), techId)) : undefined}
             onClose={nav.pop} />

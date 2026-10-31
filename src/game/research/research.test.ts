@@ -13,7 +13,7 @@ vi.mock('../../data/techData.json', () => ({
     { id: 'phys', name: '物理', description: '', branch: 'physical', cost: 100, requires: [], effects: [{ kind: 'productionPct', value: 10 }] },
     { id: 'arc', name: '魔法', description: '', branch: 'arcane', cost: 100, requires: [], effects: [{ kind: 'marketPct', value: 10 }] },
     { id: 'p1', name: '兵法', description: '', branch: 'physical', cost: 200, requires: ['phys'], effects: [{ kind: 'recruitMorale', value: 5 }] },
-    { id: 'p2', name: '籠城', description: '', branch: 'physical', cost: 300, requires: ['p1'], effects: [{ kind: 'etc', value: '迎撃 +5%' }] },
+    { id: 'p2', name: '籠城', description: '', cost: 300, requires: ['p1'], effects: [{ kind: 'etc', value: '迎撃 +5%' }] },
     { id: 'a1', name: '火', description: '', branch: 'arcane', cost: 50, requires: ['arc'], effects: [] },
     { id: 'both', name: '飛空艇', description: '', branch: 'physical', cost: 400, requires: ['p1', 'a1'], effects: [] },
   ],
@@ -74,6 +74,8 @@ describe('research points', () => {
     const physical = 5 * (1 + BALANCE.RESEARCH_BRANCH_BONUS) + 10
     expect(researchOutput(state, 'carta').buildings).toBeCloseTo(physical)
     expect(researchOutput(state, 'carta', 'arc').buildings).toBeCloseTo(5 + 10 * (1 + BALANCE.RESEARCH_BRANCH_BONUS))
+    // A technology of no branch: no building's points are worth more
+    expect(researchOutput(state, 'carta', 'p2').buildings).toBe(15)
     // The fraction rounded up by that chance
     expect(runEconomy(state, 2, () => 0.99).research.carta.progress.phys).toBe(Math.floor(physical))
     expect(runEconomy(state, 2, low).research.carta.progress.phys).toBe(Math.ceil(physical))
