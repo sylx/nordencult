@@ -18,17 +18,11 @@
   width: min(880px, 100%);
 }
 .norden-event-cut {
-  width: 100%;
-  margin: 0;
-  overflow: hidden;
-  border: 3px double #b59151;
-  border-radius: 6px;
-  box-shadow: 0 6px 24px #000c;
+  --norden-image-max-height: 52vh;
   animation: norden-event-cut 700ms ease-out both;
 }
-.norden-event-cut img { display: block; width: 100%; max-height: 52vh; object-fit: cover; }
-.norden-event-cut.is-picture { display: flex; justify-content: center; padding: 16px 0; background: #15110dcc; }
-.norden-event-cut.is-picture .norden-building-image { width: min(220px, 30vh); height: auto; }
+.norden-event-cut.is-picture .norden-building-image { width: min(220px, 30vh); max-width: 100%; height: auto; }
+.norden-event-cut.is-picture .norden-building-image.is-placeholder { aspect-ratio: 1; }
 .norden-event-window {
   display: grid;
   gap: 14px;

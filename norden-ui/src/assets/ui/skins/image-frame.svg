@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" fill="none">
+  <defs>
+    <linearGradient id="brass" x1="0" y1="0" x2="34" y2="34" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f4df9c"/>
+      <stop offset=".25" stop-color="#c6a367"/>
+      <stop offset=".55" stop-color="#856038"/>
+      <stop offset=".78" stop-color="#dcc081"/>
+      <stop offset="1" stop-color="#624522"/>
+    </linearGradient>
+    <radialGradient id="rivet" cx=".35" cy=".25" r=".75">
+      <stop stop-color="#fff0ba"/>
+      <stop offset=".4" stop-color="#c3a064"/>
+      <stop offset="1" stop-color="#5b3d20"/>
+    </radialGradient>
+    <g id="corner" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 38V10Q4 4 10 4H38V13H19Q13 13 13 19V38Z" fill="url(#brass)" stroke="#3a2918" stroke-width="2"/>
+      <path d="M6 36V11Q6 6 11 6H36" stroke="#f5dfa1" stroke-opacity=".7"/>
+      <path d="M11 36V19Q11 11 19 11H36" stroke="#52371d"/>
+      <path d="M9 31C24 32 32 24 31 9C25 14 23 20 24 24C20 23 14 25 9 31Z" fill="url(#brass)" stroke="#593d21"/>
+      <path d="M14 28C21 26 26 21 28 14M20 25L20 20L25 20" stroke="#ecd291" stroke-width="1.2"/>
+      <path d="M17 35C25 38 37 27 35 20C32 21 30 24 30 28C27 27 23 29 23 32" stroke="#bb9656" stroke-width="1.5"/>
+      <path d="M5 17L1 11L5 5L11 1L17 5L11 11Z" fill="url(#brass)" stroke="#674925"/>
+      <circle cx="10" cy="10" r="3.5" fill="url(#rivet)" stroke="#4f351d"/>
+      <circle cx="35" cy="9" r="1.4" fill="#ecd291"/>
+      <circle cx="9" cy="35" r="1.4" fill="#ecd291"/>
+    </g>
+  </defs>
+  <!-- Only straight rails cross the 40px slicing boundaries; the centre stays transparent. -->
+  <rect x="6" y="6" width="228" height="228" rx="4" stroke="#35251a" stroke-width="10"/>
+  <rect x="7" y="7" width="226" height="226" rx="3" stroke="#d6b777" stroke-width="5"/>
+  <rect x="5" y="5" width="230" height="230" rx="4" stroke="#f0d69a" stroke-opacity=".8"/>
+  <rect x="11" y="11" width="218" height="218" rx="2" stroke="#634622" stroke-width="2"/>
+  <rect x="15" y="15" width="210" height="210" stroke="#241a11" stroke-width="6"/>
+  <rect x="17" y="17" width="206" height="206" stroke="#c7a364" stroke-width="2"/>
+  <rect x="19" y="19" width="202" height="202" stroke="#edd69c" stroke-opacity=".65"/>
+  <use href="#corner"/>
+  <use href="#corner" transform="translate(240 0) scale(-1 1)"/>
+  <use href="#corner" transform="translate(0 240) scale(1 -1)"/>
+  <use href="#corner" transform="translate(240 240) scale(-1 -1)"/>
+</svg>

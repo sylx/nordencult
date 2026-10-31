@@ -120,6 +120,10 @@
 }
 .norden-faction-bar-stat-icon { grid-area: icon; width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0 1px 1px #000); }
 .norden-faction-bar-stat-label { grid-area: label; font-size: 10px; line-height: 1; color: #c8b490; }
+.is-research .norden-faction-bar-stat-label {
+  position: relative;
+  top: -4px;
+}
 .norden-faction-bar-stat-value {
   grid-area: value;
   font-family: Georgia, 'Times New Roman', serif;

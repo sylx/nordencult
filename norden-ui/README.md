@@ -27,7 +27,7 @@ http://localhost:5173 でカタログを開きます。左の一覧から項目�
 | 画面フロー | 戦略画面（`#strategy-flow`、既定）: 都市コマンド → 軍事 → 侵攻 → 地図で侵攻先を選ぶ → 侵攻画面 → 予約。Escで1段ずつ戻る |
 | 画面 | 都市コマンド（`#city-command`）、地図で選ぶ（`#map-pick`）、内政（`#domestic`）、技術（`#tech`）、侵攻（`#invasion`）、移動（`#move`）、輸送（`#transport`） |
 | 基本部品 | ウィンドウ（`#info-window`）、ウィンドウ（閉じるボタン付き）（`#window-frame`）、ツールバー（`#command-toolbar`）、ターン情報（`#date-bar`）、行動予約（`#action-orders`）、UIパーツ（`#parts`） |
-| 演出 | カットインエディタ（`#cutin-editor`）: テンプレートを作り、JSONで書き出す。`src/cutin/templates/` のJSONを開いて直せる。イベント通知（`#event`）: `EventScreen` を、カットイン `faction_destruction` のあとに出す流れで確かめる |
+| 演出 | カットインエディタ（`#cutin-editor`）: テンプレートを作り、JSONで書き出す。`src/cutin/templates/` のJSONを開いて直せる。イベント通知（`#event`）: `EventScreen` を、カットイン `faction_destruction` のあとに出す流れと、研究完了の通知（技術を選ぶ）で確かめる |
 
 画面の項目は仮の地図（`demo/mock/MockMap.tsx`）の上に重ねます。都市・騎士・兵科は `demo/mock/data.ts` の仮データです。
 

@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import Button from '../../components/parts/Button'
+import ImageFrame from '../../components/parts/ImageFrame'
 import ThinFrameWithTitle from '../../components/parts/ThinFrameWithTitle'
 import '../screens.css'
 import './EventScreen.css'
@@ -48,9 +49,9 @@ export default function EventScreen({ image, picture, title, message, details = 
     <div className="norden-event" role="dialog" aria-modal="true" aria-label={typeof title === 'string' ? title : 'イベント'}>
       <div className="norden-event-body">
         {(picture || image) && (
-          <figure className={`norden-event-cut ${picture ? 'is-picture' : ''}`}>
+          <ImageFrame className={`norden-event-cut ${picture ? 'is-picture' : ''}`}>
             {picture ?? <img src={image} alt="" />}
-          </figure>
+          </ImageFrame>
         )}
         <ThinFrameWithTitle as="div" title={title} className="norden-event-window">
           <p className="norden-event-message">{message}</p>
