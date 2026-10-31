@@ -393,10 +393,11 @@ export function dateLabel(turn: number) {
 
 /**
  * How an event is told: the cut-in (its template and texts; none: the notice at once), then the notice (its cut or
- * picture, words and the knights it concerns)
+ * picture, words and the knights it concerns), with its sound effect (none: silent)
  */
 export interface EventView {
   cutIn?: { template: string; text: string; subText: string }
+  sound?: string
   cut?: string
   picture?: BuildingView
   title: string
@@ -410,6 +411,7 @@ export function eventView(event: GameEvent): EventView {
     const tech = TECH_MAP[event.techId]
     const name = tech?.name ?? event.techId
     return {
+      sound: 'complete',
       picture: { id: event.techId, name, image: techImage(event.techId) },
       title: '研究完了',
       message: `${name}の研究が完了しました。`,

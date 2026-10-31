@@ -175,6 +175,15 @@ export default function StrategyScene() {
     }
   }, [ready, announcing, eventId, eventCutIn, eventCut, cutInQueue])
 
+  // An event's sound, after the phase's cut-in and once for each event
+  const eventSound = told?.sound
+  const sounded = useRef<string | null>(null)
+  useEffect(() => {
+    if (!ready || announcing || !eventId || !eventSound || sounded.current === eventId) return
+    sounded.current = eventId
+    playSe(eventSound)
+  }, [ready, announcing, eventId, eventSound])
+
   // Ordering belongs to the player's turn
   useEffect(() => {
     if (!playerTurn) popTo('cityCommand')
