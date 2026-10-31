@@ -5,6 +5,7 @@ import { TECH_MAP } from '../../data/techs'
 import { mixMorale } from '../army'
 import { GameRuleError } from '../errors'
 import { engagementOf, ownerOf } from '../queries'
+import { addRelic } from '../relics/box'
 import type { AssignmentRole, CharacterId, CityAssignments, CityId, CityState, FundedRole, GameState, OfficerRole } from '../types'
 import { AFFAIRS_BUDGET_LIMIT, OFFICERS_PER_ROLE, RECRUIT_GOLD } from './balance'
 import { cityOutput } from './output'
@@ -15,7 +16,7 @@ import { cityOutput } from './output'
  * allowed (or null); the command throws GameRuleError with that reason.
  */
 
-const withCity = (state: GameState, cityId: CityId, change: Partial<CityState>): GameState =>
+export const withCity = (state: GameState, cityId: CityId, change: Partial<CityState>): GameState =>
   ({ ...state, cities: { ...state.cities, [cityId]: { ...state.cities[cityId], ...change } } })
 
 /** Why the active faction cannot give domestic commands to a city now, or null */
@@ -215,10 +216,17 @@ export function buildingLocked(state: GameState, cityId: CityId, buildingId: str
     || Boolean(building.upgradeFrom && !city.buildings.includes(building.upgradeFrom))
 }
 
+const BUSY_LABELS = { building: 'ほかの施設を建設中です', relicRepair: 'ほかの遺物を修復中です', relicProduction: 'ほかの遺物を生産中です' } as const
+
+/** Why the city cannot start building, repairing or producing: it does one at a time (null: it is free) */
+export function constructionBusyProblem(state: GameState, cityId: CityId): string | null {
+  const construction = state.cities[cityId]?.construction
+  return construction ? BUSY_LABELS[construction.work.kind] : null
+}
+
 export function constructionProblem(state: GameState, cityId: CityId, buildingId: string): string | null {
-  const problem = commandProblem(state, cityId) ?? buildingProblem(state, cityId, buildingId)
+  const problem = commandProblem(state, cityId) ?? buildingProblem(state, cityId, buildingId) ?? constructionBusyProblem(state, cityId)
   if (problem) return problem
-  if (state.cities[cityId].construction) return 'ほかの施設を建設中です'
   if ((state.gold[state.activeFaction!] ?? 0) < BUILDING_MAP[buildingId].gold) return '金が足りません'
   return null
 }
@@ -229,24 +237,29 @@ export function startConstruction(state: GameState, cityId: CityId, buildingId: 
   const building = BUILDING_MAP[buildingId]
   const factionId = state.activeFaction!
   const next = withCity(state, cityId, {
-    construction: { buildingId, requiredSupplies: building.supplies, investedSupplies: 0 },
+    construction: { work: { kind: 'building', buildingId }, requiredSupplies: building.supplies, investedSupplies: 0 },
   })
   return { ...next, gold: { ...state.gold, [factionId]: state.gold[factionId] - building.gold } }
 }
 
-/** Gives up the building under construction; half of the supplies put into it return to the city's store */
+/**
+ * Gives up what the city builds, repairs or produces; half of the supplies put into it return to the city's store
+ * (the gold paid does not), and a relic being repaired goes back into the box, broken
+ */
 export function cancelConstruction(state: GameState, cityId: CityId): GameState {
   check(commandProblem(state, cityId))
   const city = state.cities[cityId]
   if (!city.construction) return state
   const refund = Math.floor(city.construction.investedSupplies / 2)
-  return withCity(state, cityId, {
+  const cancelled = withCity(state, cityId, {
     construction: null,
     storedSupplies: city.storedSupplies + refund,
   })
+  const { work } = city.construction
+  return work.kind === 'relicRepair' ? addRelic(cancelled, state.activeFaction!, work.relicId, false) : cancelled
 }
 
-/** Pauses or resumes the building under construction; while paused, the city's 生産 goes into its store */
+/** Pauses or resumes what the city builds, repairs or produces; while paused, the city's 生産 goes into its store */
 export function pauseConstruction(state: GameState, cityId: CityId, paused = true): GameState {
   check(commandProblem(state, cityId))
   const construction = state.cities[cityId].construction
@@ -263,15 +276,13 @@ export function demolishBuilding(state: GameState, cityId: CityId, buildingId: s
 }
 
 /**
- * Turns until a building is completed at the city's effective 生産: the one
- * under construction, or `buildingId` if it were started now. null when the city produces nothing
+ * Turns until the work is completed at the city's effective 生産: what it builds, repairs or produces now, or
+ * something taking `supplies` if it were started now. null when the city produces nothing
  */
-export function constructionTurns(state: GameState, cityId: CityId, buildingId?: string): number | null {
+export function constructionTurns(state: GameState, cityId: CityId, supplies?: number): number | null {
   const { production } = cityOutput(state, cityId)
   const construction = state.cities[cityId]?.construction
-  const left = buildingId === undefined || construction?.buildingId === buildingId
-    ? (construction ? construction.requiredSupplies - construction.investedSupplies : 0)
-    : (BUILDING_MAP[buildingId]?.supplies ?? 0)
+  const left = supplies ?? (construction ? construction.requiredSupplies - construction.investedSupplies : 0)
   if (left <= 0) return 0
   return production > 0 ? Math.ceil(left / production) : null
 }

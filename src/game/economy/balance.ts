@@ -86,6 +86,9 @@ export const RECRUIT_GOLD = 0.2
 /** Morale of new soldiers (before the buildings') */
 export const RECRUIT_MORALE = 20
 
+/** 法王府 repairs a relic for ceil((its repair's gold + supplies) × PAPAL_REPAIR_RATE) gold */
+export const PAPAL_REPAIR_RATE = 1.5
+
 /** Supplies and gold each soldier setting out on an invasion costs */
 export const SORTIE_SUPPLIES = 0.2
 export const SORTIE_GOLD = 0.05

@@ -2,7 +2,7 @@
 export * as BALANCE from './balance'
 export {
   affairsBudgetProblem, assign, assignmentLabel, assignmentOf, assignmentProblem, buildingLocked, OFFICER_ROLES, setOfficers, buildingProblem, cancelConstruction, commandProblem as domesticProblem,
-  constructionProblem,
+  constructionBusyProblem, constructionProblem,
   constructionTurns, demolishBuilding, maxAffairsBudget, maxRecruit, pauseConstruction, recruit, recruitCost, recruitLeft, recruitProblem, setAffairsBudget, startConstruction,
   successorLord, unassign, withGovernor, withoutAssignee,
 } from './domestic'

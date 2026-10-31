@@ -5,7 +5,10 @@
     "emblem": 5,
     "patriarchLabel": "当主",
     "color": "#3d5fa8",
-    "gold": 5000
+    "gold": 5000,
+    "relics": [
+      "behemoth"
+    ]
   },
   {
     "id": "nordis",
@@ -13,7 +16,11 @@
     "emblem": 3,
     "patriarchLabel": "当主",
     "color": "#b0342c",
-    "gold": 5000
+    "gold": 5000,
+    "relics": [
+      "arcane_focus",
+      "dragon"
+    ]
   },
   {
     "id": "leonis",
@@ -21,7 +28,11 @@
     "emblem": 6,
     "patriarchLabel": "皇帝",
     "color": "#d0a326",
-    "gold": 10000
+    "gold": 10000,
+    "relics": [
+      "field_gun",
+      "rifle"
+    ]
   },
   {
     "id": "carta",
@@ -29,7 +40,11 @@
     "emblem": 7,
     "patriarchLabel": "総帥",
     "color": "#4f8a63",
-    "gold": 3000
+    "gold": 3000,
+    "relics": [
+      "rifle",
+      "ballista"
+    ]
   },
   {
     "id": "aqua",
@@ -37,7 +52,10 @@
     "emblem": 4,
     "patriarchLabel": "会頭",
     "color": "#2f93ad",
-    "gold": 6000
+    "gold": 6000,
+    "relics": [
+      "gunship"
+    ]
   },
   {
     "id": "rosalia",
@@ -45,7 +63,11 @@
     "emblem": 1,
     "patriarchLabel": "当主",
     "color": "#b24c80",
-    "gold": 3050
+    "gold": 3050,
+    "relics": [
+      "golem",
+      "golem"
+    ]
   },
   {
     "id": "taurus",
@@ -53,7 +75,10 @@
     "emblem": 2,
     "patriarchLabel": "議長",
     "color": "#8a6238",
-    "gold": 3000
+    "gold": 3000,
+    "relics": [
+      "ballista"
+    ]
   },
   {
     "id": "sede",

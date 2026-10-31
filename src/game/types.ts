@@ -29,6 +29,8 @@ export interface GameState {
   gold: Readonly<Record<FactionId, number>>
   /** Each faction's research (研究) of the technology tree */
   research: Readonly<Record<FactionId, FactionResearch>>
+  /** Each faction's アイテムボックス of relics; one being repaired is not in it but in its city's construction */
+  relics: Readonly<Record<FactionId, readonly RelicItem[]>>
   /** What the latest economy run (at the start of the turn) did, for showing the cities grow; null on turn 1 */
   lastEconomy: EconomyReport | null
   /** Each city's numbers at the start of every turn so far (oldest first), with how the economy run got there */
@@ -87,13 +89,31 @@ export interface FactionResearch {
   carry: number
 }
 
-/** A building under construction in a city */
+/** A relic in a faction's アイテムボックス, each its own (a knight will equip one of them) */
+export interface RelicItem {
+  id: string
+  /** An id of RELIC_LIST */
+  relicId: string
+  repaired: boolean
+  /** 法王府に依頼中: repaired by the next economy run. It stays in the box, neither dismantled nor repaired meanwhile */
+  papalRepair?: boolean
+}
+
+/** Repairing a relic of the faction's, or producing one, in a city: lost with the city, unlike a building (BattleReport.lostRelicWork) */
+export type RelicWork =
+  | { kind: 'relicRepair'; relicId: string }
+  | { kind: 'relicProduction'; relicId: string }
+
+/** What a city's 生産 goes into */
+export type ConstructionWork = { kind: 'building'; buildingId: string } | RelicWork
+
+/** A building being built in a city, or a relic being repaired or produced there, one at a time */
 export interface CityConstruction {
-  buildingId: string
-  /** Supplies (hammers) it takes: the building's when it was started */
+  work: ConstructionWork
+  /** Supplies (hammers) it takes: the building's or the relic's when it was started */
   requiredSupplies: number
   investedSupplies: number
-  /** Paused: the city's 生産 goes to storedSupplies instead of this construction */
+  /** Paused: the city's 生産 goes to storedSupplies instead of this */
   paused?: boolean
 }
 
@@ -159,6 +179,7 @@ export interface CitySnapshot {
 export type EconomyEvent =
   | { kind: 'buildingCompleted'; buildingId: string }
   | { kind: 'tierUp'; tier: CityTier }
+  | { kind: 'relicCompleted'; relicId: string }
 
 export interface FactionEconomy {
   /** Gold from the cities' 商業 */
@@ -514,6 +535,8 @@ export interface BattleReport {
   freed: readonly CharacterId[]
   /** Soldiers each city got after the battle, in the order they got there */
   soldiers: readonly SoldierReturn[]
+  /** The repair or production lost with the city captured: its supplies, its gold and a relic being repaired are gone. null: none */
+  lostRelicWork: RelicWork | null
 }
 
 /** A faction lost its last city (in a battle) and is no more: every knight of it became unaffiliated (在野) */
@@ -539,4 +562,15 @@ export interface TechCompleted {
   techId: string
 }
 
-export type GameEvent = FactionDestroyed | TechCompleted
+/** A relic of a faction the player plays was repaired or produced (in the economy run starting the turn) */
+export interface RelicCompleted {
+  id: string
+  kind: 'relicCompleted'
+  turn: number
+  factionId: FactionId
+  relicId: string
+  /** The city that repaired or produced it; null: 法王府 repaired it */
+  cityId: CityId | null
+}
+
+export type GameEvent = FactionDestroyed | TechCompleted | RelicCompleted

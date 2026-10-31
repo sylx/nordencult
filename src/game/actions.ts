@@ -13,8 +13,9 @@ import {
 import type {
   ArmyUnit, Battle, BattleEndReason, BattleReport, BattleRetreat, BattleSide, BattleSurvivor, BattleWinner, BattleWipeout, CharacterId,
   CharacterMove, CharacterState, CityId, CityState, DefenseDraft, Entry, FactionDestroyed, FactionId, GameState, GovernorAppointment, Imprisonment,
-  InvasionOrder, Movement, SoldierReturn,
+  InvasionOrder, Movement, RelicWork, SoldierReturn,
 } from './types'
+import { relicsOf, withRelics } from './relics/box'
 import { neighbours } from './world'
 
 export { GameRuleError }
@@ -284,8 +285,9 @@ function startTurn(state: GameState): GameState {
  * not send out), the attacker's back where they set out from, the defender's to where its knights retreat (lost
  * when they have nowhere to go). Soldiers joining a city mix their morale with its soldiers'.
  * Characters who leave their city leave their assignment there (a governor is
- * no longer its lord); a city taken loses every assignment. `reason` is how the battlefield
- * decided it (the report keeps it); null when decided without fighting it out.
+ * no longer its lord); a city taken loses every assignment. A building under construction there goes on for the
+ * new owner, but a relic being repaired or produced there is lost, with its supplies and gold (the report lists it as
+ * lostRelicWork). `reason` is how the battlefield decided it (the report keeps it); null when decided without fighting it out.
  * Lords (governors) are then made (appointGovernor), and listed in the report:
  * - A city the head of a faction (君主) retreated or went back to: the head, in place of the lord there.
  * - The captured city: the attacking commander, when they entered it.
@@ -385,9 +387,12 @@ export function resolveBattle(
   }
 
   const freed: CharacterId[] = []
+  let lostRelicWork: RelicWork | null = null
   if (winner === 'attacker') {
     cityOwners[cityId] = attacker.factionId
-    cities[cityId] = { ...cities[cityId], assignments: { officers: {} } }
+    const work = cities[cityId].construction?.work
+    lostRelicWork = work && work.kind !== 'building' ? work : null
+    cities[cityId] = { ...cities[cityId], assignments: { officers: {} }, ...(lostRelicWork && { construction: null }) }
     for (const id of attacker.knights) if (!left.has(id)) move(id, 'enter', cityId)
     for (const id of released) move(id, 'return', attacker.from)
     // The defender's knights in the city, those not in its army too (only those still there: another battle may have moved them)
@@ -465,7 +470,7 @@ export function resolveBattle(
 
   const report: BattleReport = {
     battle, winner, reason, cityCaptured: winner === 'attacker', moves, retreats: [...retreats], wipeouts: [...wipeouts], governors,
-    captives, prisoners, freed, soldiers,
+    captives, prisoners, freed, soldiers, lostRelicWork,
   }
   const resolved: GameState = { ...state, cityOwners, characters, cities, march: { ...state.march, current: null }, lastBattle: report }
   const lost = defender.factionId
@@ -478,7 +483,8 @@ export function resolveBattle(
  * A faction that lost its last city (`cityId`, to `by`) is destroyed: every knight of it (`knights`, as the battle
  * started: some went unaffiliated in it) becomes unaffiliated (在野), those on a move or a transport too (their
  * movements end), and the event is told (FactionDestroyed). Its knights held prisoner stay prisoners, of no faction
- * (they no longer escape); the prisoners it was taking along on its moves and transports are set free where they are (escapeOf)
+ * (they no longer escape); the prisoners it was taking along on its moves and transports are set free where they are (escapeOf).
+ * Its relics go into the box of `by` as they are, those 法王府 is repairing too
  */
 function destroyFaction(state: GameState, factionId: FactionId, cityId: CityId, by: FactionId, served: readonly CharacterId[]): GameState {
   const knights = [...served].sort()
@@ -501,7 +507,8 @@ function destroyFaction(state: GameState, factionId: FactionId, cityId: CityId, 
       if (escape.movement) movements.push(escape.movement)
     }
   }
-  return { ...state, characters, movements, events: [...state.events, event], serial }
+  const relics = withRelics(withRelics(state, by, [...relicsOf(state, by), ...relicsOf(state, factionId)]), factionId, []).relics
+  return { ...state, characters, movements, relics, events: [...state.events, event], serial }
 }
 
 /** The event told to the player is dropped */

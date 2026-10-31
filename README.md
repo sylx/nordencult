@@ -196,7 +196,7 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 
 - 担当: 領主（1人。`commandRank` の「領主」）と内政担当官（商業・生産・訓練・募兵・研究にそれぞれ2人まで。能力は役職ごとの重みで平均し、2人なら合算する。領主は担当官になれない）。初期の領主は `characterStart.json` の `isLord` の騎士。騎士が都市を離れると担当から外れ、攻め落とされた都市の担当は空になります
 - 毎ターンの内政処理（`runEconomy`）は、進行フェーズを解決しきって次のターンの戦略フェーズに入る直前に、全勢力の全都市をまとめて行います。領主の能力で商業・生産が伸びます（実効値への補正）。人口は、担当官が上げたあとの基礎の商業・生産、建っている施設の数、領主の政治と魅力から伸び（`populationGrowth`。係数は `balance.ts` の `POP_GROWTH_*`）、Tier と施設のスロットも人口に応じて上がります（10000 で Tier 2、30000 で Tier 3）。商業・生産・募兵の担当官は、都市が役職ごとに割り当てた予算（`CityState.affairsBudget`。1000まで。割り当てたときに国庫から移し、減らすと戻る。`setAffairsBudget`）から毎ターン 80〜150 の乱数の金を使い、商業・生産の基礎値を上げ（政治2・知力1）、兵を集めます（魅力3・武力1。新兵の練度で混ざる）。訓練担当官は金を使わずに練度を上げます（武力2・統率1）。式と係数は `balance.ts` の `AFFAIRS_*`・`GROWTH_COEF_*`。施設の効果でも各値が伸びます
-- 施設のマスターデータは `src/data/buildingData.json`（`src/data/buildings.ts`）。1都市に同じ施設は1つ、建設中は1件だけで、建設中は都市の生産をすべて建設に回します
+- 施設のマスターデータは `src/data/buildingData.json`（`src/data/buildings.ts`）。1都市に同じ施設は1つ、建設中は1件だけで、建設中は都市の生産をすべて建設に回します。施設の建設・遺物の修復・遺物の生産は同じ枠（`CityState.construction` の `work`）を共有し、都市ごとに同時に1つです
 
 ### 研究
 
@@ -205,8 +205,20 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 - 研究ポイントは研究施設（施設の効果 `researchPoints`。図書館系は物理文明、魔術学院系は魔法文明の系統）と研究担当官（内政担当官の役職 `research`。知力、予算制）だけから出ます。研究中の技術と同じ系統の施設の分は × (1 + `RESEARCH_BRANCH_BONUS`)。担当官の分は予算から使った金 × 知力の合計 / 100 × `GROWTH_COEF_RESEARCH`。端数はどちらも確率で切り上げます
 - 研究ポイントはためられません。内政処理の最後（`runResearch`）に勢力の合計を研究中の技術へ入れ、必要なポイントに届くと研究済みにして、余りは `carry`（宙に浮いたポイント）に入ります。研究中の技術が無いターンのポイントも `carry` に入り、研究先を選んだ（`setResearch`）ときにその技術へ入ります。研究できる技術が残っていなければ消えます。研究中の技術は途中で変えてよく、進捗は技術ごとに残ります
 - プレイヤーの勢力は、ポイントが宙に浮いているあいだ（`mustChooseResearch`）ターンを終えられず（`endFactionTurnProblem`）、戦略画面はターンの初めに技術画面を閉じられない状態で開きます。研究を終えたターンは先に完成の通知（`GameState.events` の `TechCompleted`）を出します。CPU の勢力は研究先が無ければ、研究できる技術のうち必要なポイントが一番少ないものを自動で選びます（`chooseResearchForCpu`）
-- 研究し終えた技術の効果（商業・生産・人口の伸び・訓練・募兵数・新兵の練度。施設の効果と同じ種類）は、勢力の全都市の見込み（`cityOutput` の `tech`）にすぐ乗り、次の内政処理から効きます。施設の `requiredTech` の技術を研究し終えていない勢力の都市では、その施設を建てられません（建てられる施設にも出ない）。それ以外の効果（一斉攻撃・魔法・遺物の修復など）は文言（`etc`）だけです
+- 研究し終えた技術の効果（商業・生産・人口の伸び・訓練・募兵数・新兵の練度。施設の効果と同じ種類）は、勢力の全都市の見込み（`cityOutput` の `tech`）にすぐ乗り、次の内政処理から効きます。施設の `requiredTech` の技術を研究し終えていない勢力の都市では、その施設を建てられません（建てられる施設にも出ない）。それ以外の効果（一斉攻撃・魔法・遺物の修復など）は文言（`etc`）だけです。遺物の修復・生産の判定は、遺物の `repair.tech`・`production.tech` が持ちます
 - 技術画面は都市コマンドの「研究」＞「技術」か、`FactionBar` の研究の表示で開きます。ターン情報の設定メニューの「デバッグ: 研究」で、研究ポイントを足す・研究中の技術を完了にする・CPU 勢力の研究を見ることができます
+
+### 遺物
+
+勢力ごとのアイテムボックス（`GameState.relics`。1点ずつの `RelicItem`。壊れた状態・修復済み・法王府に依頼中）を持ちます。遺物のマスターデータは `src/data/relicData.json`（`src/data/relics.ts`）で、レアリティ・使い道・解体の研究ポイント・修復と生産の費用を持ちます。壊れた状態を持たない遺物（魔導書）は、解体も修復も初期配布もできず、生産だけできます。画像は壊れた状態と修復済みで別のセルを持つ `src/assets/relics.webp`（大きさは `src/data/relicSprite.json`。技術と同じ 256×384 のセル）で、どれも norden-data の「ゲームに書き出す」で作ります（いまの画像は仮）。入手は初期配布（`factionData.json` の `relics`）だけで、使い道（施設化・装備・召喚）はまだありません。
+
+- 解体（`dismantleRelic`）: 壊れた遺物を失い、研究ポイントを研究中の技術に入れます（`addResearchPoints`。系統の割増なし。届けばその場で完了）。研究先が無ければ `carry` に入り、遺物画面の上に技術画面が閉じられない状態で開きます。研究できる技術が残っていなければ解体できません
+- 修復（`startRelicRepair`）: 遺物の `repair.tech` を研究し終えていれば（省略ならいらない）、都市の建設の枠で修復します。金は開始時に国庫から払い、遺物はボックスから抜け、都市の生産が物資として入ります。施設のスロットは使いません。一時停止・中止は建設と同じで、中止すると投入した物資の半分が戻り、遺物は壊れたままボックスに戻ります
+- 生産（`startRelicProduction`）: 遺物の `production.tech` を研究し終えていれば、遺物なしで同じ枠で生産します。都市の条件はありません。完成品は修復済みでボックスに入ります
+- 法王府の修復（`requestPapalRepair`）: `(repair.gold + repair.supplies) × PAPAL_REPAIR_RATE`（切り上げ）の金を法王府（`sede`）の国庫へ払い、次の内政処理で修復済みになります。技術も都市の生産もいりません。法王府自身と、法王府が滅んだあとは頼めません（頼んだあとで滅んでも届きます）
+- 都市が奪われると、その都市の修復・生産は消滅し、投入した物資も金も修復中の遺物も戻りません（`BattleReport.lostRelicWork`。結果の画面に出ます）。施設の建設は都市に付いたまま続きます。勢力が滅びると、アイテムボックスは依頼中のものも含めて滅ぼした勢力へ移ります
+- 内政処理（`runRelics`）が修復・生産の完成と法王府の修復を仕上げ、プレイヤーの勢力には通知（`GameState.events` の `RelicCompleted`）を出します。CPU の勢力は遺物を操作しません
+- 遺物画面は都市コマンドの「研究」＞「遺物」で開き、修復と生産は開いている都市で行います。内政画面の「遺物の修復・生産」（空きスロットの「施設を追加」にも並ぶ）からも始められます。「法王府に献上」は押せないボタンだけで、処理はまだありません。ターン情報の設定メニューの「デバッグ: 遺物」で、遺物を足す・各勢力のアイテムボックスを見ることができます
 
 戦闘からの退却: 戦闘画面では、部隊は戦場の拠点に街道でつながる自勢力の拠点（`retreatCities`。攻撃側には出撃元も入る）へ退却でき、隣接する敵の数に応じて失敗すると捕虜になります。戦闘画面は結果を部隊ごとに知らせ（battle-runtime の `RetreatReport`）、戦闘シーンが `BattleRetreat`（陣営・騎士・退却先・捕虜になったか）にして `resolveBattle` に渡します。退却した騎士は勝敗に関わらず選んだ拠点へ移り、捕虜になった騎士は相手の陣営の捕虜になります（捕虜を参照。戦闘の結果は `BattleReport.retreats`）。いまの戦闘の部隊は騎士と結び付いていない仮の部隊なので、騎士は null になります（部隊の ID を騎士の ID で作れば結び付きます）。
 
@@ -216,13 +228,13 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 
 拠点の初期データ（人口・商業・生産・初期の所属・固定の絵。省略可能な初期の備蓄・兵数・練度・施設）は `src/data/cityData.json`（`src/data/city.ts`）です。地図はゲームから渡された都市（名前・絵・所属。`views.ts` の `mapCities` を `MapView` の `cities` に渡す）を、`norden-strategy` の `PLACE_POSITIONS` の位置に描きます。地図に都市の写しはありません。拠点を増やしたら、`PLACE_POSITIONS` に位置を足してください（無いと `src/data/city.test.ts` が落ちます）。
 
-勢力のマスターデータ（名前・紋章・当主の呼び名・色・初期の金）は `src/data/factionData.json`（`src/data/faction.ts`）です。一覧の順が国力の同じ勢力の手番の順で、初期の金を省略した勢力は `INITIAL_GOLD`（`src/game/economy/balance.ts`）で始まります。地図の紋章は `norden-strategy` の `FACTION_LIST`（ID・名前・紋章だけの写し）を使います。食い違うと `src/data/faction.test.ts` が落ちるので、勢力の ID・名前・紋章・並び順を変えたら写しも直してください。紋章の画像は `norden-strategy/data` の `emblemImage`（番号で引く）です。
+勢力のマスターデータ（名前・紋章・当主の呼び名・色・初期の金・初期配布の遺物）は `src/data/factionData.json`（`src/data/faction.ts`）です。一覧の順が国力の同じ勢力の手番の順で、初期の金を省略した勢力は `INITIAL_GOLD`（`src/game/economy/balance.ts`）で始まります。地図の紋章は `norden-strategy` の `FACTION_LIST`（ID・名前・紋章だけの写し）を使います。食い違うと `src/data/faction.test.ts` が落ちるので、勢力の ID・名前・紋章・並び順を変えたら写しも直してください。紋章の画像は `norden-strategy/data` の `emblemImage`（番号で引く）です。
 
-施設のマスターデータは `src/data/buildingData.json`（`src/data/buildings.ts`）、画像は全施設を並べた `src/assets/buildings.webp`（大きさは `src/data/buildingSprite.json`）です。どれも norden-data の「ゲームに書き出す」で作ります。技術のマスターデータ（`src/data/techData.json`・`techSprite.json`・`src/assets/techs.webp`）も同じです。
+施設のマスターデータは `src/data/buildingData.json`（`src/data/buildings.ts`）、画像は全施設を並べた `src/assets/buildings.webp`（大きさは `src/data/buildingSprite.json`）です。どれも norden-data の「ゲームに書き出す」で作ります。技術のマスターデータ（`src/data/techData.json`・`techSprite.json`・`src/assets/techs.webp`）と遺物のマスターデータ（`src/data/relicData.json`・`relicSprite.json`・`src/assets/relics.webp`）も同じです。
 
 キャラクターのマスターデータは `src/data/characterData.json`、初期配置は `src/data/characterStart.json`、顔・全身の画像は `src/components/CharacterImage.tsx`（`src/assets/character.webp` のスプライト。大きさは `src/data/characterSprite.json`）です。
 
-これらのデータは `norden-data` のエディタで編集します（`cd norden-data && npm install && npm run dev`）。拠点データはエディタが直接読み書きし、施設データ・技術データは `norden-data/buildings/buildings.json`・`norden-data/techs/techs.json` から書き出し（画像は元画像から切り抜く）、キャラクターのデータは `norden-data/characters/characters.json` から書き出します。
+これらのデータは `norden-data` のエディタで編集します（`cd norden-data && npm install && npm run dev`）。拠点データはエディタが直接読み書きし、施設データ・技術データ・遺物データは `norden-data/buildings/buildings.json`・`norden-data/techs/techs.json`・`norden-data/relics/relics.json` から書き出し（画像は元画像から切り抜く）、キャラクターのデータは `norden-data/characters/characters.json` から書き出します。
 
 `npm test` で `src/` の単体テスト（Vitest）を実行します。
 

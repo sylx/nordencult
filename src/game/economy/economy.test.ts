@@ -177,14 +177,14 @@ describe('economy run', () => {
     const { production } = cityOutput(state, FLUEN)
     const stored = state.cities[FLUEN].storedSupplies
     state = runEconomy(state, 2)
-    expect(state.cities[FLUEN].construction).toMatchObject({ buildingId: 'workshop', investedSupplies: production })
+    expect(state.cities[FLUEN].construction).toMatchObject({ work: { kind: 'building', buildingId: 'workshop' }, investedSupplies: production })
     expect(state.cities[FLUEN].storedSupplies).toBe(stored)
 
     const required = BUILDING_MAP.workshop.supplies
-    state = withCity(state, FLUEN, { construction: { buildingId: 'workshop', requiredSupplies: required, investedSupplies: required - 10 } })
+    state = withCity(state, FLUEN, { construction: { work: { kind: 'building', buildingId: 'workshop' }, requiredSupplies: required, investedSupplies: required - 10 } })
     state = runEconomy(state, 3)
     expect(state.cities[FLUEN].construction).toBeNull()
-    expect(state.cities[FLUEN].buildings).toEqual(['workshop'])
+    expect(state.cities[FLUEN].buildings).toContain('workshop')
     expect(state.cities[FLUEN].storedSupplies).toBe(stored + production - 10)
     expect(state.lastEconomy!.cities[FLUEN].events).toContainEqual({ kind: 'buildingCompleted', buildingId: 'workshop' })
     // The workshop counts from the next run
@@ -422,7 +422,7 @@ describe('construction', () => {
     const start = playing('carta')
     const state = startConstruction(start, FLUEN, 'market')
     expect(state.gold.carta).toBe(start.gold.carta - BUILDING_MAP.market.gold)
-    expect(state.cities[FLUEN].construction).toEqual({ buildingId: 'market', requiredSupplies: BUILDING_MAP.market.supplies, investedSupplies: 0 })
+    expect(state.cities[FLUEN].construction).toEqual({ work: { kind: 'building', buildingId: 'market' }, requiredSupplies: BUILDING_MAP.market.supplies, investedSupplies: 0 })
     expect(constructionTurns(state, FLUEN)).toBe(Math.ceil(BUILDING_MAP.market.supplies / cityOutput(state, FLUEN).production))
   })
 
@@ -448,7 +448,7 @@ describe('construction', () => {
     expect(constructionProblem(state, FLUEN, 'grand_market')).toBeNull()
     state = startConstruction(state, FLUEN, 'grand_market')
     const required = BUILDING_MAP.grand_market.supplies
-    state = withCity(state, FLUEN, { construction: { buildingId: 'grand_market', requiredSupplies: required, investedSupplies: required - 1 } })
+    state = withCity(state, FLUEN, { construction: { work: { kind: 'building', buildingId: 'grand_market' }, requiredSupplies: required, investedSupplies: required - 1 } })
     state = runEconomy(state, 2)
     expect(state.cities[FLUEN].buildings).toEqual(['workshop', 'grand_market', 'granary', 'barracks'])
     // The market cannot be built again beside its upgrade

@@ -20,6 +20,8 @@ export interface Faction {
   color: string
   /** Gold in its treasury at the start; omitted: INITIAL_GOLD (src/game/economy/balance.ts) */
   gold?: number
+  /** The relics it starts with, broken (the same one more than once for more of it): ids of RELIC_LIST with a broken state */
+  relics?: readonly string[]
 }
 
 export const FACTION_LIST: readonly Faction[] = factionData

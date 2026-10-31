@@ -54,18 +54,31 @@ export function setResearchProblem(state: GameState, factionId: FactionId, techI
 }
 
 /**
- * The research with `techId` chosen: the points 宙に浮いた (carry) go into it. Should they reach its cost it is completed
- * there and then (none researched now), the surplus 宙に浮いた for the next, or lost with nothing left to research
+ * The research with `points` put into `techId`. Should they reach its cost it is completed there and then (none
+ * researched now), the surplus 宙に浮いた for the next, or lost with nothing left to research
  */
-function choose(state: GameState, factionId: FactionId, research: FactionResearch, techId: string): FactionResearch {
-  if (research.carry <= 0) return { ...research, current: techId }
-  const invested = (research.progress[techId] ?? 0) + research.carry
+function invest(state: GameState, factionId: FactionId, research: FactionResearch, techId: string, points: number): FactionResearch {
+  const invested = (research.progress[techId] ?? 0) + points
   const cost = TECH_MAP[techId]?.cost ?? Infinity
-  if (invested < cost) return { ...research, current: techId, progress: { ...research.progress, [techId]: invested }, carry: 0 }
+  if (invested < cost) return { ...research, current: techId, progress: { ...research.progress, [techId]: invested } }
   const done: FactionResearch = {
-    current: null, progress: { ...research.progress, [techId]: cost }, researched: [...research.researched, techId], carry: invested - cost,
+    current: null, progress: { ...research.progress, [techId]: cost }, researched: [...research.researched, techId], carry: research.carry + invested - cost,
   }
   return availableTechs(withResearch(state, factionId, done), factionId).length > 0 ? done : { ...done, carry: 0 }
+}
+
+/** The research with `techId` chosen: the points 宙に浮いた (carry) go into it */
+function choose(state: GameState, factionId: FactionId, research: FactionResearch, techId: string): FactionResearch {
+  if (research.carry <= 0) return { ...research, current: techId }
+  return invest(state, factionId, { ...research, carry: 0 }, techId, research.carry)
+}
+
+/** The faction's research as `research`: a faction the player plays is told should it have completed `techId` now (TechCompleted) */
+function withInvested(state: GameState, factionId: FactionId, research: FactionResearch, techId: string): GameState {
+  const next = withResearch(state, factionId, research)
+  if (!research.researched.includes(techId) || !isPlayerFaction(state, factionId)) return next
+  const event: TechCompleted = { id: `event-${state.serial}`, kind: 'techCompleted', turn: state.turn, factionId, techId }
+  return { ...next, events: [...next.events, event], serial: state.serial + 1 }
 }
 
 /**
@@ -78,10 +91,17 @@ export function setResearch(state: GameState, factionId: FactionId, techId: stri
   if (problem) throw new GameRuleError(problem)
   const research = researchOf(state, factionId)
   if (research.current === techId) return state
-  const next = withResearch(state, factionId, choose(state, factionId, research, techId))
-  if (!next.research[factionId].researched.includes(techId) || !isPlayerFaction(state, factionId)) return next
-  const event: TechCompleted = { id: `event-${state.serial}`, kind: 'techCompleted', turn: state.turn, factionId, techId }
-  return { ...next, events: [...next.events, event], serial: state.serial + 1 }
+  return withInvested(state, factionId, choose(state, factionId, research, techId), techId)
+}
+
+/**
+ * Research points for the faction at once (dismantling a relic): they go into the technology it researches, as
+ * setResearch's do, or, researching none, 宙に浮いた until it chooses one
+ */
+export function addResearchPoints(state: GameState, factionId: FactionId, points: number): GameState {
+  const research = researchOf(state, factionId)
+  if (!research.current) return withResearch(state, factionId, { ...research, carry: research.carry + points })
+  return withInvested(state, factionId, invest(state, factionId, research, research.current, points), research.current)
 }
 
 /**

@@ -1,9 +1,10 @@
 import { BUILDING_MAP } from '../../data/buildings'
 import { MAX_MORALE, mixMorale } from '../army'
 import type {
-  AffairsResult, CityEconomy, CityId, CityRecord, CitySnapshot, CityState, EconomyEvent, EconomyReport, FactionEconomy, FactionId,
+  AffairsResult, CityEconomy, CityId, CityRecord, CitySnapshot, CityState, ConstructionWork, EconomyEvent, EconomyReport, FactionEconomy, FactionId,
   GameState, OfficerRole,
 } from '../types'
+import { runRelics } from '../relics/runRelics'
 import { runResearch } from '../research/runResearch'
 import { CITY_IDS, FACTION_IDS } from '../world'
 import { AFFAIRS_BUDGET_MAX, AFFAIRS_BUDGET_MIN, SALARY } from './balance'
@@ -51,8 +52,21 @@ function runAffairs(city: CityState, cityId: CityId, tech: BuildingBonus, random
   return { affairs, affairsBudget }
 }
 
+/** What is completed by a work: a building standing (an upgrade in the place of the one it was built over), or a relic to go into the box */
+function completeWork(work: ConstructionWork, buildings: readonly string[]): { buildings: readonly string[]; event: EconomyEvent } {
+  if (work.kind !== 'building') return { buildings, event: { kind: 'relicCompleted', relicId: work.relicId } }
+  const { buildingId } = work
+  const replaced = BUILDING_MAP[buildingId]?.upgradeFrom
+  return {
+    buildings: replaced && buildings.includes(replaced)
+      ? buildings.map((id) => (id === replaced ? buildingId : id))
+      : [...buildings, buildingId],
+    event: { kind: 'buildingCompleted', buildingId },
+  }
+}
+
 /**
- * A city's turn: its officers at work, supplies into its construction (or its store),
+ * A city's turn: its officers at work, supplies into what it builds, repairs or produces (or its store),
  * its soldiers trained and recruited, its population grown (its faction's technologies `tech` as the run started)
  */
 function growCity(
@@ -66,14 +80,10 @@ function growCity(
   if (construction && !construction.paused) {
     const invested = construction.investedSupplies + output.production
     if (invested >= construction.requiredSupplies) {
-      // An upgrade takes the place of the building it was built over
-      const { buildingId } = construction
-      const replaced = BUILDING_MAP[buildingId]?.upgradeFrom
-      buildings = replaced && buildings.includes(replaced)
-        ? buildings.map((id) => (id === replaced ? buildingId : id))
-        : [...buildings, buildingId]
+      const completed = completeWork(construction.work, buildings)
+      buildings = completed.buildings
       storedSupplies += invested - construction.requiredSupplies
-      events.push({ kind: 'buildingCompleted', buildingId: construction.buildingId })
+      events.push(completed.event)
       construction = null
     } else {
       construction = { ...construction, investedSupplies: invested }
@@ -112,14 +122,15 @@ function growCity(
  * next strategy phase (after the battles moved the cities and the knights):
  * 1. each faction gains the gold of its cities' effective 商業 and pays its knights' salaries (down to 0, not below),
  * 2. each city's 商業・生産 officers spend gold of their budget raising its base 商業・生産,
- * 3. its effective 生産 goes into its construction (the surplus of a completed building into its store)
- *    or, with nothing being built, into its store,
+ * 3. its effective 生産 goes into what it builds, repairs or produces (the surplus of one completed into its store)
+ *    or, with none, into its store,
  * 4. its soldiers train (by themselves, and by its 訓練 officers and buildings), and its 募兵 officers
  *    spend gold of their budget on soldiers, who join at the recruits' morale,
  * 5. its population grows by its base 商業・生産 (as the officers raised them), its buildings (with one completed now)
  *    and its lord, and its tier and building slots with it (tierOf, slotsOf; a 聖地・要塞 keeps FIXED_SLOTS),
  * 6. each faction's research points (its research buildings' and its 研究 officers') go into the technology it
- *    researches (runResearch); a technology completed counts for its cities from the next run.
+ *    researches (runResearch); a technology completed counts for its cities from the next run,
+ * 7. the relics completed in its cities and those 法王府 was asked to repair come into its box (runRelics).
  * Otherwise the bonuses and the base values are those before the run (a building completed or a base raised now counts from the next).
  * `turn` is the turn starting; `random` rolls the gold the officers spend.
  * The report (lastEconomy) keeps each city's numbers before and after, and what its officers did;
@@ -156,5 +167,6 @@ export function runEconomy(state: GameState, turn: number, random: () => number 
   }
 
   const report: EconomyReport = { turn, factions, research: research.report, cities: reports }
-  return { ...after, lastEconomy: report, cityHistory, events: [...state.events, ...research.events], serial: research.serial }
+  const told: GameState = { ...after, lastEconomy: report, cityHistory, events: [...state.events, ...research.events], serial: research.serial }
+  return runRelics(told, turn, reports)
 }

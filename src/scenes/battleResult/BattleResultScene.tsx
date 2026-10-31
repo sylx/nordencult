@@ -3,6 +3,7 @@ import { KnightList } from '../../components/KnightList'
 import { CITY_MAP } from '../../data/city'
 import { useGame, type BattleEndReason, type CharacterMove, type MoveKind } from '../../game'
 import { useScene } from '../sceneContext'
+import { relicWorkLabel } from '../strategy/views'
 import type { SceneProps } from '../types'
 import './BattleResultScene.css'
 
@@ -37,7 +38,7 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
     )
   }
 
-  const { battle, winner, reason, cityCaptured, moves, retreats, wipeouts, governors, soldiers, prisoners, freed } = report
+  const { battle, winner, reason, cityCaptured, moves, retreats, wipeouts, governors, soldiers, prisoners, freed, lostRelicWork } = report
   // Knights captured retreating, wiped out or in a city taken without a battle, how, and where they are held
   // (those the losing side captured are set free: they are not prisoners)
   const how = new Map([
@@ -76,6 +77,13 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
             </p>
           )}
         </section>
+
+        {lostRelicWork && (
+          <section className="battle-result__section">
+            <h2>失われた遺物</h2>
+            <p className="battle-result__owner">{relicWorkLabel(lostRelicWork)}が都市とともに失われました</p>
+          </section>
+        )}
 
         {soldiers.length > 0 && (
           <section className="battle-result__section">

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Banner, BuildingImage, CITY_COMMAND_GROUPS, CUT_IMAGES, CUTIN_TEMPLATES, CityCommandScreen, ConfirmDialog, CutInLayer, DomesticScreen, EventScreen, FactionMark,
-  InvasionScreen, KnightChip, MapPickScreen, MoveScreen, ScreenHost, TechScreen, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
+  InvasionScreen, KnightChip, MapPickScreen, MoveScreen, RelicScreen, ScreenHost, TechScreen, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
   type MoveDraft, type TransportDraft,
 } from 'norden-ui'
 import { MapView, type CityHighlight, type FocusInset, type RoadHighlight, type StrategyMap } from 'norden-strategy'
@@ -13,18 +13,19 @@ import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   BALANCE, MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
   charactersIn, citiesOf, decideInvasion, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn,
-  endFactionTurnProblem, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn, mustChooseResearch, researchOf, setResearch,
+  dismantleRelic, endFactionTurnProblem, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn, mustChooseResearch, requestPapalRepair, researchOf, setResearch,
   moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction, prisonersIn,
-  runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, stationedIn, suppliesLeft, transportFromProblem,
+  runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, startRelicProduction, startRelicRepair, stationedIn, suppliesLeft, transportFromProblem,
   transportOrderProblem, dismissEvent, useGame, viewFaction, type CityId, type DefenseDraft, type FactionId, type GameState, type InvasionOrder,
   type MoveOrder, type TransportOrder,
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
+import { RelicDebug } from './RelicDebug'
 import { ResearchDebug } from './ResearchDebug'
 import {
   UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
-  eventView, mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, researchPerTurn, researchPointDetails, techsView,
+  eventView, mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, relicOptions, relicProductionsView, relicsView, researchPerTurn, researchPointDetails, techsView,
   transportKnightView, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
@@ -70,6 +71,8 @@ type StrategyScreens = {
   defense: { cityId: string; battleId: string }
   /** The technology screen (研究＞技術), opened over the city command screen of `cityId` */
   tech: { cityId: string }
+  /** The relic screen (研究＞遺物): the faction's box; a relic is repaired or produced in `cityId` */
+  relic: { cityId: string }
 }
 
 /** Commands not made yet */
@@ -190,12 +193,12 @@ export default function StrategyScene() {
   }, [playerTurn, popTo])
 
   // Research points 宙に浮いた (none researched, or one just completed): once the notices are told, the technology
-  // screen opens and stays until something is chosen
+  // screen opens and stays until something is chosen, over the relic screen when a relic dismantled made them
   const mustChoose = playerTurn && mustChooseResearch(game, faction)
   const { push: pushScreen } = nav
   useEffect(() => {
     if (!ready || announcing || event || !mustChoose || top.screen === 'tech') return
-    popTo('cityCommand')
+    if (top.screen !== 'relic') popTo('cityCommand')
     pushScreen('tech', { cityId: 'cityId' in top.params ? top.params.cityId : top.params.from })
   }, [ready, announcing, event, mustChoose, top, popTo, pushScreen])
 
@@ -471,6 +474,7 @@ export default function StrategyScene() {
     const domestic = playerTurn ? domesticProblem(game, cityId) : '手番ではありません'
     state.domestic = domestic ? { disabled: true, reason: domestic } : {}
     state.tech = playerTurn ? {} : { disabled: true, reason: '手番ではありません' }
+    state.relic = state.tech
     return state
   }
 
@@ -505,6 +509,7 @@ export default function StrategyScene() {
                 else if (id === 'transport') nav.push('pickTransportTarget', { from: cityId })
                 else if (id === 'domestic') nav.push('domestic', { cityId })
                 else if (id === 'tech') nav.push('tech', { cityId })
+                else if (id === 'relic') nav.push('relic', { cityId })
               }}
               onOpenResearch={playerTurn ? () => nav.push('tech', { cityId }) : undefined}
               onEndTurn={endTurn} endTurnDisabled={!playerTurn || Boolean(endFactionTurnProblem(game))}
@@ -514,6 +519,7 @@ export default function StrategyScene() {
                   <p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(faction)} /></p>
                   <SoundSettings />
                   <ResearchDebug />
+                  <RelicDebug />
                 </div>
               }>
               <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))}
@@ -563,10 +569,12 @@ export default function StrategyScene() {
           <DomesticScreen
             city={cityView(game, cityId)}
             buildOptions={buildOptions(game, cityId)}
+            relicOptions={relicOptions(game, cityId)}
             gold={game.gold[faction]}
             populationGrowth={populationGrowthView(game, cityId)}
             stats={domesticStats(game, cityId)}
             onBuild={(buildingId) => update((s) => startConstruction(s, cityId, buildingId))}
+            onRelicWork={({ kind, id }) => update((s) => (kind === 'relicRepair' ? startRelicRepair(s, cityId, id) : startRelicProduction(s, cityId, id)))}
             onDemolish={(buildingId) => update((s) => demolishBuilding(s, cityId, buildingId))}
             onCancelConstruction={() => update((s) => cancelConstruction(s, cityId))}
             onPauseConstruction={(paused) => update((s) => pauseConstruction(s, cityId, paused))}
@@ -584,6 +592,16 @@ export default function StrategyScene() {
           <TechScreen techs={techsView(game, faction)} perTurn={researchPerTurn(game, faction)}
             pointDetails={researchPointDetails(game, faction)} carry={researchOf(game, faction).carry} mustChoose={mustChoose}
             onResearch={playerTurn ? (techId) => update((s) => setResearch(s, viewFaction(s), techId)) : undefined}
+            onClose={nav.pop} />
+        ),
+        relic: ({ cityId }) => (
+          <RelicScreen cityName={cityName(cityId)} gold={game.gold[faction]}
+            construction={ownerOf(game, cityId) === faction ? cityView(game, cityId).buildings?.construction : null}
+            relics={relicsView(game, faction, cityId)} productions={relicProductionsView(game, faction, cityId)}
+            onDismantle={(id) => update((s) => dismantleRelic(s, viewFaction(s), id))}
+            onRepair={(id) => update((s) => startRelicRepair(s, cityId, id))}
+            onPapalRepair={(id) => update((s) => requestPapalRepair(s, viewFaction(s), id))}
+            onProduce={(relicId) => update((s) => startRelicProduction(s, cityId, relicId))}
             onClose={nav.pop} />
         ),
         defense: ({ cityId, battleId }) => {

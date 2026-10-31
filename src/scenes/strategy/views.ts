@@ -2,14 +2,17 @@ import { createElement } from 'react'
 import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import type {
-  BuildOptionView, BuildingView, CityStatView, CityView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, EventDetail, FactionResearchSummaryView,
-  FactionSummaryView, FactionView, InvasionAssignment, KnightView, PopulationGrowthView, SpriteImage, TechView, TurnView, UnitTypeView,
+  BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, EventDetail, FactionResearchSummaryView,
+  FactionSummaryView, FactionView, InvasionAssignment, KnightView, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicView, SpriteImage, TechView, TurnView, UnitTypeView,
 } from 'norden-ui'
 import type { MapCity, MapSeason, PlaceType } from 'norden-strategy'
 import buildingSheet from '../../assets/buildings.webp'
 import { CharacterImage } from '../../components/CharacterImage'
 import { BUILDING_LIST, BUILDING_MAP, describeEffect, type BuildingEffectKind, type CityTier } from '../../data/buildings'
 import buildingSprite from '../../data/buildingSprite.json'
+import relicSheet from '../../assets/relics.webp'
+import relicSprite from '../../data/relicSprite.json'
+import { RELIC_MAP, RELIC_USE_LABELS, relicName, type Relic } from '../../data/relics'
 import techSheet from '../../assets/techs.webp'
 import techSprite from '../../data/techSprite.json'
 import { TECH_BRANCH_LABELS, TECH_LIST, TECH_MAP, techChildren } from '../../data/techs'
@@ -19,10 +22,11 @@ import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES } from '../../data/unitTypes'
 import {
   assignmentLabel, assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
-  availableTechs, engagementOf, FUNDED_ROLES, governorOf, officerTraining, researchOf, researchOutput, researchProblem, researchTurns, techStatus,
+  availableTechs, engagementOf, FUNDED_ROLES, governorOf, officerTraining, producibleRelics, productionProblem, relicItemInfo, relicsOf, relicWorks, repairableRelics, repairProblem,
+  researchOf, researchOutput, researchProblem, researchTurns, techStatus,
   MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportKnightProblem, transportOrderOf, treasuryForecast,
-  turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type CityLogStat,
-  type GameEvent, type GameState, type Season,
+  turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type CityConstruction, type CityLogStat,
+  type GameEvent, type GameState, type RelicItem, type RelicWork, type Season,
 } from '../../game'
 
 /** The game state turned into the view types norden-ui's screens draw */
@@ -149,6 +153,22 @@ export function researchSummary(game: GameState, factionId: string): FactionRese
   }
 }
 
+/** A relic's picture on src/assets/relics.webp, broken or repaired (one with no broken state has the one) */
+export function relicImage(id: string, repaired: boolean): SpriteImage | undefined {
+  const relic = RELIC_MAP[id]
+  const sprite = repaired ? relic?.sprite : relic?.brokenSprite ?? relic?.sprite
+  return sprite && {
+    src: relicSheet, sheetWidth: relicSprite.width, sheetHeight: relicSprite.height, ...sprite, width: relicSprite.cellWidth, height: relicSprite.cellHeight,
+  }
+}
+
+/** A relic as a building to draw */
+const relicBuildingView = (id: string, repaired: boolean): BuildingView =>
+  ({ id, name: relicName(id, repaired), image: relicImage(id, repaired), description: RELIC_MAP[id]?.description })
+
+/** The relic of a repair (broken still) or a production (repaired) */
+const workRelicView = (work: RelicWork) => relicBuildingView(work.relicId, work.kind === 'relicProduction')
+
 /** undefined: neutral */
 export function factionView(factionId: string | null | undefined): FactionView | undefined {
   const faction = factionId ? FACTION_MAP[factionId] : undefined
@@ -221,6 +241,19 @@ const CITY_LOG_LABELS: Readonly<Record<CityLogStat, string>> = {
 /** Full length of the 商業・生産 bars, the same for every city (a value past it fills the bar) */
 const OUTPUT_BAR_MAX = 1000
 
+/** What the city builds, repairs or produces, for the screens */
+function constructionView(game: GameState, cityId: string, construction: CityConstruction): ConstructionView {
+  const { work } = construction
+  return {
+    building: work.kind === 'building' ? buildingView(work.buildingId) : workRelicView(work),
+    kind: work.kind,
+    invested: construction.investedSupplies,
+    required: construction.requiredSupplies,
+    turnsLeft: construction.paused ? null : constructionTurns(game, cityId),
+    paused: construction.paused,
+  }
+}
+
 export function cityView(game: GameState, id: string): CityView {
   const city = CITY_MAP[id]
   const faction = factionView(ownerOf(game, id))
@@ -255,13 +288,7 @@ export function cityView(game: GameState, id: string): CityView {
     buildings: {
       slots: output.slots,
       built: state.buildings.map(buildingView),
-      construction: state.construction && {
-        building: buildingView(state.construction.buildingId),
-        invested: state.construction.investedSupplies,
-        required: state.construction.requiredSupplies,
-        turnsLeft: state.construction.paused ? null : constructionTurns(game, id),
-        paused: state.construction.paused,
-      },
+      construction: state.construction && constructionView(game, id, state.construction),
     },
     tags: city.tags,
     knights: knights.map((knight) => knightView(game, knight)),
@@ -336,17 +363,95 @@ export function populationGrowthView(game: GameState, cityId: string): Populatio
 /** Buildings the city could start (not standing or being built), with why each cannot be started now and whether it is locked */
 export function buildOptions(game: GameState, cityId: string): BuildOptionView[] {
   const city = game.cities[cityId]
+  const work = city.construction?.work
   return BUILDING_LIST
-    .filter((b) => !city.buildings.includes(b.id) && city.construction?.buildingId !== b.id)
+    .filter((b) => !city.buildings.includes(b.id) && !(work?.kind === 'building' && work.buildingId === b.id))
     .map((b) => ({
       ...buildingView(b.id),
       supplies: b.supplies,
       gold: b.gold,
-      turns: constructionTurns(game, cityId, b.id),
+      turns: constructionTurns(game, cityId, b.supplies),
       unavailableReason: constructionProblem(game, cityId, b.id) ?? undefined,
       locked: buildingLocked(game, cityId, b.id),
     }))
 }
+
+/** The relics the city could repair or produce (those the faction has the technology for), with why each cannot be started now */
+export function relicOptions(game: GameState, cityId: string): RelicOptionView[] {
+  const factionId = ownerOf(game, cityId)
+  if (!factionId) return []
+  const repairs = repairableRelics(game, factionId).map((item): RelicOptionView => {
+    const cost = RELIC_MAP[item.relicId].repair!
+    return {
+      ...relicBuildingView(item.relicId, false), id: item.id, kind: 'relicRepair', supplies: cost.supplies, gold: cost.gold,
+      turns: constructionTurns(game, cityId, cost.supplies), unavailableReason: repairProblem(game, cityId, item.id) ?? undefined,
+    }
+  })
+  const productions = producibleRelics(game, factionId).map((relic): RelicOptionView => {
+    const cost = relic.production!
+    return {
+      ...relicBuildingView(relic.id, true), kind: 'relicProduction', supplies: cost.supplies, gold: cost.gold,
+      turns: constructionTurns(game, cityId, cost.supplies), unavailableReason: productionProblem(game, cityId, relic.id) ?? undefined,
+    }
+  })
+  return [...repairs, ...productions]
+}
+
+const relicSummary = (relic: Relic) => ({ rarity: relic.rarity, useLabel: RELIC_USE_LABELS[relic.use], description: relic.description })
+
+const relicStatus = (item: RelicItem) => (item.repaired ? 'repaired' : item.papalRepair ? 'papalRepair' : 'broken')
+
+/** The faction's box, what it can do with each relic (repairing in `cityId`), then the relics being repaired or produced in its cities */
+export function relicsView(game: GameState, factionId: string, cityId: string): RelicView[] {
+  const box = relicsOf(game, factionId).flatMap((item): RelicView[] => {
+    const info = relicItemInfo(game, factionId, cityId, item.id)
+    if (!info) return []
+    const { relic, repair, papalGold, dismantlePoints } = info
+    return [{
+      ...relicSummary(relic),
+      id: item.id,
+      status: relicStatus(item),
+      name: relicName(item.relicId, item.repaired),
+      image: relicImage(item.relicId, item.repaired),
+      dismantle: dismantlePoints === undefined ? undefined : { points: dismantlePoints, unavailableReason: info.dismantleProblem ?? undefined },
+      repair: repair && {
+        supplies: repair.supplies, gold: repair.gold, turns: constructionTurns(game, cityId, repair.supplies), unavailableReason: info.repairProblem ?? undefined,
+      },
+      papalRepair: papalGold === undefined ? undefined : { gold: papalGold, unavailableReason: info.papalProblem ?? undefined },
+    }]
+  })
+  const works = relicWorks(game, factionId).flatMap(({ cityId: workCity, work }): RelicView[] => {
+    const relic = RELIC_MAP[work.relicId]
+    if (!relic) return []
+    const repairing = work.kind === 'relicRepair'
+    return [{
+      ...relicSummary(relic),
+      id: `work-${workCity}`,
+      status: repairing ? 'repairing' : 'producing',
+      name: relicName(work.relicId, !repairing),
+      image: relicImage(work.relicId, !repairing),
+      cityName: cityName(workCity),
+    }]
+  })
+  return [...box, ...works]
+}
+
+/** The relics the faction has the technology to produce, with why each cannot be started in `cityId` now */
+export function relicProductionsView(game: GameState, factionId: string, cityId: string): RelicProductionView[] {
+  return producibleRelics(game, factionId).map((relic) => ({
+    ...relicSummary(relic),
+    id: relic.id,
+    name: relic.name,
+    image: relicImage(relic.id, true),
+    supplies: relic.production!.supplies,
+    gold: relic.production!.gold,
+    turns: constructionTurns(game, cityId, relic.production!.supplies),
+    unavailableReason: productionProblem(game, cityId, relic.id) ?? undefined,
+  }))
+}
+
+/** What was lost with a city, e.g. 壊れたライフルの修復 */
+export const relicWorkLabel = (work: RelicWork) => `${relicName(work.relicId, work.kind === 'relicProduction')}の${work.kind === 'relicRepair' ? '修復' : '生産'}`
 
 /** e.g. +4〜7, or +5 when the least and the most are the same */
 const range = ([low, high]: readonly [number, number]) => (low === high ? `+${low}` : `+${low}〜${high}`)
@@ -418,6 +523,21 @@ export function eventView(event: GameEvent): EventView {
       details: [
         { label: '効果', value: tech && tech.effects.length > 0 ? tech.effects.map(describeEffect).join('・') : 'なし' },
         { label: '解禁された技術', value: techChildren(event.techId).map((t) => t.name).join('・') || 'なし' },
+      ],
+      knights: [],
+    }
+  }
+  if (event.kind === 'relicCompleted') {
+    const name = relicName(event.relicId, true)
+    const relic = RELIC_MAP[event.relicId]
+    return {
+      sound: 'complete',
+      picture: { id: event.relicId, name, image: relicImage(event.relicId, true) },
+      title: '遺物の完成',
+      message: `${name}が完成しました。`,
+      details: [
+        { label: '場所', value: event.cityId ? cityName(event.cityId) : '法王府' },
+        ...(relic ? [{ label: '使い道', value: RELIC_USE_LABELS[relic.use] }] : []),
       ],
       knights: [],
     }
