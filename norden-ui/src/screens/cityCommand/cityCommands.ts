@@ -28,7 +28,7 @@ export const CITY_COMMAND_GROUPS: readonly CityCommandGroup[] = [
   },
   {
     id: 'research', label: '研究', icon: iconResearch,
-    commands: [{ id: 'quest', label: '探索' }, { id: 'relic', label: '遺物' }, { id: 'tech', label: '技術' }],
+    commands: [{ id: 'tech', label: '技術' }, { id: 'quest', label: '探索' }, { id: 'relic', label: '遺物' }],
   },
   {
     id: 'negotiation', label: '交渉', icon: iconNegotiation,
