@@ -1,44 +1,36 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import type { TechTreeView, TechView } from '../types'
+import type { TechView } from '../types'
 import TechScreen from './TechScreen'
 import { layoutTechs } from './techLayout'
 
 const tech = (id: string, requires: string[], change: Partial<TechView> = {}): TechView =>
   ({ id, requires, status: 'hidden', ...change })
 
-const TREES: TechTreeView[] = [
-  {
-    id: 'physical', label: '物理文明', techs: [
-      tech('phys', [], { status: 'researched', name: '物理文明', cost: 100, progress: 100, effects: ['生産 +5%'] }),
-      tech('tactics', ['phys'], { status: 'researching', name: '兵法', cost: 200, progress: 40, turns: 8, effects: ['新兵の練度 +5'] }),
-      tech('gunpowder', ['phys'], { status: 'available', name: '火薬', cost: 200, progress: 0, turns: 10 }),
-      tech('melee', ['tactics']),
-    ],
-  },
-  {
-    id: 'arcane', label: '魔法文明', techs: [
-      tech('arc', [], { status: 'available', name: '魔法文明', cost: 100 }),
-      tech('fire', ['arc'], { status: 'visible', name: '火魔法', cost: 300, unavailableReason: '前提の技術（魔法文明）が要ります' }),
-    ],
-  },
+const TECHS: TechView[] = [
+  tech('phys', [], { status: 'researched', name: '物理文明', cost: 100, progress: 100, effects: ['生産 +5%'] }),
+  tech('tactics', ['phys'], { status: 'researching', name: '兵法', cost: 200, progress: 40, turns: 8, effects: ['新兵の練度 +5'] }),
+  tech('gunpowder', ['phys'], { status: 'available', name: '火薬', cost: 200, progress: 0, turns: 10 }),
+  tech('melee', ['tactics']),
+  tech('arc', [], { status: 'available', name: '魔法文明', cost: 100 }),
+  tech('fire', ['arc'], { status: 'visible', name: '火魔法', cost: 300, unavailableReason: '前提の技術（魔法文明）が要ります' }),
 ]
 
 describe('TechScreen', () => {
-  it('draws the trees with each technology as it stands, ??? for the unknown', () => {
-    render(<TechScreen trees={TREES} perTurn={[12, 15]} onClose={() => {}} />)
-    const physical = screen.getByRole('region', { name: '物理文明' })
-    expect(within(physical).getByRole('button', { name: '物理文明（研究済み）' })).toBeInTheDocument()
-    expect(within(physical).getByRole('button', { name: '兵法（研究中）' })).toHaveTextContent('40 / 200')
-    expect(within(physical).getByRole('button', { name: '???（未知の技術）' })).not.toHaveTextContent('白兵戦')
+  it('draws the tree with each technology as it stands, ??? for the unknown', () => {
+    render(<TechScreen techs={TECHS} perTurn={[12, 15]} onClose={() => {}} />)
+    const tree = screen.getByRole('region', { name: '技術ツリー' })
+    expect(within(tree).getByRole('button', { name: '物理文明（研究済み）' })).toBeInTheDocument()
+    expect(within(tree).getByRole('button', { name: '兵法（研究中）' })).toHaveTextContent('40 / 200')
+    expect(within(tree).getByRole('button', { name: '???（未知の技術）' })).not.toHaveTextContent('白兵戦')
     expect(screen.getByRole('button', { name: '火魔法（前提が足りない）' })).toBeInTheDocument()
     expect(screen.getByText('+12〜15')).toBeInTheDocument()
   })
 
   it('shows the technology researched first, and another chosen with 研究する', async () => {
     const onResearch = vi.fn()
-    render(<TechScreen trees={TREES} onResearch={onResearch} onClose={() => {}} />)
+    render(<TechScreen techs={TECHS} onResearch={onResearch} onClose={() => {}} />)
     const details = screen.getByRole('region', { name: '技術の詳細' })
     expect(within(details).getByRole('heading', { name: '兵法' })).toBeInTheDocument()
     expect(within(details).getByText('あと8ターン', { exact: false })).toBeInTheDocument()
@@ -49,7 +41,7 @@ describe('TechScreen', () => {
   })
 
   it('says what is missing, and nothing of the unknown', async () => {
-    render(<TechScreen trees={TREES} onResearch={() => {}} onClose={() => {}} />)
+    render(<TechScreen techs={TECHS} onResearch={() => {}} onClose={() => {}} />)
     const details = screen.getByRole('region', { name: '技術の詳細' })
     await userEvent.click(screen.getByRole('button', { name: '火魔法（前提が足りない）' }))
     expect(within(details).getByRole('note')).toHaveTextContent('前提の技術（魔法文明）が要ります')
@@ -60,32 +52,32 @@ describe('TechScreen', () => {
   })
 
   it('cannot be closed while the points 宙に浮いた must go somewhere', () => {
-    const { rerender } = render(<TechScreen trees={TREES} carry={30} mustChoose onClose={() => {}} />)
+    const { rerender } = render(<TechScreen techs={TECHS} carry={30} mustChoose onClose={() => {}} />)
     expect(screen.getByRole('status')).toHaveTextContent('研究先を選んでください（宙に浮いた研究ポイント 30）')
     expect(screen.queryByRole('button', { name: '閉じる' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: '戻る' })).toBeDisabled()
-    rerender(<TechScreen trees={TREES} onClose={() => {}} />)
+    rerender(<TechScreen techs={TECHS} onClose={() => {}} />)
     expect(screen.getByRole('button', { name: '閉じる' })).toBeInTheDocument()
   })
 
   it('says a technology the points 宙に浮いた complete is completed as soon as it is researched', async () => {
-    const trees: TechTreeView[] = [{ id: 'physical', label: '物理文明', techs: [tech('phys', [], { status: 'available', name: '物理文明', cost: 100, progress: 0, turns: 0 })] }]
-    render(<TechScreen trees={trees} carry={130} mustChoose onResearch={() => {}} />)
+    const techs = [tech('phys', [], { status: 'available', name: '物理文明', cost: 100, progress: 0, turns: 0 })]
+    render(<TechScreen techs={techs} carry={130} mustChoose onResearch={() => {}} />)
     const details = screen.getByRole('region', { name: '技術の詳細' })
     expect(details).toHaveTextContent('研究するとすぐに完了します')
     expect(details).not.toHaveTextContent('あと0ターン')
   })
 
   it('says every technology is researched', () => {
-    const trees: TechTreeView[] = [{ id: 'physical', label: '物理文明', techs: [tech('phys', [], { status: 'researched', name: '物理文明', cost: 100 })] }]
-    render(<TechScreen trees={trees} onClose={() => {}} />)
+    const techs = [tech('phys', [], { status: 'researched', name: '物理文明', cost: 100 })]
+    render(<TechScreen techs={techs} onClose={() => {}} />)
     expect(screen.getByText('すべての技術を研究し終えました')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '戻る' })).toBeEnabled()
   })
 
   it('goes back with 戻る at the bottom too', async () => {
     const onClose = vi.fn()
-    render(<TechScreen trees={TREES} onClose={onClose} />)
+    render(<TechScreen techs={TECHS} onClose={onClose} />)
     await userEvent.click(screen.getByRole('button', { name: '戻る' }))
     expect(onClose).toHaveBeenCalled()
   })
@@ -101,6 +93,31 @@ describe('layoutTechs', () => {
       a2: { column: 2, row: 1 }, b: { column: 1, row: 2 },
     })
     expect(layout).toMatchObject({ columns: 4, rows: 3 })
+  })
+
+  it('puts every technology requiring none side by side in the first column', () => {
+    const { places, rows } = layoutTechs([tech('a', []), tech('a1', ['a']), tech('b', []), tech('c', []), tech('c1', ['c'])])
+    expect(places).toEqual({
+      a: { column: 0, row: 0 }, a1: { column: 1, row: 0 }, b: { column: 0, row: 1 }, c: { column: 0, row: 2 }, c1: { column: 1, row: 2 },
+    })
+    expect(rows).toBe(3)
+  })
+
+  it('draws a technology on the row of the one it is aligned with, ahead of that one\'s other children', () => {
+    const { places, rows } = layoutTechs([
+      tech('root', []), tech('a', ['root']), tech('a1', ['a']), tech('b', ['root']), tech('b1', ['b']), tech('ab', ['b', 'a1'], { alignWith: 'b' }),
+    ])
+    expect(places.ab).toEqual({ column: 3, row: places.b!.row })
+    expect(places.b1!.row).not.toBe(places.b!.row)
+    expect(places.a1!.row).toBe(places.a!.row)
+    expect(rows).toBe(3)
+  })
+
+  it('ignores an alignment it cannot draw', () => {
+    const places = (alignWith: string) => layoutTechs([tech('root', []), tech('a', ['root']), tech('b', ['root'], { alignWith })]).places
+    const plain = layoutTechs([tech('root', []), tech('a', ['root']), tech('b', ['root'])]).places
+    expect(places('a')).toEqual(plain)
+    expect(places('missing')).toEqual(plain)
   })
 
   it('survives a cycle', () => {

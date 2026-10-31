@@ -256,6 +256,8 @@ export interface TechView {
   status: TechStatusView
   /** Ids of the technologies it requires (every one of them), drawn as lines into it; none for a root */
   requires: readonly string[]
+  /** A technology in a column to the left, whose row it is drawn on; given for a hidden one too, so that its place does not give way once known */
+  alignWith?: string
   name?: string
   /** Its picture on the game's technology sheet */
   image?: SpriteImage
@@ -269,13 +271,6 @@ export interface TechView {
   turns?: number | null
   /** Why it cannot be researched now, e.g. 前提の技術（火魔法）が要ります */
   unavailableReason?: string
-}
-
-/** A tree of the technology screen (物理文明・魔法文明): its technologies, in data order */
-export interface TechTreeView {
-  id: string
-  label: string
-  techs: readonly TechView[]
 }
 
 export interface UnitTypeView {

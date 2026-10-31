@@ -3,14 +3,14 @@ import { BuildingImage, ConstructionProgress } from '../../components/parts/Buil
 import Button from '../../components/parts/Button'
 import SectionFrame from '../../components/parts/SectionFrame'
 import WindowFrame from '../../components/window/WindowFrame'
-import type { TechStatusView, TechTreeView, TechView } from '../types'
+import type { TechStatusView, TechView } from '../types'
 import { layoutTechs } from './techLayout'
 import '../screens.css'
 import './TechScreen.css'
 
 export interface TechScreenProps {
-  /** The trees (物理文明・魔法文明), drawn one under the other */
-  trees: readonly TechTreeView[]
+  /** Every technology, in data order; those requiring none are the roots, side by side in the first column */
+  techs: readonly TechView[]
   /** Research points the faction gets a turn, least and most */
   perTurn?: readonly [number, number]
   /** How they are made up, for their tooltip, e.g. 施設 +7.5 */
@@ -63,8 +63,8 @@ function TechNode({ tech, selected, onSelect }: { tech: TechView; selected: bool
   )
 }
 
-function TechTree({ tree, selectedId, onSelect }: { tree: TechTreeView; selectedId?: string; onSelect: (id: string) => void }) {
-  const layout = useMemo(() => layoutTechs(tree.techs), [tree.techs])
+function TechTree({ techs, selectedId, onSelect }: { techs: readonly TechView[]; selectedId?: string; onSelect: (id: string) => void }) {
+  const layout = useMemo(() => layoutTechs(techs), [techs])
   const width = layout.columns * COLUMN_WIDTH
   const height = layout.rows * ROW_HEIGHT
   const at = (id: string) => {
@@ -72,28 +72,26 @@ function TechTree({ tree, selectedId, onSelect }: { tree: TechTreeView; selected
     return { left: place.column * COLUMN_WIDTH, top: place.row * ROW_HEIGHT }
   }
   return (
-    <section className="norden-tech-tree" aria-label={tree.label}>
-      <div className="norden-tech-tree-canvas" style={{ width, height }}>
-        <svg className="norden-tech-tree-lines" width={width} height={height} aria-hidden="true">
-          {tree.techs.flatMap(tech => tech.requires.filter(id => layout.places[id]).map(id => {
-            const from = at(id)
-            const to = at(tech.id)
-            const x1 = from.left + NODE_WIDTH
-            const y1 = from.top + NODE_HEIGHT / 2
-            const x2 = to.left
-            const y2 = to.top + NODE_HEIGHT / 2
-            const mid = (x1 + x2) / 2
-            const done = tree.techs.find(t => t.id === id)?.status === 'researched'
-            return <path key={`${id}-${tech.id}`} className={done ? 'is-open' : ''} d={`M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2},${y2}`} />
-          }))}
-        </svg>
-        {tree.techs.map(tech => (
-          <div key={tech.id} className="norden-tech-tree-cell" style={{ ...at(tech.id), width: NODE_WIDTH, height: NODE_HEIGHT }}>
-            <TechNode tech={tech} selected={tech.id === selectedId} onSelect={() => onSelect(tech.id)} />
-          </div>
-        ))}
-      </div>
-    </section>
+    <div className="norden-tech-tree-canvas" style={{ width, height }}>
+      <svg className="norden-tech-tree-lines" width={width} height={height} aria-hidden="true">
+        {techs.flatMap(tech => tech.requires.filter(id => layout.places[id]).map(id => {
+          const from = at(id)
+          const to = at(tech.id)
+          const x1 = from.left + NODE_WIDTH
+          const y1 = from.top + NODE_HEIGHT / 2
+          const x2 = to.left
+          const y2 = to.top + NODE_HEIGHT / 2
+          const mid = (x1 + x2) / 2
+          const done = techs.find(t => t.id === id)?.status === 'researched'
+          return <path key={`${id}-${tech.id}`} className={done ? 'is-open' : ''} d={`M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2},${y2}`} />
+        }))}
+      </svg>
+      {techs.map(tech => (
+        <div key={tech.id} className="norden-tech-tree-cell" style={{ ...at(tech.id), width: NODE_WIDTH, height: NODE_HEIGHT }}>
+          <TechNode tech={tech} selected={tech.id === selectedId} onSelect={() => onSelect(tech.id)} />
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -171,20 +169,19 @@ function TechDetails({ tech, onResearch }: { tech: TechView; onResearch?: (techI
 }
 
 /**
- * The technology screen (研究＞技術): a full-screen window with the trees drawn left to right (a column per depth,
- * lines from the technologies required), each technology's picture and name (researched, researching with its progress,
+ * The technology screen (研究＞技術): a full-screen window with the tree drawn left to right (a column per depth, the
+ * technologies requiring none side by side in the first, lines from the technologies required), each technology's picture and name (researched, researching with its progress,
  * researchable, seen by name, or ??? with its picture hidden), and on the right the details of the one chosen and
- * 研究する (the trees and the details 7:3, the trees scrolling on their own and panned by dragging them). Along the
+ * 研究する (the tree and the details 7:3, the tree scrolling on its own and panned by dragging it). Along the
  * bottom, the research points a turn and those 宙に浮いた (or that every technology is researched) at the left and
  * 戻る at the right; while they must go somewhere (mustChoose) the window cannot be closed
  */
-export default function TechScreen({ trees, perTurn, pointDetails, carry = 0, mustChoose = false, onResearch, onClose, children }: TechScreenProps) {
-  const all = trees.flatMap(tree => tree.techs)
+export default function TechScreen({ techs, perTurn, pointDetails, carry = 0, mustChoose = false, onResearch, onClose, children }: TechScreenProps) {
   const [selectedId, setSelectedId] = useState<string | undefined>(
-    () => (all.find(t => t.status === 'researching') ?? all.find(t => t.status === 'available') ?? all[0])?.id,
+    () => (techs.find(t => t.status === 'researching') ?? techs.find(t => t.status === 'available') ?? techs[0])?.id,
   )
-  const selected = all.find(tech => tech.id === selectedId)
-  const complete = all.length > 0 && all.every(tech => tech.status === 'researched')
+  const selected = techs.find(tech => tech.id === selectedId)
+  const complete = techs.length > 0 && techs.every(tech => tech.status === 'researched')
   const { dragging, ...pan } = useDragPan()
   return (
     <div className="norden-screen norden-tech">
@@ -194,7 +191,7 @@ export default function TechScreen({ trees, perTurn, pointDetails, carry = 0, mu
             <section className="norden-window-section norden-tech-trees" aria-label="技術ツリー">
               <SectionFrame />
               <div className={`norden-tech-trees-scroll ${dragging ? 'is-dragging' : ''}`} {...pan}>
-                {trees.map(tree => <TechTree key={tree.id} tree={tree} selectedId={selectedId} onSelect={setSelectedId} />)}
+                <TechTree techs={techs} selectedId={selectedId} onSelect={setSelectedId} />
               </div>
             </section>
             <section className="norden-window-section norden-tech-side" aria-label="技術の詳細">

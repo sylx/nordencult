@@ -5,9 +5,10 @@ export interface TechSpec {
   id: string
   name: string
   description: string
-  branch: 'physical' | 'arcane'
+  branch?: 'physical' | 'arcane'
   cost: number
   requires: readonly string[]
+  alignWith?: string
   effects: readonly string[]
   image?: SpriteImage
 }
@@ -17,9 +18,10 @@ interface RepositoryTech {
   id: string
   name: string
   description: string
-  branch: 'physical' | 'arcane'
+  branch?: 'physical' | 'arcane'
   cost: number
   requires: string[]
+  alignWith?: string
   effects: unknown[]
   sprite?: { x: number; y: number }
 }
@@ -51,6 +53,7 @@ export const repositoryTechs: TechSpec[] | null = game && describeEffect && shee
     branch: tech.branch,
     cost: tech.cost,
     requires: tech.requires,
+    alignWith: tech.alignWith,
     effects: tech.effects.map(describeEffect),
     image: tech.sprite && {
       src: sheet,
@@ -69,10 +72,12 @@ const spec = (id: string, name: string, branch: TechSpec['branch'], cost: number
 /** The catalog's own tree, when it runs outside the game's repository */
 export const MOCK_TECHS: readonly TechSpec[] = [
   spec('physical_civ', '物理文明', 'physical', 100, [], ['生産 +5%']),
-  spec('tactics', '兵法', 'physical', 200, ['physical_civ'], ['新兵の練度 +5']),
-  spec('melee', '白兵戦', 'physical', 400, ['tactics'], ['歩兵の攻撃力 +5%']),
+  spec('tactics', '兵法', undefined, 200, [], ['新兵の練度 +5']),
+  spec('melee', '白兵戦', undefined, 400, ['tactics'], ['歩兵の攻撃力 +5%']),
   spec('gunpowder', '火薬', 'physical', 200, ['physical_civ']),
   spec('rifle', 'ライフル', 'physical', 400, ['gunpowder'], ['壊れたライフルの修復']),
+  spec('flight', '飛行', 'physical', 200, ['physical_civ']),
+  { ...spec('gunship', 'ガンシップ', 'physical', 1000, ['flight', 'rifle'], ['壊れたガンシップの修復']), alignWith: 'flight' },
   spec('arcane_civ', '魔法文明', 'arcane', 100, [], ['生産 +5%']),
   spec('fire_magic', '火魔法', 'arcane', 300, ['arcane_civ'], ['フレイムランス']),
   spec('earth_magic', '土魔法', 'arcane', 300, ['arcane_civ'], ['アーススパイク']),

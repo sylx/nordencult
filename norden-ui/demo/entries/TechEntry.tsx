@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { TechScreen } from '../../src'
-import type { TechTreeView, TechView } from '../../src'
+import type { TechView } from '../../src'
 import { MOCK_TECHS, repositoryTechs, type TechSpec } from '../repositoryTechs'
 import MockMap from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
 
 const TECHS: readonly TechSpec[] = repositoryTechs ?? MOCK_TECHS
 const TECH_MAP = Object.fromEntries(TECHS.map(tech => [tech.id, tech]))
-const BRANCHES = [{ id: 'physical', label: '物理文明' }, { id: 'arcane', label: '魔法文明' }] as const
+const ALIGNED = TECHS.filter(tech => tech.alignWith)
 
 /** The game's rules of research (src/game/research/), for the demo */
 const BRANCH_BONUS = 0.5
@@ -27,6 +27,7 @@ export default function TechEntry() {
   const [officers, setOfficers] = useState(12)
   const [instance, setInstance] = useState(0)
   const [extra, setExtra] = useState(300)
+  const [aligning, setAligning] = useState(true)
 
   const pointsFor = (techId: string | null) => {
     const branch = techId ? TECH_MAP[techId]?.branch : undefined
@@ -39,24 +40,24 @@ export default function TechEntry() {
 
   const view = (tech: TechSpec): TechView => {
     const { researched } = research
+    const alignWith = aligning ? tech.alignWith : undefined
     const status = researched.includes(tech.id) ? 'researched'
       : research.current === tech.id ? 'researching'
       : available(tech.id) ? 'available'
       : tech.requires.some(id => researched.includes(id)) ? 'visible' : 'hidden'
-    if (status === 'hidden') return { id: tech.id, status, requires: tech.requires }
+    if (status === 'hidden') return { id: tech.id, status, requires: tech.requires, alignWith }
     const missing = tech.requires.filter(id => !researched.includes(id))
     const progress = research.progress[tech.id] ?? 0
     const left = tech.cost - progress - (research.current === tech.id ? 0 : research.carry)
     const perTurn = pointsFor(tech.id)
     return {
-      ...tech, status, progress,
+      ...tech, alignWith, status, progress,
       turns: status === 'researched' ? 0
         : left <= 0 ? (research.current !== tech.id && research.carry > 0 ? 0 : 1)
         : perTurn > 0 ? Math.ceil(left / perTurn) : null,
       unavailableReason: missing.length > 0 ? `前提の技術（${missing.map(id => TECH_MAP[id]!.name).join('・')}）が要ります` : undefined,
     }
   }
-  const trees: TechTreeView[] = BRANCHES.map(branch => ({ ...branch, techs: TECHS.filter(t => t.branch === branch.id).map(view) }))
 
   /** The points 宙に浮いた go into the technology chosen; reaching its cost, it is completed there and then */
   const choose = (techId: string) => {
@@ -106,13 +107,15 @@ export default function TechEntry() {
   return <Workbench variant="screen"
     stage={<>
       <MockMap />
-      <TechScreen key={instance} trees={trees} perTurn={[Math.max(0, perTurn - 2), perTurn + 2]} carry={research.carry} mustChoose={mustChoose}
+      <TechScreen key={instance} techs={TECHS.map(view)} perTurn={[Math.max(0, perTurn - 2), perTurn + 2]} carry={research.carry} mustChoose={mustChoose}
         pointDetails={[`施設 +${library + academy}（系統の割増 +${BRANCH_BONUS * 100}%）`, `担当官 +${officers}`]}
         onResearch={choose} onClose={() => add('閉じる')} />
     </>}
     controls={<>
       <h2>技術画面</h2>
-      <p>研究＞技術で開くツリー。研究し終えた技術の子が研究できるようになり、名前で見えます。それより先は「???」の枠だけです。研究ポイントが宙に浮くと（研究先が無いターン・研究を終えたターン）閉じられず、研究先を選ばされます。宙に浮いたポイントで足りる技術は、選んだ時点で完成し、余りでまた次を選ばされます。研究できる技術が残っていなければ、宙に浮いたポイントは消え、閉じられます。{repositoryTechs ? 'ゲームの技術データを使っています。' : ''}</p>
+      <p>研究＞技術で開くツリー。前提の無い技術は系統に関係なく左端に並びます。兵法の系列には系統が無く、研究施設の割増が付きません。研究し終えた技術の子が研究できるようになり、名前で見えます。それより先は「???」の枠だけです。研究ポイントが宙に浮くと（研究先が無いターン・研究を終えたターン）閉じられず、研究先を選ばされます。宙に浮いたポイントで足りる技術は、選んだ時点で完成し、余りでまた次を選ばされます。研究できる技術が残っていなければ、宙に浮いたポイントは消え、閉じられます。{repositoryTechs ? 'ゲームの技術データを使っています。' : ''}</p>
+      <label className="checkbox"><input type="checkbox" checked={aligning} onChange={event => setAligning(event.target.checked)} />行を揃える（alignWith）</label>
+      {ALIGNED.length > 0 && <p>{ALIGNED.map(tech => `${tech.name} → ${TECH_MAP[tech.alignWith!]?.name ?? tech.alignWith}`).join('、')}。外すと一番深い前提の行に戻ります。「???」のままでも位置は同じです。</p>}
       <label htmlFor="tech-library">図書館系（物理文明）の研究ポイント</label>
       <input id="tech-library" type="number" min={0} value={library} onChange={event => setLibrary(Math.max(0, event.target.valueAsNumber || 0))} />
       <label htmlFor="tech-academy">魔術学院系（魔法文明）の研究ポイント</label>
