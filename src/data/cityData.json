@@ -191,7 +191,10 @@
     "population": 12400,
     "market": 440,
     "production": 220,
-    "belongTo": "carta"
+    "belongTo": "carta",
+    "buildings": [
+      "great_archive"
+    ]
   },
   {
     "id": "P013",
