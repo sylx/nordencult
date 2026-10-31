@@ -415,7 +415,7 @@ export function eventView(event: GameEvent): EventView {
       message: `${name}の研究が完了しました。`,
       details: [
         { label: '効果', value: tech && tech.effects.length > 0 ? tech.effects.map(describeEffect).join('・') : 'なし' },
-        { label: '新しく見えた技術', value: techChildren(event.techId).map((t) => t.name).join('・') || 'なし' },
+        { label: '解禁された技術', value: techChildren(event.techId).map((t) => t.name).join('・') || 'なし' },
       ],
       knights: [],
     }
