@@ -44,11 +44,10 @@ describe('the relics\' data', () => {
     expect(relicName('nope', true)).toBe('nope')
   })
 
-  it('hands out only relics with a broken state', () => {
+  it('hands out broken only relics with a broken state', () => {
     const handedOut = FACTION_LIST.flatMap((f) => f.relics ?? [])
     expect(handedOut.length).toBeGreaterThan(0)
-    for (const id of handedOut) expect(RELIC_MAP[id]?.brokenName, id).toBeDefined()
+    for (const { relicId, repaired } of handedOut) expect(repaired ? RELIC_MAP[relicId] : RELIC_MAP[relicId]?.brokenName, relicId).toBeDefined()
     expect(FACTION_LIST.find((f) => f.id === 'sede')?.relics).toBeUndefined()
-    for (const id of FACTION_LIST.flatMap((f) => f.repairedRelics ?? [])) expect(RELIC_MAP[id], id).toBeDefined()
   })
 })

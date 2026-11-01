@@ -61,11 +61,12 @@ const almostDone = (state: GameState, cityId: string, left = 1): GameState => {
 }
 
 describe('the box', () => {
-  it('starts a faction with its repaired relics after the broken ones', () => {
-    expect(startingRelics({ id: 'carta', relics: ['rifle'], repairedRelics: ['ballista', 'grimoire_flame_lance'] })).toEqual([
+  it('starts a faction with its relics, broken or repaired', () => {
+    expect(startingRelics({
+      id: 'carta', relics: [{ relicId: 'rifle', repaired: false }, { relicId: 'grimoire_flame_lance', repaired: true }],
+    })).toEqual([
       { id: 'carta-0', relicId: 'rifle', repaired: false },
-      { id: 'carta-1', relicId: 'ballista', repaired: true },
-      { id: 'carta-2', relicId: 'grimoire_flame_lance', repaired: true },
+      { id: 'carta-1', relicId: 'grimoire_flame_lance', repaired: true },
     ])
     expect(startingRelics({ id: 'sede' })).toEqual([])
   })

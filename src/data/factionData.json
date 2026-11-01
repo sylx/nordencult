@@ -7,7 +7,10 @@
     "color": "#353536",
     "gold": 5000,
     "relics": [
-      "behemoth"
+      {
+        "relicId": "behemoth",
+        "repaired": false
+      }
     ]
   },
   {
@@ -18,8 +21,14 @@
     "color": "#ff7b24",
     "gold": 5000,
     "relics": [
-      "arcane_focus",
-      "dragon"
+      {
+        "relicId": "arcane_focus",
+        "repaired": false
+      },
+      {
+        "relicId": "dragon",
+        "repaired": false
+      }
     ]
   },
   {
@@ -30,8 +39,14 @@
     "color": "#f00000",
     "gold": 10000,
     "relics": [
-      "field_gun",
-      "rifle"
+      {
+        "relicId": "field_gun",
+        "repaired": false
+      },
+      {
+        "relicId": "rifle",
+        "repaired": false
+      }
     ]
   },
   {
@@ -42,11 +57,18 @@
     "color": "#e3e3e3",
     "gold": 3000,
     "relics": [
-      "rifle",
-      "ballista"
-    ],
-    "repairedRelics": [
-      "rifle"
+      {
+        "relicId": "rifle",
+        "repaired": false
+      },
+      {
+        "relicId": "ballista",
+        "repaired": false
+      },
+      {
+        "relicId": "rifle",
+        "repaired": true
+      }
     ]
   },
   {
@@ -57,7 +79,10 @@
     "color": "#2f93ad",
     "gold": 6000,
     "relics": [
-      "gunship"
+      {
+        "relicId": "gunship",
+        "repaired": false
+      }
     ]
   },
   {
@@ -68,8 +93,14 @@
     "color": "#b24c80",
     "gold": 3050,
     "relics": [
-      "golem",
-      "golem"
+      {
+        "relicId": "golem",
+        "repaired": false
+      },
+      {
+        "relicId": "golem",
+        "repaired": false
+      }
     ]
   },
   {
@@ -80,7 +111,10 @@
     "color": "#8a6238",
     "gold": 3000,
     "relics": [
-      "ballista"
+      {
+        "relicId": "ballista",
+        "repaired": false
+      }
     ]
   },
   {

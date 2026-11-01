@@ -8,6 +8,13 @@ import factionData from './factionData.json'
  * drawing the emblems. The order of the list is the order of the turns
  * (after the player's).
  */
+/** A relic a faction starts with, as a RelicItem of its box */
+export interface FactionRelic {
+  /** An id of RELIC_LIST; one with a broken state, unless repaired */
+  relicId: string
+  repaired: boolean
+}
+
 export interface Faction {
   /** e.g. 'carta' */
   id: string
@@ -20,10 +27,8 @@ export interface Faction {
   color: string
   /** Gold in its treasury at the start; omitted: INITIAL_GOLD (src/game/economy/balance.ts) */
   gold?: number
-  /** The relics it starts with, broken (the same one more than once for more of it): ids of RELIC_LIST with a broken state */
-  relics?: readonly string[]
-  /** The relics it starts with, repaired (the same one more than once for more of it): ids of RELIC_LIST */
-  repairedRelics?: readonly string[]
+  /** The relics it starts with (the same one more than once for more of it) */
+  relics?: readonly FactionRelic[]
 }
 
 export const FACTION_LIST: readonly Faction[] = factionData
