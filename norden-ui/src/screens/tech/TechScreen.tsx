@@ -1,11 +1,13 @@
 import { useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react'
 import { BuildingImage, ConstructionProgress } from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
+import ImageFrame from '../../components/parts/ImageFrame'
 import SectionFrame from '../../components/parts/SectionFrame'
 import WindowFrame from '../../components/window/WindowFrame'
 import type { TechStatusView, TechView } from '../types'
 import { layoutTechs } from './techLayout'
 import '../screens.css'
+import '../details.css'
 import './TechScreen.css'
 
 export interface TechScreenProps {
@@ -131,38 +133,67 @@ function useDragPan() {
 function TechDetails({ tech, onResearch }: { tech: TechView; onResearch?: (techId: string) => void }) {
   if (tech.status === 'hidden') {
     return (
-      <div className="norden-tech-details">
-        <span className="norden-tech-details-image is-hidden" aria-hidden="true">?</span>
-        <h3 className="norden-tech-details-name">???</h3>
+      <div className="norden-tech-details norden-details">
+        <header className="norden-details-hero">
+          <ImageFrame className="norden-details-portrait">
+            <span className="norden-tech-details-image is-hidden" aria-hidden="true">?</span>
+          </ImageFrame>
+          <div className="norden-details-heading">
+            <p className="norden-details-label">技術</p>
+            <h3 className="norden-tech-details-name">???</h3>
+            <span className="norden-tech-details-status is-visible">{STATUS_LABELS.hidden}</span>
+          </div>
+        </header>
         <p className="norden-window-section-empty">不明（前提の技術が必要）</p>
       </div>
     )
   }
+  const name = tech.name ?? tech.id
+  const nameParts = name.match(/^(.*)(の生産)$/)
   const researchable = tech.status === 'available' && !tech.unavailableReason
   return (
-    <div className="norden-tech-details">
-      <BuildingImage building={{ id: tech.id, name: tech.name ?? tech.id, image: tech.image }} className="norden-tech-details-image" />
-      <h3 className="norden-tech-details-name">{tech.name ?? tech.id}</h3>
-      <span className={`norden-tech-details-status is-${tech.status}`}>{STATUS_LABELS[tech.status]}</span>
+    <div className="norden-tech-details norden-details">
+      <header className="norden-details-hero">
+        <ImageFrame className="norden-details-portrait">
+          <BuildingImage building={{ id: tech.id, name: tech.name ?? tech.id, image: tech.image }} className="norden-tech-details-image" />
+        </ImageFrame>
+        <div className="norden-details-heading">
+          <p className="norden-details-label">技術</p>
+          <h3 className="norden-tech-details-name">
+            {nameParts ? <>{nameParts[1]}<wbr /><span className="norden-tech-name-suffix">{nameParts[2]}</span></> : name}
+          </h3>
+          <span className={`norden-tech-details-status is-${tech.status}`}>{STATUS_LABELS[tech.status]}</span>
+        </div>
+      </header>
       {tech.description && <p className="norden-tech-details-description">{tech.description}</p>}
       {tech.effects && tech.effects.length > 0 && (
-        <ul className="norden-tech-details-effects" aria-label="効果">
-          {tech.effects.map(effect => <li key={effect}>{effect}</li>)}
-        </ul>
+        <div className="norden-details-section">
+          <h4 className="norden-details-section-title">研究の効果</h4>
+          <ul className="norden-tech-details-effects" aria-label="効果">
+            {tech.effects.map(effect => <li key={effect}>{effect}</li>)}
+          </ul>
+        </div>
       )}
-      {tech.cost !== undefined && tech.status !== 'researched' && (
-        <ConstructionProgress invested={tech.progress ?? 0} required={tech.cost} turnsLeft={tech.turns === 0 ? undefined : tech.turns} />
-      )}
-      {tech.turns === 0 && tech.status !== 'researched' && (
-        <p className="norden-tech-details-instant">宙に浮いた研究ポイントで、研究するとすぐに完了します</p>
-      )}
-      {tech.status === 'researched' && tech.cost !== undefined && <p className="norden-tech-details-cost">研究ポイント {tech.cost.toLocaleString()}</p>}
-      {tech.unavailableReason && <p className="norden-tech-details-reason" role="note">{tech.unavailableReason}</p>}
-      {onResearch && tech.status !== 'researched' && (
-        <Button variant="primary" disabled={!researchable} title={tech.unavailableReason}
-          aria-label={`${tech.name ?? tech.id}を研究する`} onClick={() => onResearch(tech.id)}>
-          {tech.status === 'researching' ? '研究中' : '研究する'}
-        </Button>
+      {(tech.cost !== undefined || tech.unavailableReason || (tech.status !== 'researched' && (onResearch || tech.turns === 0))) && (
+        <div className="norden-details-section">
+          <h4 className="norden-details-section-title">研究状況</h4>
+          <div className="norden-tech-details-research">
+            {tech.cost !== undefined && tech.status !== 'researched' && (
+              <ConstructionProgress invested={tech.progress ?? 0} required={tech.cost} turnsLeft={tech.turns === 0 ? undefined : tech.turns} />
+            )}
+            {tech.turns === 0 && tech.status !== 'researched' && (
+              <p className="norden-tech-details-instant">宙に浮いた研究ポイントで、研究するとすぐに完了します</p>
+            )}
+            {tech.status === 'researched' && tech.cost !== undefined && <p className="norden-tech-details-cost">研究ポイント {tech.cost.toLocaleString()}</p>}
+            {tech.unavailableReason && <p className="norden-tech-details-reason" role="note">{tech.unavailableReason}</p>}
+            {onResearch && tech.status !== 'researched' && (
+              <Button variant="primary" disabled={!researchable} title={tech.unavailableReason}
+                aria-label={`${tech.name ?? tech.id}を研究する`} onClick={() => onResearch(tech.id)}>
+                {tech.status === 'researching' ? '研究中' : '研究する'}
+              </Button>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )
@@ -172,7 +203,7 @@ function TechDetails({ tech, onResearch }: { tech: TechView; onResearch?: (techI
  * The technology screen (研究＞技術): a full-screen window with the tree drawn left to right (a column per depth, the
  * technologies requiring none side by side in the first, lines from the technologies required), each technology's picture and name (researched, researching with its progress,
  * researchable, seen by name, or ??? with its picture hidden), and on the right the details of the one chosen and
- * 研究する (the tree and the details 7:3, the tree scrolling on its own and panned by dragging it). Along the
+ * 研究する (the tree scrolling on its own and panned by dragging it). Along the
  * bottom, the research points a turn and those 宙に浮いた (or that every technology is researched) at the left and
  * 戻る at the right; while they must go somewhere (mustChoose) the window cannot be closed
  */

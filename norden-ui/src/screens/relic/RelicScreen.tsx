@@ -1,11 +1,13 @@
 import { useState, type ReactNode } from 'react'
 import { BuildingImage, ConstructionProgress, workLabel } from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
+import ImageFrame from '../../components/parts/ImageFrame'
 import SectionFrame from '../../components/parts/SectionFrame'
 import ConfirmDialog from '../../components/window/ConfirmDialog'
 import WindowFrame from '../../components/window/WindowFrame'
 import type { ConstructionView, RelicProductionView, RelicRarityView, RelicStatusView, RelicView } from '../types'
 import '../screens.css'
+import '../details.css'
 import './RelicScreen.css'
 
 export interface RelicScreenProps {
@@ -68,12 +70,12 @@ const cost = (supplies: number, gold: number) => `物資 ${supplies.toLocaleStri
 const workCost = (supplies: number, gold: number, turns: number | null | undefined) =>
   `${cost(supplies, gold)}${turns === undefined ? '' : turns === null ? '・完成見込みなし' : `・約${turns}ターン`}`
 
-/** A button of the details, what it takes beside it, and why it cannot be pressed under it */
-function Action({ label, name, needs, reason, onClick, sound }: { label: string; name: string; needs?: string; reason?: string; onClick?: () => void; sound?: string }) {
+/** A compact action card keeps its cost and availability beside its own control. */
+function Action({ label, name, needs, reason, onClick, sound, primary = false }: { label: string; name: string; needs?: string; reason?: string; onClick?: () => void; sound?: string; primary?: boolean }) {
   return (
     <div className="norden-relic-action">
       <div className="norden-relic-action-row">
-        <Button variant="primary" disabled={Boolean(reason)} title={reason} aria-label={name} data-sound={sound} onClick={onClick}>{label}</Button>
+        <Button variant={primary ? 'primary' : 'normal'} size="small" disabled={Boolean(reason)} title={reason} aria-label={name} data-sound={sound} onClick={onClick}>{label}</Button>
         {needs && <span className="norden-relic-action-needs">{needs}</span>}
       </div>
       {reason && <p className="norden-relic-action-reason" role="note">{reason}</p>}
@@ -81,12 +83,20 @@ function Action({ label, name, needs, reason, onClick, sound }: { label: string;
   )
 }
 
-function Details({ item, children }: { item: Pick<RelicView, 'id' | 'name' | 'image' | 'rarity' | 'useLabel' | 'description'>; children: ReactNode }) {
+function Details({ item, status, children }: { item: Pick<RelicView, 'id' | 'name' | 'image' | 'rarity' | 'useLabel' | 'description'>; status?: ReactNode; children: ReactNode }) {
   return (
-    <div className="norden-relic-details">
-      <BuildingImage building={item} className="norden-relic-details-image" />
-      <h3 className="norden-relic-details-name">{item.name}<Rarity rarity={item.rarity} /></h3>
-      <p className="norden-relic-details-use">使い道: {item.useLabel}</p>
+    <div className="norden-relic-details norden-details">
+      <header className="norden-details-hero">
+        <ImageFrame className="norden-details-portrait">
+          <BuildingImage building={item} className="norden-relic-details-image" />
+        </ImageFrame>
+        <div className="norden-details-heading">
+          <p className="norden-details-label">遺物</p>
+          <h3 className="norden-relic-details-name">{item.name}</h3>
+          <div className="norden-details-badges"><Rarity rarity={item.rarity} />{status}</div>
+          <p className="norden-relic-details-use">使い道: {item.useLabel}</p>
+        </div>
+      </header>
       {item.description && <p className="norden-relic-details-description">{item.description}</p>}
       {children}
     </div>
@@ -166,35 +176,44 @@ export default function RelicScreen({
             <section className="norden-window-section norden-relic-side" aria-label="遺物の詳細">
               <SectionFrame />
               {relic && (
-                <Details item={relic}>
-                  <span className={`norden-relic-details-status is-${relic.status}`}>{statusLabel(relic)}</span>
+                <Details item={relic} status={<span className={`norden-relic-details-status is-${relic.status}`}>{statusLabel(relic)}</span>}>
                   {relic.status === 'repaired' && <p className="norden-relic-details-note">使い道はまだありません</p>}
                   {relic.status === 'repairing' && <p className="norden-relic-details-note">{relic.cityName}で修復しています。内政画面で中断・中止できます</p>}
                   {relic.status === 'producing' && <p className="norden-relic-details-note">{relic.cityName}で生産しています。内政画面で中断・中止できます</p>}
                   {relic.status === 'papalRepair' && <p className="norden-relic-details-note">次のターンの初めに修復済みになります。取り消せません</p>}
-                  {relic.status === 'broken' && relic.dismantle && (
-                    <Action label={`解体（研究 +${relic.dismantle.points.toLocaleString()}）`} name={`${relic.name}を解体`}
-                      reason={relic.dismantle.unavailableReason} onClick={() => setDismantling(relic)} />
-                  )}
-                  {relic.status === 'broken' && relic.repair && (
-                    <Action label={`${cityName}で修復`} name={`${relic.name}を${cityName}で修復`}
-                      needs={workCost(relic.repair.supplies, relic.repair.gold, relic.repair.turns)}
-                      reason={relic.repair.unavailableReason} sound="develop" onClick={() => onRepair?.(relic.id)} />
-                  )}
-                  {relic.status === 'broken' && relic.papalRepair && (
-                    <Action label="法王府に依頼" name={`${relic.name}を法王府に依頼`} needs={`金 ${relic.papalRepair.gold.toLocaleString()}`}
-                      reason={relic.papalRepair.unavailableReason} onClick={() => onPapalRepair?.(relic.id)} />
-                  )}
                   {(relic.status === 'broken' || relic.status === 'repaired') && (
-                    <Action label="法王府に献上" name={`${relic.name}を法王府に献上`} reason="法王府への献上はまだできません" />
+                    <div className="norden-details-section">
+                      <h4 className="norden-details-section-title">遺物の操作</h4>
+                      <div className="norden-relic-actions">
+                        {relic.status === 'broken' && relic.repair && (
+                          <Action primary label={`${cityName}で修復`} name={`${relic.name}を${cityName}で修復`}
+                            needs={workCost(relic.repair.supplies, relic.repair.gold, relic.repair.turns)}
+                            reason={relic.repair.unavailableReason} sound="develop" onClick={() => onRepair?.(relic.id)} />
+                        )}
+                        {relic.status === 'broken' && relic.papalRepair && (
+                          <Action label="法王府に依頼" name={`${relic.name}を法王府に依頼`} needs={`金 ${relic.papalRepair.gold.toLocaleString()}`}
+                            reason={relic.papalRepair.unavailableReason} onClick={() => onPapalRepair?.(relic.id)} />
+                        )}
+                        {relic.status === 'broken' && relic.dismantle && (
+                          <Action label="解体する" name={`${relic.name}を解体`} needs={`研究ポイント +${relic.dismantle.points.toLocaleString()}`}
+                            reason={relic.dismantle.unavailableReason} onClick={() => setDismantling(relic)} />
+                        )}
+                        <Action label="法王府に献上" name={`${relic.name}を法王府に献上`} reason="法王府への献上はまだできません" />
+                      </div>
+                    </div>
                   )}
                 </Details>
               )}
               {production && (
-                <Details item={production}>
-                  <Action label={`${cityName}で生産`} name={`${production.name}を${cityName}で生産`}
-                    needs={workCost(production.supplies, production.gold, production.turns)}
-                    reason={production.unavailableReason} sound="develop" onClick={() => onProduce?.(production.id)} />
+                <Details item={production} status={<span className="norden-relic-details-status">生産</span>}>
+                  <div className="norden-details-section">
+                    <h4 className="norden-details-section-title">遺物の生産</h4>
+                    <div className="norden-relic-actions">
+                      <Action primary label={`${cityName}で生産`} name={`${production.name}を${cityName}で生産`}
+                        needs={workCost(production.supplies, production.gold, production.turns)}
+                        reason={production.unavailableReason} sound="develop" onClick={() => onProduce?.(production.id)} />
+                    </div>
+                  </div>
                 </Details>
               )}
               {!relic && !production && <p className="norden-window-section-empty">遺物はありません。</p>}

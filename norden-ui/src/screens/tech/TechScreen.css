@@ -88,18 +88,20 @@
 .norden-tech-node-bar { display: block; height: 4px; overflow: hidden; background: #3a2b1d; border-radius: 2px; }
 .norden-tech-node-bar > span { display: block; height: 100%; background: linear-gradient(#bfe39a, #6f9d4b); }
 
-.norden-tech-side { flex: 3 1 0; max-width: 370px; }
-.norden-tech-details { flex: 1 1 auto; align-content: start; display: grid; justify-items: start; gap: 10px; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #94703b #211b14; }
-.norden-tech-details-image.norden-building-image { width: 160px; max-width: 100%; height: auto; border-radius: 4px; }
-.norden-tech-details-image.is-hidden { width: 160px; aspect-ratio: 2 / 3; font-size: 48px; }
-.norden-tech-details-name { margin: 0; color: #f6e7c5; font-size: 20px; }
+.norden-tech-side { flex: 0 1 370px; max-width: 44%; container: norden-detail-panel / inline-size; }
+.norden-tech-details-image.is-hidden { box-sizing: border-box; width: 100%; aspect-ratio: 2 / 3; border: 0; border-radius: 0; font-family: Georgia, serif; font-size: 48px; }
+.norden-tech-details-name { margin: 0; color: #f6e7c5; font-family: 'Noto Serif JP', 'Yu Mincho', serif; font-size: 21px; line-height: 1.55; }
+.norden-tech-name-suffix { white-space: nowrap; }
 .norden-tech-details-status { padding: 1px 8px; color: #1c1712; background: #cbb282; border-radius: 2px; font-size: 12px; }
 .norden-tech-details-status.is-researching { background: #9fd07a; }
 .norden-tech-details-status.is-visible { background: #8c7a5c; }
-.norden-tech-details-description { margin: 0; color: #e6d9bd; font-size: 14px; line-height: 1.6; }
-.norden-tech-details-effects { margin: 0; padding-left: 1.2em; color: #fff0bc; font-size: 14px; }
+.norden-tech-details-description { margin: 0; padding-bottom: 18px; color: #e6d9bd; font-size: 14px; line-height: 1.9; }
+.norden-tech-details-effects { display: grid; gap: 8px; margin: 0; padding-left: 1.2em; color: #fff0bc; font-size: 14px; line-height: 1.7; }
+.norden-tech-details-effects li::marker { color: #b79b67; }
+.norden-tech-details-research { display: grid; gap: 12px; min-width: 0; padding: 14px; background: #15110d66; border: 1px solid #a3824b40; }
+.norden-tech-details-research .norden-button { justify-self: stretch; min-width: 0; margin-top: 4px; white-space: normal; }
 .norden-tech-details-cost { margin: 0; color: #cbb282; font-size: 13px; }
-.norden-tech-details-instant { margin: 0; color: #bfe39a; font-size: 13px; }
-.norden-tech-details-reason { margin: 0; color: #f0a08a; font-size: 13px; }
+.norden-tech-details-instant { margin: 0; color: #bfe39a; font-size: 13px; line-height: 1.8; }
+.norden-tech-details-reason { margin: 0; color: #d4a28c; font-size: 13px; line-height: 1.8; }
 .norden-tech-details .norden-construction-progress { width: 100%; }
-.norden-tech-details .norden-construction-progress-text { color: #cbb282; }
+.norden-tech-details .norden-construction-progress-text { color: #cbb282; line-height: 1.7; white-space: normal; }

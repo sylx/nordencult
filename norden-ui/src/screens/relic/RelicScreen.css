@@ -47,20 +47,20 @@
 .norden-relic-rarity.is-A { background: #d6b0f0; }
 .norden-relic-rarity.is-B { background: #9cc8e6; }
 
-.norden-relic-side { flex: 4 1 0; max-width: 420px; }
-.norden-relic-details { flex: 1 1 auto; align-content: start; display: grid; justify-items: start; gap: 10px; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #94703b #211b14; }
-.norden-relic-details-image.norden-building-image { width: 160px; max-width: 100%; height: auto; border-radius: 4px; }
-.norden-relic-details-name { display: flex; align-items: center; gap: 8px; margin: 0; color: #f6e7c5; font-size: 20px; }
+.norden-relic-side { flex: 4 1 0; max-width: 480px; container: norden-detail-panel / inline-size; }
+.norden-relic-details-name { margin: 0; color: #f6e7c5; font-family: 'Noto Serif JP', 'Yu Mincho', serif; font-size: 21px; line-height: 1.55; }
 .norden-relic-details-use { margin: 0; color: #cbb282; font-size: 13px; }
-.norden-relic-details-description { margin: 0; color: #e6d9bd; font-size: 14px; line-height: 1.6; }
+.norden-relic-details-description { margin: 0; padding-bottom: 14px; color: #e6d9bd; font-size: 14px; line-height: 1.8; }
 .norden-relic-details-status { padding: 1px 8px; color: #1c1712; background: #cbb282; border-radius: 2px; font-size: 12px; }
 .norden-relic-details-status.is-repairing,
 .norden-relic-details-status.is-producing,
 .norden-relic-details-status.is-papalRepair { background: #9fd07a; }
-.norden-relic-details-note { margin: 0; color: #fff0bc; font-size: 14px; }
-.norden-relic-action { display: grid; justify-items: start; gap: 2px; }
-.norden-relic-action-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
-.norden-relic-action-needs { color: #e6d9bd; font-size: 13px; font-variant-numeric: tabular-nums; }
-.norden-relic-action-reason { margin: 0; color: #f0a08a; font-size: 13px; }
+.norden-relic-details-note { margin: 0; padding: 12px 14px; color: #e6d9bd; background: #15110d66; border-left: 2px solid #a3824b; font-size: 13px; line-height: 1.8; }
+.norden-relic-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; }
+.norden-relic-action { display: grid; align-content: start; gap: 6px; min-width: 0; padding: 6px; background: #15110d66; border: 1px solid #a3824b40; box-shadow: inset 0 1px #d5b5730a; }
+.norden-relic-action-row { display: grid; gap: 6px; min-width: 0; }
+.norden-relic-action .norden-button { width: 100%; min-width: 0; padding-inline: 12px; font-size: 13px; white-space: normal; }
+.norden-relic-action-needs { color: #e6d9bd; font-size: 12px; font-variant-numeric: tabular-nums; line-height: 1.7; word-break: keep-all; }
+.norden-relic-action-reason { margin: 0; color: #d4a28c; font-size: 11px; line-height: 1.7; }
 
 .norden-relic-footer { display: flex; justify-content: flex-end; padding: 10px 4px 4px; }
