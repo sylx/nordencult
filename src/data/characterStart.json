@@ -57,7 +57,7 @@
   {"id": "056", "cityId": "P013", "isLord": true},
   {"id": "057", "cityId": "P014", "isLord": true},
   {"id": "058", "cityId": "P005", "isLord": true},
-  {"id": "059", "cityId": "P017"},
+  {"id": "059", "cityId": "P027", "isLord": true},
   {"id": "060", "cityId": "P015", "isLord": true},
   {"id": "061", "cityId": "P026"},
   {"id": "062", "cityId": "P018"},
