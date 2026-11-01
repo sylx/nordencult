@@ -22,6 +22,8 @@ export interface Faction {
   gold?: number
   /** The relics it starts with, broken (the same one more than once for more of it): ids of RELIC_LIST with a broken state */
   relics?: readonly string[]
+  /** The relics it starts with, repaired (the same one more than once for more of it): ids of RELIC_LIST */
+  repairedRelics?: readonly string[]
 }
 
 export const FACTION_LIST: readonly Faction[] = factionData

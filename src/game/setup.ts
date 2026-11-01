@@ -5,7 +5,8 @@ import { cityRecord } from './economy/cityLog'
 import { INITIAL_GOLD, INITIAL_MORALE, INITIAL_SUPPLIES_PER_PRODUCTION, INITIAL_TROOPS_PER_PRODUCTION } from './economy/balance'
 import { turnOrder } from './queries'
 import { NO_RESEARCH } from './research/research'
-import type { CharacterId, CharacterState, CityState, FactionId, GameState, RelicItem } from './types'
+import { startingRelics } from './relics/box'
+import type { CharacterId, CharacterState, CityState, FactionId, GameState } from './types'
 import { isFactionId } from './world'
 
 /** The faction the player leads unless the URL says otherwise */
@@ -72,9 +73,7 @@ export function createInitialState(playerFactions: readonly FactionId[] = [DEFAU
     cities,
     gold: Object.fromEntries(FACTION_LIST.map((f) => [f.id, f.gold ?? INITIAL_GOLD])),
     research: Object.fromEntries(FACTION_LIST.map((f) => [f.id, NO_RESEARCH])),
-    relics: Object.fromEntries(FACTION_LIST.map((f) => [f.id, (f.relics ?? []).map((relicId, index): RelicItem => (
-      { id: `${f.id}-${index}`, relicId, repaired: false }
-    ))])),
+    relics: Object.fromEntries(FACTION_LIST.map((f) => [f.id, startingRelics(f)])),
     lastEconomy: null,
     cityHistory: Object.fromEntries(Object.entries(cities).map(([id, city]) => [id, [cityRecord(city, id, 1)]])),
     orders: [],

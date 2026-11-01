@@ -37,7 +37,8 @@ describe('the relic screen', () => {
     state = startRelicProduction(state, SILVA, 'rifle')
     state = requestPapalRepair(state, 'carta', RIFLE)
     expect(relicsView(state, 'carta', FLUEN).map(({ status, name, cityName }) => [status, name, cityName])).toEqual([
-      ['papalRepair', '壊れたライフル', undefined], ['repairing', '壊れたバリスタ', 'フルーエン'], ['producing', 'ライフル', cityView(state, SILVA).name],
+      ['papalRepair', '壊れたライフル', undefined], ['repaired', 'ライフル', undefined],
+      ['repairing', '壊れたバリスタ', 'フルーエン'], ['producing', 'ライフル', cityView(state, SILVA).name],
     ])
   })
 

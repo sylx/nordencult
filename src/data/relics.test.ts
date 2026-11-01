@@ -49,5 +49,6 @@ describe('the relics\' data', () => {
     expect(handedOut.length).toBeGreaterThan(0)
     for (const id of handedOut) expect(RELIC_MAP[id]?.brokenName, id).toBeDefined()
     expect(FACTION_LIST.find((f) => f.id === 'sede')?.relics).toBeUndefined()
+    for (const id of FACTION_LIST.flatMap((f) => f.repairedRelics ?? [])) expect(RELIC_MAP[id], id).toBeDefined()
   })
 })

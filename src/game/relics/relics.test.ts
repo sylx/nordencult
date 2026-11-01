@@ -8,6 +8,7 @@ import {
 } from '..'
 import { RELIC_MAP } from '../../data/relics'
 import { playing } from '../testing'
+import { startingRelics } from './box'
 
 // The tests' own technologies and relics, so that they do not follow the game's data
 vi.mock('../../data/techData.json', () => ({
@@ -60,11 +61,21 @@ const almostDone = (state: GameState, cityId: string, left = 1): GameState => {
 }
 
 describe('the box', () => {
-  it('starts each faction with the relics of its data, broken', () => {
+  it('starts a faction with its repaired relics after the broken ones', () => {
+    expect(startingRelics({ id: 'carta', relics: ['rifle'], repairedRelics: ['ballista', 'grimoire_flame_lance'] })).toEqual([
+      { id: 'carta-0', relicId: 'rifle', repaired: false },
+      { id: 'carta-1', relicId: 'ballista', repaired: true },
+      { id: 'carta-2', relicId: 'grimoire_flame_lance', repaired: true },
+    ])
+    expect(startingRelics({ id: 'sede' })).toEqual([])
+  })
+
+  it('starts each faction with the relics of its data', () => {
     const state = createInitialState(['carta'])
     expect(itemsOf(state)).toEqual([
       { id: RIFLE, relicId: 'rifle', repaired: false },
       { id: BALLISTA, relicId: 'ballista', repaired: false },
+      { id: 'carta-2', relicId: 'rifle', repaired: true },
     ])
     expect(itemsOf(state, 'sede')).toEqual([])
     expect(new Set(Object.values(state.relics).flat().map((i) => i.id)).size).toBe(Object.values(state.relics).flat().length)
@@ -72,10 +83,10 @@ describe('the box', () => {
 
   it('adds a relic broken in debugging, a 魔導書 repaired', () => {
     const state = debugAddRelic(debugAddRelic(playing('carta'), 'carta', 'ballista'), 'carta', 'grimoire')
-    expect(itemsOf(state).slice(2).map(({ relicId, repaired }) => ({ relicId, repaired }))).toEqual([
+    expect(itemsOf(state).slice(-2).map(({ relicId, repaired }) => ({ relicId, repaired }))).toEqual([
       { relicId: 'ballista', repaired: false }, { relicId: 'grimoire', repaired: true },
     ])
-    expect(new Set(itemsOf(state).map((i) => i.id)).size).toBe(4)
+    expect(new Set(itemsOf(state).map((i) => i.id)).size).toBe(itemsOf(state).length)
   })
 })
 

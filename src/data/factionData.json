@@ -4,7 +4,7 @@
     "name": "ヴァルハルト家",
     "emblem": 5,
     "patriarchLabel": "当主",
-    "color": "#3d5fa8",
+    "color": "#353536",
     "gold": 5000,
     "relics": [
       "behemoth"
@@ -15,7 +15,7 @@
     "name": "ノルディス家",
     "emblem": 3,
     "patriarchLabel": "当主",
-    "color": "#b0342c",
+    "color": "#ff7b24",
     "gold": 5000,
     "relics": [
       "arcane_focus",
@@ -27,7 +27,7 @@
     "name": "レオニス帝国",
     "emblem": 6,
     "patriarchLabel": "皇帝",
-    "color": "#d0a326",
+    "color": "#f00000",
     "gold": 10000,
     "relics": [
       "field_gun",
@@ -39,11 +39,14 @@
     "name": "カルタ書院",
     "emblem": 7,
     "patriarchLabel": "総帥",
-    "color": "#4f8a63",
+    "color": "#e3e3e3",
     "gold": 3000,
     "relics": [
       "rifle",
       "ballista"
+    ],
+    "repairedRelics": [
+      "rifle"
     ]
   },
   {
@@ -85,7 +88,7 @@
     "name": "法王府",
     "emblem": 9,
     "patriarchLabel": "法王",
-    "color": "#e6dfc8",
+    "color": "#ffc400",
     "gold": 10000
   }
 ]
