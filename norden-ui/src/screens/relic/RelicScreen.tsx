@@ -65,13 +65,17 @@ function RelicRow({ relic, label, status, selected, onSelect }: {
 
 const cost = (supplies: number, gold: number) => `物資 ${supplies.toLocaleString()}・金 ${gold.toLocaleString()}`
 
-const turnsLabel = (turns: number | null | undefined) => (turns === undefined ? '' : turns === null ? '（完成見込みなし）' : `（約${turns}ターン）`)
+const workCost = (supplies: number, gold: number, turns: number | null | undefined) =>
+  `${cost(supplies, gold)}${turns === undefined ? '' : turns === null ? '・完成見込みなし' : `・約${turns}ターン`}`
 
-/** A button of the details, and why it cannot be pressed under it */
-function Action({ label, name, reason, onClick, sound }: { label: string; name: string; reason?: string; onClick?: () => void; sound?: string }) {
+/** A button of the details, what it takes beside it, and why it cannot be pressed under it */
+function Action({ label, name, needs, reason, onClick, sound }: { label: string; name: string; needs?: string; reason?: string; onClick?: () => void; sound?: string }) {
   return (
     <div className="norden-relic-action">
-      <Button variant="primary" disabled={Boolean(reason)} title={reason} aria-label={name} data-sound={sound} onClick={onClick}>{label}</Button>
+      <div className="norden-relic-action-row">
+        <Button variant="primary" disabled={Boolean(reason)} title={reason} aria-label={name} data-sound={sound} onClick={onClick}>{label}</Button>
+        {needs && <span className="norden-relic-action-needs">{needs}</span>}
+      </div>
       {reason && <p className="norden-relic-action-reason" role="note">{reason}</p>}
     </div>
   )
@@ -173,11 +177,12 @@ export default function RelicScreen({
                       reason={relic.dismantle.unavailableReason} onClick={() => setDismantling(relic)} />
                   )}
                   {relic.status === 'broken' && relic.repair && (
-                    <Action label={`修復（${cost(relic.repair.supplies, relic.repair.gold)}）${turnsLabel(relic.repair.turns)}`} name={`${relic.name}を修復`}
+                    <Action label={`${cityName}で修復`} name={`${relic.name}を${cityName}で修復`}
+                      needs={workCost(relic.repair.supplies, relic.repair.gold, relic.repair.turns)}
                       reason={relic.repair.unavailableReason} sound="develop" onClick={() => onRepair?.(relic.id)} />
                   )}
                   {relic.status === 'broken' && relic.papalRepair && (
-                    <Action label={`法王府に依頼（金 ${relic.papalRepair.gold.toLocaleString()}）`} name={`${relic.name}を法王府に依頼`}
+                    <Action label="法王府に依頼" name={`${relic.name}を法王府に依頼`} needs={`金 ${relic.papalRepair.gold.toLocaleString()}`}
                       reason={relic.papalRepair.unavailableReason} onClick={() => onPapalRepair?.(relic.id)} />
                   )}
                   {(relic.status === 'broken' || relic.status === 'repaired') && (
@@ -187,7 +192,8 @@ export default function RelicScreen({
               )}
               {production && (
                 <Details item={production}>
-                  <Action label={`生産（${cost(production.supplies, production.gold)}）${turnsLabel(production.turns)}`} name={`${production.name}を生産`}
+                  <Action label={`${cityName}で生産`} name={`${production.name}を${cityName}で生産`}
+                    needs={workCost(production.supplies, production.gold, production.turns)}
                     reason={production.unavailableReason} sound="develop" onClick={() => onProduce?.(production.id)} />
                 </Details>
               )}

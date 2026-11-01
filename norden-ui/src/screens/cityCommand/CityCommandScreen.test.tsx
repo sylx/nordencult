@@ -105,6 +105,23 @@ describe('CityCommandScreen', () => {
     expect(within(slots).queryByText('空き')).not.toBeInTheDocument()
   })
 
+  it('shows a relic being repaired apart from the buildings, leaving their slots empty', () => {
+    setup({
+      city: {
+        ...city,
+        buildings: {
+          slots: 2,
+          built: [{ id: 'market', name: '市場' }],
+          construction: { kind: 'relicRepair', building: { id: 'golem', name: 'ゴーレムの残骸' }, invested: 100, required: 1000, turnsLeft: 9 },
+        },
+      },
+    })
+    const slots = screen.getByRole('list', { name: '施設 1 / 2' })
+    expect(within(slots).queryByText('ゴーレムの残骸')).not.toBeInTheDocument()
+    expect(within(slots).getByText('空き')).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: '遺物の修復' })).getByText('修復中')).toBeInTheDocument()
+  })
+
   it('lists the knights with all their abilities, the lord first', async () => {
     setup({
       city: {

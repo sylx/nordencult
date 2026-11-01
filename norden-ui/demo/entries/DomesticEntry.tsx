@@ -12,7 +12,7 @@ import { Log, useLog, Workbench } from '../Workbench'
 
 const RELICS = repositoryRelics ?? MOCK_RELICS
 
-/** A broken relic of the box to repair, and a relic the faction has the technology to produce, in the place of a building */
+/** A broken relic of the box to repair, and a relic the faction has the technology to produce, from the relic frame */
 const RELIC_OPTIONS: readonly RelicOptionView[] = [
   ...RELICS.filter(relic => relic.repair).slice(0, 1).map((relic): RelicOptionView => ({
     id: `box-${relic.id}`, kind: 'relicRepair', name: relic.brokenName ?? relic.name, image: relic.brokenImage, description: relic.description,

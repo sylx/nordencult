@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
+import type { ConstructionView } from '../types'
 import DomesticScreen from './DomesticScreen'
 
 describe('DomesticScreen', () => {
@@ -162,7 +163,7 @@ describe('DomesticScreen', () => {
     expect(screen.getAllByLabelText('空きスロット')).toHaveLength(1)
   })
 
-  it('lists the relics with the buildings, and on their own with the slots full: a relic takes no slot', async () => {
+  it('starts a relic from its own frame, past the slots, with the slots full too: the buildings list none', async () => {
     const onRelicWork = vi.fn()
     const repair = { id: 'item-1', kind: 'relicRepair', name: '壊れたバリスタ', supplies: 500, gold: 150, turns: 5 } as const
     const city = (built: readonly string[]) => ({
@@ -173,23 +174,23 @@ describe('DomesticScreen', () => {
         onRelicWork={onRelicWork} onClose={() => {}} />,
     )
     await userEvent.click(screen.getByRole('button', { name: '施設を追加' }))
-    const panel = screen.getByRole('complementary', { name: '追加できる施設' })
-    expect(within(panel).getByRole('button', { name: '工房を建設' })).toBeInTheDocument()
-    await userEvent.click(within(panel).getByRole('button', { name: '壊れたバリスタを修復' }))
-    expect(onRelicWork).toHaveBeenCalledWith(repair)
+    const buildings = screen.getByRole('complementary', { name: '追加できる施設' })
+    expect(within(buildings).getByRole('button', { name: '工房を建設' })).toBeInTheDocument()
+    expect(within(buildings).queryByRole('button', { name: '壊れたバリスタを修復' })).not.toBeInTheDocument()
 
     rerender(
       <DomesticScreen city={city(['市場', '倉庫'])} buildOptions={[{ id: 'workshop', name: '工房', supplies: 400, gold: 120 }]} relicOptions={[repair]}
         onRelicWork={onRelicWork} onClose={() => {}} />,
     )
     expect(screen.queryByRole('button', { name: '施設を追加' })).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: '遺物の修復・生産' }))
-    const relics = screen.getByRole('complementary', { name: '遺物の修復・生産' })
-    expect(within(relics).getByRole('button', { name: '壊れたバリスタを修復' })).toBeInTheDocument()
+    await userEvent.click(within(screen.getByRole('group', { name: '遺物の修復枠' })).getByRole('button', { name: '遺物を修復・生産' }))
+    const relics = screen.getByRole('complementary', { name: '修復・生産できる遺物' })
     expect(within(relics).queryByRole('button', { name: '工房を建設' })).not.toBeInTheDocument()
+    await userEvent.click(within(relics).getByRole('button', { name: '壊れたバリスタを修復' }))
+    expect(onRelicWork).toHaveBeenCalledWith(repair)
   })
 
-  it('shows a relic being repaired without taking a slot, with nothing else to start', async () => {
+  it('shows a relic being repaired in its frame, not in the slots, with nothing else to start', async () => {
     const onPauseConstruction = vi.fn()
     const onCancelConstruction = vi.fn()
     render(
@@ -206,15 +207,28 @@ describe('DomesticScreen', () => {
         onPauseConstruction={onPauseConstruction} onCancelConstruction={onCancelConstruction} onClose={() => {}}
       />,
     )
-    expect(screen.getByText('修復中')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '遺物の修復・生産' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: '遺物の修復・生産' })).toHaveAttribute('title', 'ほかの遺物を修復中です')
+    const frame = screen.getByRole('group', { name: '遺物の修復枠' })
+    expect(within(frame).getByText('修復中')).toBeInTheDocument()
+    expect(within(screen.getByRole('list', { name: '施設スロット 1 / 2' })).queryByText('ゴーレムの残骸')).not.toBeInTheDocument()
     // The slot left stays empty
     expect(screen.getByLabelText('空きスロット')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'ゴーレムの残骸の修復を中断' }))
+    await userEvent.click(within(frame).getByRole('button', { name: 'ゴーレムの残骸の修復を中断' }))
     expect(onPauseConstruction).toHaveBeenCalledWith(true)
-    await userEvent.click(screen.getByRole('button', { name: 'ゴーレムの残骸の修復を取り消す' }))
+    await userEvent.click(within(frame).getByRole('button', { name: 'ゴーレムの残骸の修復を取り消す' }))
     expect(onCancelConstruction).toHaveBeenCalled()
+  })
+
+  it('says why the relic frame cannot be used while a building goes up, or with no relic to work on', () => {
+    const city = (construction?: ConstructionView) => ({ id: 'P012', name: 'フルーエン', buildings: { slots: 2, built: [], construction } })
+    const repair = { id: 'item-1', kind: 'relicRepair', name: '壊れたバリスタ', supplies: 500, gold: 150 } as const
+    const { rerender } = render(
+      <DomesticScreen city={city({ building: { id: 'market', name: '市場' }, invested: 100, required: 300 })} relicOptions={[repair]} onClose={() => {}} />,
+    )
+    const frame = screen.getByRole('group', { name: '遺物の修復枠' })
+    expect(within(frame).getByText('ほかの施設を建設中です')).toBeInTheDocument()
+    expect(within(frame).queryByRole('button')).not.toBeInTheDocument()
+    rerender(<DomesticScreen city={city()} onClose={() => {}} />)
+    expect(within(frame).getByText('修復・生産できる遺物はありません')).toBeInTheDocument()
   })
 
   it('shows population growth and the next city scale by name', () => {

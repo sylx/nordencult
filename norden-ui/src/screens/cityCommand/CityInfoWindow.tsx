@@ -3,7 +3,7 @@ import InfoWindowWithTabs from '../../components/window/InfoWindowWithTabs'
 import type { InfoWindowWithTabsProps, TabInfo } from '../../components/window/InfoWindowWithTabs'
 import KnightCard from '../../components/parts/KnightCard'
 import StatBar from '../../components/parts/StatBar'
-import BuildingSlots from '../../components/parts/BuildingSlots'
+import BuildingSlots, { RelicWorkSlot, isRelicWork } from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
 import FactionMark from '../../components/parts/FactionMark'
 import { ABILITY_LABELS, knightAbility } from '../domestic/DomesticOfficers'
@@ -118,6 +118,14 @@ function CityInfo({ city }: { city: CityView }) {
         <section className="norden-city-info-buildings" aria-label="施設">
           <h3>施設 <span>{city.buildings.built.length} / {city.buildings.slots}</span></h3>
           <BuildingSlots buildings={city.buildings} />
+        </section>
+      )}
+      {city.buildings?.construction && isRelicWork(city.buildings.construction) && (
+        <section className="norden-city-info-buildings" aria-label="遺物の修復">
+          <h3>遺物の修復</h3>
+          <div className="norden-building-slots">
+            <RelicWorkSlot work={city.buildings.construction} />
+          </div>
         </section>
       )}
       {city.tags && city.tags.length > 0 && (

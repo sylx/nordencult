@@ -59,6 +59,8 @@
 .norden-relic-details-status.is-papalRepair { background: #9fd07a; }
 .norden-relic-details-note { margin: 0; color: #fff0bc; font-size: 14px; }
 .norden-relic-action { display: grid; justify-items: start; gap: 2px; }
+.norden-relic-action-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.norden-relic-action-needs { color: #e6d9bd; font-size: 13px; font-variant-numeric: tabular-nums; }
 .norden-relic-action-reason { margin: 0; color: #f0a08a; font-size: 13px; }
 
 .norden-relic-footer { display: flex; justify-content: flex-end; padding: 10px 4px 4px; }
