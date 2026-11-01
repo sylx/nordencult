@@ -80,6 +80,33 @@
     }
   },
   {
+    "id": "cannon",
+    "name": "要塞砲",
+    "brokenName": "壊れた要塞砲",
+    "description": "要塞に据える旧文明の巨砲。迫る敵のどこへ落ちるかは砲手にも読めないが、着弾の跡には何も残らない。",
+    "rarity": "A",
+    "use": "building",
+    "dismantlePoints": 300,
+    "repair": {
+      "supplies": 1000,
+      "gold": 500,
+      "tech": "field_gun"
+    },
+    "production": {
+      "supplies": 1750,
+      "gold": 700,
+      "tech": "field_gun_production"
+    },
+    "sprite": {
+      "x": 256,
+      "y": 384
+    },
+    "brokenSprite": {
+      "x": 512,
+      "y": 384
+    }
+  },
+  {
     "id": "arcane_focus",
     "name": "魔導台",
     "brokenName": "壊れた魔導台",
@@ -93,11 +120,11 @@
       "tech": "arcane_civ"
     },
     "sprite": {
-      "x": 256,
+      "x": 768,
       "y": 384
     },
     "brokenSprite": {
-      "x": 512,
+      "x": 1024,
       "y": 384
     }
   },
@@ -120,12 +147,12 @@
       "tech": "gunship_production"
     },
     "sprite": {
-      "x": 768,
-      "y": 384
+      "x": 0,
+      "y": 768
     },
     "brokenSprite": {
-      "x": 1024,
-      "y": 384
+      "x": 256,
+      "y": 768
     }
   },
   {
@@ -147,11 +174,11 @@
       "tech": "artificial_dragon"
     },
     "sprite": {
-      "x": 0,
+      "x": 512,
       "y": 768
     },
     "brokenSprite": {
-      "x": 256,
+      "x": 768,
       "y": 768
     }
   },
@@ -174,12 +201,12 @@
       "tech": "artificial_golem"
     },
     "sprite": {
-      "x": 512,
+      "x": 1024,
       "y": 768
     },
     "brokenSprite": {
-      "x": 768,
-      "y": 768
+      "x": 0,
+      "y": 1152
     }
   },
   {
@@ -201,11 +228,11 @@
       "tech": "artificial_behemoth"
     },
     "sprite": {
-      "x": 1024,
-      "y": 768
+      "x": 256,
+      "y": 1152
     },
     "brokenSprite": {
-      "x": 0,
+      "x": 512,
       "y": 1152
     }
   },
@@ -221,7 +248,7 @@
       "tech": "lightning_magic"
     },
     "sprite": {
-      "x": 256,
+      "x": 768,
       "y": 1152
     }
   },
@@ -237,7 +264,7 @@
       "tech": "fire_magic"
     },
     "sprite": {
-      "x": 512,
+      "x": 1024,
       "y": 1152
     }
   },
@@ -253,8 +280,8 @@
       "tech": "water_magic"
     },
     "sprite": {
-      "x": 768,
-      "y": 1152
+      "x": 0,
+      "y": 1536
     }
   },
   {
@@ -269,8 +296,8 @@
       "tech": "earth_magic"
     },
     "sprite": {
-      "x": 1024,
-      "y": 1152
+      "x": 256,
+      "y": 1536
     }
   },
   {
@@ -280,9 +307,13 @@
     "rarity": "S",
     "use": "equipment",
     "production": {
-      "supplies": 800,
-      "gold": 400,
+      "supplies": 2000,
+      "gold": 1000,
       "tech": "archmage"
+    },
+    "sprite": {
+      "x": 512,
+      "y": 1536
     }
   },
   {
@@ -292,40 +323,13 @@
     "rarity": "S",
     "use": "equipment",
     "production": {
-      "supplies": 1200,
-      "gold": 600,
+      "supplies": 2500,
+      "gold": 1500,
       "tech": "celestial_magic"
     },
     "sprite": {
-      "x": 0,
-      "y": 1536
-    }
-  },
-  {
-    "id": "cannon",
-    "name": "要塞砲",
-    "brokenName": "壊れた要塞砲",
-    "description": "要塞に据える旧文明の巨砲。迫る敵のどこへ落ちるかは砲手にも読めないが、着弾の跡には何も残らない。",
-    "rarity": "A",
-    "use": "building",
-    "dismantlePoints": 300,
-    "repair": {
-      "supplies": 1000,
-      "gold": 500,
-      "tech": "field_gun"
-    },
-    "production": {
-      "supplies": 1750,
-      "gold": 700,
-      "tech": "field_gun_production"
-    },
-    "sprite": {
-      "x": 512,
-      "y": 0
-    },
-    "brokenSprite": {
       "x": 768,
-      "y": 0
+      "y": 1536
     }
   }
 ]

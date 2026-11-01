@@ -319,7 +319,8 @@ describe('法王府', () => {
   })
 
   it('takes as many as asked in a turn, while the relic asked for can be neither dismantled nor repaired', () => {
-    const state = requestPapalRepair(requestPapalRepair(playing('carta'), 'carta', RIFLE), 'carta', BALLISTA)
+    const rich = withGold(playing('carta'), 10000)
+    const state = requestPapalRepair(requestPapalRepair(rich, 'carta', RIFLE), 'carta', BALLISTA)
     expect(dismantleProblem(state, 'carta', RIFLE)).toBe('法王府に依頼中です')
     expect(repairProblem(state, FLUEN, BALLISTA)).toBe('法王府に依頼中です')
     expect(papalRepairProblem(state, 'carta', RIFLE)).toBe('法王府に依頼中です')
