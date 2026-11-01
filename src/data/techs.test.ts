@@ -26,7 +26,7 @@ describe('the technologies\' data', () => {
   })
 
   it('keeps 兵法 and what follows from it out of the branches', () => {
-    expect(['tactics', 'encirclement', 'mobile_warfare', 'melee', 'siege_defense'].map((id) => TECH_MAP[id].branch)).toEqual(Array(5).fill(undefined))
+    expect(['tactics', 'encirclement', 'mobile_warfare', 'melee', 'siege_defense', 'archery', 'volley_fire'].map((id) => TECH_MAP[id].branch)).toEqual(Array(7).fill(undefined))
     expect(TECH_MAP.physical_civ.branch).toBe('physical')
     expect(TECH_MAP.gunpowder.branch).toBe('physical')
     expect(TECH_MAP.arcane_civ.branch).toBe('arcane')

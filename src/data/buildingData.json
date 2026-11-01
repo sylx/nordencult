@@ -408,15 +408,15 @@
   },
   {
     "id": "cannon",
-    "name": "据付大砲",
+    "name": "要塞砲",
     "description": "城壁に据えた鋼の筒。遺された設計図から鋳造されたそれは、雷鳴のような音で敵を迎える。",
     "supplies": 1200,
     "gold": 400,
-    "requiredRelic": "大砲の設計図",
+    "requiredRelic": "cannon",
     "effects": [
       {
         "kind": "etc",
-        "value": "設置した都市の防衛拠点から射程5の砲撃を毎ターン実行可能"
+        "value": "設置した都市の防衛拠点から射程3の砲撃をランダムに実行し、大ダメージを与える"
       }
     ],
     "sprite": {
@@ -430,7 +430,7 @@
     "description": "刻まれた紋様が術者の力を束ね、遠くまで届かせる。古代の術式を写した石の台座。",
     "supplies": 1000,
     "gold": 450,
-    "requiredRelic": "魔導台の設計図",
+    "requiredRelic": "arcane_focus",
     "effects": [
       {
         "kind": "etc",
@@ -448,7 +448,7 @@
     "description": "城壁の上に据えた巨大な弩。放たれた太矢は盾ごと兵を貫く。",
     "supplies": 900,
     "gold": 300,
-    "requiredRelic": "バリスタの設計図",
+    "requiredRelic": "ballista",
     "effects": [
       {
         "kind": "etc",
@@ -466,7 +466,7 @@
     "description": "旧帝国の設計図から甦った武装船。その砲火は戦場のどこへでも届く。",
     "supplies": 2600,
     "gold": 800,
-    "requiredRelic": "ガンシップの設計図",
+    "requiredRelic": "gunship",
     "effects": [
       {
         "kind": "etc",

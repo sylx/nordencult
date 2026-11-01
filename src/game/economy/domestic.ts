@@ -1,6 +1,7 @@
 import { BUILDING_MAP, upgradesOf } from '../../data/buildings'
 import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
+import { relicName } from '../../data/relics'
 import { TECH_MAP } from '../../data/techs'
 import { mixMorale } from '../army'
 import { GameRuleError } from '../errors'
@@ -191,7 +192,7 @@ export function buildingProblem(state: GameState, cityId: CityId, buildingId: st
   }
   const tech = missingTech(state, cityId, buildingId)
   if (tech) return `技術「${TECH_MAP[tech]?.name ?? tech}」の研究が必要です`
-  if (building.requiredRelic) return `遺物「${building.requiredRelic}」が必要です`
+  if (building.requiredRelic) return `遺物「${relicName(building.requiredRelic, true)}」が必要です`
   // An upgrade is built over the building it replaces, taking no slot of its own
   if (building.upgradeFrom) {
     return city.buildings.includes(building.upgradeFrom) ? null : `${BUILDING_MAP[building.upgradeFrom]?.name ?? building.upgradeFrom}がある都市で建てられます`

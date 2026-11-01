@@ -22,7 +22,7 @@ describe('the relics\' data', () => {
 
   it('has a 魔導書 of its own for each technology of magic, none of them broken', () => {
     const grimoires = RELIC_LIST.filter((r) => r.id.startsWith('grimoire_'))
-    expect(grimoires.map((r) => r.production?.tech).sort()).toEqual(['celestial_magic', 'earth_magic', 'fire_magic', 'lightning_magic', 'water_magic'])
+    expect(grimoires.map((r) => r.production?.tech).sort()).toEqual(['archmage', 'celestial_magic', 'earth_magic', 'fire_magic', 'lightning_magic', 'water_magic'])
     for (const r of grimoires) expect(r.brokenName, r.id).toBeUndefined()
   })
 
@@ -40,7 +40,7 @@ describe('the relics\' data', () => {
   it('names a relic by its state', () => {
     expect(relicName('rifle', false)).toBe('壊れたライフル')
     expect(relicName('rifle', true)).toBe('ライフル')
-    expect(relicName('grimoire_flame_lance', false)).toBe('フレイムランスの魔導書')
+    expect(relicName('grimoire_flame_lance', false)).toBe('火の魔導書')
     expect(relicName('nope', true)).toBe('nope')
   })
 
