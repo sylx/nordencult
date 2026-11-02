@@ -18,7 +18,7 @@ npm run dev
 
 `npm run build` で型チェックとビルド、`npm run lint` でルートの `src/` を検査します。
 
-main への push で GitHub Pages に公開します（`.github/workflows/deploy.yml`）。CIでは `norden-strategy`・`norden-ui`・`norden-battle`・`norden-synth` のサブモジュールだけを取得してビルドします（`norden-battle` の Git LFS のファイルは取得しません）。
+main への push で GitHub Pages に公開します（`.github/workflows/deploy.yml`）。CIでは `norden-strategy`・`norden-ui`・`norden-battle`・`norden-synth` のサブモジュールだけを取得してビルドします。
 
 ## サブモジュールの参照
 
