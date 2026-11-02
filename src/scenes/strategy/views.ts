@@ -240,15 +240,20 @@ export function knightView(game: GameState, id: string): KnightView {
   }
 }
 
+/** A mercenary's unit type, which is fixed: its name and picture */
+function mercenaryUnit(id: string) {
+  const type = defaultUnitType(id)
+  return { unitType: UNIT_TYPE_MAP[type]?.name ?? type, unitImage: UNIT_TYPE_VIEWS.find((view) => view.id === type)?.image }
+}
+
 /** The mercenaries a city can reach, with what each costs the faction and why one cannot be hired now */
 export function mercenaryOffers(game: GameState, cityId: string): MercenaryOfferView[] {
   const factionId = ownerOf(game, cityId)
   if (!factionId) return []
   return mercenaryMarket(game, cityId).map((id) => {
     const info = CHARACTER_MAP[id].mercenaryInfo!
-    const type = defaultUnitType(id)
     return {
-      knight: knightView(game, id), company: info.name, unitType: UNIT_TYPE_MAP[type]?.name ?? type,
+      knight: knightView(game, id), company: info.name, ...mercenaryUnit(id),
       soldiers: game.mercenaries[id].soldiers, maxSoldiers: info.maxSoldiers, ...contractPrice(game, factionId, id),
       cityName: cityName(game.characters[id].roaming ?? ''), unavailableReason: hireProblem(game, cityId, id) ?? undefined,
     }
@@ -261,7 +266,7 @@ export function mercenaryContracts(game: GameState, factionId: string): Mercenar
     const info = CHARACTER_MAP[id].mercenaryInfo!
     const { soldiers, contract } = game.mercenaries[id]
     return {
-      knight: knightView(game, id), company: info.name, cityName: cityName(mercenaryAt(game, id) ?? ''), soldiers, maxSoldiers: info.maxSoldiers,
+      knight: knightView(game, id), company: info.name, ...mercenaryUnit(id), cityName: cityName(mercenaryAt(game, id) ?? ''), soldiers, maxSoldiers: info.maxSoldiers,
       monthly: contract!.monthly, months: game.turn - contract!.since, unavailableReason: dismissProblem(game, id) ?? undefined,
     }
   })

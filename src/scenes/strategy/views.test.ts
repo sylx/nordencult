@@ -92,7 +92,9 @@ describe('the mercenaries', () => {
     const state = hireMercenary(rich(), FLUEN, BARREL)
     expect(cityView(state, FLUEN).knights?.find((k) => k.id === BARREL)?.mercenary).toMatchObject({ company: '樽盾団', soldiers: 500, maxSoldiers: 500 })
     expect(knightView(state, '015').mercenary).toBeUndefined()
-    expect(mercenaryContracts(state, 'carta')).toMatchObject([{ company: '樽盾団', cityName: 'フルーエン', monthly: 167, months: 0 }])
+    expect(mercenaryContracts(state, 'carta')).toMatchObject([{
+      company: '樽盾団', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, unitImage: expect.any(String), cityName: 'フルーエン', monthly: 167, months: 0,
+    }])
     expect(orderProblem(state, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: BARREL, knights: [BARREL] })).toBe('傭兵は軍団長になれません')
   })
 })
