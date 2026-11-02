@@ -90,7 +90,8 @@ describe('the mercenaries', () => {
 
   it('marks a mercenary in the city they serve in, and lists their contract', () => {
     const state = hireMercenary(rich(), FLUEN, BARREL)
-    expect(cityView(state, FLUEN).knights?.find((k) => k.id === BARREL)?.mercenary).toMatchObject({ company: '樽盾団', soldiers: 500, maxSoldiers: 500 })
+    expect(cityView(state, FLUEN).knights?.find((k) => k.id === BARREL)?.mercenary).toMatchObject({ company: '樽盾団', soldiers: 500, maxSoldiers: 500, monthly: 167 })
+    expect(knightView(rich(), BARREL).mercenary?.monthly).toBeUndefined()
     expect(knightView(state, '015').mercenary).toBeUndefined()
     expect(mercenaryContracts(state, 'carta')).toMatchObject([{
       company: '樽盾団', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, unitImage: expect.any(String), cityName: 'フルーエン', monthly: 167, months: 0,

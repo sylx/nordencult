@@ -180,6 +180,7 @@ function mercenaryMark(game: GameState, id: string): MercenaryMark | undefined {
   const info = CHARACTER_MAP[id]?.mercenaryInfo
   return info && {
     company: info.name, soldiers: game.mercenaries[id]?.soldiers ?? 0, maxSoldiers: info.maxSoldiers, morale: BALANCE.MERCENARY_MORALE,
+    monthly: game.mercenaries[id]?.contract?.monthly,
   }
 }
 
