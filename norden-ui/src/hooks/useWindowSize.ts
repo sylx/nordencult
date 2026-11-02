@@ -27,6 +27,7 @@ export function useWindowSize({ contentRef, titleRef, width, height, minWidth, m
   const [widthLimit, setWidthLimit] = useState(maxWidth)
   const [heightLimit, setHeightLimit] = useState(maxHeight)
   const [scrollbarWidth, setScrollbarWidth] = useState(0)
+  const [measured, setMeasured] = useState(false)
 
   useLayoutEffect(() => {
     const content = contentRef.current
@@ -55,6 +56,7 @@ export function useWindowSize({ contentRef, titleRef, width, height, minWidth, m
           : height)),
       }
       setSize(previous => previous.width === next.width && previous.height === next.height ? previous : next)
+      setMeasured(true)
     }
 
     measure()
@@ -72,5 +74,5 @@ export function useWindowSize({ contentRef, titleRef, width, height, minWidth, m
     }
   }, [contentRef, titleRef, width, height, minWidth, maxWidth, minHeight, maxHeight, horizontalPadding, verticalPadding, titlePadding, minimumSize])
 
-  return { size, widthLimit, heightLimit, scrollbarWidth }
+  return { size, widthLimit, heightLimit, scrollbarWidth, measured }
 }

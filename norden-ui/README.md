@@ -245,6 +245,7 @@ FactionBar は専用の球体と彫刻の画像で枠を描画します（[素�
 | `draggable` | `true` | タイトルでのポインタードラッグ |
 | `resizable` | `false` | 右下のハンドルでサイズ変更。矢印キーにも対応 |
 | `onPositionChange`, `onSizeChange` | — | ユーザー操作時の座標・サイズ通知 |
+| `onBoundsChange` | — | 位置と落ち着き先のサイズ（アニメーション途中の値ではない）の通知。測定後に一度、以後は変わるたび |
 | `className`, `style` | — | 外観の調整（寸法・座標は専用propsを使用） |
 | `skin` | `windowSkins.medium` | 全体PNGの9分割で描画。`thin` / `goddess` も同梱 |
 

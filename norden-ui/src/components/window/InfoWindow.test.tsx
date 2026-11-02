@@ -1,8 +1,23 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import InfoWindow from './InfoWindow'
 import { windowSkins } from '../../skins'
 import type { InfoWindowSkin } from '../../skins'
+
+describe('InfoWindow bounds', () => {
+  it('reports the measured bounds, not the size before measuring, then again when the window moves', () => {
+    const clientWidth = vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(432)
+    const clientHeight = vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(800)
+    const onBoundsChange = vi.fn()
+    const { rerender } = render(<InfoWindow title="都市" width={500} height={300} x={56} y={96} onBoundsChange={onBoundsChange}>本文</InfoWindow>)
+    expect(onBoundsChange).toHaveBeenCalledTimes(1)
+    expect(onBoundsChange).toHaveBeenLastCalledWith({ x: 56, y: 96, width: 400, height: 300 })
+    rerender(<InfoWindow title="都市" width={500} height={300} x={100} y={96} onBoundsChange={onBoundsChange}>本文</InfoWindow>)
+    expect(onBoundsChange).toHaveBeenLastCalledWith({ x: 100, y: 96, width: 400, height: 300 })
+    clientWidth.mockRestore()
+    clientHeight.mockRestore()
+  })
+})
 
 describe('InfoWindow decoration skins', () => {
   it('uses the medium full-frame PNG by default', () => {

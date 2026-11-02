@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useId, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent, ReactNode } from 'react'
 import { useWindowSize } from '../../hooks/useWindowSize'
 import type { WindowSize } from '../../hooks/useWindowSize'
@@ -31,6 +31,8 @@ export interface InfoWindowProps {
   resizeable?: boolean
   onPositionChange?: (position: { x: number; y: number }) => void
   onSizeChange?: (size: WindowSize) => void
+  /** Where the window is and the size it settles at (not mid-animation), once it is measured and whenever they change */
+  onBoundsChange?: (bounds: { x: number; y: number } & WindowSize) => void
   /** Decorations placed outside the content viewport (e.g. the tab rail). */
   chrome?: ReactNode
 }
@@ -49,7 +51,7 @@ interface PointerOperation {
 export default function InfoWindow({
   title, showTitleBar = true, titleBarOffset, children, className = '', style, width = 'auto', height = 'auto',
   minWidth = 320, maxWidth = 720, minHeight = 240, maxHeight = Number.POSITIVE_INFINITY, x = 0, y = 0,
-  draggable = true, resizable, resizeable = false, onPositionChange, onSizeChange, chrome, skin,
+  draggable = true, resizable, resizeable = false, onPositionChange, onSizeChange, onBoundsChange, chrome, skin,
 }: InfoWindowProps) {
   const titleId = useId()
   const contentRef = useRef<HTMLDivElement>(null)
@@ -65,7 +67,7 @@ export default function InfoWindow({
   const verticalPadding = layout.paddingTop + layout.paddingBottom
   const titlePadding = showTitleBar ? layout.titleCapWidth * 2 + 32 : 0
   const minimumSize = 2 * resolvedSkin.frame.width
-  const { size, widthLimit, heightLimit, scrollbarWidth } = useWindowSize({
+  const { size, widthLimit, heightLimit, scrollbarWidth, measured } = useWindowSize({
     contentRef, titleRef, width, height, minWidth, maxWidth, minHeight, maxHeight, horizontalPadding,
     verticalPadding, titlePadding, minimumSize,
   })
@@ -77,6 +79,11 @@ export default function InfoWindow({
 
   useEffect(() => { setPosition({ x, y }) }, [x, y])
   useEffect(() => { setManualSize(null) }, [width, height, minWidth, maxWidth, minHeight, maxHeight, horizontalPadding, verticalPadding, titlePadding, minimumSize, resolvedSkin.name])
+
+  const notifyBounds = useEffectEvent(() => onBoundsChange?.({ ...position, ...actualSize }))
+  useEffect(() => {
+    if (measured) notifyBounds()
+  }, [measured, position.x, position.y, actualSize.width, actualSize.height])
 
   const start = (event: PointerEvent<HTMLElement>, kind: 'drag' | 'resize') => {
     if (event.button !== 0 || !event.isPrimary || (kind === 'drag' && !draggable)) return
