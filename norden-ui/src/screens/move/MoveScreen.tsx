@@ -8,6 +8,8 @@ import Button from '../../components/parts/Button'
 import SectionFrame from '../../components/parts/SectionFrame'
 import PrisonerPicker from './PrisonerPicker'
 import { knightAbilityStats } from '../domestic/DomesticOfficers'
+import iconSupplies from '../../assets/ui/icons/icon-supplies.webp'
+import iconTroops from '../../assets/ui/icons/icon-troops.webp'
 import type { CityView, KnightView } from '../types'
 import '../screens.css'
 import './MoveScreen.css'
@@ -122,37 +124,38 @@ export default function MoveScreen({
               <header className="norden-window-section-header">
                 <h2 className="norden-window-section-title">移動の内容</h2>
               </header>
-              <p className="norden-move-route">
-                <span><FactionMark faction={from.faction} emblemOnly /> {from.name}</span>
-                <span className="norden-move-arrow" aria-label="から">→</span>
-                <span><FactionMark faction={to.faction} emblemOnly /> {to.name}</span>
-              </p>
-              {route && route.length > 2 && (
-                <p className="norden-move-via">経由: {route.slice(1, -1).join('・')}（街道 {route.length - 1} 区間）</p>
-              )}
-              <div className="norden-move-months" role="status" aria-label="到着までの月数">
-                <span>到着まで</span>
-                <b>{arrival}</b>
-                <span>ヶ月</span>
-                <small>{arrival <= 1 ? '次の進行フェーズで着き、その月の戦闘から加わります' : `${arrival}回目の進行フェーズで着きます`}</small>
+              <div className="norden-move-cargo-body norden-window-scroll">
+                <p className="norden-move-route">
+                  <span><FactionMark faction={from.faction} emblemOnly /> {from.name}</span>
+                  <span className="norden-move-arrow" aria-label="から">→</span>
+                  <span><FactionMark faction={to.faction} emblemOnly /> {to.name}</span>
+                </p>
+                {route && route.length > 2 && (
+                  <p className="norden-move-via">経由: {route.slice(1, -1).join('・')}（{route.length - 1} 区間）</p>
+                )}
+                <div className="norden-move-months" role="status" aria-label="到着までの月数">
+                  <span>到着まで</span>
+                  <b>{arrival}</b>
+                  <span>ヶ月</span>
+                </div>
+                <label className={`norden-move-solo ${solo ? 'is-checked' : ''} ${withMercenary ? 'is-disabled' : ''}`} title={withMercenary ? MERCENARY_SOLO_REASON : undefined}>
+                  <input type="checkbox" checked={solo} disabled={withMercenary} onChange={event => setAlone(event.target.checked)} />
+                  <span>
+                    <b>単騎移動</b>
+                    <small>兵{prisoners.length > 0 ? '・物資・捕虜' : 'と物資'}を運ばず、騎士だけで目的地に急行します</small>
+                  </span>
+                </label>
+                <div className="norden-move-amounts">
+                  <QuantityInput label="兵数" icon={<img src={iconTroops} alt="" />} unit="人" step={soldierStep} value={draft.troops} max={soldierPool} disabled={solo}
+                    onChange={setTroops} />
+                  <QuantityInput label="物資" icon={<img src={iconSupplies} alt="" />} step={supplyStep} value={draft.supplies} max={supplyPool} disabled={solo}
+                    onChange={setSupplies} />
+                </div>
+                {prisoners.length > 0 && (
+                  <PrisonerPicker prisoners={prisoners} picked={draft.prisoners} onToggle={id => setPickedPrisoners(toggleIn(id))}
+                    disabledReason={solo ? '単騎移動では連れて行けません' : undefined} />
+                )}
               </div>
-              <label className={`norden-move-solo ${solo ? 'is-checked' : ''} ${withMercenary ? 'is-disabled' : ''}`} title={withMercenary ? MERCENARY_SOLO_REASON : undefined}>
-                <input type="checkbox" checked={solo} disabled={withMercenary} onChange={event => setAlone(event.target.checked)} />
-                <span>
-                  <b>単騎移動</b>
-                  <small>兵{prisoners.length > 0 ? '・物資・捕虜' : 'と物資'}を運ばず、騎士だけで急ぎます（{soloMonths}ヶ月。通常は{months}ヶ月）</small>
-                </span>
-              </label>
-              <div className="norden-move-amounts">
-                <QuantityInput label="兵数" unit="人" step={soldierStep} value={draft.troops} max={soldierPool} disabled={solo}
-                  onChange={setTroops} />
-                <QuantityInput label="物資" step={supplyStep} value={draft.supplies} max={supplyPool} disabled={solo}
-                  onChange={setSupplies} />
-              </div>
-              {prisoners.length > 0 && (
-                <PrisonerPicker prisoners={prisoners} picked={draft.prisoners} onToggle={id => setPickedPrisoners(toggleIn(id))}
-                  disabledReason={solo ? '単騎移動では連れて行けません' : undefined} />
-              )}
             </section>
           </div>
 

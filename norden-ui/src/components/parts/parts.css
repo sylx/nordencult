@@ -216,7 +216,9 @@
   row-gap: 2px;
   color: #3a2810;
 }
-.norden-quantity-label { grid-area: label; font-size: 13px; color: #755b36; }
+.norden-quantity-label { grid-area: label; display: flex; align-items: center; gap: 4px; font-size: 13px; color: #755b36; }
+.norden-quantity-icon { display: inline-flex; flex: none; width: 22px; height: 22px; }
+.norden-quantity-icon > :is(img, svg) { width: 100%; height: 100%; object-fit: contain; }
 .norden-quantity-step.norden-button { width: 36px; height: 36px; min-width: 36px; padding: 0; font-size: 19px; }
 .norden-quantity-range {
   grid-area: range;

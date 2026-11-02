@@ -209,7 +209,7 @@ function BattleUi() {
 | `Banner` | `children`, `actions` | HUDの案内の帯（`role="status"`） |
 | `FactionBar` | `faction?: FactionView`, `summary?: FactionSummaryView`, `onOpenResearch`, `cityName`, `onPrevCity`, `onNextCity`, `cityPosition`, `movable`, `position`, `onPositionChange` | 左端の球に勢力のエンブレムを表示。球をドラッグしてバー全体を移動。矢印キーは10px、Shift併用は1px、Homeで元の位置。金（次のターンの増減）｜総生産｜総兵力｜研究（/ターンと研究中の技術・進捗・残りターン。研究先が無ければ「研究先なし」、ポイントも出ていなければ薄く。全部研究し終えたら（`complete`）「全技術研究済み」で薄く。`onOpenResearch` があれば押せる）｜◀ 都市名 ▶。`summary` が無ければ都市の切り替えだけ。ハンドラが無い方向は無効 |
 | `ChoiceGroup` | `label`, `options`, `value`, `onChange` | 単一選択のボタン列。radiogroupとして矢印キーで移動し、無効な選択肢を飛ばす |
-| `QuantityInput` | `label`, `value`, `onChange`, `min`, `max`, `step`, `unit` | スライダー・± ボタン・数値入力。範囲外は丸める |
+| `QuantityInput` | `label`, `icon?`（ラベルの前）, `value`, `onChange`, `min`, `max`, `step`, `unit` | スライダー・± ボタン・数値入力。範囲外は丸める |
 | `Card` | `as`, `children`, `className`, `style` | 羊皮紙とインクで描いた汎用装飾枠。`as` は div / article / section / label |
 | `KnightCard` | `knight: { name, portrait?, portraitSrc?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | `Card` に顔・名前・能力名と大きな能力値を配置。数値は段階別の色。`selection` でチェックボックス（`type: 'radio'` と `name` でラジオボタン）になる |
 | `KnightChip` | `knight: { name, portrait?, portraitSrc? }`, `note?` | 小さな顔（30px）と名前を1行に並べる省スペースの騎士表示。`note` は名前の後ろの小さな札（「軍団長」など）。色は周りの文字色を継ぐので、羊皮紙の上でも暗いHUDの上でも使える |

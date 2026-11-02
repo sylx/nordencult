@@ -276,7 +276,7 @@ export default function InvasionScreen({
                     )
                   })}
                   {indirectChoices.length > 0 && (
-                    <Button className="norden-invasion-add-indirect" disabled={full} title={full ? fullReason : undefined} onClick={addIndirect}>
+                    <Button className="norden-invasion-add-indirect" size="small" disabled={full} title={full ? fullReason : undefined} onClick={addIndirect}>
                       ＋ 間接指揮部隊（{indirectChoices.map(type => type.name).join('・')}）
                     </Button>
                   )}

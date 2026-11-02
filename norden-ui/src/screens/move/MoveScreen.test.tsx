@@ -48,7 +48,7 @@ describe('MoveScreen', () => {
     setup()
     expect(confirm()).toBeDisabled()
     expect(screen.getByRole('checkbox', { name: 'オスカー' })).toBeDisabled()
-    expect(screen.getByText('経由: ヴェルスタ（街道 2 区間）')).toBeInTheDocument()
+    expect(screen.getByText('経由: ヴェルスタ（2 区間）')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('checkbox', { name: 'エルネスト' }))
     await userEvent.click(screen.getByRole('checkbox', { name: 'リディア' }))
     expect(confirm()).toBeEnabled()

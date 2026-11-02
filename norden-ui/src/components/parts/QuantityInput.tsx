@@ -1,10 +1,12 @@
 import { useId } from 'react'
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import Button from './Button'
 import './parts.css'
 
 export interface QuantityInputProps {
   label: string
+  /** Shown before the label */
+  icon?: ReactNode
   value: number
   onChange: (value: number) => void
   min?: number
@@ -19,7 +21,7 @@ export interface QuantityInputProps {
 
 /** A number with a slider, − / + buttons and a text box. Values are clamped to min..cap (cap: max unless given) */
 export default function QuantityInput({
-  label, value, onChange, min = 0, max, cap, step = 10, unit, disabled = false, className = '',
+  label, icon, value, onChange, min = 0, max, cap, step = 10, unit, disabled = false, className = '',
 }: QuantityInputProps) {
   const id = useId()
   const top = Math.max(min, max)
@@ -32,7 +34,9 @@ export default function QuantityInput({
   }
   return (
     <div className={`norden-quantity ${className}`} role="group" aria-labelledby={id}>
-      <span id={id} className="norden-quantity-label">{label}</span>
+      <span id={id} className="norden-quantity-label">
+        {icon && <span className="norden-quantity-icon" aria-hidden="true">{icon}</span>}{label}
+      </span>
       <Button size="small" metal="none" className="norden-quantity-step" aria-label={`${label}を減らす`}
         disabled={disabled || value <= min} onClick={() => set(value - step)}>−</Button>
       <input type="range" className="norden-quantity-range" aria-label={label} min={min} max={top} step={step}

@@ -7,6 +7,8 @@ import FactionMark from '../../components/parts/FactionMark'
 import Button from '../../components/parts/Button'
 import SectionFrame from '../../components/parts/SectionFrame'
 import PrisonerPicker from '../move/PrisonerPicker'
+import iconSupplies from '../../assets/ui/icons/icon-supplies.webp'
+import iconTroops from '../../assets/ui/icons/icon-troops.webp'
 import type { CityView, KnightView } from '../types'
 import '../screens.css'
 import '../move/MoveScreen.css'
@@ -109,35 +111,36 @@ export default function TransportScreen({
               <header className="norden-window-section-header">
                 <h2 className="norden-window-section-title">輸送の内容</h2>
               </header>
-              <p className="norden-move-route">
-                <span><FactionMark faction={from.faction} emblemOnly /> {from.name}</span>
-                <span className="norden-move-arrow norden-transport-arrow" aria-label="から">→</span>
-                <span><FactionMark faction={to.faction} emblemOnly /> {to.name}</span>
-              </p>
-              {route && route.length > 2 && (
-                <p className="norden-move-via">経由: {route.slice(1, -1).join('・')}（街道 {route.length - 1} 区間）</p>
-              )}
-              <div className="norden-move-months" role="status" aria-label="到着までの月数">
-                <span>到着まで</span>
-                <b>{months}</b>
-                <span>ヶ月</span>
-                <small>
-                  {months <= 1 ? '次の進行フェーズで着き、兵と物資を下ろします' : `${months}回目の進行フェーズで着き、兵と物資を下ろします`}
-                  。騎士はそのあと単騎で{from.name}へ戻ります（帰還まで計{months + returnMonths}ヶ月）
-                </small>
+              <div className="norden-move-cargo-body norden-window-scroll">
+                <p className="norden-move-route">
+                  <span><FactionMark faction={from.faction} emblemOnly /> {from.name}</span>
+                  <span className="norden-move-arrow norden-transport-arrow" aria-label="から">→</span>
+                  <span><FactionMark faction={to.faction} emblemOnly /> {to.name}</span>
+                </p>
+                {route && route.length > 2 && (
+                  <p className="norden-move-via">経由: {route.slice(1, -1).join('・')}（街道 {route.length - 1} 区間）</p>
+                )}
+                <div className="norden-move-months" role="status" aria-label="到着までの月数">
+                  <span>到着まで</span>
+                  <b>{months}</b>
+                  <span>ヶ月</span>
+                  <small>
+                    {months}ヶ月後に輸送を完了。帰還に{returnMonths}ヶ月（帰還まで計{months + returnMonths}ヶ月）
+                  </small>
+                </div>
+                <div className="norden-move-amounts">
+                  <QuantityInput label="兵数" icon={<img src={iconTroops} alt="" />} unit="人" step={soldierStep} value={troops} max={soldierPool} onChange={setTroops} />
+                  <QuantityInput label="物資" icon={<img src={iconSupplies} alt="" />} step={supplyStep} value={supplies} max={supplyPool} onChange={setSupplies} />
+                </div>
+                {prisoners.length > 0 && <PrisonerPicker prisoners={prisoners} picked={taken} onToggle={togglePrisoner} />}
+                <label className="norden-move-solo is-disabled">
+                  <input type="checkbox" checked={false} disabled readOnly />
+                  <span>
+                    <b>繰り返し輸送</b>
+                    <small>兵と物資が指定の量になるのを待って、自動で輸送を続けます（準備中）</small>
+                  </span>
+                </label>
               </div>
-              <div className="norden-move-amounts">
-                <QuantityInput label="兵数" unit="人" step={soldierStep} value={troops} max={soldierPool} onChange={setTroops} />
-                <QuantityInput label="物資" step={supplyStep} value={supplies} max={supplyPool} onChange={setSupplies} />
-              </div>
-              {prisoners.length > 0 && <PrisonerPicker prisoners={prisoners} picked={taken} onToggle={togglePrisoner} />}
-              <label className="norden-move-solo is-disabled">
-                <input type="checkbox" checked={false} disabled readOnly />
-                <span>
-                  <b>繰り返し輸送</b>
-                  <small>兵と物資が指定の量になるのを待って、自動で輸送を続けます（準備中）</small>
-                </span>
-              </label>
             </section>
           </div>
 

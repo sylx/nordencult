@@ -54,6 +54,12 @@ describe('QuantityInput', () => {
     rerender(<QuantityInput label="予算" value={300} max={1000} cap={300} onChange={onChange} />)
     expect(screen.getByRole('button', { name: '予算を増やす' })).toBeDisabled()
   })
+
+  it('shows an icon before the label, keeping its name', () => {
+    render(<QuantityInput label="兵数" icon={<img src="troops.webp" alt="" />} value={0} max={100} onChange={vi.fn()} />)
+    const group = screen.getByRole('group', { name: '兵数' })
+    expect(group.querySelector('.norden-quantity-label img')).toHaveAttribute('src', 'troops.webp')
+  })
 })
 
 describe('VolumeSlider', () => {

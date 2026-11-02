@@ -2,6 +2,8 @@
 .norden-move-layout { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 14px; height: 100%; min-height: 0; }
 .norden-move .norden-window-screen-layout > .norden-window-section { flex: 1 1 0; min-width: 0; min-height: 0; }
 .norden-move .norden-window-screen-layout > .norden-move-cargo { flex: 1.2 1 0; }
+/* Scrolls under the section's title when the window is short; the section itself cannot, its frame would scroll away */
+.norden-move-cargo-body { display: flex; flex: 1; flex-direction: column; gap: 12px; padding-right: 4px; }
 
 .norden-move-list { display: grid; align-content: start; gap: 6px; margin: 0; padding: 0 4px 0 0; list-style: none; }
 .norden-move-list .norden-knight-card { width: 100%; }
@@ -43,7 +45,7 @@
 .norden-move-solo > span { display: grid; gap: 2px; }
 .norden-move-solo small { font-size: 12px; color: #8a7050; }
 
-/* The soldiers and supplies on a parchment card; their number and maximum columns have fixed widths so the sliders line up */
+/* The soldiers and supplies on a parchment card, one row each; their number and maximum columns have fixed widths so the sliders line up */
 .norden-move-amounts {
   display: grid;
   gap: 10px;
@@ -52,7 +54,11 @@
   border: 1px solid #b38d52;
   border-radius: 6px;
 }
-.norden-move-amounts .norden-quantity { grid-template-columns: 36px minmax(60px, 1fr) 36px 6.5em 4.5em; }
+.norden-move-amounts .norden-quantity {
+  grid-template-columns: auto 36px minmax(60px, 1fr) 36px 6.5em 3em;
+  grid-template-areas: 'label minus range plus value max';
+}
+.norden-move-amounts .norden-quantity-label { white-space: nowrap; }
 
 /* The prisoners to take along, on a parchment card under the amounts; the list scrolls past a few */
 .norden-move-prisoners {
