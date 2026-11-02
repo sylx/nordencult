@@ -52,6 +52,9 @@
 .norden-button:disabled { opacity: .45; cursor: default; }
 .norden-button:focus-visible { outline: 2px solid #765b9a; outline-offset: 2px; }
 .norden-button.is-quiet:focus-visible { outline-color: #ffe08a; }
+.norden-button.has-icon { gap: 7px; }
+.norden-button-icon { display: inline-flex; flex: none; width: 1.3em; height: 1.3em; }
+.norden-button-icon > :is(img, svg) { width: 100%; height: 100%; object-fit: contain; }
 
 /* Shared InfoWindow thin skin, with background inset to preserve transparent cutouts. */
 .norden-thin-frame { position: absolute; inset: 0; z-index: -1; pointer-events: none; }

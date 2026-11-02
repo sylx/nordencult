@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import iconGold from '../../assets/ui/icons/icon-gold.webp'
 import Button from '../../components/parts/Button'
 import Card from '../../components/parts/Card'
 import { KnightStats } from '../../components/parts/KnightCard'
@@ -35,13 +36,13 @@ const TABS: readonly { id: Tab; label: string }[] = [{ id: 'offers', label: '契
 type Mercenary = MercenaryOfferView | MercenaryContractView
 type Ability = (typeof ABILITIES)[number]
 /** 価格 is what they cost to hire, or for those hired what they cost each month */
-type Sort = 'default' | Ability | 'price' | 'unitType'
+type Sort = Ability | 'price' | 'unitType'
 
 const SORTS: readonly { id: Sort; label: string }[] = [
-  { id: 'default', label: '標準' }, ...ABILITIES.map(id => ({ id, label: ABILITY_LABELS[id] })), { id: 'price', label: '価格' }, { id: 'unitType', label: '兵科' },
+  { id: 'price', label: '価格' }, ...ABILITIES.map(id => ({ id, label: ABILITY_LABELS[id] })), { id: 'unitType', label: '兵科' },
 ]
 
-function compare(sort: Exclude<Sort, 'default'>, a: Mercenary, b: Mercenary) {
+function compare(sort: Sort, a: Mercenary, b: Mercenary) {
   if (sort === 'unitType') return a.unitType.localeCompare(b.unitType, 'ja')
   if (sort === 'price') return ('fee' in a ? a.fee : a.monthly) - ('fee' in b ? b.fee : b.monthly)
   return (knightAbility(a.knight, sort) ?? 0) - (knightAbility(b.knight, sort) ?? 0)
@@ -50,8 +51,8 @@ function compare(sort: Exclude<Sort, 'default'>, a: Mercenary, b: Mercenary) {
 /** Those whose company or knight's name has the words, in the order chosen */
 function arrange<T extends Mercenary>(items: readonly T[], query: string, sort: Sort, descending: boolean) {
   const words = query.trim().toLowerCase()
-  const found = items.filter(({ company, knight }) => [company, knight.name].some(name => name.toLowerCase().includes(words)))
-  return sort === 'default' ? found : found.sort((a, b) => (descending ? -1 : 1) * compare(sort, a, b))
+  return items.filter(({ company, knight }) => [company, knight.name].some(name => name.toLowerCase().includes(words)))
+    .sort((a, b) => (descending ? -1 : 1) * compare(sort, a, b))
 }
 
 const gold = (value: number) => value.toLocaleString()
@@ -120,8 +121,8 @@ export default function MercenaryScreen({ cityName, gold: treasury, offers, cont
   const [picked, setPicked] = useState<string | null>(null)
   const [dismissing, setDismissing] = useState<MercenaryContractView | null>(null)
   const [query, setQuery] = useState('')
-  const [sort, setSort] = useState<Sort>('default')
-  const [descending, setDescending] = useState(true)
+  const [sort, setSort] = useState<Sort>('price')
+  const [descending, setDescending] = useState(false)
   const shownOffers = arrange(offers, query, sort, descending)
   const shownContracts = arrange(contracts, query, sort, descending)
   // With nothing chosen (or the chosen one gone or searched away), the first of the list
@@ -169,7 +170,7 @@ export default function MercenaryScreen({ cityName, gold: treasury, offers, cont
                     {SORTS.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
                   </select>
                 </label>
-                {sort !== 'default' && <button type="button" className="norden-mercenary-order" onClick={() => setDescending(value => !value)}>{descending ? '▼ 降順' : '▲ 昇順'}</button>}
+                <button type="button" className="norden-mercenary-order" onClick={() => setDescending(value => !value)}>{descending ? '▼ 降順' : '▲ 昇順'}</button>
               </div>
               <div className="norden-window-scroll norden-mercenary-scroll">
                 {tab === 'offers' && (shownOffers.length === 0
@@ -201,7 +202,7 @@ export default function MercenaryScreen({ cityName, gold: treasury, offers, cont
                 <Details mercenary={offer} facts={[
                   ['契約金', gold(offer.fee), true], ['月額', gold(offer.monthly), true], ['所在地', offer.cityName],
                 ]}>
-                  <Button variant="primary" disabled={Boolean(offer.unavailableReason)} title={offer.unavailableReason} data-sound="develop"
+                  <Button variant="primary" icon={<img src={iconGold} alt="" />} disabled={Boolean(offer.unavailableReason)} title={offer.unavailableReason} data-sound="coins"
                     aria-label={`${offer.company}と契約`} onClick={() => onHire(offer.knight.id)}>契約（金 {gold(offer.fee)}）</Button>
                 </Details>
               )}

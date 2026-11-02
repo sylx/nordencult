@@ -18,7 +18,7 @@ const OFFERS: readonly MercenaryOfferView[] = [
   { knight: first!, company: COMPANIES[0]!, ...unit('cavalry'), soldiers: 500, maxSoldiers: 500, fee: 1000, monthly: 167, cityName: 'フルーエン' },
   {
     knight: second!, company: COMPANIES[1]!, unitType: 'ランツクネヒト', soldiers: 1000, maxSoldiers: 1000, fee: 10000, monthly: 1667, cityName: 'アンバリア',
-    unavailableReason: 'ランツクネヒトはこの勢力との契約に応じません',
+    unavailableReason: 'ランツクネヒトは我々との契約に応じません',
   },
   { knight: fourth!, company: COMPANIES[3]!, ...unit('mage'), soldiers: 500, maxSoldiers: 500, fee: 2000, monthly: 333, cityName: 'シルヴァ' },
 ]

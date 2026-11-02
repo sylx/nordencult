@@ -9,7 +9,7 @@ const offer: MercenaryOfferView = {
 }
 const proud: MercenaryOfferView = {
   knight: { id: 'm2', name: 'カスパル' }, company: 'ランツクネヒト', unitType: 'ランツクネヒト', soldiers: 1000, maxSoldiers: 1000, fee: 10000, monthly: 1667,
-  cityName: 'アンバリア', unavailableReason: 'ランツクネヒトはこの勢力との契約に応じません',
+  cityName: 'アンバリア', unavailableReason: 'ランツクネヒトは我々との契約に応じません',
 }
 const contract: MercenaryContractView = {
   knight: { id: 'm3', name: 'グレイ' }, company: '鉄弦団', unitType: '弓兵', cityName: 'シルヴァ', soldiers: 300, maxSoldiers: 500, monthly: 167, months: 2,
@@ -87,24 +87,24 @@ describe('MercenaryScreen', () => {
     expect(order()).toEqual(['ランツクネヒト（カスパル）', '樽盾団（ブロック）'])
   })
 
-  it('sorts by the price, the lowest first, and the unit type', async () => {
+  it('starts from the lowest price, and sorts by the unit type', async () => {
     show({ offers: [proud, offer] })
-    expect(order()).toEqual(['ランツクネヒト（カスパル）', '樽盾団（ブロック）'])
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: '並び順' }), '価格')
+    expect(screen.getByRole('combobox', { name: '並び順' })).toHaveValue('price')
+    expect(screen.getByRole('button', { name: '▲ 昇順' })).toBeInTheDocument()
     expect(order()).toEqual(['樽盾団（ブロック）', 'ランツクネヒト（カスパル）'])
     await userEvent.selectOptions(screen.getByRole('combobox', { name: '並び順' }), '兵科')
     expect(order()).toEqual(['ランツクネヒト（カスパル）', '樽盾団（ブロック）'])
   })
 
-  it('sorts those hired by what they cost each month', async () => {
+  it('starts those hired from what they cost the least each month', async () => {
     show({ contracts: [{ ...contract, monthly: 500 }, { ...contract, knight: { id: 'm4', name: 'ユルヴァ' }, company: '朱線団', monthly: 100 }] })
     await userEvent.click(screen.getByRole('tab', { name: /契約中/ }))
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: '並び順' }), '価格')
     expect(order()).toEqual(['朱線団（ユルヴァ）', '鉄弦団（グレイ）'])
   })
 
   it('hires the mercenary chosen', async () => {
     const { onHire } = show()
+    expect(screen.getByRole('button', { name: '樽盾団と契約' })).toHaveAttribute('data-sound', 'coins')
     await userEvent.click(screen.getByRole('button', { name: '樽盾団と契約' }))
     expect(onHire).toHaveBeenCalledWith('m1')
   })

@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
+import Button from './Button'
 import ChoiceGroup from './ChoiceGroup'
 import KnightChip from './KnightChip'
 import QuantityInput from './QuantityInput'
@@ -13,6 +14,19 @@ function Choice() {
   return <ChoiceGroup label="兵科" value={value} onChange={setValue}
     options={[{ value: 'a', label: '歩兵' }, { value: 'b', label: '弓兵', disabled: true }, { value: 'c', label: '騎兵' }]} />
 }
+
+describe('Button', () => {
+  it('shows an icon before the label, keeping its name', () => {
+    render(<Button icon={<img src="gold.webp" alt="" />}>契約</Button>)
+    const button = screen.getByRole('button', { name: '契約' })
+    expect(button.firstElementChild?.querySelector('img')).toHaveAttribute('src', 'gold.webp')
+  })
+
+  it('has no icon by default', () => {
+    render(<Button>戻る</Button>)
+    expect(screen.getByRole('button', { name: '戻る' }).childElementCount).toBe(0)
+  })
+})
 
 describe('ChoiceGroup', () => {
   it('is a radio group with one tab stop; arrow keys skip disabled options', async () => {

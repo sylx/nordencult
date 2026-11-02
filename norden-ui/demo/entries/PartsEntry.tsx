@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import iconGold from '../../src/assets/ui/icons/icon-gold.webp'
 import type { ButtonProps } from '../../src'
 import { Banner, Button, Card, ChoiceGroup, FactionMark, InfoWindow, KnightCard, KnightChip, MercenaryCard, QuantityInput, SectionFrame, SettingsDialog, ThinFrameWithTitle, VolumeSlider } from '../../src'
 import { repositoryCharacters, RepositoryPortrait } from '../repositoryCharacters'
@@ -41,6 +42,7 @@ export default function PartsEntry() {
             <Button metal="gold" onClick={() => add('金装飾のボタン')}>象牙・金</Button>
             <Button metal="none" onClick={() => add('装飾なしのボタン')}>装飾なし</Button>
             <Button variant="primary" onClick={() => add('主なボタン')}>予約</Button>
+            <Button variant="primary" icon={<img src={iconGold} alt="" />} onClick={() => add('アイコン付きのボタン')}>契約</Button>
             <Button disabled>無効</Button>
             <Button size="small">小さい</Button>
             <Button metal={buttonMetal} style={{ width: buttonWidth, height: buttonHeight }} onClick={() => add('任意サイズのボタン')}>出撃する</Button>
