@@ -318,13 +318,34 @@ describe('法王府', () => {
     expect(next.cities[FLUEN].storedSupplies).toBe(state.cities[FLUEN].storedSupplies + cityOutput(state, FLUEN).production)
   })
 
-  it('takes as many as asked in a turn, while the relic asked for can be neither dismantled nor repaired', () => {
-    const rich = withGold(playing('carta'), 10000)
-    const state = requestPapalRepair(requestPapalRepair(rich, 'carta', RIFLE), 'carta', BALLISTA)
-    expect(dismantleProblem(state, 'carta', RIFLE)).toBe('法王府に依頼中です')
+  it('leaves the relic asked for neither dismantled nor repaired', () => {
+    const state = requestPapalRepair(playing('carta'), 'carta', BALLISTA)
+    expect(dismantleProblem(state, 'carta', BALLISTA)).toBe('法王府に依頼中です')
     expect(repairProblem(state, FLUEN, BALLISTA)).toBe('法王府に依頼中です')
-    expect(papalRepairProblem(state, 'carta', RIFLE)).toBe('法王府に依頼中です')
-    expect(nextTurn(state).events).toHaveLength(2)
+    expect(papalRepairProblem(state, 'carta', BALLISTA)).toBe('法王府に依頼中です')
+  })
+
+  it('takes one request of a faction at a time, the next once it is delivered', () => {
+    const state = requestPapalRepair(withGold(playing('carta'), 10000), 'carta', RIFLE)
+    expect(papalRepairProblem(state, 'carta', BALLISTA)).toBe('法王府への依頼は同時に1件までです')
+    expect(() => requestPapalRepair(state, 'carta', BALLISTA)).toThrow(GameRuleError)
+    expect(papalRepairProblem({ ...nextTurn(state), activeFaction: 'carta' }, 'carta', BALLISTA)).toBeNull()
+  })
+
+  it('counts the request of each faction apart', () => {
+    const state = requestPapalRepair(playing('carta'), 'carta', RIFLE)
+    const leonis = withRelics(withGold({ ...state, activeFaction: 'leonis' }, 10000, 'leonis'), 'leonis', [{ id: 'r', relicId: 'rifle', repaired: false }])
+    expect(papalRepairProblem(leonis, 'leonis', 'r')).toBeNull()
+  })
+
+  it('delivers all that a faction holds asked for: a conquest can bring it more than one', () => {
+    const state = withRelics(playing('carta'), 'carta', [
+      { id: 'a', relicId: 'rifle', repaired: false, papalRepair: true },
+      { id: 'b', relicId: 'ballista', repaired: false, papalRepair: true },
+    ])
+    const next = nextTurn(state)
+    expect(itemsOf(next).map((i) => i.repaired)).toEqual([true, true])
+    expect(next.events).toHaveLength(2)
   })
 
   it('refuses what is being repaired already, and without the gold', () => {
