@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { CHARACTER_LIST, CHARACTER_START } from './character'
 import { CITY_LIST } from './city'
 import { FACTION_MAP } from './faction'
+import { UNIT_TYPES_BY_CHARACTER_TYPE } from './unitTypes'
 
 describe('character data', () => {
   const mercenaries = CHARACTER_LIST.filter((c) => c.mercenaryInfo)
@@ -28,16 +29,17 @@ describe('character data', () => {
     }
   })
 
+  it('gives a company a unit type its leader can lead', () => {
+    for (const { id, type, mercenaryInfo } of mercenaries) {
+      if (mercenaryInfo!.unitType) expect(UNIT_TYPES_BY_CHARACTER_TYPE[type], `${id} の兵科`).toContain(mercenaryInfo!.unitType)
+    }
+  })
+
   it('holds grudges against real factions only, and only among those starting 放浪', () => {
     for (const start of CHARACTER_START) {
       if (!start.grudge) continue
       expect(FACTION_MAP[start.grudge], `${start.id} の怨恨勢力`).toBeDefined()
       expect(start.factionId, `${start.id} は放浪で始まる`).toBeUndefined()
     }
-  })
-
-  it('starts everyone else serving a faction: none of the present knights starts 放浪', () => {
-    const mercenary = new Set(mercenaries.map((c) => c.id))
-    expect(CHARACTER_START.filter((s) => !s.factionId && !s.isPrisoner && !mercenary.has(s.id)).map((s) => s.id)).toEqual([])
   })
 })

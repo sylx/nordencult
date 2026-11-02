@@ -1,6 +1,7 @@
 import characterData from './characterData.json'
 import characterStart from './characterStart.json'
 import type { PersonalityTag, VoiceToneId } from './characterVoice'
+import type { UnitTypeId } from './unitTypes'
 
 /** 騎士・学者・政治家・魔術師・狩人・ライフル兵・砲兵・ランツクネヒト */
 export type CharacterType = 'knight' | 'scholar' | 'politician' | 'magician' | 'hunter' | 'rifleman' | 'artillery' | 'landsknecht'
@@ -60,6 +61,8 @@ export interface Character {
     maxSoldiers: number
     /** プライド (1..5): the higher, the more the standing with the mercenaries changes their price and whether they sign */
     pride: number
+    /** The unit type of their company, one their type of character can lead. Omitted: the default of their type */
+    unitType?: UnitTypeId
   }
   relations?: Relation[]
   biography?: string

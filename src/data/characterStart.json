@@ -53,7 +53,7 @@
   {"id": "052", "cityId": "P009", "factionId": "aqua"},
   {"id": "053", "cityId": "P015", "factionId": "leonis"},
   {"id": "054", "cityId": "P009", "factionId": "aqua"},
-  {"id": "055", "cityId": "P017", "factionId": "nordis"},
+  {"id": "055", "cityId": "P017"},
   {"id": "056", "cityId": "P013", "factionId": "leonis", "isLord": true},
   {"id": "057", "cityId": "P014", "factionId": "leonis", "isLord": true},
   {"id": "058", "cityId": "P005", "factionId": "leonis", "isLord": true},

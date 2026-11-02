@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { hireMercenary, orderProblem, requestPapalRepair, startRelicProduction, startRelicRepair, type GameState } from '../../game'
+import { defaultUnitType, hireMercenary, orderProblem, requestPapalRepair, startRelicProduction, startRelicRepair, type GameState } from '../../game'
 import { playing } from '../../game/testing'
 import { RELIC_MAP, relicRarity } from '../../data/relics'
+import { UNIT_TYPE_MAP } from '../../data/unitTypes'
 import { buildOptions, cityView, eventView, knightView, mercenaryContracts, mercenaryOffers, relicOptions, relicProductionsView, relicsView, relicWorkLabel } from './views'
 
 // Neither is drawn here: the battle's runtime needs a window, and the picture of a knight its sheets
@@ -80,7 +81,7 @@ describe('the mercenaries', () => {
   it('offers those within reach, with what they cost and why one cannot be hired', () => {
     const offers = mercenaryOffers(rich(), FLUEN)
     expect(offers.find((o) => o.knight.id === BARREL)).toMatchObject({
-      company: '樽盾団', unitType: '騎兵', soldiers: 500, maxSoldiers: 500, fee: 1000, monthly: 167, cityName: 'フルーエン',
+      company: '樽盾団', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, soldiers: 500, maxSoldiers: 500, fee: 1000, monthly: 167, cityName: 'フルーエン',
     })
     const poor = playing('carta')
     const none = { ...poor, gold: { ...poor.gold, carta: 0 } }

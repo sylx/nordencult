@@ -19,9 +19,11 @@ export function mixMorale(soldiers: number, morale: number, joining: number, joi
 /** Most soldiers of a unit, the same for every knight and for the units the commander leads indirectly */
 export const MAX_SOLDIERS = 1000
 
-/** The unit type a character leads unless the player picks another */
-export const defaultUnitType = (characterId: CharacterId): UnitTypeId =>
-  DEFAULT_UNIT_TYPES[CHARACTER_MAP[characterId]?.type ?? 'knight']
+/** The unit type a character leads unless the player picks another; a mercenary's company always has this one */
+export const defaultUnitType = (characterId: CharacterId): UnitTypeId => {
+  const character = CHARACTER_MAP[characterId]
+  return character?.mercenaryInfo?.unitType ?? DEFAULT_UNIT_TYPES[character?.type ?? 'knight']
+}
 
 /** A commander leads the units without a knight of their own with this share of their 統率・武力・知力 */
 export const INDIRECT_ABILITY_RATE = 0.5

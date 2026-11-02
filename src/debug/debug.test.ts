@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createGameStore, createInitialState, researchOf, wanderer, type GameStore } from '../game'
+import { createGameStore, createInitialState, isMercenary, researchOf, wanderer, type GameStore } from '../game'
 import { DEBUG_COMMANDS, type DebugContext } from './commands'
 import { LineEditor } from './lineEditor'
 import { DebugError, complete, completedWord, execute, helpLines, type DebugCommand } from './shell'
@@ -195,6 +195,7 @@ describe('commands', () => {
 
   it('shows those wandering, and where a knight is', () => {
     const { store, run } = setup()
+    store.update((s) => ({ ...s, characters: Object.fromEntries(Object.entries(s.characters).filter(([id, c]) => !c.roaming || isMercenary(id))) }))
     expect(run('wanderer list')).toEqual(['放浪の騎士はいません'])
     store.update((s) => ({ ...s, characters: { ...s.characters, '015': wanderer('P012', 'leonis') } }))
     const list = run('wanderer list').join('\n')

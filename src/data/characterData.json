@@ -1230,7 +1230,8 @@
       "name": "樽盾団",
       "fee": 1000,
       "maxSoldiers": 500,
-      "pride": 2
+      "pride": 2,
+      "unitType": "infantry"
     }
   },
   {
@@ -3340,7 +3341,8 @@
       "name": "星砂団",
       "fee": 1000,
       "maxSoldiers": 500,
-      "pride": 2
+      "pride": 2,
+      "unitType": "infantry"
     }
   },
   {

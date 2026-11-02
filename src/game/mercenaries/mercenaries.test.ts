@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { CHARACTER_MAP } from '../../data/character'
 import {
   addMoveOrder, addOrder, addTransportOrder, assignmentProblem, availableKnights, BALANCE, charactersIn, citiesOf, contractPrice, createInitialState,
   decideRenewal, defaultUnitType, defenderArmy, defenseKnights, defenseProblem, dismissMercenary, dismissProblem, endFactionTurn,
   finishEntry, formDefense, hireMercenary, hireProblem, hiredMercenaries, invadeFromProblem, isRecovering, leadingKnight, MAX_SOLDIERS, mercenaryFees, mercenaryMarket,
   mercenaryReach, moveOrderProblem, neighbours, orderProblem, rejoinCity, renewalPrice, renewalProblem, resolveBattle, runEconomy, runMovements, runRoaming,
-  soldiersLeft, startNextBattle, successorLord, transportOrderProblem, treasuryForecast,
+  soldiersLeft, startNextBattle, successorLord, transportOrderProblem, treasuryForecast, unitTypesOf,
   type ArmyUnit, type BattleSurvivor, type GameState, type Movement,
 } from '..'
 import { playing } from '../testing'
@@ -305,6 +305,26 @@ describe('dismissing', () => {
   })
 })
 
+describe('a company with a unit type of its own', () => {
+  const info = CHARACTER_MAP[BARREL].mercenaryInfo!
+  const data = info.unitType
+  afterEach(() => { info.unitType = data })
+
+  it('fights as that, not as the default of its leader\'s type', () => {
+    info.unitType = undefined
+    expect(defaultUnitType(BARREL)).toBe('cavalry')
+    info.unitType = 'infantry'
+    expect(defaultUnitType(BARREL)).toBe('infantry')
+    const state = hired()
+    const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015', BARREL] }
+    const unit = (unitType: string) => ({ knightId: BARREL, unitType, soldiers: MAX })
+    expect(orderProblem(state, { ...draft, units: [knightUnit('015', 200), unit('infantry')] })).toBeNull()
+    expect(orderProblem(state, { ...draft, units: [knightUnit('015', 200), unit('cavalry')] })).toBe('傭兵の部隊は変えられません')
+    const marching = invading(state)
+    expect(marching.march!.current!.attacker.units[1]).toMatchObject({ knightId: BARREL, unitType: 'infantry' })
+  })
+})
+
 describe('forming armies', () => {
   it('takes no soldiers of the city for a mercenary, whose unit stays as it is', () => {
     const state = hired()
@@ -313,7 +333,8 @@ describe('forming armies', () => {
     const ordered = addOrder(state, { ...draft, units })
     expect(soldiersLeft(ordered, FLUEN)).toBe(state.cities[FLUEN].troops - 200)
     expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], soldiers: 100 }] })).toBe('傭兵の部隊は変えられません')
-    expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], unitType: 'infantry' }] })).toBe('傭兵の部隊は変えられません')
+    const another = unitTypesOf(BARREL).find((type) => type !== units[1].unitType)!
+    expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], unitType: another }] })).toBe('傭兵の部隊は変えられません')
   })
 
   it('leaves the soldiers of the city as they are, mercenaries setting out and coming back', () => {
