@@ -91,7 +91,8 @@ function CityInfo({ city }: { city: CityView }) {
             {city.population !== undefined && <div><dt>人口</dt><dd>{city.population.toLocaleString()}</dd></div>}
             {city.scaleLabel && <div><dt>規模</dt><dd>{city.scaleLabel}</dd></div>}
             {city.special && <div><dt>特殊</dt><dd>{city.special}</dd></div>}
-            <div><dt>騎士</dt><dd>{city.knights?.length ?? 0}人</dd></div>
+            <div><dt>騎士</dt><dd>{city.knights?.filter(knight => !knight.mercenary).length ?? 0}人</dd></div>
+            {city.knights?.some(knight => knight.mercenary) && <div><dt>傭兵</dt><dd>{city.knights.filter(knight => knight.mercenary).length}人</dd></div>}
             {city.prisoners && city.prisoners.length > 0 && <div><dt>捕虜</dt><dd>{city.prisoners.length}人</dd></div>}
           </dl>
         </div>
@@ -137,9 +138,10 @@ function CityInfo({ city }: { city: CityView }) {
   )
 }
 
-/** The city's knights with all their abilities, its lord first; after a splitter the prisoners held there, with the faction they served */
+/** The city's knights with all their abilities, its lord first; after a splitter each the mercenaries serving there and the prisoners held there, with the faction they served */
 function CityKnights({ city, onShowKnight }: { city: CityView; onShowKnight?: (id: string) => void }) {
-  const knights = city.knights ?? []
+  const knights = (city.knights ?? []).filter(knight => !knight.mercenary)
+  const mercenaries = (city.knights ?? []).filter(knight => knight.mercenary)
   const prisoners = city.prisoners ?? []
   // The lord is matched to their knight by id, or by name when the city gives none
   const lord = city.lord
@@ -157,28 +159,26 @@ function CityKnights({ city, onShowKnight }: { city: CityView; onShowKnight?: (i
       </span>}
     />
   )
+  const group = (label: string, members: readonly KnightView[], badge?: (knight: KnightView) => ReactNode) => members.length > 0 && <>
+    <div className="norden-city-knights-splitter" role="separator">
+      <span>{label}</span>
+    </div>
+    <ul className="norden-city-knight-group" aria-label={label}>
+      {members.map(member => <li key={member.id}>{card(member, badge?.(member))}</li>)}
+    </ul>
+  </>
   return (
     <div className="norden-city-knights">
-      {knights.length === 0
+      {knights.length === 0 && mercenaries.length === 0
         ? <p className="norden-city-empty">この都市に所属する騎士はいません。</p>
         : ordered.map(knight => {
           const lordCard = isLord(knight)
           return card(knight, lordCard && <span className="norden-city-knight-badge">領主</span>, lordCard)
         })}
-      {prisoners.length > 0 && <>
-        <div className="norden-city-knights-splitter" role="separator">
-          <span>捕虜 {prisoners.length}人</span>
-        </div>
-        <ul className="norden-city-prisoners" aria-label="捕虜">
-          {prisoners.map(prisoner => (
-            <li key={prisoner.id}>
-              {card(prisoner, <span className="norden-city-prisoner-faction">
-                {prisoner.faction ? <FactionMark faction={prisoner.faction} /> : '勢力なし'}
-              </span>)}
-            </li>
-          ))}
-        </ul>
-      </>}
+      {group('傭兵', mercenaries)}
+      {group('捕虜', prisoners, prisoner => <span className="norden-city-prisoner-faction">
+        {prisoner.faction ? <FactionMark faction={prisoner.faction} /> : '勢力なし'}
+      </span>)}
     </div>
   )
 }

@@ -22,7 +22,7 @@ export const PLAYER = 'carta'
 export interface MockKnight extends KnightView { cityId: string }
 
 // Keep the scenario's names while using actual game character artwork for its cast.
-const characterIds: Record<string, string> = { k1: '029', k2: '016', k3: '011', k4: '001', k5: '019', k6: '015', k7: '017', k8: '024', k9: '003' }
+const characterIds: Record<string, string> = { k1: '029', k2: '016', k3: '011', k4: '001', k5: '019', k6: '015', k7: '017', k8: '024', k9: '003', k13: '042' }
 const characterFor = (id: string) => repositoryCharacters.find(character => character.id === characterIds[id])
 
 // The game's rule: anyone can lead 歩兵, and each class one more unit type
@@ -82,9 +82,16 @@ const PRISONERS: (MockKnight & Pick<KnightView, 'faction'>)[] = [
 
 export const prisonersIn = (id: string): KnightView[] => PRISONERS.filter(item => item.cityId === id)
 
+/** Mercenaries (傭兵) the player hired, serving in their cities; the screens that set them apart ask for them */
+const MERCENARIES: MockKnight[] = [
+  { ...knight('k13', 'ブロック・ドゥンダリン', 'P012', '騎士', 68, 82, 38, 'infantry'), mercenary: { company: '樽盾団', soldiers: 420, maxSoldiers: 500, monthly: 167 } },
+]
+
+export const mercenariesIn = (id: string): KnightView[] => MERCENARIES.filter(item => item.cityId === id)
+
 /** A knight by their id, or by the character id a 略歴 names them by */
 export function knightOf(id: string): KnightView | undefined {
-  const found = KNIGHTS.find(item => item.id === id || characterIds[item.id] === id)
+  const found = [...KNIGHTS, ...MERCENARIES].find(item => item.id === id || characterIds[item.id] === id)
   const owner = found && CITY_MAP[found.cityId]?.owner
   return found && { ...found, faction: owner ? FACTIONS[owner] : null, location: CITY_MAP[found.cityId]?.name }
 }

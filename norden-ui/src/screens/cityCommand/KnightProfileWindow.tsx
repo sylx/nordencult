@@ -61,6 +61,7 @@ export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, 
               {knight.location && <div><dt>所在</dt><dd>{knight.location}</dd></div>}
               {knight.mercenary && <div><dt>傭兵</dt><dd>{knight.mercenary.company}</dd></div>}
               {knight.mercenary && <div><dt>傭兵の兵</dt><dd>{knight.mercenary.soldiers.toLocaleString()} / {knight.mercenary.maxSoldiers.toLocaleString()}</dd></div>}
+              {knight.mercenary?.monthly !== undefined && <div><dt>月額</dt><dd>{knight.mercenary.monthly.toLocaleString()}</dd></div>}
             </dl>
           )}
           <KnightStats stats={abilities.map(({ label, value }) => ({ label, value: value ?? '—' }))} />

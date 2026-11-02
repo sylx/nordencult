@@ -48,13 +48,13 @@
 .norden-city-knights .norden-knight-face { width: 92px; }
 .norden-city-knight-aside { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .norden-city-knight-badge { padding: 2px 8px; color: #fff4d8; background: #7a4f17; border-radius: 3px; font-weight: 700; }
-/* The prisoners after a rule with their count, the faction each served beside them */
+/* The mercenaries and the prisoners each after a labelled rule, the faction each prisoner served beside them */
 .norden-city-knights-splitter { 
   display: flex; align-items: center; gap: 10px; margin: 8px 0 2px; 
   color: #856843; font-size: 13px; font-weight: 700; }
 .norden-city-knights-splitter::before,
 .norden-city-knights-splitter::after { content: ''; flex: 1; height: 1px; background: #cbb28266; }
-.norden-city-prisoners { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.norden-city-knight-group { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .norden-city-prisoner-faction { font-size: 12px; color: #8a7050; white-space: nowrap; }
 @media (max-width: 560px) {
   .norden-city-info-overview.has-lord { padding-right: 0; min-height: 0; }

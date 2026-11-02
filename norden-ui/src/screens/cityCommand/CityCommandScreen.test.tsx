@@ -151,12 +151,41 @@ describe('CityCommandScreen', () => {
       },
     })
     await userEvent.click(screen.getByRole('tab', { name: '騎士' }))
-    expect(screen.getByRole('separator')).toHaveTextContent('捕虜 2人')
+    expect(screen.getByRole('separator')).toHaveTextContent('捕虜')
     const prisoners = within(screen.getByRole('list', { name: '捕虜' })).getAllByRole('listitem')
     expect(prisoners[0]).toHaveTextContent('ミレイ')
     expect(prisoners[0]).toHaveTextContent('レオニス帝国')
     expect(prisoners[1]).toHaveTextContent('勢力なし')
     expect(screen.getAllByRole('button', { name: /の詳細$/ })).toHaveLength(3)
+  })
+
+  it('lists the mercenaries serving in the city between its knights and prisoners, counting them apart', async () => {
+    setup({
+      city: {
+        ...city,
+        knights: [
+          { id: 'm1', name: 'ブロック', mercenary: { company: '樽盾団', soldiers: 500, maxSoldiers: 500 } },
+          { id: 'k1', name: 'エルネスト' },
+        ],
+        prisoners: [{ id: 'p1', name: 'ミレイ', faction: null }],
+      },
+    })
+    expect(screen.getByText('騎士', { selector: 'dt' }).nextElementSibling).toHaveTextContent('1人')
+    expect(screen.getByText('傭兵', { selector: 'dt' }).nextElementSibling).toHaveTextContent('1人')
+    await userEvent.click(screen.getByRole('tab', { name: '騎士' }))
+    expect(screen.getAllByRole('separator').map(rule => rule.textContent)).toEqual(['傭兵', '捕虜'])
+    const mercenaries = within(screen.getByRole('list', { name: '傭兵' })).getAllByRole('listitem')
+    expect(mercenaries).toHaveLength(1)
+    expect(mercenaries[0]).toHaveTextContent('ブロック')
+    expect(screen.getAllByRole('button', { name: /の詳細$/ }).map(button => button.getAttribute('aria-label')))
+      .toEqual(['エルネストの詳細', 'ブロックの詳細', 'ミレイの詳細'])
+  })
+
+  it('has no splitter for the mercenaries when none serve there', async () => {
+    setup({ city: { ...city, knights: [{ id: 'k1', name: 'エルネスト' }] } })
+    await userEvent.click(screen.getByRole('tab', { name: '騎士' }))
+    expect(screen.queryByRole('separator')).not.toBeInTheDocument()
+    expect(screen.queryByText('傭兵', { selector: 'dt' })).not.toBeInTheDocument()
   })
 
   it('shows the domestic log of each turn, newest first, on the 推移 tab', async () => {

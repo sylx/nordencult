@@ -23,6 +23,8 @@ export interface MercenaryMark {
   maxSoldiers: number
   /** Morale of their soldiers (0..100), whatever their city's. Omitted: their city's */
   morale?: number
+  /** What they cost each month. Omitted: not hired */
+  monthly?: number
 }
 
 function statTier(value: ReactNode, max = 100) {

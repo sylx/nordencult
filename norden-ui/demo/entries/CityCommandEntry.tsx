@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { CityCommandScreen, windowSkins } from '../../src'
-import { FACTIONS, FACTION_SUMMARY, PLAYER, TURN, cityView, knightOf, playerCities } from '../mock/data'
+import { FACTIONS, FACTION_SUMMARY, PLAYER, TURN, cityView, knightOf, knightsIn, mercenariesIn, playerCities } from '../mock/data'
 import MockMap from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
 import { repositoryCharacters, RepositoryCharacterArt } from '../repositoryCharacters'
@@ -13,7 +13,7 @@ export default function CityCommandEntry() {
   const [skin, setSkin] = useState<keyof typeof windowSkins>('medium')
   const [lordId, setLordId] = useState('city')
   const cityId = playerCities[index]!
-  const city = cityView(cityId, noKnights ? [] : undefined)
+  const city = cityView(cityId, noKnights ? [] : [...knightsIn(cityId), ...mercenariesIn(cityId)])
   const lordCharacter = repositoryCharacters.find(character => character.id === lordId)
   const lord = lordId === 'city' ? city.lord : lordCharacter
     ? { name: lordCharacter.name, image: <RepositoryCharacterArt character={lordCharacter} /> } : undefined
