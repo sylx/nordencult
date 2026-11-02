@@ -15,6 +15,8 @@ export const ABILITY_LABELS: Readonly<Record<Ability, string>> = {
   leadership: '統率', strength: '武力', intelligence: '知力', politics: '政治', charm: '魅力',
 }
 
+export const ABILITIES = ['leadership', 'strength', 'intelligence', 'politics', 'charm'] as const
+
 export interface OfficerRoleSpec {
   role: DomesticOfficerRole
   label: string
@@ -41,6 +43,10 @@ export function knightAbility(knight: KnightView, ability: Ability): number | un
   const value = knight.abilities?.[ability] ?? knight.stats?.find(stat => stat.label === ABILITY_LABELS[ability])?.value
   return typeof value === 'number' ? value : undefined
 }
+
+/** All of a knight's abilities as the card's stats; an unknown one shows as — */
+export const knightAbilityStats = (knight: KnightView) =>
+  ABILITIES.map(ability => ({ label: ABILITY_LABELS[ability], value: knightAbility(knight, ability) ?? '—' }))
 
 /** A knight's aptitude for a role: their abilities weighed as the role weighs them (undefined when one is unknown) */
 export function roleAptitude(knight: KnightView, spec: OfficerRoleSpec): number | undefined {

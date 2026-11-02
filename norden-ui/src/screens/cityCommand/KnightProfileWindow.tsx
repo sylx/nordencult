@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import NavigationWindow from '../../components/window/NavigationWindow'
 import type { NavigationWindowProps } from '../../components/window/NavigationWindow'
 import { KnightStats } from '../../components/parts/KnightCard'
-import { ABILITY_LABELS, knightAbility } from '../domestic/DomesticOfficers'
+import { ABILITIES, ABILITY_LABELS, knightAbility } from '../domestic/DomesticOfficers'
 import type { KnightView } from '../types'
 import './KnightProfileWindow.css'
 
@@ -14,8 +14,6 @@ export interface KnightProfileWindowProps extends Omit<NavigationWindowProps, 't
   onSelectKnight?: (id: string) => void
   onClose: () => void
 }
-
-const ABILITIES = ['leadership', 'strength', 'intelligence', 'politics', 'charm'] as const
 
 /** A knight's profile: full figure, 所属・所在, abilities with their chart and 略歴, in a window with back/forward */
 export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, onClose, className = '', ...windowProps }: KnightProfileWindowProps) {

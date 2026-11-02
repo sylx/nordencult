@@ -6,7 +6,7 @@ import StatBar from '../../components/parts/StatBar'
 import BuildingSlots, { RelicWorkSlot, isRelicWork } from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
 import FactionMark from '../../components/parts/FactionMark'
-import { ABILITY_LABELS, knightAbility } from '../domestic/DomesticOfficers'
+import { knightAbilityStats } from '../domestic/DomesticOfficers'
 import KnightProfileWindow from './KnightProfileWindow'
 import { useBrowseHistory } from '../../hooks/useBrowseHistory'
 import iconAgriculture from '../../assets/ui/icons/icon-agriculture.svg'
@@ -137,8 +137,6 @@ function CityInfo({ city }: { city: CityView }) {
   )
 }
 
-const ABILITIES = ['leadership', 'strength', 'intelligence', 'politics', 'charm'] as const
-
 /** The city's knights with all their abilities, its lord first; after a splitter the prisoners held there, with the faction they served */
 function CityKnights({ city, onShowKnight }: { city: CityView; onShowKnight?: (id: string) => void }) {
   const knights = city.knights ?? []
@@ -151,10 +149,7 @@ function CityKnights({ city, onShowKnight }: { city: CityView; onShowKnight?: (i
     <KnightCard
       key={knight.id}
       current={current}
-      knight={{
-        ...knight,
-        stats: ABILITIES.map(ability => ({ label: ABILITY_LABELS[ability], value: knightAbility(knight, ability) ?? '—' })),
-      }}
+      knight={{ ...knight, stats: knightAbilityStats(knight) }}
       aside={<span className="norden-city-knight-aside">
         {badge}
         <Button size="small" aria-label={`${knight.name}の詳細`} disabled={!onShowKnight}

@@ -7,6 +7,7 @@ import FactionMark from '../../components/parts/FactionMark'
 import Button from '../../components/parts/Button'
 import SectionFrame from '../../components/parts/SectionFrame'
 import PrisonerPicker from './PrisonerPicker'
+import { knightAbilityStats } from '../domestic/DomesticOfficers'
 import type { CityView, KnightView } from '../types'
 import '../screens.css'
 import './MoveScreen.css'
@@ -107,7 +108,7 @@ export default function MoveScreen({
                   <ul className="norden-move-list norden-window-scroll" aria-label="移動する騎士">
                     {knights.map(knight => (
                       <li key={knight.id}>
-                        <KnightCard knight={knight} compact
+                        <KnightCard knight={{ ...knight, stats: knightAbilityStats(knight) }} compact
                           selection={{ selected: selected.includes(knight.id), disabled: Boolean(knight.unavailableReason), onToggle: () => toggle(knight.id) }}
                           aside={knight.unavailableReason && <span className="norden-move-reason">{knight.unavailableReason}</span>} />
                       </li>

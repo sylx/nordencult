@@ -54,6 +54,17 @@ describe('MoveScreen', () => {
     expect(confirm()).toBeEnabled()
   })
 
+  it('shows all of a knight\'s abilities on their card', () => {
+    setup({
+      knights: [{
+        id: 'k1', name: 'エルネスト', stats: [{ label: '統率', value: 81 }],
+        abilities: { leadership: 81, strength: 72, intelligence: 63, politics: 54, charm: 45 },
+      }],
+    })
+    const card = screen.getByRole('checkbox', { name: 'エルネスト' }).closest('label')!
+    expect(card).toHaveTextContent('統率81武力72知力63政治54魅力45')
+  })
+
   it('sends soldiers and supplies with the knights, in the months it takes', async () => {
     const { onConfirm } = setup()
     expect(months()).toHaveTextContent('到着まで2ヶ月')
