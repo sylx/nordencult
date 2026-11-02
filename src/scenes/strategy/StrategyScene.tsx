@@ -98,8 +98,8 @@ const draftTransport = (factionId: FactionId, from: CityId, to: CityId, draft: T
   factionId, from, to, knight: draft.knight, troops: draft.troops, supplies: draft.supplies, prisoners: draft.prisoners,
 })
 
-/** The room (px) the city window on the left and the 行動予約 list on the right take from the map, for focusing on cities */
-const FOCUS_INSET: FocusInset = { left: 360, right: 200 }
+/** The room (px) the 行動予約 list takes from the right of the map, for focusing on cities; the city window's is measured */
+const ORDER_LIST_WIDTH = 200
 /** The room the guide banner of the map pick screens covers at the top of the map */
 const PICK_INSET: FocusInset = { top: 150 }
 
@@ -139,6 +139,8 @@ export default function StrategyScene() {
   const cutIn = useCutIn()
   // The order picked on the 行動予約 list: only its route is shown on the map
   const [activeOrder, setActiveOrder] = useState<string | null>(null)
+  // The right edge (px) of the city window on the left of the map: it can be dragged or resized
+  const [cityWindowRight, setCityWindowRight] = useState(0)
 
   // Each phase starts with a cut-in; the march waits for it. A march resumed after a battle was announced before
   const phaseKey = `${game.turn}:${game.phase}`
@@ -310,8 +312,8 @@ export default function StrategyScene() {
     if (!map || !focusKey) return
     const [, from, to] = focusKey.split(':')
     // After MapView's focusPlace of the city shown (its effect runs first), clear of the windows over the map
-    map.focusPlaces([from, to], { inset: FOCUS_INSET })
-  }, [map, focusKey])
+    map.focusPlaces([from, to], { inset: { left: cityWindowRight, right: ORDER_LIST_WIDTH } })
+  }, [map, focusKey, cityWindowRight])
 
   // Choosing where to move or transport: the camera takes in the city and all the cities it can go to.
   // Keyed by the cities so that the camera stays put as the game changes while choosing
@@ -500,6 +502,7 @@ export default function StrategyScene() {
           return (
             <CityCommandScreen city={cityView(game, cityId)} turn={turnView(game)} faction={factionSummary(game)}
               playerFaction={factionView(faction)}
+              onWindowBoundsChange={({ x, width }) => setCityWindowRight(x + width)}
               knightOf={(id) => CHARACTER_MAP[id] ? knightView(game, id) : undefined}
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
               onPrevCity={playerCities.length > 0 ? () => stepCity(cityId, -1) : undefined}
