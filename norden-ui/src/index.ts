@@ -41,7 +41,7 @@ export type { QuantityInputProps } from './components/parts/QuantityInput'
 export { default as VolumeSlider } from './components/parts/VolumeSlider'
 export type { VolumeSliderProps } from './components/parts/VolumeSlider'
 export { default as KnightCard, KnightStats } from './components/parts/KnightCard'
-export type { KnightCardData, KnightCardProps } from './components/parts/KnightCard'
+export type { KnightCardData, KnightCardProps, MercenaryMark } from './components/parts/KnightCard'
 export { default as KnightChip } from './components/parts/KnightChip'
 export type { KnightChipProps } from './components/parts/KnightChip'
 export { default as FactionMark } from './components/parts/FactionMark'
@@ -72,7 +72,7 @@ export type { ScreenHostProps, ScreenRenderers } from './navigation/ScreenHost'
 
 // Screens
 export type {
-  AssignmentRoleView, BuildOptionView, BuildingView, CityAssignmentsView, CityBuildingsView, CityHistoryView, CityLogLineView, CityStatView, CityView, ConstructionKindView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, FactionResearchSummaryView, FactionSummaryView, FactionView, KnightAbilitiesView, KnightView, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicRarityView, RelicStatusView, RelicView, SpriteImage, StatBoostView, TechStatusView, TechView, TurnView, UnitTypeView,
+  AssignmentRoleView, BuildOptionView, BuildingView, CityAssignmentsView, CityBuildingsView, CityHistoryView, CityLogLineView, CityStatView, CityView, ConstructionKindView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, FactionResearchSummaryView, FactionSummaryView, FactionView, KnightAbilitiesView, KnightView, MercenaryContractView, MercenaryOfferView, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicRarityView, RelicStatusView, RelicView, SpriteImage, StatBoostView, TechStatusView, TechView, TurnView, UnitTypeView,
 } from './screens/types'
 export { default as CityCommandScreen, turnText } from './screens/cityCommand/CityCommandScreen'
 export type { CityCommandScreenProps, CommandState } from './screens/cityCommand/CityCommandScreen'
@@ -96,10 +96,12 @@ export { default as TechScreen } from './screens/tech/TechScreen'
 export type { TechScreenProps } from './screens/tech/TechScreen'
 export { default as RelicScreen } from './screens/relic/RelicScreen'
 export type { RelicScreenProps } from './screens/relic/RelicScreen'
+export { default as MercenaryScreen } from './screens/mercenary/MercenaryScreen'
+export type { MercenaryScreenProps } from './screens/mercenary/MercenaryScreen'
 export { layoutTechs } from './screens/tech/techLayout'
 export type { TechLayout, TechPlace } from './screens/tech/techLayout'
 export { default as EventScreen } from './screens/event/EventScreen'
-export type { EventDetail, EventScreenProps } from './screens/event/EventScreen'
+export type { EventChoice, EventDetail, EventScreenProps } from './screens/event/EventScreen'
 export { CUT_IMAGES } from './screens/event/cuts'
 
 // Cut-ins: templates made with the catalog's editor, played over the screen

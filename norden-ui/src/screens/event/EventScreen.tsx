@@ -24,26 +24,40 @@ export interface EventScreenProps {
   details?: readonly EventDetail[]
   /** More of the host below the details, e.g. the knights it concerns */
   children?: ReactNode
-  /** The button closing the notice (Enter and Esc too) */
+  /** The button closing the notice (Enter and Esc too, unless there is a `secondary` choice) */
   onClose: () => void
   closeLabel?: string
+  /** Why the closing button cannot be pressed now */
+  closeReason?: string
+  /** A second choice: the player must pick one of the two, so neither Enter nor Esc closes the notice */
+  secondary?: EventChoice
+}
+
+/** A button of a notice giving a choice */
+export interface EventChoice {
+  label: string
+  onClick: () => void
+  /** Why it cannot be pressed now */
+  reason?: string
 }
 
 /**
  * A notice of an event over the whole host: the cut (the event's picture) and below it a message window with what
- * happened and its details. It takes the pointer and the keys until it is closed (Esc does not reach the screen under it)
+ * happened and its details. It takes the pointer and the keys until it is closed (Esc does not reach the screen under
+ * it). With a `secondary` button it asks for a choice between the two
  */
-export default function EventScreen({ image, picture, title, message, details = [], children, onClose, closeLabel = '閉じる' }: EventScreenProps) {
+export default function EventScreen({ image, picture, title, message, details = [], children, onClose, closeLabel = '閉じる', closeReason, secondary }: EventScreenProps) {
+  const choosing = secondary !== undefined
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' && event.key !== 'Enter') return
       event.preventDefault()
       event.stopImmediatePropagation()
-      onClose()
+      if (!choosing) onClose()
     }
     window.addEventListener('keydown', onKeyDown, true)
     return () => window.removeEventListener('keydown', onKeyDown, true)
-  }, [onClose])
+  }, [onClose, choosing])
 
   return (
     <div className="norden-event" role="dialog" aria-modal="true" aria-label={typeof title === 'string' ? title : 'イベント'}>
@@ -66,8 +80,10 @@ export default function EventScreen({ image, picture, title, message, details = 
             </dl>
           )}
           {children}
+          {(closeReason || secondary?.reason) && <p className="norden-event-reason" role="note">{closeReason ?? secondary?.reason}</p>}
           <div className="norden-event-actions">
-            <Button variant="primary" onClick={onClose}>{closeLabel}</Button>
+            {secondary && <Button disabled={Boolean(secondary.reason)} title={secondary.reason} onClick={secondary.onClick}>{secondary.label}</Button>}
+            <Button variant="primary" disabled={Boolean(closeReason)} title={closeReason} onClick={onClose}>{closeLabel}</Button>
           </div>
         </ThinFrameWithTitle>
       </div>

@@ -12,6 +12,17 @@ export interface KnightCardData {
   subtitle?: string
   /** A few stats, e.g. 統率 82 */
   stats?: readonly { label: string; value: ReactNode; max?: number }[]
+  /** A mercenary (傭兵): their company and their own soldiers, marked on the card */
+  mercenary?: MercenaryMark
+}
+
+/** What marks a mercenary */
+export interface MercenaryMark {
+  company: string
+  soldiers: number
+  maxSoldiers: number
+  /** Morale of their soldiers (0..100), whatever their city's. Omitted: their city's */
+  morale?: number
 }
 
 function statTier(value: ReactNode, max = 100) {
@@ -52,6 +63,9 @@ export default function KnightCard({ knight, selection, current = false, aside, 
     <span className="norden-knight-info">
       <span className="norden-knight-name">{knight.name}</span>
       {knight.subtitle && <span className="norden-knight-subtitle">{knight.subtitle}</span>}
+      {knight.mercenary && <span className="norden-knight-mercenary">
+        <span className="norden-knight-mercenary-mark">傭兵</span>{knight.mercenary.company} 兵 {knight.mercenary.soldiers.toLocaleString()} / {knight.mercenary.maxSoldiers.toLocaleString()}
+      </span>}
       {knight.stats && knight.stats.length > 0 && <KnightStats stats={knight.stats} />}
     </span>
     {aside && <span className="norden-knight-aside">{aside}</span>}

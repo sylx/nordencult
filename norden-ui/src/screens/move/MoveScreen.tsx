@@ -50,9 +50,12 @@ export interface MoveScreenProps {
   children?: ReactNode
 }
 
+const MERCENARY_SOLO_REASON = '傭兵は単騎移動できません'
+
 /**
  * Move screen, one window of two sections: the knights to pick (several), and what they take with them.
- * 単騎移動 sends the knights alone: no soldiers, supplies or prisoners, but they arrive sooner (soloMonths).
+ * 単騎移動 sends the knights alone: no soldiers, supplies or prisoners, but they arrive sooner (soloMonths). With a
+ * mercenary among them it cannot be chosen, and picking one takes it back.
  * The months the move takes are shown as the choice changes.
  */
 export default function MoveScreen({
@@ -67,13 +70,17 @@ export default function MoveScreen({
 
   // In the order of the list
   const selected = knights.filter(knight => picked.includes(knight.id)).map(knight => knight.id)
+  const withMercenary = knights.some(knight => knight.mercenary && selected.includes(knight.id))
   const taken = solo ? [] : prisoners.filter(prisoner => pickedPrisoners.includes(prisoner.id) && !prisoner.unavailableReason).map(prisoner => prisoner.id)
   const draft: MoveDraft = { knights: selected, troops: solo ? 0 : troops, supplies: solo ? 0 : supplies, solo, prisoners: taken }
   const problem = (selected.length === 0 ? '移動する騎士を選んでください' : null) ?? validate?.(draft) ?? null
   const arrival = solo ? soloMonths : months
 
   const toggleIn = (id: string) => (current: readonly string[]) => (current.includes(id) ? current.filter(item => item !== id) : [...current, id])
-  const toggle = (id: string) => setPicked(toggleIn(id))
+  const toggle = (id: string) => {
+    if (!picked.includes(id) && knights.find(knight => knight.id === id)?.mercenary) setSolo(false)
+    setPicked(toggleIn(id))
+  }
   const setAlone = (alone: boolean) => {
     setSolo(alone)
     if (alone) {
@@ -128,8 +135,8 @@ export default function MoveScreen({
                 <span>ヶ月</span>
                 <small>{arrival <= 1 ? '次の進行フェーズで着き、その月の戦闘から加わります' : `${arrival}回目の進行フェーズで着きます`}</small>
               </div>
-              <label className={`norden-move-solo ${solo ? 'is-checked' : ''}`}>
-                <input type="checkbox" checked={solo} onChange={event => setAlone(event.target.checked)} />
+              <label className={`norden-move-solo ${solo ? 'is-checked' : ''} ${withMercenary ? 'is-disabled' : ''}`} title={withMercenary ? MERCENARY_SOLO_REASON : undefined}>
+                <input type="checkbox" checked={solo} disabled={withMercenary} onChange={event => setAlone(event.target.checked)} />
                 <span>
                   <b>単騎移動</b>
                   <small>兵{prisoners.length > 0 ? '・物資・捕虜' : 'と物資'}を運ばず、騎士だけで急ぎます（{soloMonths}ヶ月。通常は{months}ヶ月）</small>

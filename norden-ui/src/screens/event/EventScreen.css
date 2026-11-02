@@ -38,7 +38,8 @@
 .norden-event-detail { display: grid; grid-template-columns: 9em 1fr; gap: 12px; padding: 3px 0; border-bottom: 1px solid #f3ead71a; }
 .norden-event-detail dt { color: #cbb282; }
 .norden-event-detail dd { margin: 0; }
-.norden-event-actions { display: flex; justify-content: center; }
+.norden-event-actions { display: flex; justify-content: center; gap: 12px; }
+.norden-event-reason { margin: 0; color: #d4a28c; font-size: 12px; text-align: center; }
 
 @keyframes norden-event-veil { from { opacity: 0; } to { opacity: 1; } }
 @keyframes norden-event-cut { from { opacity: 0; scale: 1.03; } to { opacity: 1; scale: 1; } }

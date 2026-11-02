@@ -30,7 +30,7 @@ export default function PrisonerPicker({ prisoners, picked, onToggle, disabledRe
                 disabled: Boolean(disabledReason || prisoner.unavailableReason), onToggle: () => onToggle(prisoner.id),
               }}
               aside={<span className="norden-move-reason">
-                {prisoner.unavailableReason ?? (prisoner.faction ? <FactionMark faction={prisoner.faction} /> : '在野')}
+                {prisoner.unavailableReason ?? (prisoner.faction ? <FactionMark faction={prisoner.faction} /> : '勢力なし')}
               </span>} />
           </li>
         ))}

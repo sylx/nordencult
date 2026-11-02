@@ -137,3 +137,6 @@
   .norden-invasion .norden-window-screen-layout { flex-direction: column; overflow-y: auto; }
   .norden-invasion .norden-window-screen-layout > .norden-window-section { flex: none; }
 }
+
+.norden-invasion-mercenary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 0; color: #f3ead7; font-size: 13px; font-variant-numeric: tabular-nums; }
+.norden-invasion-mercenary small { color: #cbb282; font-size: 11px; }

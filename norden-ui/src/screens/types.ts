@@ -163,7 +163,7 @@ export interface CityView {
   buildings?: CityBuildingsView
   tags?: readonly string[]
   knights?: readonly KnightView[]
-  /** Prisoners held in the city (捕虜), knights of other factions: `faction` is the one they served (null: 在野) */
+  /** Prisoners held in the city (捕虜), knights of other factions: `faction` is the one they served (null: none) */
   prisoners?: readonly KnightView[]
   /** The city's numbers at the start of each turn so far, oldest first */
   history?: readonly CityHistoryView[]
@@ -204,7 +204,7 @@ export interface KnightView extends KnightCardData {
   /** Full character illustration for the profile (URL or host-rendered sprite); the face is shown when omitted */
   image?: ReactNode
   imageSrc?: string
-  /** 所属勢力 for the profile; null: 在野 (no faction), undefined: not shown */
+  /** 所属勢力 for the profile; null: no faction, undefined: not shown */
   faction?: FactionView | null
   /** Where they are now, e.g. a city's name; not shown when omitted */
   location?: string
@@ -220,6 +220,38 @@ export interface KnightView extends KnightCardData {
   unavailableReason?: string
 }
 
+/** A mercenary the city can reach (契約できる傭兵), hired or not by what the host says */
+export interface MercenaryOfferView {
+  knight: KnightView
+  company: string
+  /** The name of their unit type, which is fixed */
+  unitType: string
+  soldiers: number
+  maxSoldiers: number
+  /** What hiring them costs now, and each month after that */
+  fee: number
+  monthly: number
+  /** The name of the city they are in */
+  cityName: string
+  /** Why they cannot be hired now (they are shown but the button does not work) */
+  unavailableReason?: string
+}
+
+/** A mercenary the faction hired */
+export interface MercenaryContractView {
+  knight: KnightView
+  company: string
+  /** The name of the city they are in */
+  cityName: string
+  soldiers: number
+  maxSoldiers: number
+  monthly: number
+  /** Months since the contract was made or renewed */
+  months: number
+  /** Why they cannot be dismissed now */
+  unavailableReason?: string
+}
+
 export interface TurnView {
   turn: number
   /** e.g. 戦略フェーズ */
@@ -232,7 +264,7 @@ export interface TurnView {
 
 /** The player's faction at a glance (the faction bar) */
 export interface FactionSummaryView {
-  /** The treasury, and how it changes at the start of the next turn (income less salaries) */
+  /** The treasury, and how it changes at the start of the next turn (income less salaries and the mercenaries' fees) */
   gold: number
   goldForecast?: number
   /** 総生産: the 生産 of all its cities */

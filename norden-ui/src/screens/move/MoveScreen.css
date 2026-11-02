@@ -87,3 +87,5 @@
   .norden-move .norden-window-screen-layout > .norden-window-section { flex: none; }
   .norden-move-summary { flex-wrap: wrap; white-space: normal; }
 }
+
+.norden-move-solo.is-disabled { opacity: .55; cursor: not-allowed; }

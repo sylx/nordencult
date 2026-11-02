@@ -25,7 +25,7 @@ http://localhost:5173 でカタログを開きます。左の一覧から項目�
 | 区分 | 項目 |
 | --- | --- |
 | 画面フロー | 戦略画面（`#strategy-flow`、既定）: 都市コマンド → 軍事 → 侵攻 → 地図で侵攻先を選ぶ → 侵攻画面 → 予約。Escで1段ずつ戻る |
-| 画面 | 都市コマンド（`#city-command`）、地図で選ぶ（`#map-pick`）、内政（`#domestic`）、技術（`#tech`）、遺物（`#relic`）、侵攻（`#invasion`）、移動（`#move`）、輸送（`#transport`） |
+| 画面 | 都市コマンド（`#city-command`）、地図で選ぶ（`#map-pick`）、内政（`#domestic`）、技術（`#tech`）、遺物（`#relic`）、傭兵（`#mercenary`）、侵攻（`#invasion`）、移動（`#move`）、輸送（`#transport`） |
 | 基本部品 | ウィンドウ（`#info-window`）、ウィンドウ（閉じるボタン付き）（`#window-frame`）、ツールバー（`#command-toolbar`）、ターン情報（`#date-bar`）、行動予約（`#action-orders`）、UIパーツ（`#parts`） |
 | 演出 | カットインエディタ（`#cutin-editor`）: テンプレートを作り、JSONで書き出す。`src/cutin/templates/` のJSONを開いて直せる。イベント通知（`#event`）: `EventScreen` を、カットイン `faction_destruction` のあとに出す流れと、研究完了の通知（技術を選ぶ）で確かめる |
 
@@ -175,7 +175,8 @@ function BattleUi() {
 | `InvasionScreen` | 侵攻。画面いっぱいのウィンドウに、出撃する騎士の一覧、軍団編成（部隊ごとの兵科と兵数）、編成した部隊の図を横に並べ、その下に合計兵数と「やめる / 予約」。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `from` / `to: CityView`, `defenders`, `knights: KnightView[]`, `unitTypes`, `indirectUnitTypes`, `maxUnits`, `soldierPool`, `maxSoldiers`, `morale`, `unitPower`, `soldierStep`, `validate(draft)`, `onConfirm(draft)`, `onCancel`（閉じるボタンも同じ。省くと「やめる」と閉じるボタンを出さない）, `mode`（`'defense'` で防衛軍団の編成: 見出し「〇〇の防衛」・「防衛する騎士」・確定ボタン「防衛する」。`knights`・`soldierPool` は防衛する拠点のもの） |
 | `MoveScreen` | 移動。画面いっぱいのウィンドウに、移動する騎士の一覧（チェックボックスで複数選ぶ）と、移動の内容（経路・到着までの月数・単騎移動・兵数・物資・連れて行く捕虜（複数。単騎移動では選べない））を横に並べ、その下に合計と「やめる / 予約」 | `from` / `to: CityView`, `route`（経路の都市名）, `months`, `soloMonths`, `knights`, `soldierPool`, `supplyPool`, `prisoners`（出発する拠点の捕虜。無ければ一覧を出さない）, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
 | `TransportScreen` | 輸送。移動画面と同じ形のウィンドウに、担当の騎士の一覧（ラジオボタンで1人選ぶ）と、輸送の内容（経路・到着までの月数と騎士の帰還までの月数・兵数・物資・連れて行く捕虜（複数）・繰り返し輸送（準備中のため無効））を横に並べ、その下に合計と「やめる / 予約」 | `from` / `to: CityView`, `route`, `months`（到着まで）, `returnMonths`（下ろしたあと単騎で戻る月数）, `knights`, `soldierPool`, `supplyPool`, `prisoners`, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
-| `EventScreen` | イベント通知（勢力の滅亡など）。ホスト全体を暗くして、カット画像（`CUT_IMAGES`: `src/assets/cut/*.webp` をファイル名で引く）とその下のメッセージウィンドウ（見出し・メッセージ・詳細の行・ホストの内容）を出す。閉じるボタン・Enter・Escで閉じ、Escは下の画面に届かない。騎士の顔を並べるときは `norden-event-chips` の中に `KnightChip` を置く | `image`, `picture`（カットの代わりのホストの絵。技術の画像など）, `title`, `message`, `details: { label, value }[]`, `children`, `onClose`, `closeLabel` |
+| `EventScreen` | イベント通知（勢力の滅亡など）。ホスト全体を暗くして、カット画像（`CUT_IMAGES`: `src/assets/cut/*.webp` をファイル名で引く）とその下のメッセージウィンドウ（見出し・メッセージ・詳細の行・ホストの内容）を出す。閉じるボタン・Enter・Escで閉じ、Escは下の画面に届かない。騎士の顔を並べるときは `norden-event-chips` の中に `KnightChip` を置く。`secondary` を渡すと2択になり、Enter・Escでは閉じない。押せないボタンには理由（`closeReason`・`secondary.reason`）を出す | `image`, `picture`（カットの代わりのホストの絵。技術の画像など）, `title`, `message`, `details: { label, value }[]`, `children`, `onClose`, `closeLabel`, `closeReason`, `secondary: { label, onClick, reason }` |
+| `MercenaryScreen` | 軍事＞傭兵。全画面のウィンドウで、上に開いた都市と国庫の金、タブが「契約できる傭兵」と「契約中」。左の一覧で選ぶと右に詳細と「契約」または「契約を打ち切る」（確認あり。兵が減っていれば評判と回復のことを確認に出す）。できないものは押せず、ホストの理由を出す | `cityName`, `gold`, `offers: MercenaryOfferView[]`, `contracts: MercenaryContractView[]`, `onHire`, `onDismiss`, `onClose`, `children` |
 
 アクションツールバーのコマンドは `CITY_COMMAND_GROUPS` に定義しています。内政、軍事（移動・侵攻・輸送・傭兵）、研究（探索・遺物・技術）、交渉（外交・捕虜・商人）、情報（勢力・傭兵・地理・遺物）と、最後にターン終了です。
 分類を押すと上にサブコマンドが開きます。`commandState={{ invade: { disabled: true, reason: '出撃できる騎士がいません' } }}` で無効にし、理由をツールチップに出します。

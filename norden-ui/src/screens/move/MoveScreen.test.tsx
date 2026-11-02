@@ -22,6 +22,28 @@ const confirm = () => screen.getByRole('button', { name: '予約' })
 const months = () => screen.getByRole('status', { name: '到着までの月数' })
 
 describe('MoveScreen', () => {
+  const withMercenary = () => setup({
+    knights: [{ id: 'k1', name: 'エルネスト' }, { id: 'm1', name: 'ブロック', mercenary: { company: '樽盾団', soldiers: 500, maxSoldiers: 500 } }],
+  })
+
+  it('does not let a mercenary ride alone, saying why', async () => {
+    withMercenary()
+    const solo = screen.getByRole('checkbox', { name: /単騎移動/ })
+    expect(solo).toBeEnabled()
+    await userEvent.click(screen.getByRole('checkbox', { name: 'ブロック' }))
+    expect(solo).toBeDisabled()
+    expect(solo.closest('label')).toHaveAttribute('title', '傭兵は単騎移動できません')
+  })
+
+  it('takes back riding alone when a mercenary is picked', async () => {
+    withMercenary()
+    const solo = screen.getByRole('checkbox', { name: /単騎移動/ })
+    await userEvent.click(solo)
+    expect(solo).toBeChecked()
+    await userEvent.click(screen.getByRole('checkbox', { name: 'ブロック' }))
+    expect(solo).not.toBeChecked()
+  })
+
   it('picks several knights; unavailable ones cannot be picked', async () => {
     setup()
     expect(confirm()).toBeDisabled()

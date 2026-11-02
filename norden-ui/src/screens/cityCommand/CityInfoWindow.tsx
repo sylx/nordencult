@@ -178,7 +178,7 @@ function CityKnights({ city, onShowKnight }: { city: CityView; onShowKnight?: (i
           {prisoners.map(prisoner => (
             <li key={prisoner.id}>
               {card(prisoner, <span className="norden-city-prisoner-faction">
-                {prisoner.faction ? <FactionMark faction={prisoner.faction} /> : '在野'}
+                {prisoner.faction ? <FactionMark faction={prisoner.faction} /> : '勢力なし'}
               </span>)}
             </li>
           ))}

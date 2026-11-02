@@ -62,7 +62,7 @@ export default function EventEntry() {
           details={[
             { label: '最後の拠点', value: 'フルーエン' },
             { label: '攻め落とした勢力', value: 'レオニス帝国' },
-            { label: '在野になった騎士', value: `${knights.length}人` },
+            { label: '放浪する騎士', value: `${knights.length}人` },
           ]}
           onClose={() => { setOpen(false); add('閉じる') }}>
           <p className="norden-event-chips">{knights.map(knight => <KnightChip key={knight.id} knight={knight} />)}</p>

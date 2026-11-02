@@ -26,6 +26,42 @@ const unit = (name: string) => within(screen.getByRole('region', { name }))
 const units = () => screen.queryAllByRole('region', { name: /の部隊$|^間接指揮部隊\d$/ }).map(region => region.getAttribute('aria-label'))
 
 describe('InvasionScreen', () => {
+  const mercenary = { id: 'm1', name: 'ブロック', defaultUnitType: 'cavalry', mercenary: { company: '樽盾団', soldiers: 500, maxSoldiers: 500, morale: 70 } }
+  const withMercenary = () => setup({
+    knights: [{ id: 'k1', name: 'エルネスト', defaultUnitType: 'cavalry' }, mercenary, { id: 'k2', name: 'リディア' }],
+  })
+
+  it('does not make a mercenary the commander', async () => {
+    withMercenary()
+    expect(button('ブロックを軍団長にする')).toBeDisabled()
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('ブロックを加える'))
+    expect(units()).toEqual(['エルネストの部隊', 'ブロックの部隊'])
+    expect(screen.queryByRole('button', { name: 'ブロックを軍団長にする' })).not.toBeInTheDocument()
+  })
+
+  it('takes a mercenary with their own soldiers and unit type, out of the pool', async () => {
+    const { onConfirm } = withMercenary()
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('ブロックを加える'))
+    expect(unit('ブロックの部隊').getByLabelText('ブロックの部隊の内容')).toHaveTextContent('騎兵・500人')
+    expect(unit('ブロックの部隊').queryByRole('spinbutton')).not.toBeInTheDocument()
+    await userEvent.click(button('兵を均等に分ける'))
+    await userEvent.click(confirm())
+    expect(onConfirm.mock.calls[0]![0].units).toEqual([
+      { knightId: 'k1', unitType: 'cavalry', soldiers: 400 },
+      { knightId: 'm1', unitType: 'cavalry', soldiers: 500 },
+    ])
+  })
+
+  it('leaves no army of mercenaries alone when the commander goes', async () => {
+    withMercenary()
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('ブロックを加える'))
+    await userEvent.click(button('エルネストを外す'))
+    expect(units()).toEqual([])
+  })
+
   it('starts by picking the commander; unavailable knights cannot be picked', async () => {
     setup()
     expect(confirm()).toBeDisabled()

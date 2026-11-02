@@ -51,16 +51,18 @@ export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, 
               {knight.subtitle && <span className="norden-knight-profile-sub">{knight.subtitle}</span>}
             </div>
           </header>
-          {(knight.faction !== undefined || knight.location) && (
+          {(knight.faction !== undefined || knight.location || knight.mercenary) && (
             <dl className="norden-knight-profile-facts">
               {knight.faction !== undefined && <div>
                 <dt>所属</dt>
                 <dd>
                   {knight.faction?.emblem && <img className="norden-knight-profile-emblem" src={knight.faction.emblem} alt="" />}
-                  {knight.faction?.name ?? '在野'}
+                  {knight.faction?.name ?? '勢力なし'}
                 </dd>
               </div>}
               {knight.location && <div><dt>所在</dt><dd>{knight.location}</dd></div>}
+              {knight.mercenary && <div><dt>傭兵</dt><dd>{knight.mercenary.company}</dd></div>}
+              {knight.mercenary && <div><dt>傭兵の兵</dt><dd>{knight.mercenary.soldiers.toLocaleString()} / {knight.mercenary.maxSoldiers.toLocaleString()}</dd></div>}
             </dl>
           )}
           <KnightStats stats={abilities.map(({ label, value }) => ({ label, value: value ?? '—' }))} />

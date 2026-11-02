@@ -53,7 +53,7 @@ describe('knight profile', () => {
     await userEvent.click(screen.getByRole('button', { name: 'セラフィナ・ルクスの詳細' }))
     await userEvent.click(screen.getByRole('button', { name: 'イルーナ' }))
     const profile = screen.getByRole('region', { name: 'イルーナ・ヴァルハルト' })
-    expect(within(profile).getByText('所属').nextElementSibling).toHaveTextContent('在野')
+    expect(within(profile).getByText('所属').nextElementSibling).toHaveTextContent('勢力なし')
     // A knight who cannot be found is named without a link
     expect(profile).toHaveTextContent('行方知れずのカイを探している。')
     expect(within(profile).queryByRole('button', { name: 'カイ' })).not.toBeInTheDocument()

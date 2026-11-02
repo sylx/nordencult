@@ -155,7 +155,7 @@ describe('CityCommandScreen', () => {
     const prisoners = within(screen.getByRole('list', { name: '捕虜' })).getAllByRole('listitem')
     expect(prisoners[0]).toHaveTextContent('ミレイ')
     expect(prisoners[0]).toHaveTextContent('レオニス帝国')
-    expect(prisoners[1]).toHaveTextContent('在野')
+    expect(prisoners[1]).toHaveTextContent('勢力なし')
     expect(screen.getAllByRole('button', { name: /の詳細$/ })).toHaveLength(3)
   })
 
