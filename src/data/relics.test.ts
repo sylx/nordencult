@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { FACTION_LIST } from './faction'
 import relicSprite from './relicSprite.json'
-import { relicDataProblems, relicName, RELIC_LIST, RELIC_MAP, type Relic } from './relics'
+import { relicDataProblems, relicName, relicRarity, RELIC_LIST, RELIC_MAP, type Relic } from './relics'
 
 const relic = (id: string, change: Partial<Relic> = {}): Relic => ({ id, name: id, description: '', rarity: 'C', use: 'equipment', ...change })
 const broken: Partial<Relic> = { brokenName: '壊れた', dismantlePoints: 100, repair: { supplies: 100, gold: 50 } }
@@ -42,6 +42,11 @@ describe('the relics\' data', () => {
     expect(relicName('rifle', true)).toBe('ライフル')
     expect(relicName('grimoire_flame_lance', false)).toBe('火の魔導書')
     expect(relicName('nope', true)).toBe('nope')
+  })
+
+  it('shows a broken relic one grade below its rarity', () => {
+    expect((['S', 'A', 'B', 'C'] as const).map((rarity) => relicRarity(relic('r', { rarity }), false))).toEqual(['A', 'B', 'C', 'D'])
+    expect(relicRarity(relic('r', { rarity: 'C' }), true)).toBe('C')
   })
 
   it('hands out broken only relics with a broken state', () => {

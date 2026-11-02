@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { requestPapalRepair, startRelicProduction, startRelicRepair, type GameState } from '../../game'
 import { playing } from '../../game/testing'
-import { RELIC_MAP } from '../../data/relics'
+import { RELIC_MAP, relicRarity } from '../../data/relics'
 import { buildOptions, cityView, eventView, relicOptions, relicProductionsView, relicsView, relicWorkLabel } from './views'
 
 // Neither is drawn here: the battle's runtime needs a window, and the picture of a knight its sheets
@@ -21,7 +21,7 @@ describe('the relic screen', () => {
   it('shows the box with what can be done with each relic and why not', () => {
     const [rifle, ballista] = relicsView(playing('carta'), 'carta', FLUEN)
     expect(rifle).toMatchObject({
-      id: RIFLE, status: 'broken', name: '壊れたライフル', rarity: RELIC_MAP.rifle.rarity, useLabel: '装備', dismantle: { points: RELIC_MAP.rifle.dismantlePoints },
+      id: RIFLE, status: 'broken', name: '壊れたライフル', rarity: relicRarity(RELIC_MAP.rifle, false), useLabel: '装備', dismantle: { points: RELIC_MAP.rifle.dismantlePoints },
       repair: { supplies: RELIC_MAP.rifle.repair!.supplies, gold: RELIC_MAP.rifle.repair!.gold, unavailableReason: '技術「ライフル」の研究が必要です' },
       papalRepair: { unavailableReason: undefined },
     })
@@ -36,9 +36,11 @@ describe('the relic screen', () => {
     state = startRelicRepair(state, FLUEN, BALLISTA)
     state = startRelicProduction(state, SILVA, 'rifle')
     state = requestPapalRepair(state, 'carta', RIFLE)
-    expect(relicsView(state, 'carta', FLUEN).map(({ status, name, cityName }) => [status, name, cityName])).toEqual([
-      ['papalRepair', '壊れたライフル', undefined], ['repaired', 'ライフル', undefined],
-      ['repairing', '壊れたバリスタ', 'フルーエン'], ['producing', 'ライフル', cityView(state, SILVA).name],
+    const brokenRifle = relicRarity(RELIC_MAP.rifle, false)
+    const brokenBallista = relicRarity(RELIC_MAP.ballista, false)
+    expect(relicsView(state, 'carta', FLUEN).map(({ status, name, cityName, rarity }) => [status, name, cityName, rarity])).toEqual([
+      ['papalRepair', '壊れたライフル', undefined, brokenRifle], ['repaired', 'ライフル', undefined, RELIC_MAP.rifle.rarity],
+      ['repairing', '壊れたバリスタ', 'フルーエン', brokenBallista], ['producing', 'ライフル', cityView(state, SILVA).name, RELIC_MAP.rifle.rarity],
     ])
   })
 

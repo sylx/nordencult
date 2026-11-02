@@ -11,6 +11,11 @@ export type RelicRarity = 'S' | 'A' | 'B' | 'C'
 
 export const RELIC_RARITIES: readonly RelicRarity[] = ['S', 'A', 'B', 'C']
 
+/** The rarity a relic shows: one grade below the data's while broken */
+export type RelicShownRarity = RelicRarity | 'D'
+
+const BROKEN_RARITY: Readonly<Record<RelicRarity, RelicShownRarity>> = { S: 'A', A: 'B', B: 'C', C: 'D' }
+
 /** What repairing or producing a relic takes */
 export interface RelicWorkCost {
   /** Supplies, the city's 生産 going into it turn by turn */
@@ -53,6 +58,9 @@ export function relicName(relicId: string, repaired: boolean): string {
   if (!relic) return relicId
   return repaired ? relic.name : relic.brokenName ?? relic.name
 }
+
+/** A relic's rarity as it is broken or repaired */
+export const relicRarity = (relic: Relic, repaired: boolean): RelicShownRarity => (repaired ? relic.rarity : BROKEN_RARITY[relic.rarity])
 
 /** What is wrong with the relics' data: a technology that is not one, a broken state not whole, a relic that can be neither repaired nor produced; empty when nothing is */
 export function relicDataProblems(relics: readonly Relic[] = RELIC_LIST, techs: readonly Pick<Tech, 'id'>[] = TECH_LIST): string[] {

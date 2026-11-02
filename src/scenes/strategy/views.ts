@@ -12,7 +12,7 @@ import { BUILDING_LIST, BUILDING_MAP, describeEffect, type BuildingEffectKind, t
 import buildingSprite from '../../data/buildingSprite.json'
 import relicSheet from '../../assets/relics.webp'
 import relicSprite from '../../data/relicSprite.json'
-import { RELIC_MAP, RELIC_USE_LABELS, relicName, type Relic } from '../../data/relics'
+import { RELIC_MAP, RELIC_USE_LABELS, relicName, relicRarity, type Relic } from '../../data/relics'
 import techSheet from '../../assets/techs.webp'
 import techSprite from '../../data/techSprite.json'
 import { TECH_BRANCH_LABELS, TECH_LIST, TECH_MAP, techChildren } from '../../data/techs'
@@ -397,7 +397,7 @@ export function relicOptions(game: GameState, cityId: string): RelicOptionView[]
   return [...repairs, ...productions]
 }
 
-const relicSummary = (relic: Relic) => ({ rarity: relic.rarity, useLabel: RELIC_USE_LABELS[relic.use], description: relic.description })
+const relicSummary = (relic: Relic, repaired: boolean) => ({ rarity: relicRarity(relic, repaired), useLabel: RELIC_USE_LABELS[relic.use], description: relic.description })
 
 const relicStatus = (item: RelicItem) => (item.repaired ? 'repaired' : item.papalRepair ? 'papalRepair' : 'broken')
 
@@ -408,7 +408,7 @@ export function relicsView(game: GameState, factionId: string, cityId: string): 
     if (!info) return []
     const { relic, repair, papalGold, dismantlePoints } = info
     return [{
-      ...relicSummary(relic),
+      ...relicSummary(relic, item.repaired),
       id: item.id,
       status: relicStatus(item),
       name: relicName(item.relicId, item.repaired),
@@ -425,7 +425,7 @@ export function relicsView(game: GameState, factionId: string, cityId: string): 
     if (!relic) return []
     const repairing = work.kind === 'relicRepair'
     return [{
-      ...relicSummary(relic),
+      ...relicSummary(relic, !repairing),
       id: `work-${workCity}`,
       status: repairing ? 'repairing' : 'producing',
       name: relicName(work.relicId, !repairing),
@@ -439,7 +439,7 @@ export function relicsView(game: GameState, factionId: string, cityId: string): 
 /** The relics the faction has the technology to produce, with why each cannot be started in `cityId` now */
 export function relicProductionsView(game: GameState, factionId: string, cityId: string): RelicProductionView[] {
   return producibleRelics(game, factionId).map((relic) => ({
-    ...relicSummary(relic),
+    ...relicSummary(relic, true),
     id: relic.id,
     name: relic.name,
     image: relicImage(relic.id, true),
