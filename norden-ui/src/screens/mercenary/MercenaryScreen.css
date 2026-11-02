@@ -3,7 +3,8 @@
 .norden-mercenary .norden-window-screen-layout { gap: 5px; }
 .norden-mercenary .norden-window-screen-layout > .norden-window-section { min-width: 0; min-height: 0; }
 
-.norden-mercenary-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 24px; padding: 2px 4px 6px; color: #cbb282; font-size: 14px; }
+.norden-mercenary-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 24px; padding: 2px 4px 6px; color: #cbb282; font-size: 14px; }
+.norden-mercenary-city b { margin-right: 2px; color: #fff0bc; font-size: 22px; font-weight: 700; }
 .norden-mercenary-gold b { color: #fff0bc; font-family: Georgia, 'Times New Roman', serif; font-size: 18px; font-variant-numeric: tabular-nums; }
 
 .norden-mercenary-tabs { display: flex; gap: 4px; padding: 0 4px; border-bottom: 1px solid #a3824b66; }
@@ -14,22 +15,49 @@
 
 .norden-mercenary-list-section { flex: 5 1 0; }
 .norden-mercenary-scroll { flex: 1 1 auto; }
-.norden-mercenary-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.norden-mercenary-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
 
-.norden-mercenary-row { display: flex; align-items: center; gap: 8px; box-sizing: border-box; width: 100%; height: 64px; padding: 4px 8px 4px 4px; color: inherit; text-align: left; background: #2a2119; border: 1px solid #6e5838; border-radius: 4px; cursor: pointer; font: inherit; }
-.norden-mercenary-row:hover { border-color: #d6b268; }
-.norden-mercenary-row:focus-visible { outline: 2px solid #f4d987; outline-offset: 2px; }
-.norden-mercenary-row.is-selected { border-color: #f4d987; box-shadow: 0 0 0 2px #f4d98766; }
-.norden-mercenary-row-body { display: grid; flex: 1 1 auto; gap: 3px; min-width: 0; }
-.norden-mercenary-row-company { overflow: hidden; font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-.norden-mercenary-row-note { overflow: hidden; color: #cbb282; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.norden-mercenary-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.norden-mercenary-search, .norden-mercenary-sort select, .norden-mercenary-order { box-sizing: border-box; height: 30px; color: #f3ead7; background: #211b14; border: 1px solid #6e5838; border-radius: 4px; font: inherit; font-size: 13px; }
+.norden-mercenary-search { flex: 1 1 180px; min-width: 0; padding: 0 8px; }
+.norden-mercenary-search::placeholder { color: #a08a64; }
+.norden-mercenary-sort { display: inline-flex; align-items: center; gap: 6px; color: #cbb282; font-size: 13px; }
+.norden-mercenary-sort select { padding: 0 4px; }
+.norden-mercenary-order { padding: 0 10px; cursor: pointer; }
+.norden-mercenary-order:hover { border-color: #d6b268; }
+.norden-mercenary-search:focus-visible, .norden-mercenary-sort select:focus-visible, .norden-mercenary-order:focus-visible { outline: 2px solid #f4d987; outline-offset: -2px; }
 
-.norden-mercenary-side { flex: 4 1 0; max-width: 480px; }
-.norden-mercenary-details { display: grid; align-content: start; gap: 12px; flex: 1 1 auto; min-height: 0; padding: 4px 6px 8px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #94703b #211b14; }
-.norden-mercenary-facts { display: grid; gap: 6px; margin: 0; }
-.norden-mercenary-facts > div { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 4px; border-bottom: 1px solid #a3824b33; font-size: 13px; }
-.norden-mercenary-facts dt { color: #cbb282; }
-.norden-mercenary-facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+.norden-mercenary-side { flex: 4 1 0; max-width: 520px; }
+/* The body scrolls; the reason and the button stay at the bottom */
+.norden-mercenary-details { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 10px; flex: 1 1 auto; min-height: 0; }
+.norden-mercenary-details-body { display: grid; align-content: start; gap: 12px; padding-right: 6px; }
+
+.norden-mercenary-profile { display: flex; align-items: flex-start; gap: 14px; padding: 12px 14px; }
+.norden-mercenary-figure { flex: none; width: 150px; aspect-ratio: 2 / 3; overflow: hidden; }
+.norden-mercenary-figure > * { display: block; width: 100%; height: 100%; object-fit: contain; object-position: top; }
+.norden-mercenary-summary { display: grid; flex: 1 1 auto; align-content: start; gap: 10px; min-width: 0; }
+.norden-mercenary-company { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+.norden-mercenary-name { margin: 0; font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.norden-mercenary-name > span { margin-left: 8px; color: #78603f; font-size: 12px; font-weight: 400; }
+.norden-mercenary-summary .norden-knight-stats { gap: 4px; }
+.norden-mercenary-summary .norden-knight-stat { min-width: 38px; padding: 1px 3px; }
+.norden-mercenary-summary .norden-knight-stat b { font-size: 18px; }
+.norden-mercenary-unit { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700;margin: 20px; }
+.norden-mercenary-unit > img { flex: none; width: 72px; height: 72px; object-fit: contain; object-position: bottom; filter: drop-shadow(0 2px 2px #38251040); }
+.norden-mercenary-unit-facts { display: flex; flex-wrap: wrap; gap: 4px 14px; min-width: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.norden-mercenary-unit-label { display: block; color: #6a5030; font-size: 11px; font-weight: 400; }
+
+.norden-mercenary-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; margin: 0; }
+.norden-mercenary-facts > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 4px; border-bottom: 1px solid #a3824b33; font-size: 13px; }
+.norden-mercenary-facts dt { flex: none; color: #cbb282; }
+.norden-mercenary-facts dd { min-width: 0; margin: 0; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+.norden-mercenary-facts dd.is-price { font-size: 20px; line-height: 1.2; }
+
+.norden-mercenary-biography { display: grid; gap: 4px; }
+.norden-mercenary-biography h3 { margin: 0; color: #cbb282; font-size: 13px; font-weight: 700; }
+.norden-mercenary-biography p { margin: 0; font-size: 13px; line-height: 1.8; }
+
+.norden-mercenary-action { display: grid; gap: 6px; }
 .norden-mercenary-reason { margin: 0; color: #d4a28c; font-size: 12px; line-height: 1.7; }
 
 .norden-mercenary-footer { display: flex; justify-content: flex-end; padding: 10px 4px 4px; }

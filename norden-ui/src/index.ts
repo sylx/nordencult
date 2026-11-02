@@ -44,6 +44,8 @@ export { default as KnightCard, KnightStats } from './components/parts/KnightCar
 export type { KnightCardData, KnightCardProps, MercenaryMark } from './components/parts/KnightCard'
 export { default as KnightChip } from './components/parts/KnightChip'
 export type { KnightChipProps } from './components/parts/KnightChip'
+export { default as MercenaryCard } from './components/parts/MercenaryCard'
+export type { MercenaryCardProps } from './components/parts/MercenaryCard'
 export { default as FactionMark } from './components/parts/FactionMark'
 export type { FactionMarkProps } from './components/parts/FactionMark'
 export { default as ThinFrame } from './components/parts/ThinFrame'

@@ -226,6 +226,8 @@ export interface MercenaryOfferView {
   company: string
   /** The name of their unit type, which is fixed */
   unitType: string
+  /** Picture of their unit, facing right */
+  unitImage?: string
   soldiers: number
   maxSoldiers: number
   /** What hiring them costs now, and each month after that */
@@ -241,6 +243,10 @@ export interface MercenaryOfferView {
 export interface MercenaryContractView {
   knight: KnightView
   company: string
+  /** The name of their unit type, which is fixed */
+  unitType: string
+  /** Picture of their unit, facing right */
+  unitImage?: string
   /** The name of the city they are in */
   cityName: string
   soldiers: number

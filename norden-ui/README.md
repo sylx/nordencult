@@ -4,7 +4,7 @@
 
 | 層 | 内容 | 場所 |
 | --- | --- | --- |
-| 基本部品 | ウィンドウ（`InfoWindow` / `InfoWindowWithTabs`）、確認・お知らせ・設定のダイアログ（`ConfirmDialog` / OK だけの `AlertDialog` / 閉じるボタン付きの `SettingsDialog`）、ツールバー（`CommandToolbar`）、ターン情報（`DateBar`）、勢力の情報（`FactionBar`）、行動予約（`ActionOrders`）、UIパーツ（`Button`・`ChoiceGroup`・`QuantityInput`・`VolumeSlider`・`KnightCard`・`KnightChip` など） | `src/components/` |
+| 基本部品 | ウィンドウ（`InfoWindow` / `InfoWindowWithTabs`）、確認・お知らせ・設定のダイアログ（`ConfirmDialog` / OK だけの `AlertDialog` / 閉じるボタン付きの `SettingsDialog`）、ツールバー（`CommandToolbar`）、ターン情報（`DateBar`）、勢力の情報（`FactionBar`）、行動予約（`ActionOrders`）、UIパーツ（`Button`・`ChoiceGroup`・`QuantityInput`・`VolumeSlider`・`KnightCard`・`KnightChip`・`MercenaryCard` など） | `src/components/` |
 | 画面 | 基本部品を組み合わせた1画面分のUI。都市コマンド画面・地図で選ぶステップ・侵攻画面 | `src/screens/` |
 | 画面スタック | 画面の階層。都市コマンド → 侵攻先の選択 → 侵攻画面と積み、Escで1段戻る | `src/navigation/` |
 
@@ -176,7 +176,7 @@ function BattleUi() {
 | `MoveScreen` | 移動。画面いっぱいのウィンドウに、移動する騎士の一覧（チェックボックスで複数選ぶ。カードに全能力を出す）と、移動の内容（経路・到着までの月数・単騎移動・兵数・物資・連れて行く捕虜（複数。単騎移動では選べない））を横に並べ、その下に合計と「やめる / 予約」 | `from` / `to: CityView`, `route`（経路の都市名）, `months`, `soloMonths`, `knights`, `soldierPool`, `supplyPool`, `prisoners`（出発する拠点の捕虜。無ければ一覧を出さない）, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
 | `TransportScreen` | 輸送。移動画面と同じ形のウィンドウに、担当の騎士の一覧（ラジオボタンで1人選ぶ）と、輸送の内容（経路・到着までの月数と騎士の帰還までの月数・兵数・物資・連れて行く捕虜（複数）・繰り返し輸送（準備中のため無効））を横に並べ、その下に合計と「やめる / 予約」 | `from` / `to: CityView`, `route`, `months`（到着まで）, `returnMonths`（下ろしたあと単騎で戻る月数）, `knights`, `soldierPool`, `supplyPool`, `prisoners`, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
 | `EventScreen` | イベント通知（勢力の滅亡など）。ホスト全体を暗くして、カット画像（`CUT_IMAGES`: `src/assets/cut/*.webp` をファイル名で引く）とその下のメッセージウィンドウ（見出し・メッセージ・詳細の行・ホストの内容）を出す。閉じるボタン・Enter・Escで閉じ、Escは下の画面に届かない。騎士の顔を並べるときは `norden-event-chips` の中に `KnightChip` を置く。`secondary` を渡すと2択になり、Enter・Escでは閉じない。押せないボタンには理由（`closeReason`・`secondary.reason`）を出す | `image`, `picture`（カットの代わりのホストの絵。技術の画像など）, `title`, `message`, `details: { label, value }[]`, `children`, `onClose`, `closeLabel`, `closeReason`, `secondary: { label, onClick, reason }` |
-| `MercenaryScreen` | 軍事＞傭兵。全画面のウィンドウで、上に開いた都市と国庫の金、タブが「契約できる傭兵」と「契約中」。左の一覧で選ぶと右に詳細と「契約」または「契約を打ち切る」（確認あり。兵が減っていれば評判と回復のことを確認に出す）。できないものは押せず、ホストの理由を出す | `cityName`, `gold`, `offers: MercenaryOfferView[]`, `contracts: MercenaryContractView[]`, `onHire`, `onDismiss`, `onClose`, `children` |
+| `MercenaryScreen` | 軍事＞傭兵。全画面のウィンドウで、上に開いた都市と国庫の金、タブが「契約できる傭兵」と「契約中」。左の一覧（`MercenaryCard`。傭兵団・騎士名で検索でき、能力値・価格・兵科で並べ替えられる）で選ぶと、右に立ち絵・兵科の絵・略歴などの詳細と「契約」または「契約を打ち切る」（確認あり。兵が減っていれば評判と回復のことを確認に出す）。できないものは押せず、ホストの理由を出す | `cityName`, `gold`, `offers: MercenaryOfferView[]`, `contracts: MercenaryContractView[]`, `onHire`, `onDismiss`, `onClose`, `children` |
 
 アクションツールバーのコマンドは `CITY_COMMAND_GROUPS` に定義しています。内政、軍事（移動・侵攻・輸送・傭兵）、研究（探索・遺物・技術）、交渉（外交・捕虜・商人）、情報（勢力・傭兵・地理・遺物）と、最後にターン終了です。
 分類を押すと上にサブコマンドが開きます。`commandState={{ invade: { disabled: true, reason: '出撃できる騎士がいません' } }}` で無効にし、理由をツールチップに出します。
@@ -213,6 +213,7 @@ function BattleUi() {
 | `Card` | `as`, `children`, `className`, `style` | 羊皮紙とインクで描いた汎用装飾枠。`as` は div / article / section / label |
 | `KnightCard` | `knight: { name, portrait?, portraitSrc?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | `Card` に顔・名前・能力名と大きな能力値を配置。数値は段階別の色。`selection` でチェックボックス（`type: 'radio'` と `name` でラジオボタン）になる |
 | `KnightChip` | `knight: { name, portrait?, portraitSrc? }`, `note?` | 小さな顔（30px）と名前を1行に並べる省スペースの騎士表示。`note` は名前の後ろの小さな札（「軍団長」など）。色は周りの文字色を継ぐので、羊皮紙の上でも暗いHUDの上でも使える |
+| `MercenaryCard` | `knight`, `company`, `prices: { label, value }[]`, `notes?`, `selected`, `onSelect` | 一覧の傭兵1人分のボタン。羊皮紙の上に顔・傭兵団・騎士名と `notes`・金額・能力値を並べる |
 | `FactionMark` | `faction?`, `emblemOnly` | 紋章と勢力名。省略すると中立 |
 | `BuildingSlots` | `buildings: CityBuildingsView`, `onSelect?`, `selectedId?` | 都市の施設スロット。建設済み（画像と名前）・建設中（進捗のバーと残りターン）・空きの順。`onSelect` で施設をボタンにする。`BuildingImage`（画像が無ければ頭文字）と `ConstructionProgress` も公開 |
 | `ThinFrameWithTitle` | `title`, `as`, `ref`, ほかの属性 | `ThinFrame` の上辺に題名の札を載せたHUDのパネル。題名がパネルの名前になる。札はCSSの仮組（[画像の仕様](docs/parts-assets.md#細いベゼルの題名の札)） |
@@ -298,7 +299,7 @@ import { InfoWindowWithTabs, windowSkins } from 'norden-ui'
 src/components/window/   ウィンドウ（InfoWindow, InfoWindowWithTabs）
 src/components/toolbar/  CommandToolbar
 src/components/hud/      DateBar, FactionBar, ActionOrders
-src/components/parts/    小さな部品（Button, Banner, ChoiceGroup, QuantityInput, KnightCard, KnightChip, FactionMark）
+src/components/parts/    小さな部品（Button, Banner, ChoiceGroup, QuantityInput, KnightCard, KnightChip, MercenaryCard, FactionMark）
 src/navigation/          画面スタック（useScreenStack, ScreenHost）
 src/cutin/               カットイン（template.ts にJSONの型と初期値、templates/ に作ったテンプレートのJSON、engine/ に描画、useCutIn, CutInLayer）
 src/screens/             画面（types.ts にview型、cityCommand/ mapPick/ invasion/）

@@ -12,8 +12,11 @@ const proud: MercenaryOfferView = {
   cityName: 'アンバリア', unavailableReason: 'ランツクネヒトはこの勢力との契約に応じません',
 }
 const contract: MercenaryContractView = {
-  knight: { id: 'm3', name: 'グレイ' }, company: '鉄弦団', cityName: 'シルヴァ', soldiers: 300, maxSoldiers: 500, monthly: 167, months: 2,
+  knight: { id: 'm3', name: 'グレイ' }, company: '鉄弦団', unitType: '弓兵', cityName: 'シルヴァ', soldiers: 300, maxSoldiers: 500, monthly: 167, months: 2,
 }
+
+/** The cards of the list, in order */
+const order = () => screen.getAllByRole('button').map(button => button.getAttribute('aria-label')).filter(label => label?.includes('（'))
 
 function show(props: Partial<MercenaryScreenProps> = {}) {
   const handlers = { onHire: vi.fn(), onDismiss: vi.fn(), onClose: vi.fn() }
@@ -24,11 +27,80 @@ function show(props: Partial<MercenaryScreenProps> = {}) {
 describe('MercenaryScreen', () => {
   it('shows the city, the gold and the details of the first mercenary', () => {
     show()
-    expect(screen.getByText('フルーエンで契約')).toBeInTheDocument()
+    expect(screen.getByRole('banner')).toHaveTextContent('フルーエンで雇用')
     expect(screen.getByText('3,000')).toBeInTheDocument()
     const details = screen.getByRole('region', { name: '傭兵の詳細' })
     expect(within(details).getByText('騎兵')).toBeInTheDocument()
+    expect(within(details).getByText('500 / 500')).toBeInTheDocument()
     expect(within(details).getByText('167')).toBeInTheDocument()
+    expect(within(details).getByText('所在地')).toBeInTheDocument()
+  })
+
+  it('shows what each costs in the list', () => {
+    show()
+    const list = within(screen.getByRole('region', { name: '契約できる傭兵' }))
+    expect(within(list.getByRole('button', { name: '樽盾団（ブロック）' })).getByText('1,000')).toBeInTheDocument()
+    expect(within(list.getByRole('button', { name: 'ランツクネヒト（カスパル）' })).getByText('1,667')).toBeInTheDocument()
+  })
+
+  it('shows the figure, the unit and the 略歴 without the ids in it', () => {
+    const knight = { ...offer.knight, imageSrc: 'figure.webp', biography: 'カスパル（110）の古い友。' }
+    show({ offers: [{ ...offer, knight, unitImage: 'cavalry.webp' }] })
+    const details = within(screen.getByRole('region', { name: '傭兵の詳細' }))
+    expect(details.getByRole('img', { name: 'ブロックの立ち絵' }).querySelector('img')).toHaveAttribute('src', 'figure.webp')
+    expect(screen.getByRole('region', { name: '傭兵の詳細' }).querySelector('.norden-mercenary-unit img')).toHaveAttribute('src', 'cavalry.webp')
+    expect(details.getByText('カスパルの古い友。')).toBeInTheDocument()
+  })
+
+  it('searches by the company or the knight, showing the first found', async () => {
+    show()
+    const search = screen.getByRole('searchbox', { name: '傭兵団・騎士名で検索' })
+    await userEvent.type(search, 'カスパル')
+    expect(order()).toEqual(['ランツクネヒト（カスパル）'])
+    expect(screen.getByRole('button', { name: 'ランツクネヒトと契約' })).toBeInTheDocument()
+    await userEvent.clear(search)
+    await userEvent.type(search, '樽盾')
+    expect(order()).toEqual(['樽盾団（ブロック）'])
+    await userEvent.clear(search)
+    await userEvent.type(search, '無名')
+    expect(screen.getByText('条件に合う傭兵はいません。')).toBeInTheDocument()
+    expect(screen.getByText('傭兵を選ぶと詳細が出ます。')).toBeInTheDocument()
+  })
+
+  it('clears the search with Escape before anything closes', async () => {
+    const onKey = vi.fn((event: KeyboardEvent) => event.defaultPrevented)
+    window.addEventListener('keydown', onKey)
+    show()
+    await userEvent.type(screen.getByRole('searchbox'), '樽{Escape}')
+    window.removeEventListener('keydown', onKey)
+    expect(screen.getByRole('searchbox')).toHaveValue('')
+    expect(onKey).toHaveLastReturnedWith(true)
+  })
+
+  it('sorts by an ability, the highest first, and can turn it around', async () => {
+    const strong = { ...offer.knight, abilities: { strength: 90 } }
+    const weak = { ...proud.knight, abilities: { strength: 40 } }
+    show({ offers: [{ ...proud, knight: weak }, { ...offer, knight: strong }] })
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: '並び順' }), '武力')
+    expect(order()).toEqual(['樽盾団（ブロック）', 'ランツクネヒト（カスパル）'])
+    await userEvent.click(screen.getByRole('button', { name: '▼ 降順' }))
+    expect(order()).toEqual(['ランツクネヒト（カスパル）', '樽盾団（ブロック）'])
+  })
+
+  it('sorts by the price, the lowest first, and the unit type', async () => {
+    show({ offers: [proud, offer] })
+    expect(order()).toEqual(['ランツクネヒト（カスパル）', '樽盾団（ブロック）'])
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: '並び順' }), '価格')
+    expect(order()).toEqual(['樽盾団（ブロック）', 'ランツクネヒト（カスパル）'])
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: '並び順' }), '兵科')
+    expect(order()).toEqual(['ランツクネヒト（カスパル）', '樽盾団（ブロック）'])
+  })
+
+  it('sorts those hired by what they cost each month', async () => {
+    show({ contracts: [{ ...contract, monthly: 500 }, { ...contract, knight: { id: 'm4', name: 'ユルヴァ' }, company: '朱線団', monthly: 100 }] })
+    await userEvent.click(screen.getByRole('tab', { name: /契約中/ }))
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: '並び順' }), '価格')
+    expect(order()).toEqual(['朱線団（ユルヴァ）', '鉄弦団（グレイ）'])
   })
 
   it('hires the mercenary chosen', async () => {

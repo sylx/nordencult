@@ -375,6 +375,24 @@
 .norden-knight-card.is-compact .norden-knight-name { font-size: 16px; }
 .norden-knight-card.is-compact .norden-knight-stat b { font-size: 20px; }
 
+.norden-mercenary-card { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 104px; padding: 12px 14px; font-size: inherit; text-align: left; background: none; border: 0; cursor: pointer; }
+.norden-mercenary-card:hover::before { box-shadow: inset 0 0 0 1000px #fff3, 0 2px 5px #38200c26; }
+.norden-mercenary-card.is-selected { outline: 2px solid #8a5a20; outline-offset: -5px; }
+.norden-mercenary-card.is-selected::before { box-shadow: inset 0 0 0 1000px #ddb95b30, inset 0 0 18px #a0783040; }
+.norden-mercenary-card:focus-visible { outline: 2px solid #765b9a; outline-offset: 1px; }
+.norden-mercenary-card .norden-knight-face { width: 76px; }
+.norden-mercenary-card-body { display: grid; flex: 1 1 auto; gap: 5px; min-width: 0; }
+.norden-mercenary-card-head { display: flex; justify-content: space-between; gap: 10px; min-width: 0; }
+.norden-mercenary-card-title { display: grid; align-content: start; gap: 2px; min-width: 0; }
+.norden-mercenary-card-company { overflow: hidden; font-size: 15px; font-weight: 700; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.norden-mercenary-card-note { overflow: hidden; color: #78603f; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.norden-mercenary-card-prices { display: grid; flex: none; align-content: start; justify-items: end; color: #6a5030; font-size: 11px; white-space: nowrap; }
+.norden-mercenary-card-prices b { margin-left: 5px; color: #342515; font-size: 15px; font-variant-numeric: tabular-nums; }
+.norden-mercenary-card .norden-knight-stats { gap: 4px; }
+.norden-mercenary-card .norden-knight-stat { min-width: 34px; padding: 1px 3px; }
+.norden-mercenary-card .norden-knight-stat-label { font-size: 10px; }
+.norden-mercenary-card .norden-knight-stat b { font-size: 15px; }
+
 @media (prefers-reduced-motion: reduce) {
   .norden-banner { animation: none; }
   .norden-button, .norden-button::before { transition: none; }
