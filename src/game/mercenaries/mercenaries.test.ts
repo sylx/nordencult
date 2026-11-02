@@ -126,12 +126,12 @@ describe('hiring', () => {
 
   it('does not get the proud to sign however much gold there is, nor tells the standing it takes', () => {
     const state = at(withGold(playing('carta'), 100000), LANDSKNECHT, FLUEN)
-    expect(hireProblem(state, FLUEN, LANDSKNECHT)).toBe('ランツクネヒトはこの勢力との契約に応じません')
+    expect(hireProblem(state, FLUEN, LANDSKNECHT)).toBe('ランツクネヒトは我々との契約に応じません')
     expect(hireProblem(withStanding(state, 39), FLUEN, LANDSKNECHT)).not.toBeNull()
     expect(hireProblem(withStanding(state, 40), FLUEN, LANDSKNECHT)).toBeNull()
     // プライド 2 signs down to -20
     expect(hireProblem(withStanding(at(state, IRON, FLUEN), -20), FLUEN, IRON)).toBeNull()
-    expect(hireProblem(withStanding(at(state, IRON, FLUEN), -21), FLUEN, IRON)).toBe('鉄弦団はこの勢力との契約に応じません')
+    expect(hireProblem(withStanding(at(state, IRON, FLUEN), -21), FLUEN, IRON)).toBe('鉄弦団は我々との契約に応じません')
   })
 
   it('changes the price with the standing, by the pride', () => {

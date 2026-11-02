@@ -97,7 +97,7 @@ export const renewalPrice = (state: GameState, factionId: FactionId, id: Charact
 /** Why the mercenary will not sign with the faction: the standing it needs is not told. null: they will */
 function prideProblem(state: GameState, factionId: FactionId, id: CharacterId): string | null {
   const needed = (info(id).pride - STANDING_PRIDE_BASE) * STANDING_PRIDE_STEP
-  return standingOf(state, factionId) < needed ? `${info(id).name}はこの勢力との契約に応じません` : null
+  return standingOf(state, factionId) < needed ? `${info(id).name}は我々との契約に応じません` : null
 }
 
 /** Why the active faction cannot hire a mercenary in the city now, or null */
