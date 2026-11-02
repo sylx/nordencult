@@ -5,17 +5,17 @@ import type { ConstructionView, RelicProductionView, RelicView } from '../types'
 import RelicScreen from './RelicScreen'
 
 const BROKEN: RelicView = {
-  id: 'rifle-1', status: 'broken', name: '壊れたライフル', rarity: 'C', useLabel: '装備', description: '撃てない銃。',
+  id: 'rifle-1', status: 'broken', name: '壊れたライフル', rarity: 'D', useLabel: '装備', description: '撃てない銃。',
   dismantle: { points: 300 },
   repair: { supplies: 400, gold: 150, turns: 4, unavailableReason: '技術「ライフル」の研究が必要です' },
   papalRepair: { gold: 825 },
 }
 const BALLISTA: RelicView = {
-  id: 'ballista-1', status: 'broken', name: '壊れたバリスタ', rarity: 'C', useLabel: '施設',
+  id: 'ballista-1', status: 'broken', name: '壊れたバリスタ', rarity: 'D', useLabel: '施設',
   dismantle: { points: 200 }, repair: { supplies: 500, gold: 150, turns: 5 }, papalRepair: { gold: 975, unavailableReason: '金が足りません' },
 }
-const REPAIRING: RelicView = { id: 'work-P012', status: 'repairing', name: 'ゴーレムの残骸', rarity: 'A', useLabel: '召喚', cityName: 'フルーエン' }
-const ASKED: RelicView = { id: 'dragon-1', status: 'papalRepair', name: 'ドラゴンの卵', rarity: 'A', useLabel: '召喚' }
+const REPAIRING: RelicView = { id: 'work-P012', status: 'repairing', name: 'ゴーレムの残骸', rarity: 'B', useLabel: '召喚', cityName: 'フルーエン' }
+const ASKED: RelicView = { id: 'dragon-1', status: 'papalRepair', name: 'ドラゴンの卵', rarity: 'B', useLabel: '召喚' }
 const REPAIRED: RelicView = { id: 'gun-1', status: 'repaired', name: 'ガンシップ', rarity: 'A', useLabel: '施設' }
 const PRODUCTION: RelicProductionView = { id: 'rifle', name: 'ライフル', rarity: 'C', useLabel: '装備', supplies: 300, gold: 100, turns: 3 }
 
@@ -37,7 +37,7 @@ describe('RelicScreen', () => {
     shown()
     const details = screen.getByRole('region', { name: '遺物の詳細' })
     expect(within(details).getByRole('heading', { name: /壊れたライフル/ })).toBeInTheDocument()
-    expect(within(details).getByLabelText('レアリティ C')).toBeInTheDocument()
+    expect(within(details).getByLabelText('レアリティ D')).toBeInTheDocument()
     expect(within(details).getByText('使い道: 装備')).toBeInTheDocument()
     expect(within(details).getByText('撃てない銃。')).toBeInTheDocument()
     expect(within(details).getByRole('button', { name: '壊れたライフルをフルーエンで修復' })).toBeDisabled()

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { RelicScreen } from '../../src'
-import type { ConstructionView, RelicProductionView, RelicView } from '../../src'
+import type { ConstructionView, RelicProductionView, RelicRarityView, RelicView } from '../../src'
 import { MOCK_RELICS, repositoryRelics, type RelicSpec } from '../repositoryRelics'
 import MockMap from '../mock/MockMap'
 import { Log, useLog, Workbench } from '../Workbench'
@@ -12,6 +12,7 @@ const PRODUCTION_PER_TURN = 120
 
 /** The game's rules of relics (src/game/relics/), for the demo */
 const PAPAL_REPAIR_RATE = 1.5
+const BROKEN_RARITY: Readonly<Record<RelicRarityView, RelicRarityView>> = { S: 'A', A: 'B', B: 'C', C: 'D', D: 'D' }
 const INITIAL_GOLD = 3000
 
 type Item = { id: string; relicId: string; state: 'broken' | 'papalRepair' | 'repaired' }
@@ -42,7 +43,7 @@ export default function RelicEntry() {
       status: item.state,
       name: broken ? relic.brokenName ?? relic.name : relic.name,
       image: broken ? relic.brokenImage : relic.image,
-      rarity: relic.rarity,
+      rarity: broken ? BROKEN_RARITY[relic.rarity] : relic.rarity,
       useLabel: relic.useLabel,
       description: relic.description,
       dismantle: relic.dismantlePoints === undefined ? undefined : { points: relic.dismantlePoints },

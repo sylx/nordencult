@@ -6,7 +6,6 @@
 .norden-relic-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 24px; padding: 2px 4px 6px; color: #cbb282; font-size: 14px; }
 .norden-relic-status b { color: #fff0bc; }
 .norden-relic-status .norden-construction-progress { flex: 0 1 280px; color: #f3ead7; }
-.norden-relic-gold { margin-left: auto; }
 .norden-relic-gold b { font-family: Georgia, 'Times New Roman', serif; font-size: 18px; font-variant-numeric: tabular-nums; }
 
 .norden-relic-lists { flex: 5 1 0; }
@@ -46,6 +45,7 @@
 .norden-relic-rarity.is-S { background: #f0a08a; }
 .norden-relic-rarity.is-A { background: #d6b0f0; }
 .norden-relic-rarity.is-B { background: #9cc8e6; }
+.norden-relic-rarity.is-D { background: #a39d90; }
 
 .norden-relic-side { flex: 4 1 0; max-width: 480px; container: norden-detail-panel / inline-size; }
 .norden-relic-details-name { margin: 0; color: #f6e7c5; font-family: 'Noto Serif JP', 'Yu Mincho', serif; font-size: 21px; line-height: 1.55; }

@@ -284,7 +284,7 @@ export interface RelicOptionView extends BuildOptionView {
   kind: 'relicRepair' | 'relicProduction'
 }
 
-export type RelicRarityView = 'S' | 'A' | 'B' | 'C'
+export type RelicRarityView = 'S' | 'A' | 'B' | 'C' | 'D'
 
 /** A relic of the box: broken, being repaired in a city, being repaired by 法王府 or repaired; or being produced in a city */
 export type RelicStatusView = 'broken' | 'repairing' | 'producing' | 'papalRepair' | 'repaired'
