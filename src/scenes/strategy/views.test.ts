@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { requestPapalRepair, startRelicProduction, startRelicRepair, type GameState } from '../../game'
+import { hireMercenary, orderProblem, requestPapalRepair, startRelicProduction, startRelicRepair, type GameState } from '../../game'
 import { playing } from '../../game/testing'
 import { RELIC_MAP, relicRarity } from '../../data/relics'
-import { buildOptions, cityView, eventView, relicOptions, relicProductionsView, relicsView, relicWorkLabel } from './views'
+import { buildOptions, cityView, eventView, knightView, mercenaryContracts, mercenaryOffers, relicOptions, relicProductionsView, relicsView, relicWorkLabel } from './views'
 
 // Neither is drawn here: the battle's runtime needs a window, and the picture of a knight its sheets
 vi.mock('@norden/battle-runtime', () => ({}))
@@ -70,7 +70,39 @@ describe('the domestic screen', () => {
   })
 })
 
+describe('the mercenaries', () => {
+  const BARREL = '042' // 樽盾団, in フルーエン
+  const rich = (): GameState => {
+    const state = playing('carta')
+    return { ...state, gold: { ...state.gold, carta: 100000 } }
+  }
+
+  it('offers those within reach, with what they cost and why one cannot be hired', () => {
+    const offers = mercenaryOffers(rich(), FLUEN)
+    expect(offers.find((o) => o.knight.id === BARREL)).toMatchObject({
+      company: '樽盾団', unitType: '騎兵', soldiers: 500, maxSoldiers: 500, fee: 1000, monthly: 167, cityName: 'フルーエン',
+    })
+    const poor = playing('carta')
+    const none = { ...poor, gold: { ...poor.gold, carta: 0 } }
+    expect(mercenaryOffers(none, FLUEN).find((o) => o.knight.id === BARREL)?.unavailableReason).toBe('金が足りません')
+  })
+
+  it('marks a mercenary in the city they serve in, and lists their contract', () => {
+    const state = hireMercenary(rich(), FLUEN, BARREL)
+    expect(cityView(state, FLUEN).knights?.find((k) => k.id === BARREL)?.mercenary).toMatchObject({ company: '樽盾団', soldiers: 500, maxSoldiers: 500 })
+    expect(knightView(state, '015').mercenary).toBeUndefined()
+    expect(mercenaryContracts(state, 'carta')).toMatchObject([{ company: '樽盾団', cityName: 'フルーエン', monthly: 167, months: 0 }])
+    expect(orderProblem(state, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: BARREL, knights: [BARREL] })).toBe('傭兵は軍団長になれません')
+  })
+})
+
 describe('the notices', () => {
+  it('tells a renewal asked for and a contract ended for want of the fee', () => {
+    const renewal = eventView({ id: 'e', kind: 'mercenaryRenewal', turn: 7, factionId: 'carta', characterId: '042', gold: 500 })
+    expect(renewal).toMatchObject({ title: '傭兵の契約更新', details: [{ label: '更新料', value: '金 500' }], knights: ['042'] })
+    expect(eventView({ id: 'e', kind: 'mercenaryUnpaid', turn: 7, factionId: 'carta', characterId: '042' }).message).toContain('樽盾団')
+  })
+
   it('tells a relic completed with its picture repaired', () => {
     const inCity = eventView({ id: 'e', kind: 'relicCompleted', turn: 2, factionId: 'carta', relicId: 'rifle', cityId: FLUEN })
     expect(inCity).toMatchObject({ sound: 'complete', title: '遺物の完成', message: 'ライフルが完成しました。', details: [{ label: '場所', value: 'フルーエン' }, { label: '使い道', value: '装備' }] })

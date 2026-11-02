@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Banner, BuildingImage, CITY_COMMAND_GROUPS, CUT_IMAGES, CUTIN_TEMPLATES, CityCommandScreen, ConfirmDialog, CutInLayer, DomesticScreen, EventScreen, FactionMark,
-  InvasionScreen, KnightChip, MapPickScreen, MoveScreen, RelicScreen, ScreenHost, TechScreen, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
+  InvasionScreen, KnightChip, MapPickScreen, MercenaryScreen, MoveScreen, RelicScreen, ScreenHost, TechScreen, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
   type MoveDraft, type TransportDraft,
 } from 'norden-ui'
 import { MapView, type CityHighlight, type FocusInset, type RoadHighlight, type StrategyMap } from 'norden-strategy'
@@ -12,10 +12,10 @@ import { FACTION_MAP, factionColor, factionName } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   BALANCE, MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
-  charactersIn, citiesOf, decideInvasion, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn,
-  dismantleRelic, endFactionTurnProblem, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn, mustChooseResearch, requestPapalRepair, researchOf, setResearch,
+  charactersIn, citiesOf, decideInvasion, decideRenewal, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn,
+  dismantleRelic, dismissMercenary, endFactionTurnProblem, finishEntry, hireMercenary, invadeFromProblem, isPlayerFaction, isPlayerTurn, mustChooseResearch, requestPapalRepair, researchOf, setResearch,
   moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction, prisonersIn,
-  runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, startRelicProduction, startRelicRepair, stationedIn, suppliesLeft, transportFromProblem,
+  renewalProblem, runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, startRelicProduction, startRelicRepair, stationedIn, suppliesLeft, transportFromProblem,
   transportOrderProblem, dismissEvent, useGame, viewFaction, type CityId, type DefenseDraft, type FactionId, type GameState, type InvasionOrder,
   type MoveOrder, type TransportOrder,
 } from '../../game'
@@ -23,7 +23,7 @@ import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import {
   UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
-  eventView, mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, relicOptions, relicProductionsView, relicsView, researchPerTurn, researchPointDetails, techsView,
+  eventView, mapCities, mercenaryContracts, mercenaryOffers, officerEffects, officersView, phaseLabel, populationGrowthView, relicOptions, relicProductionsView, relicsView, researchPerTurn, researchPointDetails, techsView,
   transportKnightView, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
@@ -71,6 +71,8 @@ type StrategyScreens = {
   tech: { cityId: string }
   /** The relic screen (研究＞遺物): the faction's box; a relic is repaired or produced in `cityId` */
   relic: { cityId: string }
+  /** The mercenary screen (軍事＞傭兵): those `cityId` can hire, and those the faction hired */
+  mercenary: { cityId: string }
 }
 
 /** Commands not made yet */
@@ -158,6 +160,7 @@ export default function StrategyScene() {
 
   // An event (a faction destroyed) is told by its cut-in, then its notice until the player closes it; the march waits
   const event = game.events[0] ?? null
+  const renewal = event?.kind === 'mercenaryRenewal' ? event : null
   const told = useMemo(() => (event ? eventView(event) : null), [event])
   const [eventCut, setEventCut] = useState<string | null>(null)
   const eventId = event?.id
@@ -471,6 +474,7 @@ export default function StrategyScene() {
     state.transport = transport ? { disabled: true, reason: transport } : {}
     const domestic = playerTurn ? domesticProblem(game, cityId) : '手番ではありません'
     state.domestic = domestic ? { disabled: true, reason: domestic } : {}
+    state.mercenary = state.domestic
     state.tech = playerTurn ? {} : { disabled: true, reason: '手番ではありません' }
     state.relic = state.tech
     return state
@@ -508,6 +512,7 @@ export default function StrategyScene() {
                 else if (id === 'domestic') nav.push('domestic', { cityId })
                 else if (id === 'tech') nav.push('tech', { cityId })
                 else if (id === 'relic') nav.push('relic', { cityId })
+                else if (id === 'mercenary') nav.push('mercenary', { cityId })
               }}
               onOpenResearch={playerTurn ? () => nav.push('tech', { cityId }) : undefined}
               onEndTurn={endTurn} endTurnDisabled={!playerTurn || Boolean(endFactionTurnProblem(game))}
@@ -561,9 +566,16 @@ export default function StrategyScene() {
               onConfirm={(draft) => order((s) => addTransportOrder(s, draftTransport(viewFaction(s), from, to, draft)), (s) => s.transportOrders)} />
           )
         },
+        mercenary: ({ cityId }) => (
+          <MercenaryScreen cityName={cityName(cityId)} gold={game.gold[faction]} offers={mercenaryOffers(game, cityId)} contracts={mercenaryContracts(game, faction)}
+            onHire={(id) => update((s) => hireMercenary(s, cityId, id))}
+            onDismiss={(id) => update((s) => dismissMercenary(s, id))}
+            onClose={nav.pop} />
+        ),
         domestic: ({ cityId }) => (
           <DomesticScreen
-            city={cityView(game, cityId)}
+            // Mercenaries are neither lords nor officers: the screen does not offer them
+            city={{ ...cityView(game, cityId), knights: cityView(game, cityId).knights?.filter((knight) => !knight.mercenary) }}
             buildOptions={buildOptions(game, cityId)}
             relicOptions={relicOptions(game, cityId)}
             gold={game.gold[faction]}
@@ -638,7 +650,10 @@ export default function StrategyScene() {
       {event && told && ready && !announcing && (eventCut === event.id || !told.cutIn) && (
         <EventScreen image={told.cut ? CUT_IMAGES[told.cut] : undefined} picture={told.picture && <BuildingImage building={told.picture} />}
           title={told.title} message={told.message} details={told.details}
-          onClose={() => update((s) => dismissEvent(s, event.id))}>
+          closeLabel={renewal ? '更新する' : undefined}
+          closeReason={renewal ? renewalProblem(game, renewal.id) ?? undefined : undefined}
+          secondary={renewal ? { label: '契約を打ち切る', onClick: () => update((s) => decideRenewal(s, renewal.id, false)) } : undefined}
+          onClose={() => update((s) => (renewal ? decideRenewal(s, renewal.id, true) : dismissEvent(s, event.id)))}>
           {told.knights.length > 0 && (
             <p className="norden-event-chips">{told.knights.map((id) => <KnightChip key={id} knight={knightView(game, id)} />)}</p>
           )}

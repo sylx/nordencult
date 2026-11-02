@@ -48,7 +48,7 @@ describe('setup', () => {
   })
 
   it('leaves mercenaries without a faction unhired', () => {
-    expect(createInitialState().characters['028']).toEqual({ cityId: null, factionId: null })
+    expect(createInitialState().characters['028']).toEqual({ cityId: null, factionId: null, roaming: 'P001' })
   })
 
   it('reads the player factions from the URL', () => {
@@ -330,14 +330,18 @@ describe('battle results', () => {
     expect(state.lastBattle?.moves.map((m) => m.kind)).toEqual(['return', 'return'])
   })
 
-  it('defenders with nowhere to retreat become unaffiliated', () => {
+  it('defenders with nowhere to retreat go back to the head of their faction, without their soldiers', () => {
     // Every neighbour of アンバリア but フルーエン is someone else's
     let state = invadeAmbaria()
     state = { ...state, cityOwners: { ...state.cityOwners, [VERSTA]: 'taurus' } }
+    const head = Object.keys(state.characters).find((id) => CHARACTER_MAP[id].isPatriarch && state.characters[id].factionId === 'leonis')!
+    const capital = state.characters[head].cityId!
+    const troops = state.cities[capital].troops
     state = fight('attacker', state)
-    for (const id of AMBARIA_KNIGHTS) expect(state.characters[id]).toEqual({ cityId: null, factionId: null })
+    for (const id of AMBARIA_KNIGHTS) expect(state.characters[id]).toEqual({ cityId: capital, factionId: 'leonis' })
     expect(state.lastBattle?.moves.slice(-AMBARIA_KNIGHTS.length)).toMatchObject(
-      AMBARIA_KNIGHTS.map((characterId) => ({ characterId, kind: 'wander', to: null })))
+      AMBARIA_KNIGHTS.map((characterId) => ({ characterId, kind: 'rejoin', to: capital })))
+    expect(state.cities[capital].troops).toBe(troops)
   })
 
   it('lists the cities each side can retreat to', () => {
@@ -409,15 +413,15 @@ describe('battle results', () => {
     ])).toThrow(GameRuleError)
   })
 
-  it('a defender wiped out who got away leaves even when the defence holds, unaffiliated with nowhere to go', () => {
+  it('a defender wiped out who got away leaves even when the defence holds, going back to their faction with nowhere to go', () => {
     const marching = startNextBattle(endStrategyPhase(invadeAmbaria()))
     const id = marching.march!.current!.id
     const away = resolveBattle(marching, id, 'defender', [], null, [{ side: 'defender', knightId: '013', captured: false, to: VERSTA }])
     expect(away.cityOwners[AMBARIA]).toBe('leonis')
     expect(away.characters['013']).toMatchObject({ cityId: VERSTA, factionId: 'leonis' })
-    const wandering = resolveBattle(marching, id, 'defender', [], null, [{ side: 'defender', knightId: '013', captured: false, to: null }])
-    expect(wandering.characters['013']).toEqual({ cityId: null, factionId: null })
-    expect(wandering.lastBattle?.moves).toContainEqual({ characterId: '013', kind: 'wander', from: AMBARIA, to: null })
+    const stranded = resolveBattle(marching, id, 'defender', [], null, [{ side: 'defender', knightId: '013', captured: false, to: null }])
+    expect(stranded.characters['013']).toMatchObject({ factionId: 'leonis', cityId: expect.any(String) })
+    expect(stranded.lastBattle?.moves).toContainEqual({ characterId: '013', kind: 'rejoin', from: AMBARIA, to: stranded.characters['013'].cityId })
   })
 
   it('a defender who retreated leaves even when the defence holds', () => {
@@ -780,7 +784,7 @@ describe('the head of a faction and its fall', () => {
     expect(governorOf(resolveBattle(marching, id, 'defender'), FLUEN)).toBe('029')
   })
 
-  it('a faction losing its last city is destroyed: every knight of it becomes unaffiliated, and the event is told', () => {
+  it('a faction losing its last city is destroyed: every knight of it wanders from there with a grudge, and the event is told', () => {
     const start = playing('leonis')
     const knights = Object.keys(start.characters).filter((id) => start.characters[id].factionId === 'sede').sort()
     expect(knights.length).toBeGreaterThan(0)
@@ -792,7 +796,7 @@ describe('the head of a faction and its fall', () => {
     expect(held.events).toEqual([])
 
     const fallen = resolveBattle(marching, battle.id, 'attacker')
-    for (const id of knights) expect(fallen.characters[id]).toEqual({ cityId: null, factionId: null })
+    for (const id of knights) expect(fallen.characters[id]).toEqual({ cityId: null, factionId: null, roaming: ASHDAR, grudge: 'leonis' })
     expect(fallen.events).toEqual([{
       id: expect.any(String), kind: 'factionDestroyed', turn: 1, factionId: 'sede', cityId: ASHDAR, by: 'leonis', knights,
     }])

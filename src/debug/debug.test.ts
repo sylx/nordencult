@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createGameStore, createInitialState, researchOf, type GameStore } from '../game'
+import { createGameStore, createInitialState, researchOf, wanderer, type GameStore } from '../game'
 import { DEBUG_COMMANDS, type DebugContext } from './commands'
 import { LineEditor } from './lineEditor'
 import { DebugError, complete, completedWord, execute, helpLines, type DebugCommand } from './shell'
@@ -174,6 +174,35 @@ describe('commands', () => {
     expect(store.getState().cities.P012.troops).toBe(1234)
     expect(store.getState().cities.P012.troopMorale).toBe(100)
     expect(() => run('city set P012 nothing 1')).toThrow(DebugError)
+  })
+
+  it('shows the mercenaries and changes their soldiers and the standing', () => {
+    const { store, run } = setup()
+    const list = run('mercenary list').join('\n')
+    expect(list).toContain('樽盾団')
+    expect(list).toContain('市場')
+    expect(list).toContain('フルーエン')
+    expect(run('mercenary soldiers 042 120')).toEqual(['樽盾団 の兵数: 120'])
+    expect(run('mercenary list').join('\n')).toContain('回復中')
+    run('mercenary soldiers 042 99999')
+    expect(store.getState().mercenaries['042'].soldiers).toBe(500)
+    expect(run('mercenary standing')).toEqual(['カルタ書院 の友好度: 0'])
+    expect(run('mercenary standing 40 leonis')).toEqual(['レオニス帝国 の友好度: 40'])
+    run('mercenary standing 1000 leonis')
+    expect(store.getState().mercenaryStanding.leonis).toBe(100)
+    expect(() => run('mercenary soldiers 015 1')).toThrow(DebugError)
+  })
+
+  it('shows those wandering, and where a knight is', () => {
+    const { store, run } = setup()
+    expect(run('wanderer list')).toEqual(['放浪の騎士はいません'])
+    store.update((s) => ({ ...s, characters: { ...s.characters, '015': wanderer('P012', 'leonis') } }))
+    const list = run('wanderer list').join('\n')
+    expect(list).toContain('フルーエン')
+    expect(list).toContain('レオニス帝国')
+    const shown = run('knight show 015').join('\n')
+    expect(shown).toContain('放浪')
+    expect(shown).toContain('怨恨勢力')
   })
 
   it('shows what there is', () => {

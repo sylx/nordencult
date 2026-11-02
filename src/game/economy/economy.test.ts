@@ -155,7 +155,7 @@ describe('economy run', () => {
     const gold = state.gold.carta
     const next = runEconomy(state, 2)
     expect(next.lastEconomy!.factions.carta).toEqual({
-      income, salary: knights * BALANCE.SALARY, before: gold, after: gold + income - knights * BALANCE.SALARY,
+      income, salary: knights * BALANCE.SALARY, mercenaryFees: 0, before: gold, after: gold + income - knights * BALANCE.SALARY,
     })
     expect(next.gold.carta).toBe(gold + income - knights * BALANCE.SALARY)
   })

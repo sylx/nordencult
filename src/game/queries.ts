@@ -1,6 +1,6 @@
 import { CHARACTER_MAP } from '../data/character'
 import { INDIRECT_UNIT_TYPES, UNIT_TYPE_MAP } from '../data/unitTypes'
-import { MAX_SOLDIERS, MAX_UNITS, unitTypesOf } from './army'
+import { MAX_SOLDIERS, MAX_UNITS, defaultUnitType, isMercenary, unitTypesOf } from './army'
 import type {
   ArmyUnit, Battle, BattleSide, CharacterId, CityId, DefenseDraft, FactionId, GameState, InvasionOrder, MoveOrder, Movement, TransportOrder,
 } from './types'
@@ -145,11 +145,30 @@ export function retreatCities(state: GameState, battle: Battle, side: BattleSide
   return factionId ? neighbours(battle.cityId).filter((id) => ownerOf(state, id) === factionId) : []
 }
 
+/** The faction's city nearest to `from` along the roads (`from` itself when it is one), or null when it has none */
+export function nearestCity(state: GameState, factionId: FactionId, from: CityId): CityId | null {
+  const seen = new Set([from])
+  const queue = [from]
+  for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
+    if (ownerOf(state, id) === factionId) return id
+    for (const next of neighbours(id)) {
+      if (seen.has(next)) continue
+      seen.add(next)
+      queue.push(next)
+    }
+  }
+  return null
+}
+
+/** The soldiers of units taken from a city: a mercenary's unit takes none, their soldiers being their own */
+export const citySoldiers = (units: readonly ArmyUnit[]): number =>
+  units.reduce((sum, u) => (u.knightId !== null && isMercenary(u.knightId) ? sum : sum + u.soldiers), 0)
+
 /** Soldiers of a city not yet sent on an invasion, a move or a transport this turn */
 export function soldiersLeft(state: GameState, cityId: CityId): number {
   const sent = state.orders.filter((o) => o.from === cityId).flatMap((o) => o.units ?? [])
   const moved = [...state.moveOrders, ...state.transportOrders].filter((o) => o.from === cityId)
-  return (state.cities[cityId]?.troops ?? 0) - sent.reduce((sum, u) => sum + u.soldiers, 0) - moved.reduce((sum, o) => sum + o.troops, 0)
+  return (state.cities[cityId]?.troops ?? 0) - citySoldiers(sent) - moved.reduce((sum, o) => sum + o.troops, 0)
 }
 
 /** Supplies of a city not yet sent on a move or a transport this turn */
@@ -170,14 +189,17 @@ export function commandRank(_state: GameState, id: CharacterId): number {
   return CHARACTER_MAP[id]?.isPatriarch ? 1 : 0
 }
 
-/** The knight of the highest commandRank, the first of them on a tie */
+/** Who can lead an army (軍団長): anyone but a mercenary */
+export const canCommand = (id: CharacterId): boolean => !isMercenary(id)
+
+/** Of those who can lead an army (canCommand), the knight of the highest commandRank, the first of them on a tie */
 export function leadingKnight(state: GameState, knights: readonly CharacterId[]): CharacterId | undefined {
-  return knights.reduce<CharacterId | undefined>(
+  return knights.filter(canCommand).reduce<CharacterId | undefined>(
     (best, id) => (best === undefined || commandRank(state, id) > commandRank(state, best) ? id : best), undefined)
 }
 
-/** Why the units of an army (of `pool` soldiers at most) are not allowed, or null */
-function unitsProblem(knights: readonly CharacterId[], units: readonly ArmyUnit[], pool: number) {
+/** Why the units of an army (of `pool` soldiers of the city at most) are not allowed, or null */
+function unitsProblem(state: GameState, knights: readonly CharacterId[], units: readonly ArmyUnit[], pool: number) {
   const led = units.filter((u) => u.knightId !== null)
   if (led.length !== knights.length || led.some((u, i) => u.knightId !== knights[i])) {
     return '部隊の騎士が予約の騎士と一致しません'
@@ -192,8 +214,11 @@ function unitsProblem(knights: readonly CharacterId[], units: readonly ArmyUnit[
       continue
     }
     if (!unitTypesOf(u.knightId).some((id) => id === u.unitType)) return `${u.knightId} は${UNIT_TYPE_MAP[u.unitType].name}を率いられません`
+    if (isMercenary(u.knightId) && (u.unitType !== defaultUnitType(u.knightId) || u.soldiers !== state.mercenaries[u.knightId]?.soldiers)) {
+      return '傭兵の部隊は変えられません'
+    }
   }
-  if (units.reduce((sum, u) => sum + u.soldiers, 0) > pool) return '出撃できる兵が足りません'
+  if (citySoldiers(units) > pool) return '出撃できる兵が足りません'
   return null
 }
 
@@ -216,12 +241,13 @@ export function orderProblem(state: GameState, draft: Omit<InvasionOrder, 'id'>)
     if (engaged) return `${id} は${engaged}です`
   }
   if (!knights.includes(commander)) return '軍団長が出撃する騎士にいません'
+  if (!canCommand(commander)) return '傭兵は軍団長になれません'
   const leader = leadingKnight(state, knights)!
   if (commandRank(state, commander) < commandRank(state, leader)) {
     return `${leader} が出撃するときは軍団長になります`
   }
   if (state.orders.some((o) => o.factionId === factionId && o.from === from && o.to === to)) return 'この目標にはすでに侵攻を予約しています'
-  return draft.units ? unitsProblem(knights, draft.units, soldiersLeft(state, from)) : null
+  return draft.units ? unitsProblem(state, knights, draft.units, soldiersLeft(state, from)) : null
 }
 
 /** Knights who can defend the city of a battle: the defender's knights there (those of invasions called off too) */
@@ -239,9 +265,10 @@ export function defenseProblem(state: GameState, battle: Battle, draft: DefenseD
   const outsider = knights.find((id) => !allowed.includes(id))
   if (outsider) return `${outsider} はこの拠点で防衛できる騎士ではありません`
   if (!knights.includes(commander)) return '軍団長が防衛する騎士にいません'
+  if (!canCommand(commander)) return '傭兵は軍団長になれません'
   const leader = leadingKnight(state, knights)!
   if (commandRank(state, commander) < commandRank(state, leader)) return `${leader} が防衛するときは軍団長になります`
-  return unitsProblem(knights, units, state.cities[battle.cityId]?.troops ?? 0)
+  return unitsProblem(state, knights, units, state.cities[battle.cityId]?.troops ?? 0)
 }
 
 /**
@@ -256,7 +283,9 @@ export function openInvasionTargets(state: GameState, from: CityId): CityId[] {
 export function invadeFromProblem(state: GameState, cityId: CityId): string | null {
   if (state.phase !== 'strategy' || !state.activeFaction) return '手番ではありません'
   if (ownerOf(state, cityId) !== state.activeFaction) return '自勢力の都市ではありません'
-  if (availableKnights(state, cityId).length === 0) return '出撃できる騎士がいません'
+  const available = availableKnights(state, cityId)
+  if (available.length === 0) return '出撃できる騎士がいません'
+  if (!available.some(canCommand)) return '軍団長になれる騎士がいません'
   if (openInvasionTargets(state, cityId).length === 0) return '侵攻できる隣接都市がありません'
   if (soldiersLeft(state, cityId) <= 0) return '出撃できる兵がいません'
   return null

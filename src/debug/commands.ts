@@ -6,7 +6,7 @@ import { RELIC_LIST, relicName } from '../data/relics'
 import { TECH_LIST, TECH_MAP } from '../data/techs'
 import {
   awayReason, charactersIn, citiesOf, dateOf, debugAddRelic, debugAddResearchPoints, debugCompleteTech, debugFillResearch, debugSetCity, debugSetGold,
-  endFactionTurn, factionPower, governorOf, isPlayerFaction, ownerOf, prisonersIn, relicsOf, researchOf, researchOutput, resolveBattle, turnOrder, viewFaction,
+  debugSetMercenarySoldiers, debugSetStanding, endFactionTurn, factionPower, governorOf, isMercenary, isPlayerFaction, isRecovering, mercenaryAt, ownerOf, prisonersIn, relicsOf, researchOf, researchOutput, resolveBattle, turnOrder, viewFaction,
   type BattleWinner, type CityConstruction, type CityId, type DebugCityField, type FactionId, type GameState, type GameStore,
 } from '../game'
 import type { SceneNavigator } from '../scenes/types'
@@ -30,6 +30,9 @@ const viewedFactionArg: Arg = { ...factionArg, optional: true }
 const cityArg: Arg = { name: 'city', candidates: () => CITY_LIST.map((c) => ({ value: c.id, label: c.name })) }
 const knightArg: Arg = { name: 'knight', candidates: () => CHARACTER_LIST.map((c) => ({ value: c.id, label: c.name })) }
 const relicArg: Arg = { name: 'relic', candidates: () => RELIC_LIST.map((r) => ({ value: r.id, label: r.brokenName ?? r.name })) }
+const mercenaryArg: Arg = {
+  name: 'mercenary', candidates: () => CHARACTER_LIST.flatMap((c) => (c.mercenaryInfo ? [{ value: c.id, label: `${c.mercenaryInfo.name} ${c.name}` }] : [])),
+}
 const techArg: Arg = { name: 'tech', candidates: () => TECH_LIST.map((t) => ({ value: t.id, label: t.name })) }
 
 const words = (...values: readonly string[]) => (): DebugCandidate[] => values.map((value) => ({ value }))
@@ -43,6 +46,18 @@ const relicsLabel = (state: GameState, factionId: FactionId) =>
   relicsOf(state, factionId).map((item) => `${relicName(item.relicId, item.repaired)}${item.papalRepair ? '（依頼中）' : ''}`).join('・') || 'なし'
 const knightsOf = (state: GameState, factionId: FactionId) =>
   Object.values(state.characters).filter((c) => c.factionId === factionId && !c.prisoner).length
+
+/** The city a character serving nobody is in */
+const roamingLabel = (state: GameState, id: string) => cityLabel(state.characters[id]?.roaming ?? null)
+
+/** A mercenary's state: who hired them or where they are */
+function mercenaryRow(state: GameState, id: string): string[] {
+  const info = CHARACTER_MAP[id].mercenaryInfo!
+  const { soldiers, contract } = state.mercenaries[id]
+  const status = contract ? `契約中（月額 ${contract.monthly}）` : isRecovering(state, id) ? '回復中' : '市場'
+  const place = contract ? `${factionName(state.characters[id].factionId)} ${cityLabel(mercenaryAt(state, id))}` : roamingLabel(state, id)
+  return [id, info.name, CHARACTER_MAP[id].name, status, place, `${soldiers}/${info.maxSoldiers}`]
+}
 
 function researchLabel(state: GameState, factionId: FactionId): string {
   const { current, progress } = researchOf(state, factionId)
@@ -292,13 +307,62 @@ export const DEBUG_COMMANDS: readonly Command[] = [
         run: ([id], { store }) => {
           const state = store.getState()
           const knight = CHARACTER_MAP[id]
-          const { cityId, factionId, prisoner } = state.characters[id] ?? { cityId: null, factionId: null }
+          const { cityId, factionId, prisoner, roaming, grudge } = state.characters[id] ?? { cityId: null, factionId: null }
           return table([
             ['騎士', `${knight.name} (${id}) ${CHARACTER_TYPE_LABELS[knight.type]}`],
-            ['勢力', factionId ? factionName(factionId) : '在野'],
+            ['勢力', factionId ? factionName(factionId) : prisoner ? '勢力なし' : isMercenary(id) ? '雇われていない' : '放浪'],
             ['都市', cityLabel(cityId)],
+            ['居所', cityLabel(roaming ?? null)],
+            ['怨恨勢力', grudge ? factionName(grudge) : 'なし'],
             ['状態', prisoner ? '捕虜' : awayReason(state, id) ?? '待機'],
             ['能力', `政治${knight.politics} 知力${knight.intelligence} 統率${knight.leadership} 武力${knight.strength} 魅力${knight.charm}`],
+          ])
+        },
+      },
+    ],
+  },
+  {
+    name: 'mercenary', summary: '傭兵を見る・変える',
+    subcommands: [
+      {
+        name: 'list', summary: '全傭兵の状態・居所または雇い主・兵数',
+        run: (_, { store }) => {
+          const state = store.getState()
+          return table([
+            ['id', '傭兵団', '騎士', '状態', '居所', '兵数'],
+            ...Object.keys(state.mercenaries).sort().map((id) => mercenaryRow(state, id)),
+          ])
+        },
+      },
+      {
+        name: 'soldiers', summary: '傭兵の兵数を決める', args: [mercenaryArg, { name: 'soldiers', int: true }],
+        run: ([id, soldiers], { store }) => {
+          store.update((s) => debugSetMercenarySoldiers(s, id, Number(soldiers)))
+          return `${CHARACTER_MAP[id].mercenaryInfo!.name} の兵数: ${store.getState().mercenaries[id].soldiers}`
+        },
+      },
+      {
+        name: 'standing', summary: '傭兵業界の友好度を見る・決める', args: [{ name: 'value', int: true, optional: true }, viewedFactionArg],
+        run: ([value, ...rest], { store }) => {
+          const id = factionOf(rest, 0, store.getState())
+          if (value !== undefined) store.update((s) => debugSetStanding(s, id, Number(value)))
+          return `${factionName(id)} の友好度: ${store.getState().mercenaryStanding[id] ?? 0}`
+        },
+      },
+    ],
+  },
+  {
+    name: 'wanderer', summary: '放浪の騎士を見る',
+    subcommands: [
+      {
+        name: 'list', summary: '放浪の騎士の居所と怨恨勢力',
+        run: (_, { store }) => {
+          const state = store.getState()
+          const ids = Object.keys(state.characters).sort().filter((id) => state.characters[id].roaming && !isMercenary(id))
+          if (ids.length === 0) return '放浪の騎士はいません'
+          return table([
+            ['id', '騎士', '居所', '怨恨勢力'],
+            ...ids.map((id) => [id, CHARACTER_MAP[id]?.name ?? id, roamingLabel(state, id), state.characters[id].grudge ? factionName(state.characters[id].grudge) : 'なし']),
           ])
         },
       },

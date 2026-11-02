@@ -89,6 +89,38 @@ export const RECRUIT_MORALE = 20
 /** 法王府 repairs a relic for ceil((its repair's gold + supplies) × PAPAL_REPAIR_RATE) gold */
 export const PAPAL_REPAIR_RATE = 2.5
 
+/** A mercenary's monthly fee is their 契約金 / this */
+export const MERCENARY_MONTHLY_DIVISOR = 6
+/** How many roads from a city it can hire mercenaries at, without and with a 酒場 (a 傭兵ギルド: every city) */
+export const MERCENARY_REACH = 1
+export const MERCENARY_REACH_TAVERN = 2
+/** Soldiers a mercenary gets back each economy run, as a share of their 最大兵力 */
+export const MERCENARY_RECOVERY_RATE = 0.1
+/** Morale of a mercenary's soldiers, whatever the city's */
+export const MERCENARY_MORALE = 70
+/** A contract asks no renewal fee for this many months; after that, at this chance each economy run */
+export const MERCENARY_RENEWAL_MIN_MONTHS = 6
+export const MERCENARY_RENEWAL_CHANCE = 1 / 3
+/** The renewal fee as a share of the 契約金 */
+export const MERCENARY_RENEWAL_RATE = 0.5
+/** The standing with the mercenaries goes from -this to this */
+export const MERCENARY_STANDING_LIMIT = 100
+/** Standing gained by hiring a mercenary, and each economy run by each 酒場 and 傭兵ギルド of the faction */
+export const STANDING_HIRE = 5
+export const STANDING_TAVERN = 1
+export const STANDING_GUILD = 2
+/** Standing lost when the contract of a mercenary short of soldiers ends (dismissed, not renewed, not paid), and when one is wiped out */
+export const STANDING_DISMISS_REDUCED = -10
+export const STANDING_WIPED_OUT = -15
+/** The price of a mercenary is × (1 − standing / 100 × their プライド × this) */
+export const STANDING_PRICE_RATE = 0.1
+/** A mercenary signs at a standing of (their プライド − STANDING_PRIDE_BASE) × STANDING_PRIDE_STEP or more */
+export const STANDING_PRIDE_BASE = 3
+export const STANDING_PRIDE_STEP = 20
+
+/** The chance a mercenary not hired or a 放浪 knight goes on to a neighbouring city in a progress phase */
+export const ROAM_MOVE_CHANCE = 0.5
+
 /** Supplies and gold each soldier setting out on an invasion costs */
 export const SORTIE_SUPPLIES = 0.2
 export const SORTIE_GOLD = 0.05

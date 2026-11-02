@@ -1,11 +1,12 @@
 import { CHARACTER_MAP } from '../data/character'
-import { mixMorale } from './army'
+import { isMercenary, mixMorale } from './army'
 import { assignmentLabel, assignmentOf, successorLord, withGovernor, withoutAssignee } from './economy/domestic'
 import { GameRuleError } from './errors'
 import {
-  availableKnights, availablePrisoners, citiesOf, engagementOf, isPrisoner, ownerOf, prisonerMovementOf, prisonerOrderOf, soldiersLeft, stationedIn,
-  suppliesLeft,
+  availableKnights, availablePrisoners, citiesOf, engagementOf, isPrisoner, nearestCity, ownerOf, prisonerMovementOf, prisonerOrderOf, soldiersLeft,
+  stationedIn, suppliesLeft,
 } from './queries'
+import { wanderer } from './roaming'
 import type { CharacterId, CharacterState, CityId, CityState, FactionId, GameState, MoveLeg, MoveOrder, Movement, MovementKind, TransportOrder } from './types'
 import { neighbours } from './world'
 
@@ -107,6 +108,7 @@ export function moveOrderProblem(state: GameState, draft: Omit<MoveOrder, 'id'>)
     if (engaged) return `${id} は${engaged}です`
   }
   if (![troops, supplies].every((n) => Number.isInteger(n) && n >= 0)) return '数が正しくありません'
+  if (solo && knights.some(isMercenary)) return '傭兵は単騎移動できません'
   if (solo && (troops > 0 || supplies > 0)) return '単騎移動では兵と物資を運べません'
   if (solo && prisoners.length > 0) return '単騎移動では捕虜を連れて行けません'
   if (troops > soldiersLeft(state, from)) return '兵が足りません'
@@ -199,21 +201,6 @@ export function cancelTransportOrder(state: GameState, orderId: string): GameSta
   return { ...state, transportOrders: state.transportOrders.filter((o) => o.id !== orderId) }
 }
 
-/** The faction's city nearest to `from` along the roads (`from` itself when it is one), or null when it has none */
-export function nearestCity(state: GameState, factionId: FactionId, from: CityId): CityId | null {
-  const seen = new Set([from])
-  const queue = [from]
-  for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
-    if (ownerOf(state, id) === factionId) return id
-    for (const next of neighbours(id)) {
-      if (seen.has(next)) continue
-      seen.add(next)
-      queue.push(next)
-    }
-  }
-  return null
-}
-
 /**
  * A movement heading for a city its faction still holds: when the city it set out for was lost, it heads for
  * the faction's city nearest to where it is instead. null when the faction has no city left
@@ -254,14 +241,14 @@ function returnOf(state: GameState, transport: Movement): Movement | null {
 
 /**
  * A prisoner set free (escaping, or let go) at `at`: riding alone (as 単騎移動) to the nearest city of their
- * faction, serving nowhere on the way (an 'escape' movement, `id`); straight into it when `at` is one. Unaffiliated
- * (在野) when the faction has no city left
+ * faction, serving nowhere on the way (an 'escape' movement, `id`); straight into it when `at` is one. 放浪 from `at`
+ * when the faction has no city left
  */
 export function escapeOf(state: GameState, characterId: CharacterId, at: CityId, id: string): { character: CharacterState; movement: Movement | null } {
   const factionId = state.characters[characterId]?.factionId
   const to = factionId ? nearestCity(state, factionId, at) : null
   const route = factionId && to ? moveRoute(state, factionId, at, to) : null
-  if (!factionId || !to || !route) return { character: { cityId: null, factionId: null }, movement: null }
+  if (!factionId || !to || !route) return { character: wanderer(at), movement: null }
   if (route.length < 2) return { character: { cityId: to, factionId }, movement: null }
   return {
     character: { cityId: null, factionId },
@@ -344,8 +331,8 @@ export function movementLegs(state: GameState): MoveLeg[] {
  * 君主, moving in becomes its lord in place of the one there), the soldiers join its own (their morale mixing) and
  * the supplies its store, the prisoners it takes along are held there. A transport's knight does not stay: they ride back alone
  * to the city they set out from (serving there all the while), from the next month (returnOf). A movement whose city was lost heads for the
- * faction's nearest city instead; when the faction has no city left, its knights become unaffiliated,
- * its soldiers and supplies are lost and its prisoners are set free (escapeOf).
+ * faction's nearest city instead; when the faction has no city left, its knights take to wandering (放浪) from where
+ * they are, its soldiers and supplies are lost and its prisoners are set free (escapeOf).
  */
 export function runMovements(state: GameState, random: () => number = Math.random): GameState {
   const { state: departed, movements: setOff } = setOut(state, random)
@@ -356,7 +343,7 @@ export function runMovements(state: GameState, random: () => number = Math.rando
   for (const m of [...departed.movements, ...setOff]) {
     const movement = heading(departed, m)
     if (!movement) {
-      for (const id of m.knights) characters[id] = { cityId: null, factionId: null }
+      for (const id of m.knights) characters[id] = wanderer(m.route[0])
       for (const id of m.prisoners ?? []) {
         const escape = escapeOf(departed, id, m.route[0], `escape-${serial++}`)
         characters[id] = escape.character

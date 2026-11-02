@@ -1,7 +1,9 @@
 import { BUILDING_MAP } from '../../data/buildings'
-import { MAX_MORALE, mixMorale } from '../army'
+import { isMercenary, MAX_MORALE, mixMorale } from '../army'
+import { mercenaryFees } from '../mercenaries/mercenaries'
+import { runMercenaries } from '../mercenaries/runMercenaries'
 import type {
-  AffairsResult, CityEconomy, CityId, CityRecord, CitySnapshot, CityState, ConstructionWork, EconomyEvent, EconomyReport, FactionEconomy, FactionId,
+  AffairsResult, CharacterId, CityEconomy, CityId, CityRecord, CitySnapshot, CityState, ConstructionWork, EconomyEvent, EconomyReport, FactionEconomy, FactionId,
   GameState, OfficerRole,
 } from '../types'
 import { runRelics } from '../relics/runRelics'
@@ -19,16 +21,18 @@ function snapshot(city: CityState, cityId: CityId, tech: BuildingBonus): CitySna
 
 /**
  * What a faction's treasury gains and pays at the next economy run: the income
- * of its cities and its knights' salaries (paid as far as the gold goes)
+ * of its cities, its knights' salaries (paid as far as the gold goes) and the monthly
+ * fees of the mercenaries it hired (those the gold is left for: mercenaryFees)
  */
 export function treasuryForecast(state: GameState, factionId: FactionId): FactionEconomy {
   const income = CITY_IDS.filter((id) => state.cityOwners[id] === factionId)
     .reduce((sum, id) => sum + outputOf(state.cities[id], id, cityTechBonus(state, id)).income, 0)
-  // Its knights held prisoner are paid nothing
-  const knights = Object.values(state.characters).filter((c) => c.factionId === factionId && !c.prisoner).length
+  // Its knights held prisoner are paid nothing, and its mercenaries their fees instead
+  const knights = Object.entries(state.characters).filter(([id, c]) => c.factionId === factionId && !c.prisoner && !isMercenary(id)).length
   const before = state.gold[factionId] ?? 0
   const salary = Math.min(before + income, knights * SALARY)
-  return { income, salary, before, after: before + income - salary }
+  const fees = mercenaryFees(state, factionId, before + income - salary).paid
+  return { income, salary, mercenaryFees: fees, before, after: before + income - salary - fees }
 }
 
 /**
@@ -120,7 +124,8 @@ function growCity(
 /**
  * The economy of every city, run once a turn between the march phase and the
  * next strategy phase (after the battles moved the cities and the knights):
- * 1. each faction gains the gold of its cities' effective 商業 and pays its knights' salaries (down to 0, not below),
+ * 1. each faction gains the gold of its cities' effective 商業 and pays its knights' salaries (down to 0, not below)
+ *    and its mercenaries' monthly fees,
  * 2. each city's 商業・生産 officers spend gold of their budget raising its base 商業・生産,
  * 3. its effective 生産 goes into what it builds, repairs or produces (the surplus of one completed into its store)
  *    or, with none, into its store,
@@ -130,7 +135,8 @@ function growCity(
  *    and its lord, and its tier and building slots with it (tierOf, slotsOf; a 聖地・要塞 keeps FIXED_SLOTS),
  * 6. each faction's research points (its research buildings' and its 研究 officers') go into the technology it
  *    researches (runResearch); a technology completed counts for its cities from the next run,
- * 7. the relics completed in its cities and those 法王府 was asked to repair come into its box (runRelics).
+ * 7. the relics completed in its cities and those 法王府 was asked to repair come into its box (runRelics),
+ * 8. the mercenaries not paid leave, the mercenaries recover and may ask to renew their contract (runMercenaries).
  * Otherwise the bonuses and the base values are those before the run (a building completed or a base raised now counts from the next).
  * `turn` is the turn starting; `random` rolls the gold the officers spend.
  * The report (lastEconomy) keeps each city's numbers before and after, and what its officers did;
@@ -139,9 +145,11 @@ function growCity(
 export function runEconomy(state: GameState, turn: number, random: () => number = Math.random): GameState {
   const factions: Record<FactionId, FactionEconomy> = {}
   const gold = { ...state.gold }
+  const unpaid: CharacterId[] = []
   for (const factionId of FACTION_IDS) {
     factions[factionId] = treasuryForecast(state, factionId)
     gold[factionId] = factions[factionId].after
+    unpaid.push(...mercenaryFees(state, factionId, factions[factionId].after + factions[factionId].mercenaryFees).unpaid)
   }
 
   const cities: Record<CityId, CityState> = {}
@@ -168,5 +176,5 @@ export function runEconomy(state: GameState, turn: number, random: () => number 
 
   const report: EconomyReport = { turn, factions, research: research.report, cities: reports }
   const told: GameState = { ...after, lastEconomy: report, cityHistory, events: [...state.events, ...research.events], serial: research.serial }
-  return runRelics(told, turn, reports)
+  return runMercenaries(runRelics(told, turn, reports), turn, unpaid, random)
 }

@@ -31,6 +31,10 @@ export interface GameState {
   research: Readonly<Record<FactionId, FactionResearch>>
   /** Each faction's アイテムボックス of relics; one being repaired is not in it but in its city's construction */
   relics: Readonly<Record<FactionId, readonly RelicItem[]>>
+  /** Every mercenary's soldiers and contract, those not hired too */
+  mercenaries: Readonly<Record<CharacterId, MercenaryState>>
+  /** Each faction's standing with the mercenaries (傭兵業界の友好度, -100..100); no screen shows it */
+  mercenaryStanding: Readonly<Record<FactionId, number>>
   /** What the latest economy run (at the start of the turn) did, for showing the cities grow; null on turn 1 */
   lastEconomy: EconomyReport | null
   /** Each city's numbers at the start of every turn so far (oldest first), with how the economy run got there */
@@ -58,17 +62,37 @@ export interface GameState {
 
 export interface CharacterState {
   /**
-   * City they serve in; null when unaffiliated (在野). On a move or a transport (GameState.movements) they still serve in
-   * the city they set out from, away from it (movementOf), until they get where they are going; null when that city was lost
+   * City they serve in; null when serving nobody (放浪, or a mercenary not hired: `roaming`). On a move or a transport
+   * (GameState.movements) they still serve in the city they set out from, away from it (movementOf), until they get
+   * where they are going; null when that city was lost
    */
   cityId: CityId | null
-  /** Faction they serve; null when unaffiliated. A prisoner's: the faction they served when captured (null once it fell) */
+  /** Faction they serve; null when serving nobody. A prisoner's: the faction they served when captured (null once it fell) */
   factionId: FactionId | null
+  /** The city they are in, serving nobody: 放浪 knights and mercenaries not hired, going from city to city (runRoaming) */
+  roaming?: CityId
+  /** 怨恨勢力: the faction that destroyed theirs, which they will not serve */
+  grudge?: FactionId
   /**
    * 捕虜: held prisoner in `cityId` (a city of another faction), not serving there. They may escape in a progress
    * phase (runEscapes) and be taken to another city of its faction on a move or a transport (MoveOrder.prisoners)
    */
   prisoner?: boolean
+}
+
+/** A mercenary's own soldiers, apart from any city's, and their contract */
+export interface MercenaryState {
+  /** Their soldiers now; below their 最大兵力 with no contract they are recovering (isRecovering), off the market */
+  soldiers: number
+  /** null: not hired */
+  contract: MercenaryContract | null
+}
+
+export interface MercenaryContract {
+  /** What they are paid each economy run, fixed by the standing when they were hired */
+  monthly: number
+  /** The turn they were hired or the contract last renewed */
+  since: number
 }
 
 /**
@@ -186,6 +210,8 @@ export interface FactionEconomy {
   income: number
   /** Gold paid to the knights (as much as there was) */
   salary: number
+  /** Gold paid to the mercenaries hired (those it could pay: mercenaryFees) */
+  mercenaryFees: number
   before: number
   after: number
 }
@@ -479,8 +505,9 @@ export interface SoldierReturn {
  * A unit wiped out on the battlefield, as the battle screen reports it
  * (battle-runtime's WipeoutReport). Its knight retreats on their own and may be
  * captured: a prisoner, like a knight captured retreating. Otherwise they get
- * away to the first city their side can retreat to, or become unaffiliated
- * when it has none.
+ * away to the first city their side can retreat to, or with none to where
+ * resolveBattle sends knights with nowhere to retreat to (rejoinCity).
+ * A mercenary's contract ends instead, wherever their side can retreat to.
  */
 export interface BattleWipeout {
   side: BattleSide
@@ -488,12 +515,16 @@ export interface BattleWipeout {
   knightId: CharacterId | null
   /** The knight was captured and taken prisoner */
   captured: boolean
-  /** The city the knight got away to (one of retreatCities); null when captured, or with nowhere to go (unaffiliated) */
+  /** The city the knight got away to (one of retreatCities); null when captured, or with nowhere to go */
   to: CityId | null
 }
 
-/** enter: into the captured city, return: back to where the attack started, retreat: to a city of their own, wander: unaffiliated */
-export type MoveKind = 'enter' | 'return' | 'retreat' | 'wander'
+/**
+ * enter: into the captured city, return: back to where the attack started, retreat: to a city of their own,
+ * rejoin: with nowhere to retreat to, back to their faction (rejoinCity), wander: 放浪 (their faction has no city left),
+ * released: a mercenary whose contract ended
+ */
+export type MoveKind = 'enter' | 'return' | 'retreat' | 'rejoin' | 'wander' | 'released'
 
 export interface CharacterMove {
   characterId: CharacterId
@@ -533,13 +564,13 @@ export interface BattleReport {
   prisoners: readonly Imprisonment[]
   /** Prisoners of the attacker's faction held in the city captured, set free: they serve there now */
   freed: readonly CharacterId[]
-  /** Soldiers each city got after the battle, in the order they got there */
+  /** Soldiers each city got after the battle, in the order they got there (a mercenary's stay theirs) */
   soldiers: readonly SoldierReturn[]
   /** The repair or production lost with the city captured: its supplies, its gold and a relic being repaired are gone. null: none */
   lostRelicWork: RelicWork | null
 }
 
-/** A faction lost its last city (in a battle) and is no more: every knight of it became unaffiliated (在野) */
+/** A faction lost its last city (in a battle) and is no more: every knight of it took to wandering (放浪) */
 export interface FactionDestroyed {
   id: string
   kind: 'factionDestroyed'
@@ -549,7 +580,7 @@ export interface FactionDestroyed {
   cityId: CityId
   /** The faction that took it */
   by: FactionId
-  /** Its knights, unaffiliated now */
+  /** Its knights, 放浪 now (not the mercenaries it hired) */
   knights: readonly CharacterId[]
 }
 
@@ -573,4 +604,23 @@ export interface RelicCompleted {
   cityId: CityId | null
 }
 
-export type GameEvent = FactionDestroyed | TechCompleted | RelicCompleted
+/** A mercenary a faction the player plays hired demands the renewal fee; it stays until the player chooses (decideRenewal) */
+export interface MercenaryRenewal {
+  id: string
+  kind: 'mercenaryRenewal'
+  turn: number
+  factionId: FactionId
+  characterId: CharacterId
+  gold: number
+}
+
+/** A faction the player plays could not pay a mercenary's monthly fee, and the contract ended */
+export interface MercenaryUnpaid {
+  id: string
+  kind: 'mercenaryUnpaid'
+  turn: number
+  factionId: FactionId
+  characterId: CharacterId
+}
+
+export type GameEvent = FactionDestroyed | TechCompleted | RelicCompleted | MercenaryRenewal | MercenaryUnpaid

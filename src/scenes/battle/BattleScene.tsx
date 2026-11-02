@@ -8,7 +8,7 @@ import { CITY_MAP } from '../../data/city'
 import { factionName } from '../../data/faction'
 import { pickVoiceLine } from '../../data/voiceLines'
 import {
-  isPlayerFaction, resolveBattle, retreatCities, useGame, type Battle, type BattleRetreat, type BattleSide, type BattleSurvivor,
+  isMercenary, isPlayerFaction, resolveBattle, retreatCities, useGame, type Battle, type BattleRetreat, type BattleSide, type BattleSurvivor,
   type BattleWinner, type BattleWipeout, type GameState,
 } from '../../game'
 import { useScene } from '../sceneContext'
@@ -177,7 +177,8 @@ function Battlefield({ battle }: { battle: Battle }) {
             殲滅: {wipeouts.map((w, i) => (
               <span key={i}>
                 <br />{w.side === 'attacker' ? '攻撃' : '防衛'} {w.knightId ?? '(騎士なし)'}
-                {w.captured ? '（捕縛・捕虜）' : w.to ? `（${CITY_MAP[w.to]?.name ?? w.to}へ落ち延びた）` : '（落ち延びて在野に）'}
+                {w.knightId && isMercenary(w.knightId) ? '（契約解除）'
+                  : w.captured ? '（捕縛・捕虜）' : w.to ? `（${CITY_MAP[w.to]?.name ?? w.to}へ落ち延びた）` : '（退却先が無く、君主のもとへ）'}
               </span>
             ))}
           </p>

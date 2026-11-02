@@ -2,6 +2,9 @@ import { CHARACTER_MAP } from '../data/character'
 import { DEFAULT_UNIT_TYPES, UNIT_TYPES_BY_CHARACTER_TYPE, type UnitTypeId } from '../data/unitTypes'
 import type { CharacterId } from './types'
 
+/** A mercenary (傭兵): a character with Character.mercenaryInfo, hired or not */
+export const isMercenary = (characterId: CharacterId): boolean => Boolean(CHARACTER_MAP[characterId]?.mercenaryInfo)
+
 /** Most units of an invasion, those the commander leads indirectly included */
 export const MAX_UNITS = 6
 

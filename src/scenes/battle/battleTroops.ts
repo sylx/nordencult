@@ -2,7 +2,7 @@ import { troopStatus, type Portrait, type Troop, type TroopFactory, type UnitSta
 import type { UnitType } from '@norden/map-runtime/core/units'
 import { CHARACTER_MAP, type Character } from '../../data/character'
 import { characterSheet } from '../../data/characterSheets'
-import { unitAbilities, type Battle, type BattleSide, type CharacterId } from '../../game'
+import { BALANCE, isMercenary, unitAbilities, type Battle, type BattleSide, type CharacterId } from '../../game'
 
 /** Abilities of the leader of units nobody leads (the garrison of a city without knights). Provisional */
 const GARRISON_LEADER = { leadership: 40, strength: 40, intelligence: 40 }
@@ -32,6 +32,7 @@ export interface BattleTroops {
  * troop id (retreats and wipeouts report it back); the others are `<side>-indirect-<n>`. Units led
  * indirectly have half of their commander's abilities (unitAbilities) and the commander's face; the garrison nobody leads has no face.
  * A knight's unit carries the knight's name, so the battle screen calls it "<name>隊".
+ * A mercenary's unit has the mercenaries' morale whatever its side's, and is not captured.
  */
 export function battleTroops(battle: Battle): BattleTroops {
   const knights = new Map<UnitStatus, CharacterId | null>()
@@ -43,9 +44,11 @@ export function battleTroops(battle: Battle): BattleTroops {
       return army.units.map((unit) => {
         const leader = CHARACTER_MAP[unit.knightId ?? army.commander ?? '']
         const abilities = unitAbilities(unit.knightId, army.commander)
+        const mercenary = unit.knightId !== null && isMercenary(unit.knightId)
         const status = troopStatus(unit.unitType as UnitType, {
           soldiers: unit.soldiers,
-          morale: army.morale,
+          morale: mercenary ? BALANCE.MERCENARY_MORALE : army.morale,
+          uncapturable: mercenary,
           ...(leader && abilities ? { ...abilities, portrait: portraitOf(leader) } : GARRISON_LEADER),
           // Only a knight's own unit is called by the knight's name; the others keep "<faction> <unit type>"
           ...(unit.knightId && leader ? { name: leader.name } : {}),

@@ -50,7 +50,17 @@ export interface Character {
   leadership: number
   strength: number
   charm: number
-  mercenaryInfo?: { name: string; fee: number }
+  /** A mercenary (傭兵), hired for gold */
+  mercenaryInfo?: {
+    /** The company's name */
+    name: string
+    /** 契約金; the monthly fee is 1/MERCENARY_MONTHLY_DIVISOR of it */
+    fee: number
+    /** 最大兵力: their own soldiers at full strength (MAX_SOLDIERS at most) */
+    maxSoldiers: number
+    /** プライド (1..5): the higher, the more the standing with the mercenaries changes their price and whether they sign */
+    pride: number
+  }
   relations?: Relation[]
   biography?: string
   /** Head of their faction */
@@ -60,9 +70,12 @@ export interface Character {
 /** Where a character serves when the game starts */
 export interface CharacterStart {
   id: string
+  /** The city they serve in, are held in, or (with no `factionId`) roam from */
   cityId: string
-  /** Omitted: the faction of the city */
+  /** Omitted: they serve nobody (a mercenary not hired, anyone else 放浪) */
   factionId?: string
+  /** 怨恨勢力, for those starting 放浪 only */
+  grudge?: string
   /** Lord of the city */
   isLord?: boolean
   /** Held prisoner in the city (捕虜); `factionId` is the faction they served (omitted: none) */

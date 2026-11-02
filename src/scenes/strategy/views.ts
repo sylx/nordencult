@@ -3,7 +3,7 @@ import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import type {
   BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, EventDetail, FactionResearchSummaryView,
-  FactionSummaryView, FactionView, InvasionAssignment, KnightView, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicView, SpriteImage, TechView, TurnView, UnitTypeView,
+  FactionSummaryView, FactionView, InvasionAssignment, KnightView, MercenaryContractView, MercenaryMark, MercenaryOfferView, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicView, SpriteImage, TechView, TurnView, UnitTypeView,
 } from 'norden-ui'
 import type { MapCity, MapSeason, PlaceType } from 'norden-strategy'
 import buildingSheet from '../../assets/buildings.webp'
@@ -19,10 +19,10 @@ import { TECH_BRANCH_LABELS, TECH_LIST, TECH_MAP, techChildren } from '../../dat
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { FACTION_MAP, factionEmblem } from '../../data/faction'
 import { CITY_MAP } from '../../data/city'
-import { UNIT_TYPES } from '../../data/unitTypes'
+import { UNIT_TYPES, UNIT_TYPE_MAP } from '../../data/unitTypes'
 import {
-  assignmentLabel, assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
-  availableTechs, engagementOf, FUNDED_ROLES, governorOf, officerTraining, producibleRelics, productionProblem, relicItemInfo, relicsOf, relicWorks, repairableRelics, repairProblem,
+  assignmentLabel, assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, contractPrice, dateOf, defaultUnitType,
+  availableTechs, dismissProblem, engagementOf, FUNDED_ROLES, governorOf, hiredMercenaries, hireProblem, isMercenary, mercenaryAt, mercenaryMarket, officerTraining, producibleRelics, productionProblem, relicItemInfo, relicsOf, relicWorks, repairableRelics, repairProblem,
   researchOf, researchOutput, researchProblem, researchTurns, techStatus,
   MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportKnightProblem, transportOrderOf, treasuryForecast,
   turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type CityConstruction, type CityLogStat,
@@ -175,6 +175,14 @@ export function factionView(factionId: string | null | undefined): FactionView |
   return faction && { name: faction.name, emblem: factionEmblem(faction.id) }
 }
 
+/** What marks a mercenary on the screens: their company and their own soldiers */
+function mercenaryMark(game: GameState, id: string): MercenaryMark | undefined {
+  const info = CHARACTER_MAP[id]?.mercenaryInfo
+  return info && {
+    company: info.name, soldiers: game.mercenaries[id]?.soldiers ?? 0, maxSoldiers: info.maxSoldiers, morale: BALANCE.MERCENARY_MORALE,
+  }
+}
+
 export function knightView(game: GameState, id: string): KnightView {
   const character = CHARACTER_MAP[id]
   if (!character) return { id, name: id }
@@ -197,8 +205,10 @@ export function knightView(game: GameState, id: string): KnightView {
     // height: auto keeps the 2:3 figure; the profile crops it from the top
     image: createElement(CharacterImage, { character, style: { height: 'auto' } }),
     faction: factionView(game.characters[id]?.factionId) ?? null,
-    location: game.characters[id]?.cityId ? cityName(game.characters[id].cityId) : undefined,
+    location: game.characters[id]?.cityId ? cityName(game.characters[id].cityId)
+      : game.characters[id]?.roaming ? cityName(game.characters[id].roaming) : undefined,
     biography: character.biography,
+    mercenary: mercenaryMark(game, id),
     subtitle: [
       CHARACTER_TYPE_LABELS[character.type],
       ...(prisoner ? ['捕虜'] : []),
@@ -228,6 +238,33 @@ export function knightView(game: GameState, id: string): KnightView {
     commandRank: commandRank(game, id),
     unavailableReason: engagementOf(game, id) ?? (carried ? '移送中' : carriedOrder ? '移送予約中' : undefined),
   }
+}
+
+/** The mercenaries a city can reach, with what each costs the faction and why one cannot be hired now */
+export function mercenaryOffers(game: GameState, cityId: string): MercenaryOfferView[] {
+  const factionId = ownerOf(game, cityId)
+  if (!factionId) return []
+  return mercenaryMarket(game, cityId).map((id) => {
+    const info = CHARACTER_MAP[id].mercenaryInfo!
+    const type = defaultUnitType(id)
+    return {
+      knight: knightView(game, id), company: info.name, unitType: UNIT_TYPE_MAP[type]?.name ?? type,
+      soldiers: game.mercenaries[id].soldiers, maxSoldiers: info.maxSoldiers, ...contractPrice(game, factionId, id),
+      cityName: cityName(game.characters[id].roaming ?? ''), unavailableReason: hireProblem(game, cityId, id) ?? undefined,
+    }
+  })
+}
+
+/** The mercenaries a faction hired, and why one cannot be dismissed now */
+export function mercenaryContracts(game: GameState, factionId: string): MercenaryContractView[] {
+  return hiredMercenaries(game, factionId).map((id) => {
+    const info = CHARACTER_MAP[id].mercenaryInfo!
+    const { soldiers, contract } = game.mercenaries[id]
+    return {
+      knight: knightView(game, id), company: info.name, cityName: cityName(mercenaryAt(game, id) ?? ''), soldiers, maxSoldiers: info.maxSoldiers,
+      monthly: contract!.monthly, months: game.turn - contract!.since, unavailableReason: dismissProblem(game, id) ?? undefined,
+    }
+  })
 }
 
 /** A knight on the transport screen: an officer cannot take a transport (transportKnightProblem) */
@@ -512,6 +549,24 @@ export interface EventView {
 }
 
 export function eventView(event: GameEvent): EventView {
+  if (event.kind === 'mercenaryRenewal') {
+    const info = CHARACTER_MAP[event.characterId]?.mercenaryInfo
+    return {
+      title: '傭兵の契約更新',
+      message: `${info?.name ?? event.characterId}が更新料を求めています。払わなければ契約は打ち切りになります。`,
+      details: [{ label: '更新料', value: `金 ${event.gold.toLocaleString()}` }],
+      knights: [event.characterId],
+    }
+  }
+  if (event.kind === 'mercenaryUnpaid') {
+    const info = CHARACTER_MAP[event.characterId]?.mercenaryInfo
+    return {
+      title: '傭兵の契約切れ',
+      message: `月額を払えず、${info?.name ?? event.characterId}との契約が切れました。`,
+      details: [],
+      knights: [event.characterId],
+    }
+  }
   if (event.kind === 'techCompleted') {
     const tech = TECH_MAP[event.techId]
     const name = tech?.name ?? event.techId
@@ -551,7 +606,7 @@ export function eventView(event: GameEvent): EventView {
     details: [
       { label: '最後の拠点', value: cityName(event.cityId) },
       { label: '攻め落とした勢力', value: FACTION_MAP[event.by]?.name ?? event.by },
-      { label: '在野になった騎士', value: event.knights.length > 0 ? `${event.knights.length}人` : 'なし' },
+      { label: '放浪する騎士', value: event.knights.length > 0 ? `${event.knights.length}人` : 'なし' },
     ],
     knights: event.knights,
   }
@@ -598,7 +653,7 @@ export const UNIT_TYPE_VIEWS: readonly UnitTypeView[] = UNIT_TYPES.map((type) =>
 
 /**
  * Basic attack and defense of a unit of an invasion from `from` (norden-battle's rules): its soldiers and unit type,
- * the city's morale, and its knight's 統率・武力 (知力 for mages), or half of the commander's for an indirect unit
+ * the city's morale (a mercenary's unit: theirs), and its knight's 統率・武力 (知力 for mages), or half of the commander's for an indirect unit
  */
 export function unitPower(game: GameState, from: string, unit: InvasionAssignment, commander: string) {
   const leader = unitAbilities(unit.knightId, commander)
@@ -606,7 +661,7 @@ export function unitPower(game: GameState, from: string, unit: InvasionAssignmen
   const power = {
     type,
     soldiers: unit.soldiers,
-    morale: game.cities[from]?.troopMorale ?? 0,
+    morale: unit.knightId !== null && isMercenary(unit.knightId) ? BALANCE.MERCENARY_MORALE : game.cities[from]?.troopMorale ?? 0,
     leadership: leader?.leadership ?? 0,
     strength: leader ? mightFor(type, leader) : 0,
   }

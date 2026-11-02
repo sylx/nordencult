@@ -11,7 +11,9 @@ const MOVE_LABELS: Readonly<Record<MoveKind, string>> = {
   enter: '入城',
   return: '帰還',
   retreat: '退却',
-  wander: '在野',
+  rejoin: '君主のもとへ帰還',
+  wander: '放浪',
+  released: '契約解除',
 }
 
 const REASON_LABELS: Readonly<Record<BattleEndReason, string>> = {
@@ -145,7 +147,9 @@ function MoveList({ moves }: { moves: readonly CharacterMove[] }) {
       case 'enter': return `${cityName(m.to)}に入城`
       case 'return': return `${cityName(m.to)}へ帰還`
       case 'retreat': return `${cityName(m.to)}へ退却`
-      case 'wander': return '退却先が無く在野に'
+      case 'rejoin': return `退却先が無く${cityName(m.to)}へ`
+      case 'wander': return '退却先が無く放浪に'
+      case 'released': return '傭兵の契約が切れた'
     }
   }
   return <KnightList ids={moves.map((m) => m.characterId)} compact aside={describe} />

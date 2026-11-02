@@ -3,7 +3,7 @@ import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { relicName } from '../../data/relics'
 import { TECH_MAP } from '../../data/techs'
-import { mixMorale } from '../army'
+import { isMercenary, mixMorale } from '../army'
 import { GameRuleError } from '../errors'
 import { engagementOf, ownerOf } from '../queries'
 import { addRelic } from '../relics/box'
@@ -68,8 +68,8 @@ export function withoutAssignee(assignments: CityAssignments, characterId: Chara
 
 /**
  * The knight to follow a city's lord who leaves it (on a move or an invasion): of the faction's knights serving
- * there and not `excluded` (those leaving too, those on an invasion; a transport's knight is fine), the one of the
- * highest 政治, at random among equals; none when there is nobody
+ * there and not `excluded` (those leaving too, those on an invasion; a transport's knight is fine; a mercenary is no
+ * lord), the one of the highest 政治, at random among equals; none when there is nobody
  */
 export function successorLord(
   state: GameState, cityId: CityId, excluded: ReadonlySet<CharacterId>, random: () => number,
@@ -77,7 +77,7 @@ export function successorLord(
   const owner = ownerOf(state, cityId)
   const candidates = Object.keys(state.characters).sort().filter((id) => {
     const character = state.characters[id]
-    return character.cityId === cityId && character.factionId === owner && !character.prisoner && !excluded.has(id)
+    return character.cityId === cityId && character.factionId === owner && !character.prisoner && !excluded.has(id) && !isMercenary(id)
   })
   const politics = (id: CharacterId) => CHARACTER_MAP[id]?.politics ?? 0
   const best = Math.max(...candidates.map(politics))
@@ -94,6 +94,7 @@ export function assignmentProblem(state: GameState, cityId: CityId, characterId:
   if (problem) return problem
   const character = state.characters[characterId]
   if (character?.cityId !== cityId || character.factionId !== ownerOf(state, cityId) || character.prisoner) return `${characterId} はこの都市の騎士ではありません`
+  if (isMercenary(characterId)) return '傭兵は内政を担当できません'
   // A knight on a transport cannot be made an officer, as an officer cannot take one (transportKnightProblem)
   const engaged = engagementOf(state, characterId)
   if (engaged) return `${engaged}です`
