@@ -223,3 +223,20 @@ export function debugFillResearch(state: GameState, factionId: FactionId): GameS
   const tech = research.current ? TECH_MAP[research.current] : undefined
   return tech ? withResearch(state, factionId, { ...research, progress: { ...research.progress, [tech.id]: tech.cost } }) : state
 }
+
+/** Debugging: the faction has researched the technology there and then, with every technology it requires */
+export function debugCompleteTech(state: GameState, factionId: FactionId, techId: string): GameState {
+  const research = researchOf(state, factionId)
+  const researched = [...research.researched]
+  const progress = { ...research.progress }
+  const complete = (id: string) => {
+    const tech = TECH_MAP[id]
+    if (!tech || researched.includes(id)) return
+    tech.requires.forEach(complete)
+    researched.push(id)
+    progress[id] = tech.cost
+  }
+  complete(techId)
+  const current = research.current && researched.includes(research.current) ? null : research.current
+  return withResearch(state, factionId, { ...research, current, progress, researched })
+}

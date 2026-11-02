@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useMemo, useState, type ComponentType } from 'react'
 import { playBgm } from '../audio/bgm'
 import { SCENE_BGM } from '../audio/sceneBgm'
+import { DebugConsole } from '../debug/DebugConsole'
 import { SCENES } from './registry'
 import { SceneContext } from './sceneContext'
 import type { GoTo, SceneEntry, SceneNavigator } from './types'
@@ -32,6 +33,7 @@ export function SceneManager({ initial }: Props) {
           <Scene params={current.params} />
         </div>
       </Suspense>
+      <DebugConsole />
     </SceneContext>
   )
 }

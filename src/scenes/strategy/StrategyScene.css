@@ -17,9 +17,3 @@
 
 .strategy-scene__settings { display: grid; gap: 14px; }
 .strategy-scene__player { display: flex; align-items: center; gap: 8px; margin: 0; white-space: nowrap; }
-.strategy-scene__debug { max-width: 420px; font-size: 13px; }
-.strategy-scene__debug summary { cursor: pointer; color: #cbb282; }
-.strategy-scene__debug-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
-.strategy-scene__debug-table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.strategy-scene__debug-table caption { text-align: left; color: #cbb282; }
-.strategy-scene__debug-table th, .strategy-scene__debug-table td { padding: 2px 6px; text-align: left; white-space: nowrap; }

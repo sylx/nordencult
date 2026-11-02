@@ -205,7 +205,7 @@ export function relicItemInfo(state: GameState, factionId: FactionId, cityId: Ci
   }
 }
 
-/** Debugging: a relic for the faction, broken when it can be (a 魔導書 cannot) */
-export function debugAddRelic(state: GameState, factionId: FactionId, relicId: string): GameState {
-  return addRelic(state, factionId, relicId, RELIC_MAP[relicId]?.brokenName === undefined)
+/** Debugging: a relic for the faction, repaired or else broken when it can be (a 魔導書 cannot) */
+export function debugAddRelic(state: GameState, factionId: FactionId, relicId: string, repaired = false): GameState {
+  return addRelic(state, factionId, relicId, repaired || RELIC_MAP[relicId]?.brokenName === undefined)
 }

@@ -1,0 +1,19 @@
+/* Over everything, the game showing through. Hidden, not removed: the terminal keeps its size and what it showed */
+.debug-console {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 20000;
+  box-sizing: border-box;
+  height: 55vh;
+  padding: 8px 10px;
+  visibility: hidden;
+  background: rgb(10 9 8 / 72%);
+  border-bottom: 1px solid rgb(212 176 106 / 55%);
+  backdrop-filter: blur(2px);
+}
+
+.debug-console--open { visibility: visible; }
+
+.debug-console .xterm,
+.debug-console .xterm-viewport,
+.debug-console .xterm-screen { background: transparent !important; }

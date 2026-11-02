@@ -206,7 +206,7 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 - 研究ポイントはためられません。内政処理の最後（`runResearch`）に勢力の合計を研究中の技術へ入れ、必要なポイントに届くと研究済みにして、余りは `carry`（宙に浮いたポイント）に入ります。研究中の技術が無いターンのポイントも `carry` に入り、研究先を選んだ（`setResearch`）ときにその技術へ入ります。研究できる技術が残っていなければ消えます。研究中の技術は途中で変えてよく、進捗は技術ごとに残ります
 - プレイヤーの勢力は、ポイントが宙に浮いているあいだ（`mustChooseResearch`）ターンを終えられず（`endFactionTurnProblem`）、戦略画面はターンの初めに技術画面を閉じられない状態で開きます。研究を終えたターンは先に完成の通知（`GameState.events` の `TechCompleted`）を出します。CPU の勢力は研究先が無ければ、研究できる技術のうち必要なポイントが一番少ないものを自動で選びます（`chooseResearchForCpu`）
 - 研究し終えた技術の効果（商業・生産・人口の伸び・訓練・募兵数・新兵の練度。施設の効果と同じ種類）は、勢力の全都市の見込み（`cityOutput` の `tech`）にすぐ乗り、次の内政処理から効きます。施設の `requiredTech` の技術を研究し終えていない勢力の都市では、その施設を建てられません（建てられる施設にも出ない）。それ以外の効果（一斉攻撃・魔法・遺物の修復など）は文言（`etc`）だけです。遺物の修復・生産の判定は、遺物の `repair.tech`・`production.tech` が持ちます
-- 技術画面は都市コマンドの「研究」＞「技術」か、`FactionBar` の研究の表示で開きます。ターン情報の設定メニューの「デバッグ: 研究」で、研究ポイントを足す・研究中の技術を完了にする・CPU 勢力の研究を見ることができます
+- 技術画面は都市コマンドの「研究」＞「技術」か、`FactionBar` の研究の表示で開きます。研究ポイントを足す・研究中の技術を完了にする・各勢力の研究を見るのは[デバッグコンソール](#デバッグコンソール)の `research` です
 
 ### 遺物
 
@@ -218,7 +218,7 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 - 法王府の修復（`requestPapalRepair`）: `(repair.gold + repair.supplies) × PAPAL_REPAIR_RATE`（切り上げ）の金を法王府（`sede`）の国庫へ払い、次の内政処理で修復済みになります。技術も都市の生産もいりません。法王府自身と、法王府が滅んだあとは頼めません（頼んだあとで滅んでも届きます）
 - 都市が奪われると、その都市の修復・生産は消滅し、投入した物資も金も修復中の遺物も戻りません（`BattleReport.lostRelicWork`。結果の画面に出ます）。施設の建設は都市に付いたまま続きます。勢力が滅びると、アイテムボックスは依頼中のものも含めて滅ぼした勢力へ移ります
 - 内政処理（`runRelics`）が修復・生産の完成と法王府の修復を仕上げ、プレイヤーの勢力には通知（`GameState.events` の `RelicCompleted`）を出します。CPU の勢力は遺物を操作しません
-- 遺物画面は都市コマンドの「研究」＞「遺物」で開き、修復と生産は開いている都市で行います。内政画面の施設の横にある「遺物の修復」の枠からも始められます（施設の一覧には混ざりません）。「法王府に献上」は押せないボタンだけで、処理はまだありません。ターン情報の設定メニューの「デバッグ: 遺物」で、遺物を足す・各勢力のアイテムボックスを見ることができます
+- 遺物画面は都市コマンドの「研究」＞「遺物」で開き、修復と生産は開いている都市で行います。内政画面の施設の横にある「遺物の修復」の枠からも始められます（施設の一覧には混ざりません）。「法王府に献上」は押せないボタンだけで、処理はまだありません。遺物を足す・各勢力のアイテムボックスを見るのは[デバッグコンソール](#デバッグコンソール)の `relic` です
 
 戦闘からの退却: 戦闘画面では、部隊は戦場の拠点に街道でつながる自勢力の拠点（`retreatCities`。攻撃側には出撃元も入る）へ退却でき、隣接する敵の数に応じて失敗すると捕虜になります。戦闘画面は結果を部隊ごとに知らせ（battle-runtime の `RetreatReport`）、戦闘シーンが `BattleRetreat`（陣営・騎士・退却先・捕虜になったか）にして `resolveBattle` に渡します。退却した騎士は勝敗に関わらず選んだ拠点へ移り、捕虜になった騎士は相手の陣営の捕虜になります（捕虜を参照。戦闘の結果は `BattleReport.retreats`）。いまの戦闘の部隊は騎士と結び付いていない仮の部隊なので、騎士は null になります（部隊の ID を騎士の ID で作れば結び付きます）。
 
@@ -237,6 +237,32 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 これらのデータは `norden-data` のエディタで編集します（`cd norden-data && npm install && npm run dev`）。拠点データはエディタが直接読み書きし、施設データ・技術データ・遺物データは `norden-data/buildings/buildings.json`・`norden-data/techs/techs.json`・`norden-data/relics/relics.json` から書き出し（画像は元画像から切り抜く）、キャラクターのデータは `norden-data/characters/characters.json` から書き出します。
 
 `npm test` で `src/` の単体テスト（Vitest）を実行します。
+
+## デバッグコンソール
+
+どのシーンでも `Ctrl+Alt+D` で半透明のコンソールを開閉します（`Esc`・`exit` でも閉じる）。`help` で一覧、`help <コマンド>` で使い方を出します。
+
+| コマンド | できること |
+| --- | --- |
+| `status` | ターン・フェーズ・手番・シーン |
+| `faction list` / `show [faction]` | 勢力の一覧と詳細 |
+| `gold add <amount> [faction]` / `set <amount> [faction]` | 金を変える |
+| `research list` | 勢力ごとの研究 |
+| `research add <points> [faction]` / `fill [faction]` / `complete <tech> [faction]` | 研究ポイントを足す・研究中の技術を完了にする・技術を前提ごと研究済みにする |
+| `relic list` / `add <relic> [faction] [broken\|repaired]` | アイテムボックスを見る・遺物を足す |
+| `city list [faction]` / `show <city>` / `set <city> <field> <value>` | 都市を見る・数値を決める |
+| `knight show <knight>` | 騎士の詳細 |
+| `turn end` | 手番の勢力の戦略フェーズを終える |
+| `battle win <attacker\|defender>` | 戦闘を決めて結果へ（戦場での退却・殲滅は無かったものとする） |
+| `scene <title\|strategy>` | シーンを移る |
+| `state [path]` | ゲームの状態を JSON で見る（例: `state cities.P012.assignments`） |
+| `clear` / `exit` | 画面を消す・閉じる |
+
+- `[faction]` を省くと画面の勢力（`viewFaction`）です。ID の代わりに名前も書けます（`gold set 500 レオニス帝国`）
+- `Tab` で補完します。コマンド・ID のほか、`state` のパスも補完し、候補が複数あれば名前つきで並べます。日本語の名前を途中まで書いて `Tab` を押しても ID に補完します
+- `↑` `↓` で履歴（再読み込みしても残る）。`Ctrl+A` `Ctrl+E` `Ctrl+U` `Ctrl+K` `Ctrl+L` `Ctrl+C` も使えます
+
+コマンドを足すのは [src/debug/commands.ts](src/debug/commands.ts) の `DEBUG_COMMANDS` です。引数に `candidates` を書けば補完と値の確認がつきます。状態を変える処理は `debugAddRelic` のように `src/game/` に置きます。ターミナル（xterm.js）は初めて開いたときに読み込むので、通常の起動には載りません。
 
 ## マイルストーン
 

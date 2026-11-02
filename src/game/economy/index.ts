@@ -13,3 +13,4 @@ export {
 } from './output'
 export { runEconomy, treasuryForecast } from './runEconomy'
 export { cityRecord, explainCity } from './cityLog'
+export { debugSetCity, debugSetGold, type DebugCityField } from './debug'

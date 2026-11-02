@@ -21,8 +21,6 @@ import {
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
-import { RelicDebug } from './RelicDebug'
-import { ResearchDebug } from './ResearchDebug'
 import {
   UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
   eventView, mapCities, officerEffects, officersView, phaseLabel, populationGrowthView, relicOptions, relicProductionsView, relicsView, researchPerTurn, researchPointDetails, techsView,
@@ -518,8 +516,6 @@ export default function StrategyScene() {
                 <div className="strategy-scene__settings">
                   <p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(faction)} /></p>
                   <SoundSettings />
-                  <ResearchDebug />
-                  <RelicDebug />
                 </div>
               }>
               <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))}
