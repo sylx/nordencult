@@ -18,7 +18,10 @@
   animation: norden-dialogue-fade-in 320ms ease-out both;
 }
 .norden-dialogue-body {
+  /* The window's room is fixed: a window growing (a choice under the line) grows down into it and moves nothing */
+  --norden-dialogue-window-room: 200px;
   display: grid;
+  grid-template-rows: auto var(--norden-dialogue-window-room);
   justify-items: center;
   gap: 18px;
 }
@@ -28,7 +31,8 @@
 .norden-dialogue-stage {
   position: relative;
   overflow: hidden;
-  width: min(880px, calc(100cqw - 80px), calc(52cqh * 1680 / 720));
+  /* As wide as there is room for: the frame (32px), the gap and the window's room below it */
+  width: min(1040px, calc(100cqw - 80px), calc((100cqh - 98px - var(--norden-dialogue-window-room)) * 1680 / 720));
   aspect-ratio: 1680 / 720;
   background: #0b0907;
 }
@@ -70,6 +74,11 @@
   height: 100%;
   background-repeat: no-repeat;
   filter: drop-shadow(0 0 8px rgb(0 0 0 / 0.6));
+  /* Fading out at the bottom and both sides (as CityInfoWindow's lord), into whatever background is behind */
+  mask-image:
+    linear-gradient(to bottom, black 92%, transparent 100%),
+    linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  mask-composite: intersect;
   transition: filter 200ms;
   animation-fill-mode: both;
   animation-timing-function: ease-out;
@@ -105,7 +114,8 @@
   display: grid;
   gap: 14px;
   box-sizing: border-box;
-  width: min(760px, calc(100cqw - 48px));
+  align-self: start;
+  width: min(880px, calc(100cqw - 48px));
   min-height: 118px;
   padding: 26px 28px 18px;
   color: #f3ead7;

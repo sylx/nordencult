@@ -3,7 +3,8 @@
  *
  * - PUT /api/dialogue/<sceneId>  ルートの src/dialogue/<sceneId>.json を決まった書式（formatScript）で書く
  *
- * 書いたファイルは HMR でエディタにも、開いているゲームにも反映される。新しい台本はここでは作らない（JSON を手で置く）
+ * 書いたファイルは HMR でエディタにも、開いているゲームにも反映される。新しい台本はここでは作らない（JSON を手で置く）。
+ * 親の台本・背景・効果音の置き場所も見張り、足したファイルがエディタに出るようにする
  */
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
@@ -15,6 +16,12 @@ import { formatScript } from '../../src/format.ts'
 /** ゲーム本体（nordencult）の会話シーンの置き場所。NORDEN_ROOT で変えられる */
 const GAME_ROOT = path.resolve(process.env.NORDEN_ROOT ?? fileURLToPath(new URL('../../..', import.meta.url)))
 export const DIALOGUE_DIR = path.join(GAME_ROOT, 'src', 'dialogue')
+
+/**
+ * 親のうち、ファイルを足すと読み直すところ（import.meta.glob で読む: 台本・背景・効果音）。Vite は自分の root の外は
+ * 読み込んだファイルしか見張らないので、ここに足したファイルに気づくよう見張りに加える
+ */
+const WATCHED_DIRS = [DIALOGUE_DIR, path.join(GAME_ROOT, 'src', 'assets', 'bg'), path.join(GAME_ROOT, 'src', 'assets', 'se')]
 
 const SCENE_ID = /^[A-Za-z][A-Za-z0-9]*$/
 
@@ -55,6 +62,7 @@ export function dialoguePlugin(): Plugin {
   return {
     name: 'norden-dialogue-save',
     configureServer(server) {
+      server.watcher.add(WATCHED_DIRS)
       server.middlewares.use((req, res, next) => {
         const match = /^\/api\/dialogue\/([^/?]+)$/.exec(new URL(req.url ?? '/', 'http://localhost').pathname)
         if (!match || req.method !== 'PUT') return next()
