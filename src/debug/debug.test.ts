@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createGameStore, createInitialState, isMercenary, researchOf, wanderer, type GameStore } from '../game'
+import { setDialogueStarter } from '../scenes/playDialogue'
 import { DEBUG_COMMANDS, type DebugContext } from './commands'
 import { LineEditor } from './lineEditor'
 import { DebugError, complete, completedWord, execute, helpLines, type DebugCommand } from './shell'
@@ -27,6 +28,19 @@ describe('shell', () => {
 
   it('takes a label for its value', () => {
     expect(execute(COMMANDS, 'item give 槍', null)).toEqual(['gave spear'])
+  })
+
+  it('gives the words left to an argument taking the rest', () => {
+    const COMMANDS: readonly DebugCommand<null>[] = [{
+      name: 'say', summary: '言う',
+      args: [{ name: 'who', candidates: () => [{ value: 'me' }] }, { name: 'word', optional: true, rest: true, candidates: () => [{ value: 'hello' }, { value: 'bye' }] }],
+      run: ([who, ...said]) => `${who}: ${said.join(' ')}`,
+    }]
+    expect(execute(COMMANDS, 'say me hello bye', null)).toEqual(['me: hello bye'])
+    expect(execute(COMMANDS, 'say me', null)).toEqual(['me: '])
+    expect(() => execute(COMMANDS, 'say me hello yo', null)).toThrow('word: yo はありません')
+    expect(complete(COMMANDS, 'say me hello b', null).candidates.map((c) => c.value)).toEqual(['bye'])
+    expect(helpLines(COMMANDS, 'say')[0]).toContain('say <who> [word…]')
   })
 
   it('tells what is wrong', () => {
@@ -237,6 +251,38 @@ describe('commands', () => {
     expect(completedWord(complete(DEBUG_COMMANDS, 'state citie', context))).toBe('cities.')
     expect(completedWord(complete(DEBUG_COMMANDS, 'state cities.P012.popu', context))).toBe('cities.P012.population ')
     expect(complete(DEBUG_COMMANDS, 'state cities.P01', context).candidates.every((c) => c.partial)).toBe(true)
+  })
+
+  it('lists and plays the dialogue scenes, the input left out from their samples', () => {
+    const { run, context } = setup()
+    const start = vi.fn(async () => true)
+    setDialogueStarter(start)
+    try {
+      expect(run('dialogue list').join('\n')).toMatch(/hireMercenary.*傭兵を雇う/)
+      run('dialogue play travelingMerchant')
+      expect(start).toHaveBeenLastCalledWith('travelingMerchant', { city: expect.any(String) })
+      run('dialogue play hireMercenary merc=101 city=P012')
+      expect(start).toHaveBeenLastCalledWith('hireMercenary', { city: 'P012', merc: '101' })
+      expect(context.close).toHaveBeenCalled()
+      expect(() => run('dialogue play hireMercenary price=3')).toThrow(DebugError)
+      expect(complete(DEBUG_COMMANDS, 'dialogue play hireMercenary me', context).candidates.map((c) => c.value)).toEqual(['merc='])
+      expect(complete(DEBUG_COMMANDS, 'dialogue play hireMercenary merc=10', context).candidates[0].value).toMatch(/^merc=10\d$/)
+    } finally {
+      setDialogueStarter(null)
+    }
+  })
+
+  it('sets, lists and clears the flags', () => {
+    const { store, run } = setup()
+    expect(run('flag list')).toEqual(['フラグはありません'])
+    run('flag set travelingMerchant:met 2')
+    run('flag set travelingMerchant:offended true')
+    expect(store.getState().flags).toEqual({ 'travelingMerchant:met': 2, 'travelingMerchant:offended': true })
+    expect(run('flag list').join('\n')).toMatch(/travelingMerchant:met\s+2/)
+    run('flag clear travelingMerchant:met')
+    expect(store.getState().flags).toEqual({ 'travelingMerchant:offended': true })
+    expect(() => run('flag set met yes')).toThrow(DebugError)
+    expect(() => run('flag set met 1')).toThrow('<シーン id>:<名前>')
   })
 
   it('lists every command in help', () => {

@@ -8,6 +8,7 @@
 | `norden-ui` | React UI ライブラリ（基本部品・画面・画面スタック。カタログで各画面を作り込む） |
 | `norden-battle` | 戦闘。`battle-runtime`（戦闘画面 `BattleScreen`。地形・戦闘記録・行動メニューは norden-ui の部品）・`map-runtime`（HEX マップの描画）・`assets/maps/`（戦闘マップ）を使う |
 | `norden-data` | 拠点データ・勢力データ・騎士データ・施設データ・技術データ・セリフのエディタ（`src/data/`・`src/assets/` などに書き出す。開発時だけ使う） |
+| `norden-dialogue` | 会話システム。台本（JSON）と流れ（TypeScript）で書く会話シーンの再生の仕組み（`src/`）と、台本のエディタ（`npm run dev`。ルートの `src/dialogue/` を読み書きする。開発時だけ使う） |
 | `norden-synth` | BGM。SoundFont から取り出した音色で鳴らすシンセと、LLM が書いた曲（`src/songs/`）。`BgmPlayer` で曲を切り替えて鳴らす |
 
 ```sh
@@ -22,13 +23,14 @@ main への push で GitHub Pages に公開します（`.github/workflows/deploy
 
 ## サブモジュールの参照
 
-`norden-strategy`・`norden-ui`・`norden-battle/battle-runtime`・`norden-battle/map-runtime`・`norden-synth` はビルドせず、ソースを直接読み込みます（`vite.config.ts` のエイリアスと `tsconfig.app.json` の `paths`）。サブモジュールの変更はそのまま開発サーバーに反映されます。
+`norden-strategy`・`norden-ui`・`norden-battle/battle-runtime`・`norden-battle/map-runtime`・`norden-synth`・`norden-dialogue` はビルドせず、ソースを直接読み込みます（`vite.config.ts` のエイリアスと `tsconfig.app.json` の `paths`）。サブモジュールの変更はそのまま開発サーバーに反映されます。
 
 - `import { MapView, CITY_MAP } from 'norden-strategy'` → `norden-strategy/src/index.ts`
 - `import { PLACE_POINTS, ROAD_LINKS } from 'norden-strategy/data'` → `norden-strategy/src/data.ts`（データだけ。three.js を読み込まないので `src/game/` はこちらを使う）
 - `import { generateWorld, WorldSampler } from 'norden-strategy/world'` → `norden-strategy/src/world.ts`（マクロ地形の生成と読み取り。three.js を読み込まない。街道マップの生成に使う）
 - `import { BattleScreen } from '@norden/battle-runtime'` → `norden-battle/battle-runtime/src/index.ts`（戦闘画面。battle-editor と同じもの。中で `norden-ui` と map-runtime を使う）
 - `import { MapView } from '@norden/map-runtime/render/mapView'` → `norden-battle/map-runtime/src/render/mapView.ts`（パッケージの `exports` と同じ対応。依存の `simplex-noise` はルートに入れてある）
+- `import { DialogueView, runScene } from 'norden-dialogue'` → `norden-dialogue/src/index.ts`（会話シーンの再生。ゲームの状態は知らず、騎士・背景・音はルートが渡す）
 - `import { BgmPlayer, SONGS } from 'norden-synth'` → `norden-synth/src/index.ts`（BGM の再生と曲の一覧。ルートでは `src/audio/bgm.ts` が初めて鳴らす時に動的 import する）
 
 戦闘マップ（`norden-battle/assets/maps/`）は、map-runtime の Vite プラグイン（`mapsPlugin`、読み取り専用）でページの `maps/` として配信し、ビルドでは `dist/maps/` にコピーします。
@@ -253,6 +255,7 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 - 契約または更新から6ヶ月たつと、内政処理ごとに 1/3 の確率で更新料（契約金の半分）を求められます（`MercenaryRenewal`）。通知で「更新する」か「契約を打ち切る」を選び、閉じるだけでは済みません（`decideRenewal`）
 - 傭兵画面の「契約中」から打ち切れます。金は戻りません。移動・輸送・侵攻の予約中は打ち切れません。兵が減った傭兵を打ち切ると友好度が下がります
 - 契約が切れた傭兵は、そのとき居た都市が居所になり（移動中なら今いる都市、戦闘なら戦場の拠点）、移動から抜けます（ほかの騎士が残らなければ移動は消え、運んでいたものは失われる）。兵が減っていれば回復中（`isRecovering`）で市場から消え、回復し終えると戻ります
+- 傭兵画面の「契約」で、傭兵の雇用の会話シーン（`src/dialogue/hireMercenary`）が始まります。傭兵が名乗って契約金と月額を示し、「契約する」で契約します（「やめておく」なら何も変わらない）。金が足りないときは傭兵画面では押せて、シーンの「契約する」が押せず理由が出ます（一覧の理由は金以外の `hireOfferProblem`）。セリフは傭兵の口調で変わります
 - 雇うのはプレイヤーの勢力だけです（CPU の手番はまだターンを渡すだけ）
 
 ### 放浪の騎士
@@ -265,6 +268,24 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 - 放浪の騎士の一覧は画面に無く、デバッグコンソールの `wanderer list` で見ます
 
 勢力が健在なのに退却先が無くなった騎士（全滅して落ち延びる先が無いとき、都市が奪われて隣接の自勢力の都市が無いとき）は放浪にならず、部隊の兵を失って君主のいる拠点へその場で帰ります。君主が捕虜のときや、君主の拠点が勢力のものでないとき、帰るのが君主自身のときは、戦場からいちばん近い自勢力の都市へ帰ります（`rejoinCity`。結果画面の「君主のもとへ帰還」）。
+
+## 会話シーン
+
+騎士の立ち絵・顔付きのセリフ・背景・BGM・効果音で見せる簡易なノベル風の場面です。仕組み（再生・画面・検査）とエディタは norden-dialogue、シーンそのものはゲームのデータとしてルートの `src/dialogue/` に置きます。設計は [docs/milestones/m006.md](docs/milestones/m006.md)、書き方は [norden-dialogue/README.md](norden-dialogue/README.md)。
+
+| 場所 | 内容 |
+| --- | --- |
+| `src/dialogue/<id>.json` | 台本（セリフ・話し手・立ち絵・背景・音・選択肢の文言。分岐なし）。先頭の `$schema` で VSCode の補完が効く |
+| `src/dialogue/<id>.ts` | 流れ（`gameScene(script, 入力, run, sample)`）。分岐・条件・状態の更新（`ctx.update(s => hireMercenary(s, …))`）・フラグを書く。ブロック名・選択肢は台本から型が付く |
+| `src/dialogue/index.ts` | `SCENES`（id → シーン）、`DIALOGUE_PROVIDERS`、`runDialogue` |
+| `src/dialogue/cast.ts`・`audio.ts` | 騎士（名前・口調・立ち絵・顔）・都市・背景（`src/assets/bg/<名前>.webp`。無ければ仮のグラデーション）と、BGM・効果音（`src/audio/`） |
+| `src/dialogue/events.ts` | ランダムイベント（`RANDOM_EVENTS`・`pickRandomEvent`）。ゲームからはまだ呼ばない（探索の実装のとき） |
+| `src/dialogue/catalog.ts` | 台本が名指せるもの（騎士 ID・背景・曲・効果音・口調）。テストとエディタだけが使う |
+| `src/scenes/DialogueLayer.tsx`・`playDialogue.ts` | 画面に重ねる層。`playDialogue(id, 入力)` で再生し、終わるとシーンの状態を一度にゲームへ反映する。規則の違反（`GameRuleError`）なら何も反映せず通知を出す。会話中は画面を覆ってクリックとキーを受け、終わると前の曲に戻る |
+| `src/game/flags.ts` | `GameState.flags`（`<シーン id>:<名前>` → 数か真偽）の `flagOf`・`setFlag`・`clearFlag` |
+
+- `src/dialogue/scripts.test.ts` が全台本を検査します（命令の形・宣言していない変数・存在しない騎士 ID・曲・効果音・口調・決まった書式。背景の画像が無いのは警告だけ）。流れの分岐もここで確かめます（norden-dialogue の `ScriptedPlayer`）
+- 台本を直して保存すると、開いているゲームにもそのまま反映されます（HMR）
 
 ## デバッグコンソール
 
@@ -284,6 +305,8 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 | `wanderer list` | 放浪の騎士の居所と怨恨勢力 |
 | `turn end` | 手番の勢力の戦略フェーズを終える |
 | `battle win <attacker\|defender>` | 戦闘を決めて結果へ（戦場での退却・殲滅は無かったものとする） |
+| `dialogue list` / `play <scene> [入力=値…]` | 会話シーンの一覧と入力、再生（省いた入力はその状態での既定の値。例: `dialogue play hireMercenary merc=101 city=P012`）。コンソールを閉じて再生し、終わると状態に反映する |
+| `flag list` / `set <key> <true\|false\|数>` / `clear <key>` | 会話シーンのフラグを見る・決める・消す |
 | `scene <title\|strategy>` | シーンを移る |
 | `state [path]` | ゲームの状態を JSON で見る（例: `state cities.P012.assignments`） |
 | `clear` / `exit` | 画面を消す・閉じる |

@@ -31,6 +31,9 @@ export function playBgm(songId: string | null): void {
     .catch((err: unknown) => console.error(`bgm: cannot play ${songId}`, err))
 }
 
+/** The song last asked for (null: silence), e.g. to go back to after a dialogue */
+export const currentBgm = (): string | null => requested
+
 const unsubscribe = subscribeVolumes(() => {
   const { bgm } = getVolumes()
   if (player) void player.then((p) => (p.volume = volumeGain(bgm)))

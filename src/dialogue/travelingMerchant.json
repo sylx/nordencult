@@ -1,0 +1,44 @@
+{
+  "$schema": "../../norden-dialogue/script.schema.json",
+  "title": "旅の商人（ランダムイベント）",
+  "params": { "city": "city", "supplies": "number", "price": "number", "cheap": "number", "visits": "number" },
+  "blocks": {
+    "first": [
+      { "bg": "market", "fx": "fade" },
+      { "bgm": "wandering-bird" },
+      { "narrate": "{city.name}の市場に、見慣れない荷馬車が止まっている。" },
+      { "name": "旅の商人", "text": ["やあやあ、ご領主のご家中の方ですな？", "南から運んできた物資が{supplies}ほど。{price}金貨でいかがです？"] }
+    ],
+    "again": [
+      { "bg": "market", "fx": "fade" },
+      { "bgm": "wandering-bird" },
+      { "narrate": "{city.name}の市場に、あの荷馬車がまた来ている。" },
+      { "name": "旅の商人", "text": ["おや、またお会いしましたな。これで{visits}度目ですか。", "今日は物資が{supplies}。お得意様ですから{price}金貨で結構ですよ。"] }
+    ],
+    "grudge": [
+      { "name": "旅の商人", "text": "……前のように値切るのは、ご勘弁願いますよ。" }
+    ],
+    "bought": [
+      { "se": "coins" },
+      { "name": "旅の商人", "text": "毎度あり！ 物資は倉へ運んでおきます。" },
+      { "narrate": "{city.name}の物資が{supplies}増えた。" }
+    ],
+    "haggled": [
+      { "se": "coins" },
+      { "name": "旅の商人", "text": "……参りましたな。{cheap}金貨で手を打ちましょう。" },
+      { "narrate": "{city.name}の物資が{supplies}増えた。" }
+    ],
+    "offended": [
+      { "shake": "small" },
+      { "name": "旅の商人", "text": "冗談はよしてください！ これ以上は一枚もまけられません。" },
+      { "narrate": "商人は荷をまとめ、市場を去っていった。" }
+    ],
+    "declined": [
+      { "name": "旅の商人", "text": "左様ですか。では、またの機会に。" },
+      { "narrate": "荷馬車は次の町へ向かっていった。" }
+    ]
+  },
+  "choices": {
+    "trade": { "options": { "buy": "買う（{price}金貨）", "haggle": "値切る（{cheap}金貨）", "decline": "断る" } }
+  }
+}

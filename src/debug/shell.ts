@@ -21,6 +21,8 @@ export interface DebugArg<C> {
   candidates?: (context: C, word: string) => readonly DebugCandidate[]
   /** `candidates` are suggestions only */
   open?: boolean
+  /** Takes every word left, each as this argument (the last argument only) */
+  rest?: boolean
 }
 
 interface Named {
@@ -59,7 +61,14 @@ function walk<C>(commands: readonly DebugCommand<C>[], words: readonly string[])
   return { path, rest: words.slice(index) }
 }
 
-const argUsage = <C>({ name, optional }: DebugArg<C>) => (optional ? `[${name}]` : `<${name}>`)
+const argUsage = <C>({ name, optional, rest }: DebugArg<C>) => {
+  const words = rest ? `${name}…` : name
+  return optional ? `[${words}]` : `<${words}>`
+}
+
+/** The argument a word at `index` is: past the last, the last when it takes the rest */
+const argAt = <C>(args: readonly DebugArg<C>[], index: number): DebugArg<C> | undefined =>
+  args[index] ?? (args.at(-1)?.rest ? args.at(-1) : undefined)
 
 /** e.g. relic add <relic> [faction] */
 function usage<C>(path: readonly DebugCommand<C>[]): string {
@@ -73,11 +82,11 @@ const sameWord = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
 /** The arguments as `run` gets them */
 function checkedArgs<C>(path: readonly DebugCommand<C>[], command: DebugAction<C>, words: readonly string[], context: C): string[] {
   const args = command.args ?? []
-  if (words.length > args.length || args.slice(words.length).some((arg) => !arg.optional)) {
+  if ((words.length > args.length && !args.at(-1)?.rest) || args.slice(words.length).some((arg) => !arg.optional)) {
     throw new DebugError(`使い方: ${usage(path)}`)
   }
   return words.map((word, index) => {
-    const arg = args[index]
+    const arg = argAt(args, index)!
     if (arg.int && !/^-?\d+$/.test(word)) throw new DebugError(`${arg.name}: ${word} は整数ではありません`)
     if (!arg.candidates || arg.open) return word
     const candidates = arg.candidates(context, word)
@@ -129,7 +138,7 @@ export function complete<C>(commands: readonly DebugCommand<C>[], line: string, 
   const word = words.pop() ?? ''
   const { path, rest } = walk(commands, words)
   const command = path.at(-1)
-  if (command && !isGroup(command)) return { word, candidates: matching(command.args?.[rest.length]?.candidates?.(context, word) ?? [], word) }
+  if (command && !isGroup(command)) return { word, candidates: matching(argAt(command.args ?? [], rest.length)?.candidates?.(context, word) ?? [], word) }
   const level = command ? command.subcommands : commands
   return { word, candidates: matching(rest.length === 0 ? level.map((c) => ({ value: c.name, label: c.summary })) : [], word) }
 }

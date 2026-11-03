@@ -2,6 +2,7 @@ import { Suspense, useEffect, useMemo, useState, type ComponentType } from 'reac
 import { playBgm } from '../audio/bgm'
 import { SCENE_BGM } from '../audio/sceneBgm'
 import { DebugConsole } from '../debug/DebugConsole'
+import { DialogueLayer } from './DialogueLayer'
 import { SCENES } from './registry'
 import { SceneContext } from './sceneContext'
 import type { GoTo, SceneEntry, SceneNavigator } from './types'
@@ -33,6 +34,7 @@ export function SceneManager({ initial }: Props) {
           <Scene params={current.params} />
         </div>
       </Suspense>
+      <DialogueLayer />
       <DebugConsole />
     </SceneContext>
   )

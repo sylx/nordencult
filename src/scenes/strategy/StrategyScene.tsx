@@ -13,12 +13,13 @@ import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   BALANCE, MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
   charactersIn, citiesOf, decideInvasion, decideRenewal, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn,
-  dismantleRelic, dismissMercenary, endFactionTurnProblem, finishEntry, hireMercenary, invadeFromProblem, isPlayerFaction, isPlayerTurn, lordChangeProblem, mustChooseResearch, requestPapalRepair, researchOf, setResearch,
+  dismantleRelic, dismissMercenary, endFactionTurnProblem, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn, lordChangeProblem, mustChooseResearch, requestPapalRepair, researchOf, setResearch,
   moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction, prisonersIn,
   renewalProblem, runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, startRelicProduction, startRelicRepair, stationedIn, suppliesLeft, transportFromProblem,
   transportOrderProblem, dismissEvent, useGame, viewFaction, type CityId, type DefenseDraft, type FactionId, type GameState, type InvasionOrder,
   type MoveOrder, type TransportOrder,
 } from '../../game'
+import { playDialogue } from '../playDialogue'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import { useStrategyLayout } from './uiLayout'
@@ -582,7 +583,7 @@ export default function StrategyScene() {
         },
         mercenary: ({ cityId }) => (
           <MercenaryScreen cityName={cityName(cityId)} gold={game.gold[faction]} offers={mercenaryOffers(game, cityId)} contracts={mercenaryContracts(game, faction)}
-            onHire={(id) => update((s) => hireMercenary(s, cityId, id))}
+            onHire={(id) => void playDialogue('hireMercenary', { city: cityId, merc: id })}
             onDismiss={(id) => update((s) => dismissMercenary(s, id))}
             onClose={nav.pop} />
         ),

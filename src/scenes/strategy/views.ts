@@ -22,7 +22,7 @@ import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES, UNIT_TYPE_MAP } from '../../data/unitTypes'
 import {
   assignmentLabel, assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, contractPrice, dateOf, defaultUnitType,
-  availableTechs, dismissProblem, engagementOf, FUNDED_ROLES, governorOf, hiredMercenaries, hireProblem, isMercenary, mercenaryAt, mercenaryMarket, officerTraining, producibleRelics, productionProblem, relicItemInfo, relicsOf, relicWorks, repairableRelics, repairProblem,
+  availableTechs, dismissProblem, engagementOf, FUNDED_ROLES, governorOf, hiredMercenaries, hireOfferProblem, isMercenary, mercenaryAt, mercenaryMarket, officerTraining, producibleRelics, productionProblem, relicItemInfo, relicsOf, relicWorks, repairableRelics, repairProblem,
   researchOf, researchOutput, researchProblem, researchTurns, techStatus,
   MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportKnightProblem, transportOrderOf, treasuryForecast,
   turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type CityConstruction, type CityLogStat,
@@ -256,7 +256,7 @@ export function mercenaryOffers(game: GameState, cityId: string): MercenaryOffer
     return {
       knight: knightView(game, id), company: info.name, ...mercenaryUnit(id),
       soldiers: game.mercenaries[id].soldiers, maxSoldiers: info.maxSoldiers, ...contractPrice(game, factionId, id),
-      cityName: cityName(game.characters[id].roaming ?? ''), unavailableReason: hireProblem(game, cityId, id) ?? undefined,
+      cityName: cityName(game.characters[id].roaming ?? ''), unavailableReason: hireOfferProblem(game, cityId, id) ?? undefined,
     }
   })
 }

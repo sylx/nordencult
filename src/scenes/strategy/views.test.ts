@@ -83,9 +83,12 @@ describe('the mercenaries', () => {
     expect(offers.find((o) => o.knight.id === BARREL)).toMatchObject({
       company: '樽盾団', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, soldiers: 500, maxSoldiers: 500, fee: 1000, monthly: 167, cityName: 'フルーエン',
     })
+    // Short of gold, the contract can still be talked over: the hiring scene tells it
     const poor = playing('carta')
     const none = { ...poor, gold: { ...poor.gold, carta: 0 } }
-    expect(mercenaryOffers(none, FLUEN).find((o) => o.knight.id === BARREL)?.unavailableReason).toBe('金が足りません')
+    expect(mercenaryOffers(none, FLUEN).find((o) => o.knight.id === BARREL)?.unavailableReason).toBeUndefined()
+    const proud = { ...rich(), mercenaryStanding: { carta: -100 } }
+    expect(mercenaryOffers(proud, FLUEN).find((o) => o.knight.id === BARREL)?.unavailableReason).toBe('樽盾団は我々との契約に応じません')
   })
 
   it('marks a mercenary in the city they serve in, and lists their contract', () => {

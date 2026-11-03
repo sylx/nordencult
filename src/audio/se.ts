@@ -9,6 +9,9 @@ export const seName = (path: string) => path.replace(/^.*\//, '').replace(/\.[^.
 
 const URLS = new Map(Object.entries(FILES).map(([path, url]) => [seName(path), url]))
 
+/** The sound effects there are files of */
+export const SE_NAMES: readonly string[] = [...URLS.keys()]
+
 let audio: { ctx: AudioContext; output: GainNode } | undefined
 const buffers = new Map<string, Promise<AudioBuffer | null>>()
 const warned = new Set<string>()

@@ -13,3 +13,6 @@
 [submodule "norden-synth"]
 	path = norden-synth
 	url = git@github.com:sylx/norden-synth.git
+[submodule "norden-dialogue"]
+	path = norden-dialogue
+	url = git@github.com:sylx/norden-dialogue.git

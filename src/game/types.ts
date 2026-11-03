@@ -56,6 +56,11 @@ export interface GameState {
   lastBattle: BattleReport | null
   /** Events to tell the player (a cut-in, then a notice each), oldest first; each is dropped once told (dismissEvent) */
   events: readonly GameEvent[]
+  /**
+   * What the dialogue scenes remember ('<scene id>:<name>', e.g. 'travelingMerchant:met'; a scene may read another's).
+   * None at first; no screen shows them (the debug console's flag list does)
+   */
+  flags: Readonly<Record<string, number | boolean>>
   /** Next number for order and battle ids */
   serial: number
 }

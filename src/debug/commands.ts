@@ -4,11 +4,13 @@ import { CITY_LIST, CITY_MAP } from '../data/city'
 import { FACTION_LIST, factionName } from '../data/faction'
 import { RELIC_LIST, relicName } from '../data/relics'
 import { TECH_LIST, TECH_MAP } from '../data/techs'
+import { SCENES, isDialogueId, type DialogueId } from '../dialogue'
 import {
-  awayReason, charactersIn, citiesOf, dateOf, debugAddRelic, debugAddResearchPoints, debugCompleteTech, debugFillResearch, debugSetCity, debugSetGold,
-  debugSetMercenarySoldiers, debugSetStanding, endFactionTurn, factionPower, governorOf, isMercenary, isPlayerFaction, isRecovering, mercenaryAt, ownerOf, prisonersIn, relicsOf, researchOf, researchOutput, resolveBattle, turnOrder, viewFaction,
+  awayReason, charactersIn, clearFlag, citiesOf, dateOf, debugAddRelic, debugAddResearchPoints, debugCompleteTech, debugFillResearch, debugSetCity, debugSetGold,
+  debugSetMercenarySoldiers, debugSetStanding, endFactionTurn, setFlag, factionPower, governorOf, isMercenary, isPlayerFaction, isRecovering, mercenaryAt, ownerOf, prisonersIn, relicsOf, researchOf, researchOutput, resolveBattle, turnOrder, viewFaction,
   type BattleWinner, type CityConstruction, type CityId, type DebugCityField, type FactionId, type GameState, type GameStore,
 } from '../game'
+import { playDialogue } from '../scenes/playDialogue'
 import type { SceneNavigator } from '../scenes/types'
 import { DebugError, helpLines, type DebugArg, type DebugCandidate, type DebugCommand } from './shell'
 import { table } from './text'
@@ -36,6 +38,43 @@ const mercenaryArg: Arg = {
 const techArg: Arg = { name: 'tech', candidates: () => TECH_LIST.map((t) => ({ value: t.id, label: t.name })) }
 
 const words = (...values: readonly string[]) => (): DebugCandidate[] => values.map((value) => ({ value }))
+
+const dialogueArg: Arg = { name: 'scene', candidates: () => Object.entries(SCENES).map(([value, scene]) => ({ value, label: scene.script.title })) }
+
+/** The input names of the dialogue scenes (any of them), and what each takes once typed: `merc=` then a knight */
+function dialogueInputs(context: DebugContext, word: string): DebugCandidate[] {
+  const inputs = new Map(Object.values(SCENES).flatMap((scene) => Object.entries(scene.input)))
+  const eq = word.indexOf('=')
+  if (eq < 0) return [...inputs].map(([name, type]) => ({ value: `${name}=`, label: type, partial: true }))
+  const name = word.slice(0, eq)
+  const values = inputs.get(name) === 'character' ? knightArg : inputs.get(name) === 'city' ? cityArg : undefined
+  return (values?.candidates?.(context, word) ?? []).map((c) => ({ ...c, value: `${name}=${c.value}` }))
+}
+
+/** A scene's input: its sample in the state now, with the `name=value` given over it */
+function dialogueInput(id: DialogueId, pairs: readonly string[], state: GameState): Record<string, string | number> {
+  const scene = SCENES[id]
+  const input: Record<string, string | number> = { ...scene.sample?.(state) }
+  for (const pair of pairs) {
+    const [name, value] = pair.split(/=(.*)/s)
+    const type = (scene.input as Record<string, string>)[name]
+    if (!type || value === undefined) throw new DebugError(`${id} の入力は ${Object.keys(scene.input).map((n) => `${n}=…`).join(' ')} です: ${pair}`)
+    input[name] = type === 'number' ? Number(value) : value
+  }
+  const missing = Object.keys(scene.input).filter((name) => input[name] === undefined)
+  if (missing.length > 0) throw new DebugError(`入力が足りません（この状態では決められません）: ${missing.join('・')}`)
+  return input
+}
+
+const inputLabel = (input: object | null | undefined) => (input ? Object.entries(input).map(([k, v]) => `${k}=${v}`).join(' ') : 'なし')
+
+/** A flag's value as typed: true, false or a number */
+function flagValue(word: string): boolean | number {
+  if (word === 'true' || word === 'false') return word === 'true'
+  const value = Number(word)
+  if (word === '' || !Number.isFinite(value)) throw new DebugError(`フラグの値は true・false か数にしてください: ${word}`)
+  return value
+}
 
 const factionOf = (args: readonly string[], index: number, state: GameState): FactionId => args[index] ?? viewFaction(state)
 
@@ -392,6 +431,64 @@ export const DEBUG_COMMANDS: readonly Command[] = [
           if (!battleId) throw new DebugError('進行中の戦闘はありません')
           store.update((s) => resolveBattle(s, battleId, side as BattleWinner))
           navigator().goTo('battleResult', { battleId })
+        },
+      },
+    ],
+  },
+  {
+    name: 'dialogue', summary: '会話シーンを見る・再生する',
+    subcommands: [
+      {
+        name: 'list', summary: '会話シーンの一覧（入力と、この状態での既定の入力）',
+        run: (_, { store }) => table([
+          ['id', '題', '入力', '既定の入力'],
+          ...Object.entries(SCENES).map(([id, scene]) => [
+            id, scene.script.title, Object.entries(scene.input).map(([name, type]) => `${name}:${type}`).join(' '),
+            inputLabel(scene.sample?.(store.getState())),
+          ]),
+        ]),
+      },
+      {
+        name: 'play', summary: '会話シーンを再生する（省いた入力は既定の値。終わると状態に反映）',
+        args: [dialogueArg, { name: '入力=値', optional: true, open: true, rest: true, candidates: dialogueInputs }],
+        run: ([id, ...pairs], { store, close }) => {
+          if (!isDialogueId(id)) throw new DebugError(`${id} という会話シーンはありません`)
+          const input = dialogueInput(id, pairs, store.getState())
+          close()
+          playDialogue(id, input as never).catch((error: unknown) => console.error(error))
+          return `${id} を再生します（${inputLabel(input)}）`
+        },
+      },
+    ],
+  },
+  {
+    name: 'flag', summary: '会話シーンのフラグを見る・変える',
+    subcommands: [
+      {
+        name: 'list', summary: 'フラグの一覧',
+        run: (_, { store }) => {
+          const { flags } = store.getState()
+          const keys = Object.keys(flags).sort()
+          return keys.length === 0 ? 'フラグはありません' : table(keys.map((key) => [key, `${flags[key]}`]))
+        },
+      },
+      {
+        name: 'set', summary: 'フラグを決める（<シーン id>:<名前> true|false|数）',
+        args: [
+          { name: 'key', open: true, candidates: ({ store }) => Object.keys(store.getState().flags).sort().map((value) => ({ value })) },
+          { name: 'value', candidates: words('true', 'false'), open: true },
+        ],
+        run: ([key, value], { store }) => {
+          store.update((s) => setFlag(s, key, flagValue(value)))
+          return `${key}: ${store.getState().flags[key]}`
+        },
+      },
+      {
+        name: 'clear', summary: 'フラグを消す（立てる前に戻す）',
+        args: [{ name: 'key', candidates: ({ store }) => Object.keys(store.getState().flags).sort().map((value) => ({ value })) }],
+        run: ([key], { store }) => {
+          store.update((s) => clearFlag(s, key))
+          return `${key} を消した`
         },
       },
     ],
