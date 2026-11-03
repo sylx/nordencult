@@ -89,6 +89,12 @@ export function successorLord(
 export const withGovernor = (assignments: CityAssignments, governor: CharacterId | undefined): CityAssignments =>
   (governor ? { ...withoutAssignee(assignments, governor), governor } : assignments)
 
+/** Why the city's lord cannot be replaced, or null: 君主 stays the lord of the city they are in, having become it on arriving */
+export function lordChangeProblem(state: GameState, cityId: CityId): string | null {
+  const governor = state.cities[cityId]?.assignments.governor
+  return governor && CHARACTER_MAP[governor]?.isPatriarch ? '君主のいる都市の領主は交代できません' : null
+}
+
 export function assignmentProblem(state: GameState, cityId: CityId, characterId: CharacterId, role: AssignmentRole): string | null {
   const problem = commandProblem(state, cityId)
   if (problem) return problem
@@ -99,7 +105,7 @@ export function assignmentProblem(state: GameState, cityId: CityId, characterId:
   const engaged = engagementOf(state, characterId)
   if (engaged) return `${engaged}です`
   if (assignmentOf(state, characterId) === role) return `すでに${assignmentLabel(role)}です`
-  if (role === 'governor') return null
+  if (role === 'governor') return lordChangeProblem(state, cityId)
   const assignments = state.cities[cityId].assignments
   if (assignments.governor === characterId) return '領主は担当官になれません'
   if ((assignments.officers[role]?.length ?? 0) >= OFFICERS_PER_ROLE) return `${OFFICER_LABELS[role]}担当官は${OFFICERS_PER_ROLE}人までです`
@@ -134,6 +140,7 @@ export function setOfficers(state: GameState, cityId: CityId, role: OfficerRole,
 /** Takes a knight of the city off their assignment (nothing changes if they hold none) */
 export function unassign(state: GameState, cityId: CityId, characterId: CharacterId): GameState {
   check(commandProblem(state, cityId))
+  if (state.cities[cityId].assignments.governor === characterId) check(lordChangeProblem(state, cityId))
   const assignments = withoutAssignee(state.cities[cityId].assignments, characterId)
   return assignments === state.cities[cityId].assignments ? state : withCity(state, cityId, { assignments })
 }

@@ -5,7 +5,7 @@ import { CITY_MAP } from '../../data/city'
 import {
   addOrder, affairsBudgetProblem, affairsGain, affairsGrowth, assign, assignmentOf, assignmentProblem, BALANCE, buildingBonus, buildingLocked, cancelConstruction,
   cityOutput, commandRank, constructionProblem, constructionTurns, endFactionTurn, GameRuleError,
-  governorBonus, governorOf, maxAffairsBudget, maxRecruit, MAX_MORALE, mixMorale, officerAbility, officerPower, officerTraining, recruit,
+  governorBonus, governorOf, lordChangeProblem, maxAffairsBudget, maxRecruit, MAX_MORALE, mixMorale, officerAbility, officerPower, officerTraining, recruit,
   recruitCost, recruitLeft, recruitProblem, runEconomy, setAffairsBudget, slotsOf, setOfficers, startConstruction, startNextBattle,
   tierOf, turnsToNextTier, unassign,
   type CityState, type GameState,
@@ -349,23 +349,33 @@ describe('assignments', () => {
   })
 
   it('assigns knights of the city, one assignment each', () => {
-    let state = playing('carta')
-    state = assign(state, FLUEN, '016', 'training')
+    let state = assign(playing('carta'), FLUEN, '016', 'training')
     state = assign(state, FLUEN, '027', 'training')
     expect(state.cities[FLUEN].assignments.officers.training).toEqual(['016', '027'])
     // A new governor replaces the one before, and leaves their officer role
-    state = assign(state, FLUEN, '016', 'governor')
-    expect(state.cities[FLUEN].assignments).toEqual({ governor: '016', officers: { training: ['027'] } })
-    expect(assignmentOf(state, '029')).toBeNull()
-    expect(commandRank(state, '016')).toBe(0) // a lord need not lead the invasions they join
-    state = unassign(state, FLUEN, '016')
-    expect(governorOf(state, FLUEN)).toBeUndefined()
-    expect(unassign(state, FLUEN, '016')).toBe(state)
+    state = assign(playing('carta'), SILVA, '061', 'training')
+    state = assign(state, SILVA, '061', 'governor')
+    expect(state.cities[SILVA].assignments).toEqual({ governor: '061', officers: { training: [] } })
+    expect(assignmentOf(state, '067')).toBeNull()
+    expect(commandRank(state, '061')).toBe(0) // a lord need not lead the invasions they join
+    state = unassign(state, SILVA, '061')
+    expect(governorOf(state, SILVA)).toBeUndefined()
+    expect(unassign(state, SILVA, '061')).toBe(state)
+  })
+
+  it('keeps 君主 the lord of their city', () => {
+    const state = playing('carta')
+    const reason = '君主のいる都市の領主は交代できません'
+    expect(lordChangeProblem(state, FLUEN)).toBe(reason)
+    expect(lordChangeProblem(state, SILVA)).toBeNull()
+    expect(assignmentProblem(state, FLUEN, '015', 'governor')).toBe(reason)
+    expect(() => assign(state, FLUEN, '015', 'governor')).toThrow(GameRuleError)
+    expect(() => unassign(state, FLUEN, '029')).toThrow(GameRuleError)
   })
 
   it('refuses assignments breaking the rules', () => {
     const state = playing('carta')
-    expect(assignmentProblem(state, FLUEN, '015', 'governor')).toBeNull()
+    expect(assignmentProblem(state, SILVA, '061', 'governor')).toBeNull()
     expect(assignmentProblem(state, FLUEN, '029', 'governor')).toBe('すでに領主です')
     expect(assignmentProblem(state, FLUEN, '013', 'commerce')).not.toBeNull() // アンバリア's knight
     expect(assignmentProblem(state, AMBARIA, '013', 'commerce')).toBe('自勢力の都市ではありません')

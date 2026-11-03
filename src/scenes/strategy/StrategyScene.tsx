@@ -13,7 +13,7 @@ import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   BALANCE, MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
   charactersIn, citiesOf, decideInvasion, decideRenewal, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn,
-  dismantleRelic, dismissMercenary, endFactionTurnProblem, finishEntry, hireMercenary, invadeFromProblem, isPlayerFaction, isPlayerTurn, mustChooseResearch, requestPapalRepair, researchOf, setResearch,
+  dismantleRelic, dismissMercenary, endFactionTurnProblem, finishEntry, hireMercenary, invadeFromProblem, isPlayerFaction, isPlayerTurn, lordChangeProblem, mustChooseResearch, requestPapalRepair, researchOf, setResearch,
   moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction, prisonersIn,
   renewalProblem, runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, startRelicProduction, startRelicRepair, stationedIn, suppliesLeft, transportFromProblem,
   transportOrderProblem, dismissEvent, useGame, viewFaction, type CityId, type DefenseDraft, type FactionId, type GameState, type InvasionOrder,
@@ -606,6 +606,7 @@ export default function StrategyScene() {
             budgetPerTurn={[BALANCE.AFFAIRS_BUDGET_MIN, BALANCE.AFFAIRS_BUDGET_MAX]}
             onChangeBudget={(role, amount) => update((s) => setAffairsBudget(s, cityId, role, amount))}
             onChangeLord={(knightId) => update((s) => assign(s, cityId, knightId, 'governor'))}
+            lordFixedReason={lordChangeProblem(game, cityId) ?? undefined}
             onAssignOfficers={(role, knightIds) => update((s) => setOfficers(s, cityId, role, knightIds))}
             onClose={nav.pop}
           />
