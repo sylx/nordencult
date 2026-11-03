@@ -39,7 +39,7 @@ export default function MercenaryEntry() {
     </>}
     controls={<>
       <h2>傭兵画面</h2>
-      <p>軍事＞傭兵。「契約できる傭兵」で交渉し（契約金・月額は会話で明かす）、「契約中」で打ち切ります。一覧は傭兵団・騎士名で検索でき、ランク・能力値・兵科で並べ替えられます。交渉できない傭兵は理由を出してボタンを押せなくします（契約に応じない傭兵は交渉でき、会話で断られます）。兵が減った傭兵を打ち切ると、確認に評判と回復のことを出します。</p>
+      <p>軍事＞傭兵。「契約できる傭兵」で交渉し（契約金・月額は会話で明かす）、「契約中」で打ち切ります。一覧はランクの低い順に並び、傭兵団・騎士名で検索できます（能力値は出さない）。交渉できない傭兵は理由を出してボタンを押せなくします（契約に応じない傭兵は交渉でき、会話で断られます）。兵が減った傭兵を打ち切ると、確認に評判と回復のことを出します。</p>
       <label className="checkbox"><input type="checkbox" checked={empty} onChange={event => setEmpty(event.target.checked)} />傭兵がいない</label>
       <button className="reset-button" onClick={() => setInstance(value => value + 1)}>画面を開き直す</button>
       <Log entries={log} />

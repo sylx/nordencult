@@ -6,7 +6,6 @@ import SectionFrame from '../../components/parts/SectionFrame'
 import ConfirmDialog from '../../components/window/ConfirmDialog'
 import WindowFrame from '../../components/window/WindowFrame'
 import { biographyParts } from '../cityCommand/KnightProfileWindow'
-import { ABILITIES, ABILITY_LABELS, knightAbility } from '../domestic/DomesticOfficers'
 import type { MercenaryContractView, MercenaryOfferView, MercenaryRank } from '../types'
 import MercenaryProfile from './MercenaryProfile'
 import '../screens.css'
@@ -34,28 +33,19 @@ type Tab = 'offers' | 'contracts'
 const TABS: readonly { id: Tab; label: string }[] = [{ id: 'offers', label: '契約できる傭兵' }, { id: 'contracts', label: '契約中' }]
 
 type Mercenary = MercenaryOfferView | MercenaryContractView
-type Ability = (typeof ABILITIES)[number]
-type Sort = Ability | 'rank' | 'unitType'
-
-const SORTS: readonly { id: Sort; label: string }[] = [
-  { id: 'rank', label: 'ランク' }, ...ABILITIES.map(id => ({ id, label: ABILITY_LABELS[id] })), { id: 'unitType', label: '兵科' },
-]
 
 /** The ranks from the cheapest */
 const RANKS: readonly MercenaryRank[] = ['D', 'C', 'B', 'A', 'S']
 
-function compare(sort: Sort, a: Mercenary, b: Mercenary) {
-  if (sort === 'unitType') return a.unitType.localeCompare(b.unitType, 'ja')
-  if (sort === 'rank') return RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank)
-  return (knightAbility(a.knight, sort) ?? 0) - (knightAbility(b.knight, sort) ?? 0)
-}
-
-/** Those whose company or knight's name has the words, in the order chosen */
-function arrange<T extends Mercenary>(items: readonly T[], query: string, sort: Sort, descending: boolean) {
+/** Those whose company or knight's name has the words, from the cheapest rank (in the order given within one) */
+function arrange<T extends Mercenary>(items: readonly T[], query: string) {
   const words = query.trim().toLowerCase()
   return items.filter(({ company, knight }) => [company, knight.name].some(name => name.toLowerCase().includes(words)))
-    .sort((a, b) => (descending ? -1 : 1) * compare(sort, a, b))
+    .sort((a, b) => RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank))
 }
+
+/** A mercenary's knight on a card of the list, without their stats: the hiring talk shows them */
+const cardKnight = ({ knight }: Mercenary) => ({ ...knight, stats: undefined })
 
 const gold = (value: number) => value.toLocaleString()
 
@@ -100,28 +90,21 @@ function Details({ mercenary, facts = [], children }: {
  * The mercenary screen (軍事＞傭兵): a full-screen window with the city it is opened on and the treasury along the top,
  * and two tabs: the mercenaries the city can reach, to talk to about a contract (by their rank: what they ask is told
  * in the talk), and those the faction hired, to dismiss (after a confirmation saying what it costs). Each tab lists
- * them on the left, searched and sorted as chosen, with the details of the one chosen on the right
+ * them on the left from the cheapest rank, searched by name, with the details of the one chosen on the right
  */
 export default function MercenaryScreen({ cityName, gold: treasury, offers, contracts, onHire, onDismiss, onClose, children }: MercenaryScreenProps) {
   const [tab, setTab] = useState<Tab>('offers')
   const [picked, setPicked] = useState<string | null>(null)
   const [dismissing, setDismissing] = useState<MercenaryContractView | null>(null)
   const [query, setQuery] = useState('')
-  const [sort, setSort] = useState<Sort>('rank')
-  const [descending, setDescending] = useState(false)
-  const shownOffers = arrange(offers, query, sort, descending)
-  const shownContracts = arrange(contracts, query, sort, descending)
+  const shownOffers = arrange(offers, query)
+  const shownContracts = arrange(contracts, query)
   // With nothing chosen (or the chosen one gone or searched away), the first of the list
   const offer = shownOffers.find(item => item.knight.id === picked) ?? shownOffers[0]
   const contract = shownContracts.find(item => item.knight.id === picked) ?? shownContracts[0]
   const open = (next: Tab) => {
     setTab(next)
     setPicked(null)
-  }
-  const sortBy = (next: Sort) => {
-    setSort(next)
-    // The best first: the highest ability, the cheapest rank
-    setDescending(next !== 'rank' && next !== 'unitType')
   }
 
   return (
@@ -151,12 +134,6 @@ export default function MercenaryScreen({ cityName, gold: treasury, offers, cont
                     event.preventDefault()
                     setQuery('')
                   }} />
-                <label className="norden-mercenary-sort">並び順
-                  <select value={sort} onChange={event => sortBy(event.target.value as Sort)}>
-                    {SORTS.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
-                  </select>
-                </label>
-                <button type="button" className="norden-mercenary-order" onClick={() => setDescending(value => !value)}>{descending ? '▼ 降順' : '▲ 昇順'}</button>
               </div>
               <div className="norden-window-scroll norden-mercenary-scroll">
                 {tab === 'offers' && (shownOffers.length === 0
@@ -164,7 +141,7 @@ export default function MercenaryScreen({ cityName, gold: treasury, offers, cont
                   : <ul className="norden-mercenary-list">
                     {shownOffers.map(item => (
                       <li key={item.knight.id}>
-                        <MercenaryCard knight={item.knight} company={item.company} rank={item.rank} selected={item === offer} onSelect={() => setPicked(item.knight.id)} />
+                        <MercenaryCard knight={cardKnight(item)} company={item.company} rank={item.rank} selected={item === offer} onSelect={() => setPicked(item.knight.id)} />
                       </li>
                     ))}
                   </ul>)}
@@ -173,7 +150,7 @@ export default function MercenaryScreen({ cityName, gold: treasury, offers, cont
                   : <ul className="norden-mercenary-list">
                     {shownContracts.map(item => (
                       <li key={item.knight.id}>
-                        <MercenaryCard knight={item.knight} company={item.company} rank={item.rank} prices={[{ label: '月額', value: item.monthly }]}
+                        <MercenaryCard knight={cardKnight(item)} company={item.company} rank={item.rank} prices={[{ label: '月額', value: item.monthly }]}
                           selected={item === contract} onSelect={() => setPicked(item.knight.id)} />
                       </li>
                     ))}

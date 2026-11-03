@@ -17,3 +17,21 @@
 .norden-mercenary-unit > img { flex: none; width: 72px; height: 72px; object-fit: contain; object-position: bottom; filter: drop-shadow(0 2px 2px #38251040); }
 .norden-mercenary-unit-facts { display: flex; flex-wrap: wrap; gap: 4px 14px; min-width: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .norden-mercenary-unit-label { display: block; color: #6a5030; font-size: 11px; font-weight: 400; }
+
+.norden-mercenary-prices { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0; padding-top: 6px; }
+.norden-mercenary-prices > div { display: flex; align-items: baseline; gap: 8px; }
+.norden-mercenary-prices dt { color: #6a5030; font-size: 12px; }
+.norden-mercenary-prices dd { margin: 0; color: #7e0101; font-family: Georgia, 'Times New Roman', serif; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.norden-dialogue-panel .norden-mercenary-heading{
+    column-gap: 24px;
+}
+.norden-dialogue-panel .norden-knight-face{
+    margin-top: 36px;
+}
+.norden-dialogue-panel .norden-mercenary-unit{
+    margin: 0;
+    border-top: 1px solid #a3824b66;
+    position: relative;
+    left: -60px;
+}

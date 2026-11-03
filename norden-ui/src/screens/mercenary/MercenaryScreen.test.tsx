@@ -46,7 +46,8 @@ describe('MercenaryScreen', () => {
   })
 
   it('shows the rank of each in the list, without what they cost or their abilities', () => {
-    const knight = { ...offer.knight, abilities: { strength: 90 } }
+    // The knight's view has a few stats for the cards of other screens
+    const knight = { ...offer.knight, abilities: { strength: 90 }, stats: [{ label: '武力', value: 90 }] }
     show({ offers: [{ ...offer, knight }, proud] })
     const list = within(screen.getByRole('region', { name: '契約できる傭兵' }))
     expect(list.getByRole('button', { name: '樽盾団（ブロック）' })).toHaveTextContent('ランクD')
@@ -97,23 +98,11 @@ describe('MercenaryScreen', () => {
     expect(onKey).toHaveLastReturnedWith(true)
   })
 
-  it('sorts by an ability, the highest first, and can turn it around', async () => {
-    const strong = { ...offer.knight, abilities: { strength: 90 } }
-    const weak = { ...proud.knight, abilities: { strength: 40 } }
-    show({ offers: [{ ...proud, knight: weak }, { ...offer, knight: strong }] })
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: '並び順' }), '武力')
-    expect(order()).toEqual(['樽盾団（ブロック）', 'ランツクネヒト（カスパル）'])
-    await userEvent.click(screen.getByRole('button', { name: '▼ 降順' }))
-    expect(order()).toEqual(['ランツクネヒト（カスパル）', '樽盾団（ブロック）'])
-  })
-
-  it('starts from the lowest rank, and sorts by the unit type', async () => {
+  it('lists them from the lowest rank, with no way to sort them otherwise', () => {
     show({ offers: [proud, offer] })
-    expect(screen.getByRole('combobox', { name: '並び順' })).toHaveValue('rank')
-    expect(screen.getByRole('button', { name: '▲ 昇順' })).toBeInTheDocument()
     expect(order()).toEqual(['樽盾団（ブロック）', 'ランツクネヒト（カスパル）'])
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: '並び順' }), '兵科')
-    expect(order()).toEqual(['ランツクネヒト（カスパル）', '樽盾団（ブロック）'])
+    expect(screen.queryByRole('combobox')).toBeNull()
+    expect(screen.queryByRole('button', { name: /昇順|降順/ })).toBeNull()
   })
 
   it('starts those hired from the lowest rank', async () => {

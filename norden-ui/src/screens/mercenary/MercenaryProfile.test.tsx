@@ -23,5 +23,11 @@ describe('MercenaryProfile', () => {
     expect(container.querySelector('.norden-knight-stats')).toHaveTextContent('90')
     expect(screen.queryByRole('img', { name: 'ブロックの立ち絵' })).toBeNull()
     expect(container.querySelector('.norden-knight-face')).not.toBeNull()
+    expect(container.querySelector('.norden-mercenary-prices')).toBeNull()
+  })
+
+  it('shows what they ask when given', () => {
+    const { container } = render(<MercenaryProfile mercenary={mercenary} prices={[{ label: '契約金', value: 2000 }, { label: '月額', value: 334 }]} />)
+    expect(container.querySelector('.norden-mercenary-prices')).toHaveTextContent('契約金2,000月額334')
   })
 })
