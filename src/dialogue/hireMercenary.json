@@ -7,6 +7,7 @@
       { "bg": "tavern", "fx": "fade" },
       { "bgm": "highland-covenant" },
       { "narrate": "{city.name}の酒場。奥の卓で、{company}の頭目が待っていた。" },
+      { "dim": 0.45 },
       { "show": "$merc", "at": "right", "fx": "slide" },
       { "say": "$merc", "text": "{company}の{merc.name}だ。腕なら保証する。",
         "tones": {

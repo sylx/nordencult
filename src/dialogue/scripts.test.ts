@@ -62,6 +62,9 @@ describe('hireMercenary', () => {
     expect(player.texts).toContain('ワシがドゥンダリン盾隊のブロック・ドゥンダリンじゃ。')
     expect(player.offered[0][0]).toEqual({ key: 'yes', text: '契約する（2,000金貨）' })
     expect(player.steps).toContainEqual({ kind: 'se', name: 'coins' })
+    // The tavern dims as the mercenary comes up, so that they stand out from it
+    const dim = player.steps.findIndex((s) => s.kind === 'dim')
+    expect(player.steps[dim + 1]).toMatchObject({ kind: 'show', id: BARREL })
     // The profile shows on the left with the price, and goes before the contract is made
     const panels = player.steps.filter((s) => s.kind === 'panel')
     expect(panels).toEqual([
