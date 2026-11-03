@@ -44,13 +44,28 @@ export interface CityCommandScreenProps {
   turnMenu?: ReactNode
   /** Finds any knight by id for the knight profile (e.g. one a 略歴 names); only the city's knights are found when omitted */
   knightOf?: (id: string) => KnightView | undefined
-  /** Initial position of the city window */
+  /** Where the city window starts; the screen fits it from there, wherever it is dragged */
   windowPosition?: { x: number; y: number }
+  /** Where the movable parts are */
+  layout?: CityCommandLayout
+  /** A movable part was dragged or moved with the keys */
+  onLayoutChange?: (part: keyof CityCommandLayout, position: { x: number; y: number }) => void
   /** Where the city window is and its size, as it is measured, dragged or resized (e.g. to keep things clear of it) */
   onWindowBoundsChange?: InfoWindowProps['onBoundsChange']
   skin?: InfoWindowSkin
   /** Extra HUD of the host (e.g. a list of orders), drawn in the screen layer */
   children?: ReactNode
+}
+
+/**
+ * Where the parts the player can move are, to keep them over a remount or between plays. Omitted: where they start.
+ * `window` is the city window's position; the others are offsets from their layout positions
+ */
+export interface CityCommandLayout {
+  window?: { x: number; y: number }
+  factionBar?: { x: number; y: number }
+  toolbar?: { x: number; y: number }
+  knightProfile?: { x: number; y: number }
 }
 
 export function turnText(turn: TurnView) {
@@ -62,8 +77,9 @@ export function turnText(turn: TurnView) {
 /** City command screen: the faction bar with ◀ ▶ between cities and the city window (left), turn bar (top right) and the action toolbar (bottom) */
 export default function CityCommandScreen({
   city, turn, faction, onOpenResearch, playerFaction, onPrevCity, onNextCity, cityPosition, commandState = {}, activeCommand, onCommand, onEndTurn,
-  endTurnDisabled = false, endTurnReason, turnMenu, knightOf, windowPosition = { x: 56, y: 96 }, onWindowBoundsChange, skin, children,
+  endTurnDisabled = false, endTurnReason, turnMenu, knightOf, windowPosition = { x: 56, y: 96 }, layout = {}, onLayoutChange, onWindowBoundsChange, skin, children,
 }: CityCommandScreenProps) {
+  const cityWindow = layout.window ?? windowPosition
   const command = (id: CityCommandId, label: string): ToolbarCommand => {
     const active = activeCommand === id
     return {
@@ -84,16 +100,20 @@ export default function CityCommandScreen({
     <div className="norden-screen norden-city-command">
       <div className="norden-screen-top-left">
         <FactionBar faction={playerFaction} summary={faction} onOpenResearch={onOpenResearch} cityName={city.name} onPrevCity={onPrevCity}
-          onNextCity={onNextCity} cityPosition={cityPosition} />
+          onNextCity={onNextCity} cityPosition={cityPosition}
+          position={layout.factionBar} onPositionChange={position => onLayoutChange?.('factionBar', position)} />
       </div>
       <div className="norden-screen-top-right">
         <DateBar phaseLabel={turn.phaseLabel} factionName={turn.activeFaction ? turn.activeFaction.name : turn.activeFaction}
           dateLabel={turn.dateLabel}>{turnMenu}</DateBar>
       </div>
-      <CityInfoWindow city={city} knightOf={knightOf} x={windowPosition.x} y={windowPosition.y} skin={skin} onBoundsChange={onWindowBoundsChange}
+      <CityInfoWindow city={city} knightOf={knightOf} x={cityWindow.x} y={cityWindow.y} skin={skin} onBoundsChange={onWindowBoundsChange}
+        onPositionChange={position => onLayoutChange?.('window', position)} profileAnchor={windowPosition}
+        profilePosition={layout.knightProfile} onProfilePositionChange={position => onLayoutChange?.('knightProfile', position)}
         style={{ '--norden-city-window-x': `${windowPosition.x}px`, '--norden-city-window-y': `${windowPosition.y}px` } as CSSProperties} />
       <div className="norden-screen-bottom-center">
-        <CommandToolbar commands={commands} aria-label="都市コマンド" movable={true} />
+        <CommandToolbar commands={commands} aria-label="都市コマンド" movable={true}
+          position={layout.toolbar} onPositionChange={position => onLayoutChange?.('toolbar', position)} />
       </div>
       {children}
     </div>

@@ -79,7 +79,7 @@ export type {
   AssignmentRoleView, BuildOptionView, BuildingView, CityAssignmentsView, CityBuildingsView, CityHistoryView, CityLogLineView, CityStatView, CityView, ConstructionKindView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, FactionResearchSummaryView, FactionSummaryView, FactionView, KnightAbilitiesView, KnightView, MercenaryContractView, MercenaryOfferView, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicRarityView, RelicStatusView, RelicView, SpriteImage, StatBoostView, TechStatusView, TechView, TurnView, UnitTypeView,
 } from './screens/types'
 export { default as CityCommandScreen, turnText } from './screens/cityCommand/CityCommandScreen'
-export type { CityCommandScreenProps, CommandState } from './screens/cityCommand/CityCommandScreen'
+export type { CityCommandLayout, CityCommandScreenProps, CommandState } from './screens/cityCommand/CityCommandScreen'
 export { default as CityInfoWindow } from './screens/cityCommand/CityInfoWindow'
 export type { CityInfoTabOptions, CityInfoWindowProps } from './screens/cityCommand/CityInfoWindow'
 export { default as KnightProfileWindow, biographyParts } from './screens/cityCommand/KnightProfileWindow'

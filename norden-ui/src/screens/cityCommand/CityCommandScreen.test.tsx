@@ -210,4 +210,43 @@ describe('CityCommandScreen', () => {
     expect(within(turns[0]!).getByText(/^floor\(\(経済 300/)).toBeInTheDocument()
     expect(turns[1]).toHaveTextContent('初期値')
   })
+
+  it('puts the movable parts where the layout says, and reports them moved', async () => {
+    const onLayoutChange = vi.fn()
+    setup({ layout: { window: { x: 200, y: 150 }, factionBar: { x: 30, y: 40 }, toolbar: { x: -20, y: -10 } }, onLayoutChange })
+    expect(screen.getByRole('region', { name: 'カルタ書院 フルーエン' })).toHaveStyle({ left: '200px', top: '150px' })
+    expect(screen.getByRole('group', { name: '勢力' })).toHaveStyle({ translate: '30px 40px' })
+    expect(screen.getByRole('navigation', { name: '都市コマンド' })).toHaveStyle({ translate: '-20px -10px' })
+
+    screen.getByRole('button', { name: '都市コマンドを移動（左端）' }).focus()
+    await userEvent.keyboard('{ArrowUp}')
+    expect(onLayoutChange).toHaveBeenLastCalledWith('toolbar', { x: -20, y: -20 })
+    screen.getByRole('button', { name: '勢力のバーを移動' }).focus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(onLayoutChange).toHaveBeenLastCalledWith('factionBar', { x: 40, y: 40 })
+  })
+
+  it('moves the parts back when the layout is cleared', () => {
+    const props = {
+      city, turn: { turn: 3, phaseLabel: '戦略フェーズ' }, onCommand: vi.fn(), onEndTurn: vi.fn(),
+    }
+    const { rerender } = render(<CityCommandScreen {...props} layout={{ window: { x: 200, y: 150 }, toolbar: { x: -20, y: -10 } }} />)
+    rerender(<CityCommandScreen {...props} layout={{}} />)
+    expect(screen.getByRole('region', { name: /フルーエン/ })).toHaveStyle({ left: '56px', top: '96px' })
+    expect(screen.getByRole('navigation', { name: '都市コマンド' })).toHaveStyle({ translate: '0px 0px' })
+  })
+
+  it('opens the knight profile at its offset, beside where the city window starts', async () => {
+    const onLayoutChange = vi.fn()
+    setup({ layout: { window: { x: 400, y: 300 }, knightProfile: { x: 50, y: 60 } }, onLayoutChange })
+    await userEvent.click(screen.getByRole('tab', { name: '騎士' }))
+    await userEvent.click(screen.getByRole('button', { name: /詳細/ }))
+    const profile = screen.getByRole('region', { name: 'エルネスト' })
+    expect(profile).toHaveStyle({ translate: '50px 60px' })
+    expect(profile.style.getPropertyValue('--norden-knight-profile-y')).toBe('96px')
+
+    screen.getByRole('button', { name: 'ウィンドウを移動' }).focus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(onLayoutChange).toHaveBeenLastCalledWith('knightProfile', { x: 50, y: 70 })
+  })
 })

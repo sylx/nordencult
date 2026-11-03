@@ -26,14 +26,22 @@ export interface CityInfoWindowProps extends Omit<InfoWindowWithTabsProps, 'tabs
   city: CityView
   /** Finds any knight by id for the profile window (e.g. one a 略歴 names); only the city's knights are found when omitted */
   knightOf?: (id: string) => KnightView | undefined
+  /** Where the profile window opens beside. Omitted: the city window's `x` and `y` */
+  profileAnchor?: { x: number; y: number }
+  /** Offset of the profile window from where it opens, in px */
+  profilePosition?: { x: number; y: number }
+  onProfilePositionChange?: (position: { x: number; y: number }) => void
 }
 
 /**
  * A city's information, knights and growth in a tabbed window; past its maximum size the panels scroll.
  * 詳細 on a knight opens their profile beside it, with back/forward through the knights opened since.
  */
-export default function CityInfoWindow({ city, knightOf, maxWidth = 544, maxHeight = 760, ...windowProps }: CityInfoWindowProps) {
+export default function CityInfoWindow({
+  city, knightOf, profileAnchor, profilePosition, onProfilePositionChange, maxWidth = 544, maxHeight = 760, ...windowProps
+}: CityInfoWindowProps) {
   const profile = useBrowseHistory<string>()
+  const anchor = profileAnchor ?? { x: windowProps.x ?? 0, y: windowProps.y ?? 0 }
   const findKnight = (id: string) => knightOf?.(id) ?? city.knights?.find(knight => knight.id === id)
   const knight = profile.current === undefined ? undefined : findKnight(profile.current)
   return <>
@@ -41,10 +49,10 @@ export default function CityInfoWindow({ city, knightOf, maxWidth = 544, maxHeig
       tabs={createCityInfoTabs(city, { onShowKnight: profile.show })} />
     {knight && <KnightProfileWindow knight={knight} knightOf={findKnight} onSelectKnight={profile.show}
       onBack={profile.back} onForward={profile.forward} backDisabled={!profile.canBack} forwardDisabled={!profile.canForward}
-      onClose={profile.close}
+      onClose={profile.close} position={profilePosition} onPositionChange={onProfilePositionChange}
       style={{
-        '--norden-knight-profile-x': `${(windowProps.x ?? 0) + maxWidth + 16}px`,
-        '--norden-knight-profile-y': `${windowProps.y ?? 0}px`,
+        '--norden-knight-profile-x': `${anchor.x + maxWidth + 16}px`,
+        '--norden-knight-profile-y': `${anchor.y}px`,
       } as CSSProperties} />}
   </>
 }

@@ -26,6 +26,9 @@ export interface CommandToolbarProps {
   width?: CSSProperties['width']
   /** Show the drag handles on both ends. */
   movable?: boolean
+  /** Offset from the toolbar's layout position, in px. */
+  position?: { x: number; y: number }
+  onPositionChange?: (position: { x: number; y: number }) => void
   className?: string
   style?: CSSProperties
   'aria-label'?: string
@@ -40,9 +43,11 @@ interface DragState {
 }
 
 export default function CommandToolbar({
-  commands, width, movable = true, className = '', style, 'aria-label': label = 'コマンド',
+  commands, width, movable = true, position, onPositionChange, className = '', style, 'aria-label': label = 'コマンド',
 }: CommandToolbarProps) {
-  const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const x = position?.x ?? 0
+  const y = position?.y ?? 0
+  const [offset, setOffset] = useState({ x, y })
   const [isDragging, setIsDragging] = useState(false)
   const [openId, setOpenId] = useState<string | null>(null)
   const [flyoutX, setFlyoutX] = useState(0)
@@ -53,6 +58,11 @@ export default function CommandToolbar({
   const flyoutId = useId()
   const open = commands.find(command => command.id === openId && command.children && !isDisabled(command))
   const openedId = open?.id
+  useEffect(() => { setOffset({ x, y }) }, [x, y])
+  const moveTo = (next: { x: number; y: number }) => {
+    setOffset(next)
+    onPositionChange?.(next)
+  }
 
   // Keyed by id: the commands are usually rebuilt on every render of the parent
   useEffect(() => {
@@ -103,7 +113,7 @@ export default function CommandToolbar({
   const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
     const drag = dragRef.current
     if (!drag || drag.pointerId !== event.pointerId) return
-    setOffset({ x: drag.offsetX + event.clientX - drag.startX, y: drag.offsetY + event.clientY - drag.startY })
+    moveTo({ x: drag.offsetX + event.clientX - drag.startX, y: drag.offsetY + event.clientY - drag.startY })
   }
 
   const handlePointerEnd = (event: PointerEvent<HTMLButtonElement>) => {
@@ -126,7 +136,7 @@ export default function CommandToolbar({
     if (!delta) return
     event.preventDefault()
     event.stopPropagation()
-    setOffset(current => ({ x: current.x + delta.x, y: current.y + delta.y }))
+    moveTo({ x: offset.x + delta.x, y: offset.y + delta.y })
   }
 
   return (
