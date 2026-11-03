@@ -47,6 +47,7 @@ export default function MercenaryProfile({ mercenary, abilities = false, figure 
           <div className="norden-mercenary-unit-facts">
             <span><span className="norden-mercenary-unit-label">兵科</span>{unitType}</span>
             <span><span className="norden-mercenary-unit-label">兵数</span>{`${count(soldiers)} / ${count(maxSoldiers)}`}</span>
+            <span><span className="norden-mercenary-unit-label">所在地</span>{cityName}</span>
           </div>
         </div>
       </div>
