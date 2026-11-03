@@ -109,7 +109,7 @@ const SHAKE: Record<'small' | 'large', number> = { small: 6, large: 16 }
 
 /**
  * 会話の画面。イベント通知（norden-ui の EventScreen）と同じく、親の要素を暗い幕で覆い、中央にカット（背景・立ち絵
- * （左・中央・右）・暗転・揺れ・光。真鍮の枠）と、その下にメッセージウィンドウ（名札・顔・1 文字ずつ・選択肢）を置く。
+ * （左・中央・右）・資料・暗転・揺れ・光。真鍮の枠）と、その下にメッセージウィンドウ（名札・顔・1 文字ずつ・選択肢）を置く。
  * クリック・Enter・Space で文字送り、数字キーで選択肢を選ぶ。幕はクリックをすべて受ける
  */
 export function DialogueView({ player, showBackgroundNames = false, modal = true }: DialogueViewProps) {
@@ -176,6 +176,11 @@ export function DialogueView({ player, showBackgroundNames = false, modal = true
                 <Portrait key={portrait.id} portrait={portrait} info={player.providers.character(portrait.id)} dimmed={speakerShown && portrait.id !== speaking} />
               ))}
             </div>
+            {view.panel && (
+              <div key={view.panel.key} className="norden-dialogue-panel" data-at={view.panel.at}>
+                {player.providers.panel?.(view.panel.name, { vars: view.panel.vars, state: view.panel.state })}
+              </div>
+            )}
             <div className="norden-dialogue-fade" style={{ background: view.fade.color, opacity: view.fade.opacity, transitionDuration: `${view.fade.ms}ms` }} />
             {view.flash && <div key={view.flash.key} className={`norden-dialogue-flash is-${view.flash.color}`} style={{ animationDuration: `${TIMING.flash}ms` }} />}
           </div>

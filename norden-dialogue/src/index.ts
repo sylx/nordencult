@@ -16,7 +16,7 @@ export type { AnyScene, InputOf, InputSpec, PlayOptions, RunOptions, Scene, Scen
 
 // 画面
 export { DialogueAborted, DialoguePlayer, TIMING } from './player'
-export type { CharacterInfo, ChoiceOption, DialogueProviders, PlayerView, Rect, ScenePlayer, Step } from './player'
+export type { CharacterInfo, ChoiceOption, DialogueProviders, PanelContext, PanelView, PlayerView, Rect, ScenePlayer, Step } from './player'
 export { DialogueView } from './view/DialogueView'
 export { CharacterFace } from './view/CharacterFace'
 export { ScriptedPlayer } from './testing'

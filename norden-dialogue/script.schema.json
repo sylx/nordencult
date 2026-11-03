@@ -398,6 +398,35 @@
             }
           },
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "ゲームの資料（傭兵のプロフィールなど）をカットの上に出す。null で消す（資料の名前はゲームの DIALOGUE_PANELS。npm test で照合する）",
+          "required": [
+            "panel"
+          ],
+          "properties": {
+            "panel": {
+              "description": "資料の名前。null で消す",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "at": {
+              "enum": [
+                "left",
+                "center",
+                "right"
+              ]
+            }
+          },
+          "additionalProperties": false
         }
       ]
     }

@@ -38,6 +38,20 @@
 }
 .norden-dialogue-scene { position: absolute; inset: 0; }
 
+/* A panel of the game's (a mercenary's profile...) over the scene, on its side, as large as it is up to half the cut */
+.norden-dialogue-panel {
+  position: absolute;
+  top: 50%;
+  max-width: 48%;
+  max-height: 92%;
+  overflow: hidden;
+  transform: translateY(-50%);
+  animation: norden-dialogue-fade-in 300ms ease-out both;
+}
+.norden-dialogue-panel[data-at='left'] { left: 3%; }
+.norden-dialogue-panel[data-at='center'] { left: 50%; transform: translate(-50%, -50%); }
+.norden-dialogue-panel[data-at='right'] { right: 3%; }
+
 .norden-dialogue-bg {
   position: absolute;
   inset: 0;

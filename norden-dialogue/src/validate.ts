@@ -13,7 +13,7 @@ export interface ScriptProblem {
 }
 
 /**
- * ゲームのデータとの照合（無い項目は見ない）。騎士 ID・曲 id・効果音・口調はエラー、背景は警告（画像が揃うまで）
+ * ゲームのデータとの照合（無い項目は見ない）。騎士 ID・曲 id・効果音・口調・資料はエラー、背景は警告（画像が揃うまで）
  */
 export interface ScriptCatalog {
   character?: (id: string) => boolean
@@ -21,6 +21,7 @@ export interface ScriptCatalog {
   bgm?: (id: string) => boolean
   se?: (name: string) => boolean
   tone?: (id: string) => boolean
+  panel?: (name: string) => boolean
 }
 
 const TOP_KEYS = ['$schema', 'title', 'params', 'blocks', 'choices']
@@ -40,6 +41,7 @@ const COMMAND_KEYS: Readonly<Record<CommandKind, { required: readonly string[]; 
   wait: { required: ['wait'], optional: [] },
   bgm: { required: ['bgm'], optional: [] },
   se: { required: ['se'], optional: [] },
+  panel: { required: ['panel'], optional: ['at'] },
 }
 
 const NAME = /^[A-Za-z_]\w*$/
@@ -184,6 +186,11 @@ class Checker {
       case 'se':
         if (typeof value.se !== 'string' || value.se === '') this.error(field('se'), '効果音の名前を書いてください', at)
         else if (this.catalog.se && !this.catalog.se(value.se)) this.error(field('se'), `存在しない効果音: ${value.se}`, at)
+        break
+      case 'panel':
+        if (value.panel !== null && (typeof value.panel !== 'string' || value.panel === '')) this.error(field('panel'), '資料の名前か null にしてください', at)
+        else if (typeof value.panel === 'string' && this.catalog.panel && !this.catalog.panel(value.panel)) this.error(field('panel'), `存在しない資料: ${value.panel}`, at)
+        if ('at' in value) this.oneOf(value.at, POSITIONS, field('at'), at)
         break
     }
   }

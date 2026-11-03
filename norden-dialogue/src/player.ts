@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { BackgroundFx, PortraitFx, Position } from './script'
 
 export interface Rect { x: number; y: number; width: number; height: number }
@@ -15,7 +16,13 @@ export interface CharacterInfo {
   face: Rect
 }
 
-/** ゲームが渡すもの: 騎士・都市の名前と画像、背景の URL、BGM と効果音 */
+/** 資料を描くときに渡すもの: 出したときの台本の変数と、シーンの状態（1 ブロックだけの再生では無い） */
+export interface PanelContext {
+  vars: Readonly<Record<string, string | number>>
+  state?: unknown
+}
+
+/** ゲームが渡すもの: 騎士・都市の名前と画像、背景の URL、BGM と効果音、資料 */
 export interface DialogueProviders {
   character(id: string): CharacterInfo | undefined
   city(id: string): { name: string } | undefined
@@ -24,6 +31,8 @@ export interface DialogueProviders {
   /** 曲を変える。null でフェードアウト */
   playBgm(songId: string | null): void
   playSe(name: string): void
+  /** 資料（`panel` の命令）を描く。無い名前なら何も出さない */
+  panel?(name: string, context: PanelContext): ReactNode
 }
 
 /** runScene がプレイヤーに渡す 1 歩: 変数を展開し、話し手の口調で文言を選んだ命令 */
@@ -40,6 +49,8 @@ export type Step =
   | { kind: 'wait'; ms: number }
   | { kind: 'bgm'; id: string | null }
   | { kind: 'se'; name: string }
+  /** 資料を出す（name が null なら消す）。vars・state は出したときのもの */
+  | { kind: 'panel'; name: string | null; at: Position } & PanelContext
 
 export interface ChoiceOption {
   key: string
@@ -75,6 +86,13 @@ export interface PortraitView {
   leaving?: PortraitFx
 }
 
+/** カットの上の資料 */
+export interface PanelView extends PanelContext {
+  name: string
+  at: Position
+  key: number
+}
+
 /** 背景の層。上の層がフェードで重なり、終わると下の層は消える。name が null なら黒 */
 export interface BackgroundView {
   name: string | null
@@ -104,6 +122,7 @@ export interface PlayerView {
   /** 下から順。空なら後ろのゲームの画面が透けて見える */
   backgrounds: readonly BackgroundView[]
   portraits: readonly PortraitView[]
+  panel: PanelView | null
   message: MessageView | null
   choice: readonly ChoiceOption[] | null
   fade: { color: 'black' | 'white'; opacity: 0 | 1; ms: number }
@@ -124,7 +143,7 @@ export const TIMING = {
 } as const
 
 const IDLE: PlayerView = {
-  active: false, backgrounds: [], portraits: [], message: null, choice: null, fade: { color: 'black', opacity: 0, ms: 0 }, shake: null, flash: null,
+  active: false, backgrounds: [], portraits: [], panel: null, message: null, choice: null, fade: { color: 'black', opacity: 0, ms: 0 }, shake: null, flash: null,
 }
 
 /** 会話の画面の状態。runScene が命令を渡し、DialogueView が描いてクリックを返す */
@@ -264,6 +283,9 @@ export class DialoguePlayer implements ScenePlayer {
         return
       case 'se':
         if (!this.skipping) this.providers.playSe(step.name)
+        return
+      case 'panel':
+        this.set({ panel: step.name === null ? null : { name: step.name, at: step.at, vars: step.vars, state: step.state, key: ++this.serial } })
         return
     }
   }

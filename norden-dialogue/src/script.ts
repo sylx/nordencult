@@ -48,15 +48,17 @@ export interface WaitCommand { wait: number }
 /** 曲 id。null でフェードアウト */
 export interface BgmCommand { bgm: string | null }
 export interface SeCommand { se: string }
+/** ゲームの資料（傭兵のプロフィールなど。DialogueProviders.panel が描く）をカットの上に出す。null で消す */
+export interface PanelCommand { panel: string | null; at?: Position }
 
 export type Command =
   | SayCommand | NameCommand | NarrateCommand | ShowCommand | HideCommand | MoveCommand | BackgroundCommand
-  | FadeCommand | ShakeCommand | FlashCommand | WaitCommand | BgmCommand | SeCommand
+  | FadeCommand | ShakeCommand | FlashCommand | WaitCommand | BgmCommand | SeCommand | PanelCommand
 
 /** 命令の種類（先頭のキー） */
-export type CommandKind = 'say' | 'name' | 'narrate' | 'show' | 'hide' | 'move' | 'bg' | 'fade' | 'shake' | 'flash' | 'wait' | 'bgm' | 'se'
+export type CommandKind = 'say' | 'name' | 'narrate' | 'show' | 'hide' | 'move' | 'bg' | 'fade' | 'shake' | 'flash' | 'wait' | 'bgm' | 'se' | 'panel'
 
-export const COMMAND_KINDS: readonly CommandKind[] = ['say', 'name', 'narrate', 'show', 'hide', 'move', 'bg', 'fade', 'shake', 'flash', 'wait', 'bgm', 'se']
+export const COMMAND_KINDS: readonly CommandKind[] = ['say', 'name', 'narrate', 'show', 'hide', 'move', 'bg', 'fade', 'shake', 'flash', 'wait', 'bgm', 'se', 'panel']
 
 export interface Choice {
   /** 選択肢のキー → 文言。並びがボタンの並び */

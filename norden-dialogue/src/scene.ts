@@ -85,13 +85,16 @@ class Performer {
   readonly player: ScenePlayer
   readonly vars: Record<string, string | number> = {}
   private readonly tones: Readonly<Record<string, string>>
+  /** シーンの今の状態（資料に渡す） */
+  private readonly stateOf: () => unknown
 
-  constructor(script: ScriptShape, { player, tones = {} }: PlayOptions) {
+  constructor(script: ScriptShape, { player, tones = {} }: PlayOptions, stateOf: () => unknown = () => undefined) {
     const errors = scriptErrors(validateScript(script))
     if (errors.length > 0) throw new ScriptError(`台本に誤りがあります: ${errors.map((e) => `${e.path} ${e.message}`).join(' / ')}`)
     this.script = script as Script
     this.player = player
     this.tones = tones
+    this.stateOf = stateOf
   }
 
   bind(vars: Readonly<Record<string, unknown>>) {
@@ -142,6 +145,7 @@ class Performer {
     }
     if ('name' in command) return { kind: 'message', name: this.text(command.name), pages: pagesOf(command.text).map((page) => this.text(page)) }
     if ('narrate' in command) return { kind: 'message', narrate: true, pages: pagesOf(command.narrate).map((page) => this.text(page)) }
+    if ('panel' in command) return { kind: 'panel', name: command.panel, at: command.at ?? 'left', vars: { ...this.vars }, state: this.stateOf() }
     if ('show' in command) return { kind: 'show', id: this.character(command.show), at: command.at, fx: command.fx ?? 'fade' }
     if ('hide' in command) return { kind: 'hide', id: command.hide === 'all' ? 'all' : this.character(command.hide), fx: command.fx ?? 'fade' }
     if ('move' in command) return { kind: 'move', id: this.character(command.move), at: command.at }
@@ -194,9 +198,9 @@ export async function runScene<State, I extends InputSpec>(scene: Scene<ScriptSh
     const problem = valueProblem(player, name, type, (input as Record<string, unknown>)[name])
     if (problem) throw new Error(problem)
   }
-  const performer = new Performer(scene.script, options)
-  const replay = [...(options.replay ?? [])]
   let state = options.state
+  const performer = new Performer(scene.script, options, () => state)
+  const replay = [...(options.replay ?? [])]
   let running = true
   const ctx: SceneContext<ScriptShape, State> = {
     get state() { return state },

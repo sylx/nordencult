@@ -118,6 +118,37 @@ describe('runScene', () => {
   })
 })
 
+describe('panels', () => {
+  const shown = { title: 'x', params: { merc: 'character' }, blocks: { offer: [{ panel: 'mercenary' }, { say: '$merc', text: 'よし' }, { panel: null, at: 'right' }] } }
+
+  it('hands the panel the variables and the state of the scene when it is shown, and hides it', async () => {
+    const player = new FakePlayer()
+    const scene = define(shown, { merc: 'character' }, async (ctx, { merc }) => {
+      ctx.update((s) => ({ ...s, gold: 7 }))
+      ctx.bind({ merc })
+      await ctx.play('offer')
+    })
+    await runScene(scene, { merc: '001' }, { state: start, player })
+    expect(player.steps[0]).toEqual({ kind: 'panel', name: 'mercenary', at: 'left', vars: { merc: '001' }, state: { gold: 7, hired: [] } })
+    expect(player.steps.at(-1)).toMatchObject({ kind: 'panel', name: null })
+  })
+
+  it('shows and hides it on the player', async () => {
+    const player = new DialoguePlayer(providers())
+    player.begin()
+    await player.perform({ kind: 'panel', name: 'mercenary', at: 'left', vars: { merc: '001' } })
+    expect(player.getSnapshot().panel).toMatchObject({ name: 'mercenary', at: 'left', vars: { merc: '001' } })
+    await player.perform({ kind: 'panel', name: null, at: 'left', vars: {} })
+    expect(player.getSnapshot().panel).toBeNull()
+  })
+
+  it('has no state in a block played alone', async () => {
+    const player = new FakePlayer()
+    await playBlock(shown, 'offer', { merc: '001' }, { player })
+    expect(player.steps[0]).toEqual({ kind: 'panel', name: 'mercenary', at: 'left', vars: { merc: '001' }, state: undefined })
+  })
+})
+
 describe('tones', () => {
   it('says the lines of the speaker’s tone, else the text', async () => {
     const said = async (merc: string, tones?: Record<string, string>) => {

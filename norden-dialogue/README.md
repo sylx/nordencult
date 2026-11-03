@@ -70,6 +70,7 @@ npm test           # 台本の検査・書式・シーンの実行
 | `wait` | `{ "wait": 500 }` | 待つ（ミリ秒） |
 | `bgm` | `{ "bgm": "曲 id" \| null }` | 曲を変える（norden-synth の曲 id）。`null` でフェードアウト |
 | `se` | `{ "se": "coins" }` | 効果音（親の `src/assets/se/` の名前） |
+| `panel` | `{ "panel": "mercenary" \| null, "at"?: "left" \| "center" \| "right" }` | ゲームの資料（傭兵のプロフィールなど）をカットの上に出す（既定は left）。`null` で消す。描くのはゲームの `DialogueProviders.panel` で、出したときの変数とシーンの状態を受け取る |
 
 - 話し手は騎士 ID か変数で書き、JSON に名前は書かない（エディタは名前と顔で出す）。話している騎士の立ち絵は明るく、ほかは暗くなる
 - 文言を配列にすると 1 要素が 1 ページ。`[]` なら何も言わない

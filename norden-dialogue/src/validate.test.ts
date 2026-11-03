@@ -57,10 +57,11 @@ describe('validateScript', () => {
           { bg: 'castle' }, { bgm: 'nope' }, { se: 'boom' }, { show: '999', at: 'left' },
           { say: '$merc', text: '{price}', tones: { unknown: 'x' } },
           { say: '$merc', text: '{price}', characters: { '001': '{price}', '999': 'x', $merc: 'y' } },
+          { panel: 'nothing', at: 'top' }, { panel: 'mercenary' }, { panel: null },
         ],
       },
     }), {
-      character: (id) => id === '001', background: () => false, bgm: () => false, se: () => false, tone: (id) => id === 'wild',
+      character: (id) => id === '001', background: () => false, bgm: () => false, se: () => false, tone: (id) => id === 'wild', panel: (name) => name === 'mercenary',
     })
     expect(messages(problems)).toEqual([
       'warning blocks.greet.0.bg: 背景の画像がありません: castle（仮のグラデーションで出ます）',
@@ -70,6 +71,8 @@ describe('validateScript', () => {
       'error blocks.greet.4.tones.unknown: 知らない口調: unknown',
       'error blocks.greet.5.characters.999: 存在しない騎士 ID: 999',
       'error blocks.greet.5.characters.$merc: characters のキーは騎士 ID にしてください（変数は書けません）: $merc',
+      'error blocks.greet.6.panel: 存在しない資料: nothing',
+      'error blocks.greet.6.at: "left"・"center"・"right" のどれかにしてください',
     ])
   })
 
