@@ -239,6 +239,25 @@
       "sisterly_veteran/mentor_spirit": [
         "ひよっこども、よく見てな！ 戦い方を教えてやるよ！"
       ],
+      "polite_female/*": [
+        "…行きます",
+        "参ります。お覚悟を。"
+      ],
+      "polite_female/cautious": [
+        "敵の動きは見えています。今です、参ります。"
+      ],
+      "polite_female/valiant": [
+        "退くわけにはいきません。私が前に出ます！"
+      ],
+      "polite_female/loyal": [
+        "主君のご命令です。参ります。"
+      ],
+      "polite_female/devout": [
+        "神よ、どうかお導きください……参ります！"
+      ],
+      "polite_female/generous": [
+        "皆さんは無理をしないでください。ここは私が。"
+      ],
       "eccentric_scholar/*": [
         "さて、実験の時間だよ。",
         "この理論、身をもって確かめてもらおうかね。"
@@ -293,6 +312,10 @@
       "sisterly_veteran/*": [
         "おっと、ここはアタシの持ち場さ！",
         "来たかい。まとめて面倒見てやるよ！"
+      ],
+      "polite_female/*": [
+        "ここから先へは通しません。",
+        "来ました。迎え撃ちます。"
       ],
       "eccentric_scholar/*": [
         "おや、予想通りに来てくれたね。",
@@ -493,6 +516,25 @@
       "sisterly_veteran/mentor_spirit": [
         "若いのはアタシの後ろにいな！ まだやれるさ！"
       ],
+      "polite_female/*": [
+        "皆さん、まだ終わっていません。持ちこたえましょう！",
+        "大丈夫です。私たちは、まだ戦えます！"
+      ],
+      "polite_female/cautious": [
+        "落ち着いてください。隊列を整えれば、まだ勝てます。"
+      ],
+      "polite_female/valiant": [
+        "私が先頭に立ちます。皆さん、続いてください！"
+      ],
+      "polite_female/loyal": [
+        "主君の旗はまだ立っています。最後まで共に！"
+      ],
+      "polite_female/devout": [
+        "神は私たちを見捨てません。顔を上げてください！"
+      ],
+      "polite_female/generous": [
+        "誰一人、置いていきません。だから、もう少しだけ頑張ってください。"
+      ],
       "eccentric_scholar/*": [
         "諸君、確率はまだこちらに傾いているよ！",
         "諦めるのは観測が終わってからにしたまえ！"
@@ -692,6 +734,25 @@
       "sisterly_veteran/mentor_spirit": [
         "どうだい、わかったかい？ 次はあんたの番さ。"
       ],
+      "polite_female/*": [
+        "敵部隊、退けました。次に向かいます。",
+        "……終わりました。皆さん、怪我はありませんか？"
+      ],
+      "polite_female/cautious": [
+        "片付きました。ですが、まだ油断はできません。"
+      ],
+      "polite_female/valiant": [
+        "やりました！ この勢いのまま進みましょう！"
+      ],
+      "polite_female/loyal": [
+        "主君に良いご報告ができそうです。"
+      ],
+      "polite_female/devout": [
+        "どうか、安らかに……。次へ参ります。"
+      ],
+      "polite_female/generous": [
+        "皆さん、よく頑張ってくださいました。"
+      ],
       "eccentric_scholar/*": [
         "ふむ、仮説は正しかったようだね。",
         "実に興味深い結果だよ。"
@@ -889,6 +950,25 @@
       ],
       "sisterly_veteran/mentor_spirit": [
         "若いのから先に逃がしな！ 殿はアタシさ！"
+      ],
+      "polite_female/*": [
+        "ここは退きます。体勢を立て直しましょう。",
+        "申し訳ありません、一度下がります！"
+      ],
+      "polite_female/cautious": [
+        "深追いは禁物です。今のうちに下がります。"
+      ],
+      "polite_female/valiant": [
+        "皆さんを先に下がらせてください。殿は私が務めます。"
+      ],
+      "polite_female/loyal": [
+        "主君のもとへ戻ります。ここで倒れるわけにはいきません。"
+      ],
+      "polite_female/devout": [
+        "今は退きます……神よ、皆をお守りください。"
+      ],
+      "polite_female/generous": [
+        "負傷した方を先に！ 私は最後に下がります。"
       ],
       "eccentric_scholar/*": [
         "ここは一度、検証をやり直そうかね。",
@@ -1089,6 +1169,25 @@
       "sisterly_veteran/mentor_spirit": [
         "あんたたち……強く……なるんだよ……"
       ],
+      "polite_female/*": [
+        "申し訳……ありません……ここまで、です……",
+        "皆さん……どうか、ご無事で……"
+      ],
+      "polite_female/cautious": [
+        "見誤り、ました……私の、落ち度です……"
+      ],
+      "polite_female/valiant": [
+        "最後まで……退きませんでした……"
+      ],
+      "polite_female/loyal": [
+        "主君……お役に立てず……申し訳、ありません……"
+      ],
+      "polite_female/devout": [
+        "神よ……どうか、皆を……"
+      ],
+      "polite_female/generous": [
+        "私のことは……いいですから……皆さん、逃げて……"
+      ],
       "eccentric_scholar/*": [
         "計算外だね……実に、興味深い……",
         "研究……まだ、途中だったのに……"
@@ -1143,6 +1242,10 @@
       "sisterly_veteran/*": [
         "あんた、合わせな！ まとめて片付けるよ！",
         "今だよ、一気に畳みかけな！"
+      ],
+      "polite_female/*": [
+        "今です。合わせてください！",
+        "囲みました。一緒にお願いします！"
       ],
       "eccentric_scholar/*": [
         "君、ここで合わせてくれたまえ。面白いものが見られるよ。",
@@ -1199,6 +1302,10 @@
       "sisterly_veteran/*": [
         "あいよ、任せときな！",
         "しょうがないねえ、付き合ってやるさ！"
+      ],
+      "polite_female/*": [
+        "はい、続きます！",
+        "承知しました。お任せください。"
       ],
       "eccentric_scholar/*": [
         "いいとも。付き合おうかね。",
