@@ -325,6 +325,27 @@
         },
         {
           "type": "object",
+          "description": "背景だけを暗くする（立ち絵・資料はそのまま）。背景を替えても残る",
+          "required": [
+            "dim"
+          ],
+          "properties": {
+            "dim": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "暗さ。0（暗くしない）〜 1（真っ黒）"
+            },
+            "ms": {
+              "type": "number",
+              "minimum": 0,
+              "description": "ミリ秒。既定は 400"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
           "description": "画面を揺らす",
           "required": [
             "shake"

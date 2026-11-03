@@ -44,6 +44,7 @@ export type Step =
   | { kind: 'move'; id: string; at: Position }
   | { kind: 'bg'; name: string | null; fx: BackgroundFx }
   | { kind: 'fade'; to: 'out' | 'in'; color: 'black' | 'white'; ms: number }
+  | { kind: 'dim'; amount: number; ms: number }
   | { kind: 'shake'; size: 'small' | 'large' }
   | { kind: 'flash'; color: 'white' | 'red' }
   | { kind: 'wait'; ms: number }
@@ -126,6 +127,8 @@ export interface PlayerView {
   message: MessageView | null
   choice: readonly ChoiceOption[] | null
   fade: { color: 'black' | 'white'; opacity: 0 | 1; ms: number }
+  /** 背景を暗くする度合い（0〜1） */
+  dim: { amount: number; ms: number }
   shake: { size: 'small' | 'large'; key: number } | null
   flash: { color: 'white' | 'red'; key: number } | null
 }
@@ -136,6 +139,7 @@ export const TIMING = {
   move: 400,
   background: 600,
   fade: 600,
+  dim: 400,
   shake: { small: 300, large: 600 },
   flash: 250,
   /** 1 文字を出す間隔 */
@@ -143,7 +147,7 @@ export const TIMING = {
 } as const
 
 const IDLE: PlayerView = {
-  active: false, backgrounds: [], portraits: [], panel: null, message: null, choice: null, fade: { color: 'black', opacity: 0, ms: 0 }, shake: null, flash: null,
+  active: false, backgrounds: [], portraits: [], panel: null, message: null, choice: null, fade: { color: 'black', opacity: 0, ms: 0 }, dim: { amount: 0, ms: 0 }, shake: null, flash: null,
 }
 
 /** 会話の画面の状態。runScene が命令を渡し、DialogueView が描いてクリックを返す */
@@ -267,6 +271,11 @@ export class DialoguePlayer implements ScenePlayer {
       case 'fade': {
         const ms = this.skipping ? 0 : step.ms
         this.set({ fade: { color: step.color, opacity: step.to === 'out' ? 1 : 0, ms } })
+        return this.delay(ms)
+      }
+      case 'dim': {
+        const ms = this.skipping ? 0 : step.ms
+        this.set({ dim: { amount: step.amount, ms } })
         return this.delay(ms)
       }
       case 'shake':

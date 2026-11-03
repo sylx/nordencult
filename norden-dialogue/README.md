@@ -65,6 +65,7 @@ npm test           # 台本の検査・書式・シーンの実行
 | `move` | `{ "move": "$merc", "at": "center" }` | 立ち絵を動かす |
 | `bg` | `{ "bg": "tavern" \| null, "fx"?: "fade" \| "cut" }` | 背景（親の `src/assets/bg/<名前>.webp`。無ければ名前から決まる色の仮のグラデーション）。`null` で黒 |
 | `fade` | `{ "fade": "out" \| "in", "color"?: "black" \| "white", "ms"?: 600 }` | 画面全体の暗転・明転 |
+| `dim` | `{ "dim": 0.4, "ms"?: 400 }` | 背景だけを暗くする（立ち絵・資料はそのまま）。0（暗くしない）〜 1（真っ黒）。背景を替えても残り、`0` で戻す |
 | `shake` | `{ "shake": "small" \| "large" }` | 画面を揺らす |
 | `flash` | `{ "flash": "white" \| "red" }` | 一瞬光らせる |
 | `wait` | `{ "wait": 500 }` | 待つ（ミリ秒） |

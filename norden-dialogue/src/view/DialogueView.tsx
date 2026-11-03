@@ -109,7 +109,7 @@ const SHAKE: Record<'small' | 'large', number> = { small: 6, large: 16 }
 
 /**
  * 会話の画面。イベント通知（norden-ui の EventScreen）と同じく、親の要素を暗い幕で覆い、中央にカット（背景・立ち絵
- * （左・中央・右）・資料・暗転・揺れ・光。真鍮の枠）と、その下にメッセージウィンドウ（名札・顔・1 文字ずつ・選択肢）を置く。
+ * （左・中央・右）・背景の暗さ・資料・暗転・揺れ・光。真鍮の枠）と、その下にメッセージウィンドウ（名札・顔・1 文字ずつ・選択肢）を置く。
  * クリック・Enter・Space で文字送り、数字キーで選択肢を選ぶ。幕はクリックをすべて受ける
  */
 export function DialogueView({ player, showBackgroundNames = false, modal = true }: DialogueViewProps) {
@@ -172,6 +172,7 @@ export function DialogueView({ player, showBackgroundNames = false, modal = true
           <div className="norden-dialogue-stage">
             <div className="norden-dialogue-scene" ref={stage}>
               {view.backgrounds.map((layer) => <Background key={layer.key} layer={layer} showName={showBackgroundNames} />)}
+              <div className="norden-dialogue-dim" style={{ opacity: view.dim.amount, transitionDuration: `${view.dim.ms}ms` }} />
               {view.portraits.map((portrait) => (
                 <Portrait key={portrait.id} portrait={portrait} info={player.providers.character(portrait.id)} dimmed={speakerShown && portrait.id !== speaking} />
               ))}

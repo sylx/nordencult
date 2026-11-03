@@ -118,6 +118,21 @@ describe('runScene', () => {
   })
 })
 
+describe('dim', () => {
+  it('dims the backgrounds by the amount, over the time given (400ms when not), at once while skipping', async () => {
+    const dims = { title: 'x', blocks: { a: [{ dim: 0.5 }, { dim: 0, ms: 0 }] } }
+    const scripted = new FakePlayer()
+    await playBlock(dims, 'a', {}, { player: scripted })
+    expect(scripted.steps).toEqual([{ kind: 'dim', amount: 0.5, ms: 400 }, { kind: 'dim', amount: 0, ms: 0 }])
+
+    const player = new DialoguePlayer(providers())
+    player.begin()
+    player.setSkipping(true)
+    await player.perform({ kind: 'dim', amount: 0.5, ms: 400 })
+    expect(player.getSnapshot().dim).toEqual({ amount: 0.5, ms: 0 })
+  })
+})
+
 describe('panels', () => {
   const shown = { title: 'x', params: { merc: 'character' }, blocks: { offer: [{ panel: 'mercenary' }, { say: '$merc', text: 'よし' }, { panel: null, at: 'right' }] } }
 

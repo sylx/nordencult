@@ -36,6 +36,7 @@ const COMMAND_KEYS: Readonly<Record<CommandKind, { required: readonly string[]; 
   move: { required: ['move', 'at'], optional: [] },
   bg: { required: ['bg'], optional: ['fx'] },
   fade: { required: ['fade'], optional: ['color', 'ms'] },
+  dim: { required: ['dim'], optional: ['ms'] },
   shake: { required: ['shake'], optional: [] },
   flash: { required: ['flash'], optional: [] },
   wait: { required: ['wait'], optional: [] },
@@ -168,6 +169,10 @@ class Checker {
       case 'fade':
         this.oneOf(value.fade, ['out', 'in'], field('fade'), at)
         if ('color' in value) this.oneOf(value.color, ['black', 'white'], field('color'), at)
+        if ('ms' in value) this.duration(value.ms, field('ms'), at)
+        break
+      case 'dim':
+        if (typeof value.dim !== 'number' || !(value.dim >= 0 && value.dim <= 1)) this.error(field('dim'), '0（暗くしない）〜 1（真っ黒）の数にしてください', at)
         if ('ms' in value) this.duration(value.ms, field('ms'), at)
         break
       case 'shake':

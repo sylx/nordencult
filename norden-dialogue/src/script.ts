@@ -42,6 +42,8 @@ export interface MoveCommand { move: string; at: Position }
 export interface BackgroundCommand { bg: string | null; fx?: BackgroundFx }
 /** 画面全体の暗転（out）・明転（in） */
 export interface FadeCommand { fade: 'out' | 'in'; color?: 'black' | 'white'; ms?: number }
+/** 背景だけを暗くする（立ち絵・資料はそのまま）。0（暗くしない）〜 1（真っ黒）。背景を替えても残る */
+export interface DimCommand { dim: number; ms?: number }
 export interface ShakeCommand { shake: 'small' | 'large' }
 export interface FlashCommand { flash: 'white' | 'red' }
 export interface WaitCommand { wait: number }
@@ -53,12 +55,12 @@ export interface PanelCommand { panel: string | null; at?: Position }
 
 export type Command =
   | SayCommand | NameCommand | NarrateCommand | ShowCommand | HideCommand | MoveCommand | BackgroundCommand
-  | FadeCommand | ShakeCommand | FlashCommand | WaitCommand | BgmCommand | SeCommand | PanelCommand
+  | FadeCommand | DimCommand | ShakeCommand | FlashCommand | WaitCommand | BgmCommand | SeCommand | PanelCommand
 
 /** 命令の種類（先頭のキー） */
-export type CommandKind = 'say' | 'name' | 'narrate' | 'show' | 'hide' | 'move' | 'bg' | 'fade' | 'shake' | 'flash' | 'wait' | 'bgm' | 'se' | 'panel'
+export type CommandKind = 'say' | 'name' | 'narrate' | 'show' | 'hide' | 'move' | 'bg' | 'fade' | 'dim' | 'shake' | 'flash' | 'wait' | 'bgm' | 'se' | 'panel'
 
-export const COMMAND_KINDS: readonly CommandKind[] = ['say', 'name', 'narrate', 'show', 'hide', 'move', 'bg', 'fade', 'shake', 'flash', 'wait', 'bgm', 'se', 'panel']
+export const COMMAND_KINDS: readonly CommandKind[] = ['say', 'name', 'narrate', 'show', 'hide', 'move', 'bg', 'fade', 'dim', 'shake', 'flash', 'wait', 'bgm', 'se', 'panel']
 
 export interface Choice {
   /** 選択肢のキー → 文言。並びがボタンの並び */

@@ -58,6 +58,7 @@ describe('validateScript', () => {
           { say: '$merc', text: '{price}', tones: { unknown: 'x' } },
           { say: '$merc', text: '{price}', characters: { '001': '{price}', '999': 'x', $merc: 'y' } },
           { panel: 'nothing', at: 'top' }, { panel: 'mercenary' }, { panel: null },
+          { dim: 1.5 }, { dim: 0.4, ms: -1 }, { dim: 0 },
         ],
       },
     }), {
@@ -73,6 +74,8 @@ describe('validateScript', () => {
       'error blocks.greet.5.characters.$merc: characters のキーは騎士 ID にしてください（変数は書けません）: $merc',
       'error blocks.greet.6.panel: 存在しない資料: nothing',
       'error blocks.greet.6.at: "left"・"center"・"right" のどれかにしてください',
+      'error blocks.greet.9.dim: 0（暗くしない）〜 1（真っ黒）の数にしてください',
+      'error blocks.greet.10.ms: ミリ秒（0 以上の数）にしてください',
     ])
   })
 

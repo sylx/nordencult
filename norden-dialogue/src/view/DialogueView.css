@@ -106,6 +106,16 @@
 .norden-dialogue-portrait-body.is-leave-slide { animation-name: norden-dialogue-slide-out; }
 .norden-dialogue-portrait-body.is-leave-none { visibility: hidden; }
 
+/* Over the backgrounds and under the portraits: dims the backgrounds only */
+.norden-dialogue-dim {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  transition-property: opacity;
+  transition-timing-function: ease-in-out;
+}
+
 /* The fade and the flash cover the cut */
 .norden-dialogue-fade {
   position: absolute;

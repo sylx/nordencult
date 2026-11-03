@@ -1,4 +1,4 @@
-import { DialogueAborted, type ChoiceOption, type ScenePlayer, type Step } from './player'
+import { DialogueAborted, TIMING, type ChoiceOption, type ScenePlayer, type Step } from './player'
 import {
   pagesOf, type BlockName, type ChoiceName, type Command, type OptionKey, type ParamName, type ParamType, type Script, type ScriptShape, type Vars,
 } from './script'
@@ -151,6 +151,7 @@ class Performer {
     if ('move' in command) return { kind: 'move', id: this.character(command.move), at: command.at }
     if ('bg' in command) return { kind: 'bg', name: command.bg, fx: command.fx ?? 'fade' }
     if ('fade' in command) return { kind: 'fade', to: command.fade, color: command.color ?? 'black', ms: command.ms ?? 600 }
+    if ('dim' in command) return { kind: 'dim', amount: command.dim, ms: command.ms ?? TIMING.dim }
     if ('shake' in command) return { kind: 'shake', size: command.shake }
     if ('flash' in command) return { kind: 'flash', color: command.flash }
     if ('wait' in command) return { kind: 'wait', ms: command.wait }
