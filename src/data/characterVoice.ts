@@ -15,6 +15,7 @@ export const VOICE_TONE_IDS = [
   'tomboy_warrior',   // 勝ち気・ボーイッシュ（アタシ/あんた/〜だよ、〜だね）
   'cool_female',      // 寡黙・クール（私/お前/〜……、〜だ）
   'sisterly_veteran', // 姉御肌・世話焼き（アタシ/あんた/〜かい、〜さ）
+  'polite_female',    // 真面目・礼儀正しい（私/あなた/〜です、〜ます）
 
   // 中性・特殊
   'eccentric_scholar', // 変人魔術師・策士（僕or小生/君/〜かね、〜だよ）
@@ -34,13 +35,14 @@ export const VOICE_TONE_LABELS: Readonly<Record<VoiceToneId, string>> = {
   tomboy_warrior: '勝ち気・ボーイッシュ（アタシ/あんた/〜だよ、〜だね）',
   cool_female: '寡黙・クール（私/お前/〜……、〜だ）',
   sisterly_veteran: '姉御肌・世話焼き（アタシ/あんた/〜かい、〜さ）',
+  polite_female: '真面目・礼儀正しい（私/あなた/〜です、〜ます）',
   eccentric_scholar: '変人魔術師・策士（僕or小生/君/〜かね、〜だよ）',
 }
 
 /** エディタの選択肢の見出し */
 export const VOICE_TONE_GROUPS: readonly { label: string; ids: readonly VoiceToneId[] }[] = [
   { label: '男性系', ids: ['noble_male', 'earnest_youth', 'wild_berserker', 'veteran_soldier', 'cool_tactician', 'fanatic_zealot'] },
-  { label: '女性系', ids: ['valkyrie_female', 'noble_lady', 'tomboy_warrior', 'cool_female', 'sisterly_veteran'] },
+  { label: '女性系', ids: ['valkyrie_female', 'noble_lady', 'tomboy_warrior', 'cool_female', 'sisterly_veteran', 'polite_female'] },
   { label: '中性・特殊', ids: ['eccentric_scholar'] },
 ]
 
