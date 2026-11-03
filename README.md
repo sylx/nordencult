@@ -304,3 +304,4 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 | [m002.md](docs/milestones/m002.md) | 内政（都市の状態・担当・施設・毎ターンの内政処理・成長の演出） |
 | [m003.md](docs/milestones/m003.md) | 研究（技術ツリー・研究ポイント・研究担当官・技術の効果） |
 | [m005.md](docs/milestones/m005.md) | 傭兵（契約・独立採算）と放浪の騎士 |
+| [m006.md](docs/milestones/m006.md) | 会話システム（norden-dialogue。台本と流れ・プレイヤー・エディタ・傭兵の雇用シーン） |
