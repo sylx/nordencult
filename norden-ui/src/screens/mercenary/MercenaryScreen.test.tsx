@@ -5,14 +5,14 @@ import MercenaryScreen, { type MercenaryScreenProps } from './MercenaryScreen'
 import type { MercenaryContractView, MercenaryOfferView } from '../types'
 
 const offer: MercenaryOfferView = {
-  knight: { id: 'm1', name: 'ブロック' }, company: '樽盾団', unitType: '騎兵', soldiers: 500, maxSoldiers: 500, fee: 1000, monthly: 167, cityName: 'フルーエン',
+  knight: { id: 'm1', name: 'ブロック' }, company: '樽盾団', unitType: '騎兵', soldiers: 500, maxSoldiers: 500, rank: 'D', cityName: 'フルーエン',
 }
 const proud: MercenaryOfferView = {
-  knight: { id: 'm2', name: 'カスパル' }, company: 'ランツクネヒト', unitType: 'ランツクネヒト', soldiers: 1000, maxSoldiers: 1000, fee: 10000, monthly: 1667,
-  cityName: 'アンバリア', unavailableReason: 'ランツクネヒトは我々との契約に応じません',
+  knight: { id: 'm2', name: 'カスパル' }, company: 'ランツクネヒト', unitType: 'ランツクネヒト', soldiers: 1000, maxSoldiers: 1000, rank: 'S',
+  cityName: 'アンバリア',
 }
 const contract: MercenaryContractView = {
-  knight: { id: 'm3', name: 'グレイ' }, company: '鉄弦団', unitType: '弓兵', cityName: 'シルヴァ', soldiers: 300, maxSoldiers: 500, monthly: 167, months: 2,
+  knight: { id: 'm3', name: 'グレイ' }, company: '鉄弦団', unitType: '弓兵', cityName: 'シルヴァ', soldiers: 300, maxSoldiers: 500, rank: 'C', monthly: 167, months: 2,
 }
 
 /** The cards of the list, in order */
@@ -25,22 +25,35 @@ function show(props: Partial<MercenaryScreenProps> = {}) {
 }
 
 describe('MercenaryScreen', () => {
-  it('shows the city, the gold and the details of the first mercenary', () => {
+  it('shows the city, the gold and the details of the first mercenary, without what they cost', () => {
     show()
     expect(screen.getByRole('banner')).toHaveTextContent('フルーエンで雇用')
     expect(screen.getByText('3,000')).toBeInTheDocument()
     const details = screen.getByRole('region', { name: '傭兵の詳細' })
     expect(within(details).getByText('騎兵')).toBeInTheDocument()
     expect(within(details).getByText('500 / 500')).toBeInTheDocument()
-    expect(within(details).getByText('167')).toBeInTheDocument()
-    expect(within(details).getByText('所在地')).toBeInTheDocument()
+    expect(within(details).getByLabelText('ランクD')).toBeInTheDocument()
+    expect(details.querySelector('.norden-mercenary-profile')).toHaveTextContent('所在地フルーエン')
+    expect(details).not.toHaveTextContent('契約金')
+    expect(details).not.toHaveTextContent('月額')
   })
 
-  it('shows what each costs in the list', () => {
-    show()
+  it('shows the rank of each in the list, without what they cost or their abilities', () => {
+    const knight = { ...offer.knight, abilities: { strength: 90 } }
+    show({ offers: [{ ...offer, knight }, proud] })
     const list = within(screen.getByRole('region', { name: '契約できる傭兵' }))
-    expect(within(list.getByRole('button', { name: '樽盾団（ブロック）' })).getByText('1,000')).toBeInTheDocument()
-    expect(within(list.getByRole('button', { name: 'ランツクネヒト（カスパル）' })).getByText('1,667')).toBeInTheDocument()
+    expect(list.getByRole('button', { name: '樽盾団（ブロック）' })).toHaveTextContent('ランクD')
+    expect(list.getByRole('button', { name: 'ランツクネヒト（カスパル）' })).toHaveTextContent('ランクS')
+    expect(list.getByRole('button', { name: '樽盾団（ブロック）' })).not.toHaveTextContent('90')
+    expect(screen.getByRole('region', { name: '契約できる傭兵' }).querySelector('.norden-knight-stats')).toBeNull()
+  })
+
+  it('shows what those hired cost each month', async () => {
+    show()
+    await userEvent.click(screen.getByRole('tab', { name: /契約中/ }))
+    expect(within(screen.getByRole('region', { name: '傭兵の詳細' })).getByText('月額')).toBeInTheDocument()
+    const list = within(screen.getByRole('region', { name: '契約中の傭兵' }))
+    expect(within(list.getByRole('button', { name: '鉄弦団（グレイ）' })).getByText('167')).toBeInTheDocument()
   })
 
   it('shows the figure, the unit and the 略歴 without the ids in it', () => {
@@ -57,7 +70,7 @@ describe('MercenaryScreen', () => {
     const search = screen.getByRole('searchbox', { name: '傭兵団・騎士名で検索' })
     await userEvent.type(search, 'カスパル')
     expect(order()).toEqual(['ランツクネヒト（カスパル）'])
-    expect(screen.getByRole('button', { name: 'ランツクネヒトと契約' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'ランツクネヒトと交渉' })).toBeInTheDocument()
     await userEvent.clear(search)
     await userEvent.type(search, '樽盾')
     expect(order()).toEqual(['樽盾団（ブロック）'])
@@ -87,33 +100,31 @@ describe('MercenaryScreen', () => {
     expect(order()).toEqual(['ランツクネヒト（カスパル）', '樽盾団（ブロック）'])
   })
 
-  it('starts from the lowest price, and sorts by the unit type', async () => {
+  it('starts from the lowest rank, and sorts by the unit type', async () => {
     show({ offers: [proud, offer] })
-    expect(screen.getByRole('combobox', { name: '並び順' })).toHaveValue('price')
+    expect(screen.getByRole('combobox', { name: '並び順' })).toHaveValue('rank')
     expect(screen.getByRole('button', { name: '▲ 昇順' })).toBeInTheDocument()
     expect(order()).toEqual(['樽盾団（ブロック）', 'ランツクネヒト（カスパル）'])
     await userEvent.selectOptions(screen.getByRole('combobox', { name: '並び順' }), '兵科')
     expect(order()).toEqual(['ランツクネヒト（カスパル）', '樽盾団（ブロック）'])
   })
 
-  it('starts those hired from what they cost the least each month', async () => {
-    show({ contracts: [{ ...contract, monthly: 500 }, { ...contract, knight: { id: 'm4', name: 'ユルヴァ' }, company: '朱線団', monthly: 100 }] })
+  it('starts those hired from the lowest rank', async () => {
+    show({ contracts: [{ ...contract, rank: 'A' }, { ...contract, knight: { id: 'm4', name: 'ユルヴァ' }, company: '朱線団', rank: 'D' }] })
     await userEvent.click(screen.getByRole('tab', { name: /契約中/ }))
     expect(order()).toEqual(['朱線団（ユルヴァ）', '鉄弦団（グレイ）'])
   })
 
-  it('hires the mercenary chosen', async () => {
+  it('talks to the mercenary chosen', async () => {
     const { onHire } = show()
-    expect(screen.getByRole('button', { name: '樽盾団と契約' })).toHaveAttribute('data-sound', 'coins')
-    await userEvent.click(screen.getByRole('button', { name: '樽盾団と契約' }))
+    await userEvent.click(screen.getByRole('button', { name: '樽盾団と交渉' }))
     expect(onHire).toHaveBeenCalledWith('m1')
   })
 
-  it('shows why one cannot be hired, the button not working', async () => {
-    const { onHire } = show()
-    await userEvent.click(screen.getByRole('button', { name: 'ランツクネヒト（カスパル）' }))
-    expect(screen.getByRole('note')).toHaveTextContent('契約に応じません')
-    expect(screen.getByRole('button', { name: 'ランツクネヒトと契約' })).toBeDisabled()
+  it('shows why one cannot be talked to, the button not working', async () => {
+    const { onHire } = show({ offers: [{ ...proud, unavailableReason: '手番ではありません' }] })
+    expect(screen.getByRole('note')).toHaveTextContent('手番ではありません')
+    expect(screen.getByRole('button', { name: 'ランツクネヒトと交渉' })).toBeDisabled()
     expect(onHire).not.toHaveBeenCalled()
   })
 

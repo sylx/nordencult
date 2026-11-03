@@ -58,7 +58,7 @@ export default function PartsEntry() {
           <h3>KnightChip</h3>
           <div className="demo-row"><KnightChip knight={preview} /><KnightChip knight={KNIGHTS[2]!} note="軍団長" /></div>
           <h3>MercenaryCard</h3>
-          <MercenaryCard knight={KNIGHTS[1]!} company="樽盾団" notes={['騎兵', 'フルーエン']} prices={[{ label: '契約金', value: 1000 }, { label: '月額', value: 167 }]}
+          <MercenaryCard knight={KNIGHTS[1]!} company="樽盾団" notes={['騎兵', 'フルーエン']} rank="D" prices={[{ label: '月額', value: 167 }]}
             selected={selected} onSelect={() => setSelected(value => !value)} />
           <h3>Card</h3>
           <Card><strong>騎士団の記録</strong><p className="demo-card-description">羊皮紙とインクの装飾枠。任意の内容を配置できます。</p></Card>

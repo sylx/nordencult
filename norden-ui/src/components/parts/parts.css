@@ -391,6 +391,7 @@
 .norden-mercenary-card-note { overflow: hidden; color: #78603f; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .norden-mercenary-card-prices { display: grid; flex: none; align-content: start; justify-items: end; color: #6a5030; font-size: 11px; white-space: nowrap; }
 .norden-mercenary-card-prices b { margin-left: 5px; color: #342515; font-size: 15px; font-variant-numeric: tabular-nums; }
+.norden-mercenary-card-rank b { font-family: Georgia, 'Times New Roman', serif; font-size: 22px; line-height: 1; }
 .norden-mercenary-card .norden-knight-stats { gap: 4px; }
 .norden-mercenary-card .norden-knight-stat { min-width: 34px; padding: 1px 3px; }
 .norden-mercenary-card .norden-knight-stat-label { font-size: 10px; }

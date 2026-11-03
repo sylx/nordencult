@@ -221,6 +221,9 @@ export interface KnightView extends KnightCardData {
 }
 
 /** A mercenary the city can reach (契約できる傭兵), hired or not by what the host says */
+/** A mercenary's rank by what they cost, S the dearest */
+export type MercenaryRank = 'S' | 'A' | 'B' | 'C' | 'D'
+
 export interface MercenaryOfferView {
   knight: KnightView
   company: string
@@ -230,12 +233,14 @@ export interface MercenaryOfferView {
   unitImage?: string
   soldiers: number
   maxSoldiers: number
-  /** What hiring them costs now, and each month after that */
-  fee: number
-  monthly: number
+  /** Their rank by what they cost (the price itself is told when they are talked to) */
+  rank: MercenaryRank
   /** The name of the city they are in */
   cityName: string
-  /** Why they cannot be hired now (they are shown but the button does not work) */
+  /**
+   * Why they cannot be talked to now (they are shown but the button does not work). Those who will not sign with the
+   * faction can be talked to: they turn it away in the talk
+   */
   unavailableReason?: string
 }
 
@@ -251,6 +256,7 @@ export interface MercenaryContractView {
   cityName: string
   soldiers: number
   maxSoldiers: number
+  rank: MercenaryRank
   monthly: number
   /** Months since the contract was made or renewed */
   months: number

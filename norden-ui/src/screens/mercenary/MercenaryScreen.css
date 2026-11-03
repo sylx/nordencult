@@ -36,6 +36,11 @@
 .norden-mercenary-figure { flex: none; width: 150px; aspect-ratio: 2 / 3; overflow: hidden; }
 .norden-mercenary-figure > * { display: block; width: 100%; height: 100%; object-fit: contain; object-position: top; }
 .norden-mercenary-summary { display: grid; flex: 1 1 auto; align-content: start; gap: 10px; min-width: 0; }
+.norden-mercenary-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; }
+.norden-mercenary-heading > :not(.norden-mercenary-rank) { grid-column: 1; }
+/* The rank to the right of the company and the knight */
+.norden-mercenary-rank { display: grid; grid-column: 2; grid-row: 1 / span 2; align-content: start; justify-items: center; color: #6a5030; font-size: 11px; }
+.norden-mercenary-rank b { color: #342515; font-family: Georgia, 'Times New Roman', serif; font-size: 32px; line-height: 1; }
 .norden-mercenary-company { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
 .norden-mercenary-name { margin: 0; font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
 .norden-mercenary-name > span { margin-left: 8px; color: #78603f; font-size: 12px; font-weight: 400; }

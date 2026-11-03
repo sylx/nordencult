@@ -15,15 +15,15 @@ const unit = (id: string) => {
 }
 
 const OFFERS: readonly MercenaryOfferView[] = [
-  { knight: first!, company: COMPANIES[0]!, ...unit('cavalry'), soldiers: 500, maxSoldiers: 500, fee: 1000, monthly: 167, cityName: 'フルーエン' },
+  { knight: first!, company: COMPANIES[0]!, ...unit('cavalry'), soldiers: 500, maxSoldiers: 500, rank: 'D', cityName: 'フルーエン' },
+  { knight: second!, company: COMPANIES[1]!, unitType: 'ランツクネヒト', soldiers: 1000, maxSoldiers: 1000, rank: 'S', cityName: 'アンバリア' },
   {
-    knight: second!, company: COMPANIES[1]!, unitType: 'ランツクネヒト', soldiers: 1000, maxSoldiers: 1000, fee: 10000, monthly: 1667, cityName: 'アンバリア',
-    unavailableReason: 'ランツクネヒトは我々との契約に応じません',
+    knight: fourth!, company: COMPANIES[3]!, ...unit('mage'), soldiers: 500, maxSoldiers: 500, rank: 'C', cityName: 'シルヴァ',
+    unavailableReason: '手番ではありません',
   },
-  { knight: fourth!, company: COMPANIES[3]!, ...unit('mage'), soldiers: 500, maxSoldiers: 500, fee: 2000, monthly: 333, cityName: 'シルヴァ' },
 ]
 const CONTRACTS: readonly MercenaryContractView[] = [
-  { knight: third!, company: COMPANIES[2]!, ...unit('archer'), cityName: 'シルヴァ', soldiers: 350, maxSoldiers: 500, monthly: 167, months: 3 },
+  { knight: third!, company: COMPANIES[2]!, ...unit('archer'), cityName: 'シルヴァ', soldiers: 350, maxSoldiers: 500, rank: 'D', monthly: 167, months: 3 },
 ]
 
 export default function MercenaryEntry() {
@@ -35,11 +35,11 @@ export default function MercenaryEntry() {
     stage={<>
       <MockMap />
       <MercenaryScreen key={instance} cityName="フルーエン" gold={3000} offers={empty ? [] : OFFERS} contracts={empty ? [] : CONTRACTS}
-        onHire={id => add(`契約: ${id}`)} onDismiss={id => add(`打ち切り: ${id}`)} onClose={() => add('戻る')} />
+        onHire={id => add(`交渉: ${id}`)} onDismiss={id => add(`打ち切り: ${id}`)} onClose={() => add('戻る')} />
     </>}
     controls={<>
       <h2>傭兵画面</h2>
-      <p>軍事＞傭兵。「契約できる傭兵」で契約し、「契約中」で打ち切ります。一覧は傭兵団・騎士名で検索でき、能力値・価格・兵科で並べ替えられます。契約できない傭兵は理由を出してボタンを押せなくします。兵が減った傭兵を打ち切ると、確認に評判と回復のことを出します。</p>
+      <p>軍事＞傭兵。「契約できる傭兵」で交渉し（契約金・月額は会話で明かす）、「契約中」で打ち切ります。一覧は傭兵団・騎士名で検索でき、ランク・能力値・兵科で並べ替えられます。交渉できない傭兵は理由を出してボタンを押せなくします（契約に応じない傭兵は交渉でき、会話で断られます）。兵が減った傭兵を打ち切ると、確認に評判と回復のことを出します。</p>
       <label className="checkbox"><input type="checkbox" checked={empty} onChange={event => setEmpty(event.target.checked)} />傭兵がいない</label>
       <button className="reset-button" onClick={() => setInstance(value => value + 1)}>画面を開き直す</button>
       <Log entries={log} />
