@@ -139,6 +139,8 @@ export default function StrategyScene() {
   const cutIn = useCutIn()
   // The order picked on the 行動予約 list: only its route is shown on the map
   const [activeOrder, setActiveOrder] = useState<string | null>(null)
+  // The 行動予約 list folded down to its title: it stays so across the screens and phases
+  const [ordersMinimized, setOrdersMinimized] = useState(false)
   // The right edge (px) of the city window on the left of the map: it can be dragged or resized
   const [cityWindowRight, setCityWindowRight] = useState(0)
 
@@ -529,7 +531,8 @@ export default function StrategyScene() {
               <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))}
                 onCancelMove={(id) => update((s) => cancelMoveOrder(s, id))}
                 onCancelTransport={(id) => update((s) => cancelTransportOrder(s, id))} onSelectCity={switchCity}
-                activeId={activeOrder} onActiveChange={setActiveOrder} />
+                activeId={activeOrder} onActiveChange={setActiveOrder}
+                minimized={ordersMinimized} onMinimizedChange={setOrdersMinimized} />
               {notice && <div className="norden-screen-top-center norden-screen-banner"><Banner>{notice}</Banner></div>}
             </CityCommandScreen>
           )

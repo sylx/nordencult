@@ -15,6 +15,9 @@ interface Props {
   /** The order picked on the list: its route is shown on the map */
   activeId: string | null
   onActiveChange: (id: string | null) => void
+  /** The list folded down to its title */
+  minimized: boolean
+  onMinimizedChange: (minimized: boolean) => void
 }
 
 /** An order on the list, with the city it is shown by */
@@ -99,9 +102,9 @@ function legStatus(kind: MovementKind = 'move', solo: boolean, arrives: boolean)
  * moves and transports under way (from the city they set out from, with the months left; a transport's knight
  * riding back from where they unloaded), in the order they were made: the first on top. In the progress phase every order still to resolve and every faction's
  * moves and transports of the month until they are made. The order picked opens its details (the knights' faces,
- * what it takes and the months). Hidden while there are none
+ * what it takes and the months). Hidden while there are none. Folding the list lets go of the order picked
  */
-export function OrderList({ game, onCancel, onCancelMove, onCancelTransport, onSelectCity, activeId, onActiveChange }: Props) {
+export function OrderList({ game, onCancel, onCancelMove, onCancelTransport, onSelectCity, activeId, onActiveChange, minimized, onMinimizedChange }: Props) {
   const playerTurn = isPlayerTurn(game)
   const faction = viewFaction(game)
   const march = game.march
@@ -154,6 +157,10 @@ export function OrderList({ game, onCancel, onCancelMove, onCancelTransport, onS
     <div className="order-list-region">
       <ActionOrders title={march ? '進行' : '行動予約'} orders={items} onCancel={cancel}
         activeId={activeId} onDeactivate={() => onActiveChange(null)}
+        minimized={minimized} onMinimizedChange={(next) => {
+          onMinimizedChange(next)
+          if (next) onActiveChange(null)
+        }}
         onSelect={(id) => {
           const item = items.find((i) => i.id === id)
           if (item) onSelectCity(item.city)
