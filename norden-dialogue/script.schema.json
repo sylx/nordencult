@@ -1,0 +1,384 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "norden-dialogue/script.schema.json",
+  "title": "会話シーンの台本（norden-dialogue）",
+  "description": "1 シーンにつき 1 つ。分岐は持たず、流れ（同じ名前の .ts）が書く。命令は 1 行に 1 つ",
+  "type": "object",
+  "required": [
+    "title",
+    "blocks"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "シーンの題（エディタの一覧に出る）"
+    },
+    "params": {
+      "type": "object",
+      "description": "流れから渡す変数（ctx.bind）。変数名 → 型",
+      "additionalProperties": {
+        "enum": [
+          "character",
+          "city",
+          "number",
+          "string"
+        ]
+      },
+      "propertyNames": {
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+      }
+    },
+    "blocks": {
+      "type": "object",
+      "description": "ブロック名 → 命令の列（流れが ctx.play で再生する）",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/command"
+        }
+      }
+    },
+    "choices": {
+      "type": "object",
+      "description": "選択肢の名前 → 選択肢（流れが ctx.choose で選ばせる）",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "options"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "options": {
+            "type": "object",
+            "description": "選択肢のキー（ctx.choose の戻り値）→ 文言",
+            "minProperties": 1,
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "command": {
+      "oneOf": [
+        {
+          "type": "object",
+          "description": "顔付きのセリフ。name で名前だけ差し替える。tones は話し手の騎士の口調で差し替える文言",
+          "required": [
+            "say",
+            "text"
+          ],
+          "properties": {
+            "say": {
+              "type": "string",
+              "description": "話し手: 騎士 ID か変数（\"$merc\"）",
+              "minLength": 1
+            },
+            "text": {
+              "description": "文言。配列は 1 要素が 1 ページ（[] なら何も言わない）。{price}・{merc.name} で変数",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            "name": {
+              "type": "string",
+              "description": "名前だけ差し替える（顔は出たまま）"
+            },
+            "tones": {
+              "type": "object",
+              "description": "口調 → 文言。話し手に口調が無いか、その口調が無ければ text（口調の id はゲームの VOICE_TONE_IDS。npm test で照合する）",
+              "additionalProperties": {
+                "description": "文言。配列は 1 要素が 1 ページ（[] なら何も言わない）。{price}・{merc.name} で変数",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "顔の無い話し手",
+          "required": [
+            "name",
+            "text"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "話し手の名前"
+            },
+            "text": {
+              "description": "文言。配列は 1 要素が 1 ページ（[] なら何も言わない）。{price}・{merc.name} で変数",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "地の文",
+          "required": [
+            "narrate"
+          ],
+          "properties": {
+            "narrate": {
+              "description": "文言。配列は 1 要素が 1 ページ（[] なら何も言わない）。{price}・{merc.name} で変数",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "立ち絵を出す",
+          "required": [
+            "show",
+            "at"
+          ],
+          "properties": {
+            "show": {
+              "type": "string",
+              "description": "騎士 ID（\"001\"）か変数（\"$merc\"）",
+              "minLength": 1
+            },
+            "at": {
+              "enum": [
+                "left",
+                "center",
+                "right"
+              ]
+            },
+            "fx": {
+              "enum": [
+                "fade",
+                "slide",
+                "none"
+              ],
+              "description": "既定は fade"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "立ち絵を消す（\"all\" で全員）",
+          "required": [
+            "hide"
+          ],
+          "properties": {
+            "hide": {
+              "type": "string",
+              "description": "騎士 ID（\"001\"）か変数（\"$merc\"）",
+              "minLength": 1
+            },
+            "fx": {
+              "enum": [
+                "fade",
+                "slide",
+                "none"
+              ],
+              "description": "既定は fade"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "立ち絵を動かす",
+          "required": [
+            "move",
+            "at"
+          ],
+          "properties": {
+            "move": {
+              "type": "string",
+              "description": "騎士 ID（\"001\"）か変数（\"$merc\"）",
+              "minLength": 1
+            },
+            "at": {
+              "enum": [
+                "left",
+                "center",
+                "right"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "背景（src/assets/bg/<名前>.webp）。null で黒",
+          "required": [
+            "bg"
+          ],
+          "properties": {
+            "bg": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "fx": {
+              "enum": [
+                "fade",
+                "cut"
+              ],
+              "description": "既定は fade"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "画面全体の暗転（out）・明転（in）",
+          "required": [
+            "fade"
+          ],
+          "properties": {
+            "fade": {
+              "enum": [
+                "out",
+                "in"
+              ]
+            },
+            "color": {
+              "enum": [
+                "black",
+                "white"
+              ],
+              "description": "既定は black"
+            },
+            "ms": {
+              "type": "number",
+              "minimum": 0,
+              "description": "既定は 600"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "画面を揺らす",
+          "required": [
+            "shake"
+          ],
+          "properties": {
+            "shake": {
+              "enum": [
+                "small",
+                "large"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "一瞬光らせる",
+          "required": [
+            "flash"
+          ],
+          "properties": {
+            "flash": {
+              "enum": [
+                "white",
+                "red"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "待つ（ミリ秒）",
+          "required": [
+            "wait"
+          ],
+          "properties": {
+            "wait": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "曲を変える（norden-synth の曲 id）。null でフェードアウト",
+          "required": [
+            "bgm"
+          ],
+          "properties": {
+            "bgm": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "効果音（src/assets/se/ の名前）",
+          "required": [
+            "se"
+          ],
+          "properties": {
+            "se": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

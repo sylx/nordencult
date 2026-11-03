@@ -1,0 +1,153 @@
+/* The dialogue fills its parent (the game puts it over the screen) and takes every click */
+.norden-dialogue {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* Until a background is set the game shows through, dimmed */
+  background: rgb(0 0 0 / 0.35);
+  cursor: pointer;
+  user-select: none;
+  color: #f1e6cf;
+}
+.norden-dialogue-stage { position: absolute; inset: 0; }
+
+.norden-dialogue-bg {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  animation-name: norden-dialogue-fade-in;
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+}
+.norden-dialogue-bg[data-fx='cut'] { animation: none; }
+.norden-dialogue-bg-name {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.5);
+  font-size: 12px;
+  color: #e8dcc2;
+}
+
+/* A portrait stands on the bottom edge, centred on its place */
+.norden-dialogue-portrait {
+  position: absolute;
+  bottom: 0;
+  height: 92%;
+  transform: translateX(-50%);
+  transition: left 400ms ease-in-out;
+}
+.norden-dialogue-portrait[data-at='left'] { left: 22%; }
+.norden-dialogue-portrait[data-at='center'] { left: 50%; }
+.norden-dialogue-portrait[data-at='right'] { left: 78%; }
+.norden-dialogue-portrait-body {
+  height: 100%;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 12px rgb(0 0 0 / 0.6));
+  transition: filter 200ms;
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+  --norden-dialogue-slide: -12%;
+}
+.norden-dialogue-portrait-body[data-at='right'] { --norden-dialogue-slide: 12%; }
+.norden-dialogue-portrait-body.is-dimmed { filter: drop-shadow(0 0 12px rgb(0 0 0 / 0.6)) brightness(0.5); }
+.norden-dialogue-portrait-body.is-enter-fade { animation-name: norden-dialogue-fade-in; }
+.norden-dialogue-portrait-body.is-enter-slide { animation-name: norden-dialogue-slide-in; }
+.norden-dialogue-portrait-body.is-leave-fade { animation-name: norden-dialogue-fade-out; }
+.norden-dialogue-portrait-body.is-leave-slide { animation-name: norden-dialogue-slide-out; }
+.norden-dialogue-portrait-body.is-leave-none { visibility: hidden; }
+
+/* The message window: norden-ui's thin frame along the bottom */
+.norden-dialogue-message {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  width: min(1080px, calc(100% - 48px));
+  min-height: 150px;
+  box-sizing: border-box;
+  padding: 26px 34px;
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+  isolation: isolate;
+}
+.norden-dialogue-face {
+  flex: none;
+  width: 104px;
+  border-radius: 6px;
+  background-repeat: no-repeat;
+  box-shadow: 0 0 0 2px rgb(201 168 106 / 0.7), 0 2px 8px rgb(0 0 0 / 0.5);
+}
+.norden-dialogue-message-body { flex: 1; min-width: 0; }
+.norden-dialogue-name {
+  margin-bottom: 6px;
+  font-weight: bold;
+  font-size: 17px;
+  color: #e9c97d;
+  letter-spacing: 0.05em;
+}
+.norden-dialogue-text {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.norden-dialogue-message.is-narrate .norden-dialogue-text { color: #d8cfbd; font-style: italic; }
+.norden-dialogue-text-rest { visibility: hidden; }
+.norden-dialogue-next {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 12px;
+  color: #e9c97d;
+  animation: norden-dialogue-blink 900ms ease-in-out infinite;
+}
+
+/* Choices stand above the message window, which keeps the line before them */
+.norden-dialogue-choices {
+  position: absolute;
+  left: 50%;
+  bottom: 200px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  min-width: min(420px, calc(100% - 48px));
+  cursor: default;
+}
+.norden-dialogue-choices .norden-button { flex-direction: column; justify-content: center; }
+.norden-dialogue-choice-reason { display: block; font-size: 12px; opacity: 0.85; }
+
+.norden-dialogue-fade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition-property: opacity;
+  transition-timing-function: ease-in-out;
+}
+.norden-dialogue-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: norden-dialogue-flash ease-out both;
+}
+.norden-dialogue-flash.is-white { background: #fff; }
+.norden-dialogue-flash.is-red { background: #c0201c; }
+
+@keyframes norden-dialogue-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes norden-dialogue-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes norden-dialogue-slide-in {
+  from { opacity: 0; transform: translateX(var(--norden-dialogue-slide)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes norden-dialogue-slide-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateX(var(--norden-dialogue-slide)); }
+}
+@keyframes norden-dialogue-flash { from { opacity: 0.85; } to { opacity: 0; } }
+@keyframes norden-dialogue-blink { 50% { opacity: 0.2; } }
