@@ -78,17 +78,19 @@ describe('the mercenaries', () => {
     return { ...state, gold: { ...state.gold, carta: 100000 } }
   }
 
-  it('offers those within reach, with what they cost and why one cannot be hired', () => {
+  it('offers those within reach, with their rank and why one cannot be talked to', () => {
     const offers = mercenaryOffers(rich(), FLUEN)
     expect(offers.find((o) => o.knight.id === BARREL)).toMatchObject({
-      company: '樽盾団', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, soldiers: 500, maxSoldiers: 500, fee: 1000, monthly: 167, cityName: 'フルーエン',
+      company: '樽盾団', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, soldiers: 500, maxSoldiers: 500, rank: 'C', cityName: 'フルーエン',
     })
+    expect(offers.find((o) => o.knight.id === BARREL)).not.toHaveProperty('fee')
     // Short of gold, the contract can still be talked over: the hiring scene tells it
     const poor = playing('carta')
     const none = { ...poor, gold: { ...poor.gold, carta: 0 } }
     expect(mercenaryOffers(none, FLUEN).find((o) => o.knight.id === BARREL)?.unavailableReason).toBeUndefined()
+    // Those who will not sign can still be talked to: they turn the faction away in the hiring scene
     const proud = { ...rich(), mercenaryStanding: { carta: -100 } }
-    expect(mercenaryOffers(proud, FLUEN).find((o) => o.knight.id === BARREL)?.unavailableReason).toBe('樽盾団は我々との契約に応じません')
+    expect(mercenaryOffers(proud, FLUEN).find((o) => o.knight.id === BARREL)?.unavailableReason).toBeUndefined()
   })
 
   it('marks a mercenary in the city they serve in, and lists their contract', () => {
@@ -97,7 +99,7 @@ describe('the mercenaries', () => {
     expect(knightView(rich(), BARREL).mercenary?.monthly).toBeUndefined()
     expect(knightView(state, '015').mercenary).toBeUndefined()
     expect(mercenaryContracts(state, 'carta')).toMatchObject([{
-      company: '樽盾団', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, unitImage: expect.any(String), cityName: 'フルーエン', monthly: 167, months: 0,
+      company: '樽盾団', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, unitImage: expect.any(String), cityName: 'フルーエン', rank: 'C', monthly: 167, months: 0,
     }])
     expect(orderProblem(state, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: BARREL, knights: [BARREL] })).toBe('傭兵は軍団長になれません')
   })

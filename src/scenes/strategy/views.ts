@@ -21,8 +21,8 @@ import { FACTION_MAP, factionEmblem } from '../../data/faction'
 import { CITY_MAP } from '../../data/city'
 import { UNIT_TYPES, UNIT_TYPE_MAP } from '../../data/unitTypes'
 import {
-  assignmentLabel, assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, contractPrice, dateOf, defaultUnitType,
-  availableTechs, dismissProblem, engagementOf, FUNDED_ROLES, governorOf, hiredMercenaries, hireOfferProblem, isMercenary, mercenaryAt, mercenaryMarket, officerTraining, producibleRelics, productionProblem, relicItemInfo, relicsOf, relicWorks, repairableRelics, repairProblem,
+  assignmentLabel, assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
+  availableTechs, dismissProblem, engagementOf, FUNDED_ROLES, governorOf, hiredMercenaries, hireOfferProblem, isMercenary, mercenaryAt, mercenaryMarket, mercenaryRank, officerTraining, producibleRelics, productionProblem, relicItemInfo, relicsOf, relicWorks, repairableRelics, repairProblem,
   researchOf, researchOutput, researchProblem, researchTurns, techStatus,
   MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportKnightProblem, transportOrderOf, treasuryForecast,
   turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type CityConstruction, type CityLogStat,
@@ -247,7 +247,7 @@ function mercenaryUnit(id: string) {
   return { unitType: UNIT_TYPE_MAP[type]?.name ?? type, unitImage: UNIT_TYPE_VIEWS.find((view) => view.id === type)?.image }
 }
 
-/** The mercenaries a city can reach, with what each costs the faction and why one cannot be hired now */
+/** The mercenaries a city can reach, with their rank and why one cannot be talked to now */
 export function mercenaryOffers(game: GameState, cityId: string): MercenaryOfferView[] {
   const factionId = ownerOf(game, cityId)
   if (!factionId) return []
@@ -255,7 +255,7 @@ export function mercenaryOffers(game: GameState, cityId: string): MercenaryOffer
     const info = CHARACTER_MAP[id].mercenaryInfo!
     return {
       knight: knightView(game, id), company: info.name, ...mercenaryUnit(id),
-      soldiers: game.mercenaries[id].soldiers, maxSoldiers: info.maxSoldiers, ...contractPrice(game, factionId, id),
+      soldiers: game.mercenaries[id].soldiers, maxSoldiers: info.maxSoldiers, rank: mercenaryRank(id),
       cityName: cityName(game.characters[id].roaming ?? ''), unavailableReason: hireOfferProblem(game, cityId, id) ?? undefined,
     }
   })
@@ -267,7 +267,7 @@ export function mercenaryContracts(game: GameState, factionId: string): Mercenar
     const info = CHARACTER_MAP[id].mercenaryInfo!
     const { soldiers, contract } = game.mercenaries[id]
     return {
-      knight: knightView(game, id), company: info.name, ...mercenaryUnit(id), cityName: cityName(mercenaryAt(game, id) ?? ''), soldiers, maxSoldiers: info.maxSoldiers,
+      knight: knightView(game, id), company: info.name, ...mercenaryUnit(id), cityName: cityName(mercenaryAt(game, id) ?? ''), soldiers, maxSoldiers: info.maxSoldiers, rank: mercenaryRank(id),
       monthly: contract!.monthly, months: game.turn - contract!.since, unavailableReason: dismissProblem(game, id) ?? undefined,
     }
   })

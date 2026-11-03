@@ -3,8 +3,8 @@ import { CHARACTER_MAP } from '../../data/character'
 import {
   addMoveOrder, addOrder, addTransportOrder, assignmentProblem, availableKnights, BALANCE, charactersIn, citiesOf, contractPrice, createInitialState,
   decideRenewal, defaultUnitType, defenderArmy, defenseKnights, defenseProblem, dismissMercenary, dismissProblem, endFactionTurn,
-  finishEntry, formDefense, hireMercenary, hireProblem, hiredMercenaries, invadeFromProblem, isRecovering, leadingKnight, MAX_SOLDIERS, mercenaryFees, mercenaryMarket,
-  mercenaryReach, moveOrderProblem, neighbours, orderProblem, rejoinCity, renewalPrice, renewalProblem, resolveBattle, runEconomy, runMovements, runRoaming,
+  finishEntry, formDefense, hireMercenary, hireOfferProblem, hireProblem, hiredMercenaries, invadeFromProblem, isRecovering, leadingKnight, MAX_SOLDIERS, mercenaryFees, mercenaryMarket,
+  mercenaryRank, mercenaryReach, moveOrderProblem, neighbours, orderProblem, prideProblem, rejoinCity, renewalPrice, renewalProblem, resolveBattle, runEconomy, runMovements, runRoaming,
   soldiersLeft, startNextBattle, successorLord, transportOrderProblem, treasuryForecast, unitTypesOf,
   type ArmyUnit, type BattleSurvivor, type GameState, type Movement,
 } from '..'
@@ -16,7 +16,7 @@ const VERSTA = 'P005'
 const SILVA = 'P026'
 /** 樽盾団 (knight, 1000 gold, 500 soldiers, pride 2) starts in フルーエン */
 const BARREL = '042'
-/** 鉄弦団 (hunter, pride 2) */
+/** シルバーファング (hunter, pride 3) */
 const IRON = '028'
 /** ランツクネヒト (pride 5, 10000 gold) */
 const LANDSKNECHT = '110'
@@ -111,9 +111,9 @@ describe('hiring', () => {
   })
 
   it('hires those in the cities of enemies alike', () => {
-    const state = at(withGold(playing('carta'), 3000), IRON, AMBARIA)
+    const state = at(withGold(playing('carta'), 3000), BARREL, AMBARIA)
     expect(state.cityOwners[AMBARIA]).toBe('leonis')
-    expect(hireProblem(state, FLUEN, IRON)).toBeNull()
+    expect(hireProblem(state, FLUEN, BARREL)).toBeNull()
   })
 
   it('needs the gold, and only the active faction in a city of its own', () => {
@@ -127,11 +127,25 @@ describe('hiring', () => {
   it('does not get the proud to sign however much gold there is, nor tells the standing it takes', () => {
     const state = at(withGold(playing('carta'), 100000), LANDSKNECHT, FLUEN)
     expect(hireProblem(state, FLUEN, LANDSKNECHT)).toBe('ランツクネヒトは我々との契約に応じません')
-    expect(hireProblem(withStanding(state, 39), FLUEN, LANDSKNECHT)).not.toBeNull()
-    expect(hireProblem(withStanding(state, 40), FLUEN, LANDSKNECHT)).toBeNull()
-    // プライド 2 signs down to -20
-    expect(hireProblem(withStanding(at(state, IRON, FLUEN), -20), FLUEN, IRON)).toBeNull()
-    expect(hireProblem(withStanding(at(state, IRON, FLUEN), -21), FLUEN, IRON)).toBe('鉄弦団は我々との契約に応じません')
+    expect(hireProblem(withStanding(state, 59), FLUEN, LANDSKNECHT)).not.toBeNull()
+    expect(hireProblem(withStanding(state, 60), FLUEN, LANDSKNECHT)).toBeNull()
+    // プライド 3 does not sign at the standing a faction starts with, and signs from 20
+    expect(hireProblem(at(state, IRON, FLUEN), FLUEN, IRON)).toBe('シルバーファングは我々との契約に応じません')
+    expect(hireProblem(withStanding(at(state, IRON, FLUEN), 19), FLUEN, IRON)).not.toBeNull()
+    expect(hireProblem(withStanding(at(state, IRON, FLUEN), 20), FLUEN, IRON)).toBeNull()
+    // プライド 2 signs from 0
+    expect(hireProblem(at(state, BARREL, FLUEN), FLUEN, BARREL)).toBeNull()
+    expect(hireProblem(withStanding(at(state, BARREL, FLUEN), -1), FLUEN, BARREL)).not.toBeNull()
+    // They can still be talked to: the hiring scene turns the faction away
+    expect(hireOfferProblem(state, FLUEN, LANDSKNECHT)).toBeNull()
+    expect(prideProblem(state, 'carta', LANDSKNECHT)).toBe('ランツクネヒトは我々との契約に応じません')
+  })
+
+  it('ranks them by the 契約金, whatever the standing', () => {
+    expect(mercenaryRank(LANDSKNECHT)).toBe('S') // 10000
+    expect(mercenaryRank('109')).toBe('A') // 5000
+    expect(mercenaryRank(IRON)).toBe('B') // 3000
+    expect(mercenaryRank('095')).toBe('D') // 1000
   })
 
   it('changes the price with the standing, by the pride', () => {

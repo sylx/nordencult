@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ScriptedPlayer, formatScript, validateScript } from 'norden-dialogue'
 import { CHARACTER_LIST } from '../data/character'
-import { contractPrice, debugSetGold, flagOf, hireProblem, type GameState } from '../game'
+import { contractPrice, debugSetGold, debugSetStanding, flagOf, hireProblem, type GameState } from '../game'
 import { playing } from '../game/testing'
 import { DIALOGUE_CATALOG } from './catalog'
 import hireScript from './hireMercenary.json'
@@ -51,6 +51,7 @@ describe('the dialogue scripts', () => {
 describe('hireMercenary', () => {
   const FLUEN = 'P012'
   const BARREL = '042' // 樽盾団, 老練
+  const LANDSKNECHT = '110' // ランツクネヒト, プライド 5
   const rich = () => debugSetGold(playing('carta'), 'carta', 5000)
 
   it('hires the mercenary on 契約する, in the mercenary’s 口調', async () => {
@@ -67,6 +68,23 @@ describe('hireMercenary', () => {
     const start = rich()
     const { done } = run('hireMercenary', { city: FLUEN, merc: BARREL }, start, ['no'])
     expect(await done).toBe(start)
+  })
+
+  it('is turned away by those who will not sign, before any price', async () => {
+    const start = rich()
+    const reach = { ...start, characters: { ...start.characters, [LANDSKNECHT]: { ...start.characters[LANDSKNECHT], roaming: FLUEN } } }
+    const { player, done } = run('hireMercenary', { city: FLUEN, merc: LANDSKNECHT }, reach)
+    expect(await done).toBe(reach)
+    expect(player.offered).toEqual([])
+    // His own lines, over those of his 口調 (荒くれ)
+    expect(player.texts).toContain('ハッハァ！ 俺がランツクネヒトの隊長、カスパル・フロイントだ！')
+    expect(player.texts).toContain('……ああ、てめぇらの噂は聞いてるぜ。')
+    expect(player.texts).not.toContain('……ああ、てめぇらか。売る腕はねぇよ。とっとと失せな！')
+    expect(player.texts.join('')).not.toContain('金貨')
+    // At the standing they ask, they name their price
+    const liked = run('hireMercenary', { city: FLUEN, merc: LANDSKNECHT }, debugSetStanding(reach, 'carta', 60), ['no'])
+    await liked.done
+    expect(liked.player.offered).toHaveLength(1)
   })
 
   it('cannot sign short of gold, and says why', async () => {

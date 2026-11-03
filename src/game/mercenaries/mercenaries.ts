@@ -1,7 +1,7 @@
 import { CHARACTER_MAP } from '../../data/character'
 import { isMercenary } from '../army'
 import {
-  MERCENARY_MONTHLY_DIVISOR, MERCENARY_REACH, MERCENARY_REACH_TAVERN, MERCENARY_RENEWAL_RATE, MERCENARY_STANDING_LIMIT, STANDING_DISMISS_REDUCED,
+  MERCENARY_MONTHLY_DIVISOR, MERCENARY_RANKS, MERCENARY_REACH, MERCENARY_REACH_TAVERN, MERCENARY_RENEWAL_RATE, MERCENARY_STANDING_LIMIT, STANDING_DISMISS_REDUCED,
   STANDING_HIRE, STANDING_PRICE_RATE, STANDING_PRIDE_BASE, STANDING_PRIDE_STEP,
 } from '../economy/balance'
 import { commandProblem } from '../economy/domestic'
@@ -90,19 +90,26 @@ export function contractPrice(state: GameState, factionId: FactionId, id: Charac
   return { fee: priced(state, factionId, id, fee), monthly: priced(state, factionId, id, fee / MERCENARY_MONTHLY_DIVISOR) }
 }
 
+/** A mercenary's rank (S–D) by their 契約金, whatever the standing */
+export const mercenaryRank = (id: CharacterId): (typeof MERCENARY_RANKS)[number][0] =>
+  MERCENARY_RANKS.find(([, least]) => info(id).fee >= least)![0]
+
 /** The renewal fee of a mercenary's contract at the faction's standing now */
 export const renewalPrice = (state: GameState, factionId: FactionId, id: CharacterId): number =>
   priced(state, factionId, id, info(id).fee * MERCENARY_RENEWAL_RATE)
 
-/** Why the mercenary will not sign with the faction: the standing it needs is not told. null: they will */
-function prideProblem(state: GameState, factionId: FactionId, id: CharacterId): string | null {
+/**
+ * Why the mercenary will not sign with the faction: the standing it needs is not told. null: they will. The hiring
+ * scene tells it, the mercenary turning the faction away
+ */
+export function prideProblem(state: GameState, factionId: FactionId, id: CharacterId): string | null {
   const needed = (info(id).pride - STANDING_PRIDE_BASE) * STANDING_PRIDE_STEP
   return standingOf(state, factionId) < needed ? `${info(id).name}は我々との契約に応じません` : null
 }
 
 /**
- * Why the active faction cannot talk a mercenary in the city into a contract now, or null: all but the gold, which
- * the hiring scene tells (the mercenary screen opens it whatever the treasury holds)
+ * Why the active faction cannot talk a mercenary in the city into a contract now, or null: all but their pride and
+ * the gold, which the hiring scene tells (the mercenary screen opens it whatever the treasury holds)
  */
 export function hireOfferProblem(state: GameState, cityId: CityId, id: CharacterId): string | null {
   const problem = commandProblem(state, cityId)
@@ -110,14 +117,13 @@ export function hireOfferProblem(state: GameState, cityId: CityId, id: Character
   if (!isMercenary(id) || !state.mercenaries[id]) return `${id} は傭兵ではありません`
   if (state.mercenaries[id].contract) return 'すでに契約中です'
   if (isRecovering(state, id)) return '回復中です'
-  if (!mercenaryMarket(state, cityId).includes(id)) return 'この都市からは届きません'
-  return prideProblem(state, state.activeFaction!, id)
+  return mercenaryMarket(state, cityId).includes(id) ? null : 'この都市からは届きません'
 }
 
 /** Why the active faction cannot hire a mercenary in the city now, or null */
 export function hireProblem(state: GameState, cityId: CityId, id: CharacterId): string | null {
   const factionId = state.activeFaction
-  return hireOfferProblem(state, cityId, id)
+  return hireOfferProblem(state, cityId, id) ?? prideProblem(state, factionId!, id)
     ?? (contractPrice(state, factionId!, id).fee > (state.gold[factionId!] ?? 0) ? '金が足りません' : null)
 }
 

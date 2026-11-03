@@ -11,21 +11,45 @@
       { "say": "$merc", "text": "{company}の{merc.name}だ。腕なら保証する。",
         "tones": {
           "veteran_soldier": ["ワシが{company}の{merc.name}じゃ。", "老いぼれと侮るでないぞ。くぐった戦場の数なら、お主の歳より多いわい。"],
-          "wild_berserker": ["{company}の{merc.name}様だ。", "てめぇ、金はあるんだろうな？"],
+          "wild_berserker": ["{company}の{merc.name}様だ。", "で、俺様に何の用だ？"],
           "sisterly_veteran": ["アタシが{company}を仕切ってる{merc.name}さ。", "あんた、傭兵を雇うのは初めてかい？"],
           "cool_female": "……{company}の{merc.name}だ。",
-          "tomboy_warrior": ["{company}の{merc.name}だよ！", "アタシたちを選ぶなんて、あんた見る目あるね！"],
+          "tomboy_warrior": ["{company}の{merc.name}だよ！", "アタシたちに何か用？"],
           "earnest_youth": ["は、はじめまして！ {company}の{merc.name}です。", "まだ若輩ですが、皆の腕は確かです！"]
-        } },
+        },
+        "characters": {
+          "110": ["ハッハァ！ 俺が{company}の隊長、{merc.name}だ！", "まあ座れ、まずは一杯やろうじゃねぇか。話はそれからだ。"]
+        } }
+    ],
+    "offer": [
       { "say": "$merc", "text": ["契約金は{price}金貨。", "あとは月に{monthly}金貨だ。払いが続く限り、{city.name}のために剣を振るおう。"],
         "tones": {
           "veteran_soldier": "契約金は{price}金貨、月々{monthly}金貨じゃ。この腕でこの値なら安いもんじゃろう？",
-          "wild_berserker": "前金で{price}金貨、あとは月に{monthly}金貨だ。びた一文まけねぇぜ。",
+          "wild_berserker": ["金はあるんだろうな？", "前金で{price}金貨、あとは月に{monthly}金貨だ。びた一文まけねぇぜ。"],
           "sisterly_veteran": ["契約金は{price}金貨、あとは月に{monthly}金貨。", "うちの子たちを食わせなきゃならないからね、まけられないよ。"],
           "cool_female": ["契約金、{price}金貨。", "月に{monthly}金貨。……それだけだ。"],
-          "tomboy_warrior": "契約金は{price}金貨、月に{monthly}金貨だよ。腕のぶん、ちょっと高いけどね！",
+          "tomboy_warrior": ["アタシたちを選ぶなんて、見る目あるね！", "契約金は{price}金貨、月に{monthly}金貨だよ。腕のぶん、ちょっと高いけどね！"],
           "earnest_youth": "契約金は{price}金貨、月々{monthly}金貨になります。よろしくお願いします！"
+        },
+        "characters": {
+          "110": ["細けぇ条件は書記に聞いてくれ。俺は字が読めねぇからな！", "契約金は{price}金貨、月に{monthly}金貨。大陸一高ぇが、大陸一負けねぇ値段だぜ。"]
         } }
+    ],
+    "refuse": [
+      { "say": "$merc", "text": "……悪いが、あんたらと組む気はない。帰ってくれ。",
+        "tones": {
+          "veteran_soldier": "……じゃが、お主らに貸す腕は持ち合わせておらん。帰るがよい。",
+          "wild_berserker": "……ああ、てめぇらか。売る腕はねぇよ。とっとと失せな！",
+          "sisterly_veteran": "……悪いけど、あんたらにうちの子たちは預けられないね。帰りな。",
+          "cool_female": "お前たちとは組まない。帰れ。",
+          "tomboy_warrior": "……ごめん、あんたたちとは組めないや。他を当たって！",
+          "earnest_youth": "申し訳ありません……皆と話し合ったのですが、お受けできません。"
+        },
+        "characters": {
+          "110": ["……ああ、てめぇらの噂は聞いてるぜ。", "酒なら奢ってやる。だが剣は売らねぇ。俺たちを雇いてぇなら、まずは傭兵どもの間で名を上げてくるんだな！"]
+        } },
+      { "hide": "$merc", "fx": "fade" },
+      { "narrate": "{company}は、話を聞こうともしなかった。" }
     ],
     "accept": [
       { "se": "coins" },
@@ -37,6 +61,9 @@
           "cool_female": "……契約成立だ。仕事はする。",
           "tomboy_warrior": "やった、決まりだね！ アタシたちに任せときな！",
           "earnest_youth": "ありがとうございます！ ご期待に応えられるよう、全力を尽くします！"
+        },
+        "characters": {
+          "110": "ハッハァ！ 決まりだ！ 野郎ども、酒をしまえ、仕事だぞ！"
         } },
       { "narrate": "{company}が{city.name}に加わった。" }
     ],
@@ -49,6 +76,9 @@
           "cool_female": "……そうか。",
           "tomboy_warrior": "えー、やめちゃうの？ 後悔しても知らないよ！",
           "earnest_youth": "そう、ですか……。またお声がけいただけたら嬉しいです。"
+        },
+        "characters": {
+          "110": "ハッ、そうかい。ま、飲んでけよ。気が変わったらいつでも来な！"
         } },
       { "hide": "$merc", "fx": "fade" }
     ]

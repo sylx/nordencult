@@ -91,6 +91,8 @@ export const PAPAL_REPAIR_RATE = 2.5
 
 /** A mercenary's monthly fee is their 契約金 / this */
 export const MERCENARY_MONTHLY_DIVISOR = 6
+/** A mercenary's rank by their 契約金 before the standing: the first whose least it reaches (the mercenary screen shows it, not the price) */
+export const MERCENARY_RANKS = [['S', 10000], ['A', 5000], ['B', 3000], ['C', 2000], ['D', 0]] as const
 /** How many roads from a city it can hire mercenaries at, without and with a 酒場 (a 傭兵ギルド: every city) */
 export const MERCENARY_REACH = 1
 export const MERCENARY_REACH_TAVERN = 2
@@ -115,7 +117,7 @@ export const STANDING_WIPED_OUT = -15
 /** The price of a mercenary is × (1 − standing / 100 × their プライド × this) */
 export const STANDING_PRICE_RATE = 0.1
 /** A mercenary signs at a standing of (their プライド − STANDING_PRIDE_BASE) × STANDING_PRIDE_STEP or more */
-export const STANDING_PRIDE_BASE = 3
+export const STANDING_PRIDE_BASE = 2
 export const STANDING_PRIDE_STEP = 20
 
 /** The chance a mercenary not hired or a 放浪 knight goes on to a neighbouring city in a progress phase */
