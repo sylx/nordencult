@@ -135,7 +135,8 @@ class Performer {
     if ('say' in command) {
       const speaker = this.character(command.say)
       const tone = command.say.startsWith('$') ? this.toneOf(command.say.slice(1)) : this.player.providers.character(speaker)?.tone
-      const lines = tone !== undefined && command.tones && Object.hasOwn(command.tones, tone) ? command.tones[tone] : command.text
+      const lines = command.characters && Object.hasOwn(command.characters, speaker) ? command.characters[speaker]
+        : tone !== undefined && command.tones && Object.hasOwn(command.tones, tone) ? command.tones[tone] : command.text
       const name = command.name !== undefined ? this.text(command.name) : this.player.providers.character(speaker)?.name ?? speaker
       return { kind: 'message', speaker, name, pages: pagesOf(lines).map((page) => this.text(page)) }
     }

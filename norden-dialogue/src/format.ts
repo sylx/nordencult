@@ -1,5 +1,5 @@
 /**
- * 台本の JSON の決まった書式。命令は 1 行に 1 つ、`tones` を持つ `say` だけは口調ごとに 1 行にする。
+ * 台本の JSON の決まった書式。命令は 1 行に 1 つ、`tones`・`characters` を持つ `say` だけは口調・騎士ごとに 1 行にする。
  * エディタの保存も、手で直すときもこの書式にする（差分が直した行だけになる）
  */
 
@@ -17,14 +17,24 @@ export function inline(value: unknown): string {
 
 const indent = (depth: number) => '  '.repeat(depth)
 
+/** 1 項目 1 行に分けて書く、命令の項目（命令の終わりにこの順で） */
+const SPREAD = ['tones', 'characters']
+
+const isSpread = ([key, value]: [string, unknown]) =>
+  SPREAD.includes(key) && value !== null && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0
+
 /** 命令（ブロックの中、深さ 3） */
 function command(value: unknown): string {
-  if (value === null || typeof value !== 'object' || Array.isArray(value) || !('tones' in value)) return indent(3) + inline(value)
-  const { tones, ...rest } = value as Record<string, unknown>
-  if (tones === null || typeof tones !== 'object' || Array.isArray(tones) || Object.keys(tones).length === 0) return indent(3) + inline(value)
-  const head = inline(rest).replace(/ \}$/, ',')
-  const lines = Object.entries(tones).map(([tone, text]) => `${indent(5)}${JSON.stringify(tone)}: ${inline(text)}`)
-  return `${indent(3)}${head}\n${indent(4)}"tones": {\n${lines.join(',\n')}\n${indent(4)}} }`
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return indent(3) + inline(value)
+  const entries = Object.entries(value)
+  const spread = entries.filter(isSpread).sort(([a], [b]) => SPREAD.indexOf(a) - SPREAD.indexOf(b))
+  if (spread.length === 0) return indent(3) + inline(value)
+  const head = inline(Object.fromEntries(entries.filter((entry) => !isSpread(entry)))).replace(/ \}$/, ',')
+  const sections = spread.map(([key, items]) => {
+    const lines = Object.entries(items as object).map(([name, text]) => `${indent(5)}${JSON.stringify(name)}: ${inline(text)}`)
+    return `${indent(4)}${JSON.stringify(key)}: {\n${lines.join(',\n')}\n${indent(4)}}`
+  })
+  return `${indent(3)}${head}\n${sections.join(',\n')} }`
 }
 
 /** ブロック名 → 命令の列 */

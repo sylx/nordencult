@@ -56,6 +56,7 @@ describe('validateScript', () => {
         greet: [
           { bg: 'castle' }, { bgm: 'nope' }, { se: 'boom' }, { show: '999', at: 'left' },
           { say: '$merc', text: '{price}', tones: { unknown: 'x' } },
+          { say: '$merc', text: '{price}', characters: { '001': '{price}', '999': 'x', $merc: 'y' } },
         ],
       },
     }), {
@@ -67,6 +68,8 @@ describe('validateScript', () => {
       'error blocks.greet.2.se: 存在しない効果音: boom',
       'error blocks.greet.3.show: 存在しない騎士 ID: 999',
       'error blocks.greet.4.tones.unknown: 知らない口調: unknown',
+      'error blocks.greet.5.characters.999: 存在しない騎士 ID: 999',
+      'error blocks.greet.5.characters.$merc: characters のキーは騎士 ID にしてください（変数は書けません）: $merc',
     ])
   })
 

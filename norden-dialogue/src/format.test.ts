@@ -39,6 +39,24 @@ describe('formatScript', () => {
     expect(JSON.parse(text)).toMatchObject({ title: '傭兵を雇う' })
   })
 
+  it('writes a line a character, after the tones', () => {
+    const text = formatScript({
+      title: 'x',
+      blocks: { a: [{ say: '$merc', text: '私だ', characters: { '110': ['俺様だ', 'ほれ'] }, tones: { wild: '俺だ' } }, { say: '001', text: 'x', characters: {} }] },
+    })
+    expect(text).toContain(`    "a": [
+      { "say": "$merc", "text": "私だ",
+        "tones": {
+          "wild": "俺だ"
+        },
+        "characters": {
+          "110": ["俺様だ", "ほれ"]
+        } },
+      { "say": "001", "text": "x", "characters": {} }
+    ]`)
+    expect(formatScript(JSON.parse(text))).toBe(text)
+  })
+
   it('is stable: formatting its own output changes nothing', () => {
     const once = formatScript({ title: 'x', blocks: { a: [{ narrate: '改行\nあり "引用"' }, { say: '001', text: [], tones: {} }] } })
     expect(formatScript(JSON.parse(once))).toBe(once)

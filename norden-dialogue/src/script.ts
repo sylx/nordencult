@@ -22,8 +22,14 @@ export type Lines = string | readonly string[]
 /** 話し手の騎士の口調 → 文言 */
 export type Tones = Readonly<Record<string, Lines>>
 
-/** 顔付きのセリフ。`say` は騎士 ID か変数（"$merc"）。`name` で名前だけ差し替える。`tones` は話し手の口調で差し替える文言 */
-export interface SayCommand { say: string; text: Lines; name?: string; tones?: Tones }
+/** 話し手の騎士 ID → 文言 */
+export type CharacterLines = Readonly<Record<string, Lines>>
+
+/**
+ * 顔付きのセリフ。`say` は騎士 ID か変数（"$merc"）。`name` で名前だけ差し替える。`tones` は話し手の口調で、
+ * `characters` は話し手その人で差し替える文言（`characters` が先）
+ */
+export interface SayCommand { say: string; text: Lines; name?: string; tones?: Tones; characters?: CharacterLines }
 /** 顔の無い話し手 */
 export interface NameCommand { name: string; text: Lines }
 /** 地の文 */

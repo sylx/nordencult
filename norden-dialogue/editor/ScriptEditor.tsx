@@ -1,8 +1,8 @@
 import { useMemo, type ReactNode } from 'react'
 import { CharacterFace, commandKind, type ScriptProblem } from 'norden-dialogue'
 import type { PreviewVars } from './App'
-import { linesToText, textToLines, withCommand, withOption, withTone, type Json } from './edit'
-import { CHARACTER_LIST, VOICE_TONE_GROUPS, VOICE_TONE_LABELS, dialogueCharacter } from './game'
+import { linesToText, textToLines, withCommand, withOption, withVariant, type Json } from './edit'
+import { CHARACTER_LIST, CHARACTER_MAP, VOICE_TONE_GROUPS, VOICE_TONE_LABELS, dialogueCharacter } from './game'
 
 interface Props {
   script: Json
@@ -62,12 +62,12 @@ function TonesField({ command, onChange }: { command: Json; onChange: (command: 
       {Object.entries(tones).map(([tone, lines]) => (
         <div key={tone} className="tones__row">
           <span className="tones__tone" title={(VOICE_TONE_LABELS as Record<string, string>)[tone] ?? '知らない口調'}>{toneLabel(tone)}</span>
-          <LinesField value={lines} nothing placeholder="（この口調では何も言わない）" onChange={(next) => onChange(withTone(command, tone, next))} />
-          <button className="is-small" title="この口調の文言を消す（共通の文言になる）" onClick={() => onChange(withTone(command, tone, undefined))}>×</button>
+          <LinesField value={lines} nothing placeholder="（この口調では何も言わない）" onChange={(next) => onChange(withVariant(command, 'tones', tone, next))} />
+          <button className="is-small" title="この口調の文言を消す（共通の文言になる）" onClick={() => onChange(withVariant(command, 'tones', tone, undefined))}>×</button>
         </div>
       ))}
       {free.length > 0 && (
-        <select className="tones__add" value="" onChange={(event) => onChange(withTone(command, event.target.value, linesToText(command.text) ? command.text : ''))}>
+        <select className="tones__add" value="" onChange={(event) => onChange(withVariant(command, 'tones', event.target.value, linesToText(command.text) ? command.text : ''))}>
           <option value="">＋ 口調別の文言を足す</option>
           {free.map((g) => (
             <optgroup key={g.label} label={g.label}>
@@ -76,6 +76,27 @@ function TonesField({ command, onChange }: { command: Json; onChange: (command: 
           ))}
         </select>
       )}
+    </div>
+  )
+}
+
+/** 騎士別の文言: 騎士ごとに 1 行。足す・消す（口調別より先に使われる） */
+function CharactersField({ command, onChange }: { command: Json; onChange: (command: Json) => void }) {
+  const characters = (command.characters ?? {}) as Record<string, unknown>
+  const free = CHARACTER_LIST.filter((c) => !(c.id in characters))
+  return (
+    <div className="tones">
+      {Object.entries(characters).map(([id, lines]) => (
+        <div key={id} className="tones__row">
+          <span className="tones__tone" title={`${id} だけの文言（口調別より先）`}>{CHARACTER_MAP[id]?.name ?? `${id}（存在しない騎士）`}</span>
+          <LinesField value={lines} nothing placeholder="（この騎士は何も言わない）" onChange={(next) => onChange(withVariant(command, 'characters', id, next))} />
+          <button className="is-small" title="この騎士の文言を消す（口調別か共通の文言になる）" onClick={() => onChange(withVariant(command, 'characters', id, undefined))}>×</button>
+        </div>
+      ))}
+      <select className="tones__add" value="" onChange={(event) => onChange(withVariant(command, 'characters', event.target.value, linesToText(command.text) ? command.text : ''))}>
+        <option value="">＋ 騎士別の文言を足す</option>
+        {free.map((c) => <option key={c.id} value={c.id}>{c.name}（{c.id}）</option>)}
+      </select>
     </div>
   )
 }
@@ -103,9 +124,11 @@ function CommandRow({ command, params, vars, problems, onChange }: {
             </label>
           )}
           {'tones' in command && <span className="mark" title="口調別の文言がある">◆ 口調別</span>}
+          {'characters' in command && <span className="mark" title="騎士別の文言がある">◆ 騎士別</span>}
         </div>
         <LinesField value={command.text} onChange={(text) => onChange({ ...command, text })} placeholder="（共通の文言）" />
         <TonesField command={command} onChange={onChange} />
+        <CharactersField command={command} onChange={onChange} />
       </div>
     )
   } else if (kind === 'name') {

@@ -135,6 +135,20 @@ describe('tones', () => {
     expect(await said('001', { merc: 'polite' })).toEqual(['ディルクだ。', '10金貨だ。'])
   })
 
+  it('says the lines written for the speaker themselves, over those of their tone', async () => {
+    const own = { title: 'x', params: { merc: 'character' }, blocks: { greet: [{ say: '$merc', text: '共通', tones: { wild: '口調' }, characters: { '001': ['本人', 'だ'] } }] } }
+    const said = async (merc: string, tones?: Record<string, string>) => {
+      const player = new FakePlayer()
+      await playBlock(own, 'greet', { merc }, { player, tones })
+      return player.texts
+    }
+    expect(await said('001')).toEqual(['本人', 'だ'])
+    expect(await said('003', { merc: 'wild' })).toEqual(['口調'])
+    expect(await said('002')).toEqual(['共通'])
+    // A tone chosen in the editor does not change the lines of the character
+    expect(await said('001', { merc: 'quiet' })).toEqual(['本人', 'だ'])
+  })
+
   it('tells the flow the tone of a character variable', async () => {
     const tones: (string | undefined)[] = []
     const probe = define(script, { merc: 'character' }, async (ctx, { merc }) => {

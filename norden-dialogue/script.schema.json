@@ -71,7 +71,7 @@
       "oneOf": [
         {
           "type": "object",
-          "description": "顔付きのセリフ。name で名前だけ差し替える。tones は話し手の騎士の口調で差し替える文言",
+          "description": "顔付きのセリフ。name で名前だけ差し替える。tones は話し手の騎士の口調で、characters は話し手その人で差し替える文言（characters が先）",
           "required": [
             "say",
             "text"
@@ -103,6 +103,27 @@
             "tones": {
               "type": "object",
               "description": "口調 → 文言。話し手に口調が無いか、その口調が無ければ text（口調の id はゲームの VOICE_TONE_IDS。npm test で照合する）",
+              "additionalProperties": {
+                "description": "文言。配列は 1 要素が 1 ページ（[] なら何も言わない）。{price}・{merc.name} で変数",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              }
+            },
+            "characters": {
+              "type": "object",
+              "description": "騎士 ID → 文言。話し手がその騎士なら tones より先にこれ（騎士 ID はゲームのデータ。npm test で照合する）",
+              "propertyNames": {
+                "pattern": "^[^$]"
+              },
               "additionalProperties": {
                 "description": "文言。配列は 1 要素が 1 ページ（[] なら何も言わない）。{price}・{merc.name} で変数",
                 "anyOf": [

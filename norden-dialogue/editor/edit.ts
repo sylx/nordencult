@@ -32,14 +32,16 @@ export function withOption(script: Json, choice: string, key: string, text: stri
   return { ...script, choices: { ...choices, [choice]: { ...choices[choice], options: { ...options, [key]: text } } } }
 }
 
-/** 口調別の文言を足す・替える（undefined で消す。最後の 1 つを消すと tones ごと消す） */
-export function withTone(command: Json, tone: string, lines: unknown): Json {
-  const tones = { ...(command.tones as Json | undefined) }
-  if (lines === undefined) delete tones[tone]
-  else tones[tone] = lines
-  if (Object.keys(tones).length > 0) return { ...command, tones }
+/**
+ * 口調別（`tones`）・騎士別（`characters`）の文言を足す・替える（undefined で消す。最後の 1 つを消すと項目ごと消す）
+ */
+export function withVariant(command: Json, field: 'tones' | 'characters', key: string, lines: unknown): Json {
+  const variants = { ...(command[field] as Json | undefined) }
+  if (lines === undefined) delete variants[key]
+  else variants[key] = lines
+  if (Object.keys(variants).length > 0) return { ...command, [field]: variants }
   const rest = { ...command }
-  delete rest.tones
+  delete rest[field]
   return rest
 }
 

@@ -4,7 +4,7 @@ import { placeholders } from './text'
 /** 台本の問題。エラーは再生できない（ルートのテストも落ちる）、警告は再生できる */
 export interface ScriptProblem {
   level: 'error' | 'warning'
-  /** どこか: `title`・`params.merc`・`blocks.greet.3.tones.wild_berserker`・`choices.hire.options.yes` */
+  /** どこか: `title`・`params.merc`・`blocks.greet.3.tones.wild_berserker`・`blocks.greet.3.characters.110`・`choices.hire.options.yes` */
   path: string
   /** 命令の問題なら、そのブロックと命令の位置 */
   block?: string
@@ -27,7 +27,7 @@ const TOP_KEYS = ['$schema', 'title', 'params', 'blocks', 'choices']
 
 /** 命令ごとの項目（先頭が命令のキー） */
 const COMMAND_KEYS: Readonly<Record<CommandKind, { required: readonly string[]; optional: readonly string[] }>> = {
-  say: { required: ['say', 'text'], optional: ['name', 'tones'] },
+  say: { required: ['say', 'text'], optional: ['name', 'tones', 'characters'] },
   name: { required: ['name', 'text'], optional: [] },
   narrate: { required: ['narrate'], optional: [] },
   show: { required: ['show', 'at'], optional: ['fx'] },
@@ -133,6 +133,7 @@ class Checker {
         if ('text' in value) this.lines(value.text, field('text'), at)
         if ('name' in value) this.name(value.name, field('name'), at)
         if ('tones' in value) this.tones(value.tones, field('tones'), at)
+        if ('characters' in value) this.characterLines(value.characters, field('characters'), at)
         break
       }
       case 'name':
@@ -197,6 +198,15 @@ class Checker {
     for (const [tone, lines] of Object.entries(value)) {
       if (this.catalog.tone && !this.catalog.tone(tone)) this.error(`${path}.${tone}`, `知らない口調: ${tone}`, at)
       this.lines(lines, `${path}.${tone}`, at)
+    }
+  }
+
+  characterLines(value: unknown, path: string, at: At) {
+    if (!isObject(value)) return this.error(path, 'characters は 騎士 ID → 文言 のオブジェクトにしてください', at)
+    for (const [id, lines] of Object.entries(value)) {
+      if (id.startsWith('$')) this.error(`${path}.${id}`, `characters のキーは騎士 ID にしてください（変数は書けません）: ${id}`, at)
+      else if (this.catalog.character && !this.catalog.character(id)) this.error(`${path}.${id}`, `存在しない騎士 ID: ${id}`, at)
+      this.lines(lines, `${path}.${id}`, at)
     }
   }
 
