@@ -1,0 +1,32 @@
+/* The control sits on the plaque's right end, in the padding the title leaves there */
+.norden-minimizable-window .norden-thin-titled-title { padding-right: calc(var(--norden-thin-title-cap) + 2px); }
+
+.norden-minimizable-window-toggle {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  padding: 0;
+  color: #f2d69b;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+/* A wider hit target than the plaque's height allows */
+.norden-minimizable-window-toggle::after { content: ''; position: absolute; inset: -6px; }
+.norden-minimizable-window-toggle svg { width: 14px; height: 14px; filter: drop-shadow(0 1px 1px #100b05); }
+.norden-minimizable-window-toggle:hover { color: #fff3cc; }
+.norden-minimizable-window-toggle:focus-visible { outline: 2px solid #ffe0a1; outline-offset: 0; }
+
+/* Folded: only the plaque, in the flow and at the height it straddled the top edge at */
+.norden-minimizable-window.is-minimized {
+  width: max-content;
+  margin-top: calc(3px - var(--norden-thin-title-height) / 2);
+  padding: 0;
+}
+.norden-minimizable-window.is-minimized > .norden-thin-frame { display: none; }
+.norden-minimizable-window.is-minimized > .norden-thin-titled-title { position: relative; top: 0; left: 0; translate: none; max-width: none; }

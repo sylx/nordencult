@@ -87,7 +87,7 @@ export default function ActionOrdersEntry() {
     </>}
     controls={<>
       <h2>行動予約</h2>
-      <p>侵攻は侵攻元 → 侵攻先と軍団長以下の人数、移動と輸送は出発した拠点 → 行き先と担当の騎士を出します。取消はプレイヤーの手番の今月の予約だけで、月をまたいで移動・輸送中のものは残りの月数を出します。経路を押すとその予約を選び、騎士の顔と名前、兵・物資・到着までの月数などの詳細を開きます。</p>
+      <p>侵攻は侵攻元 → 侵攻先と軍団長以下の人数、移動と輸送は出発した拠点 → 行き先と担当の騎士を出します。取消はプレイヤーの手番の今月の予約だけで、月をまたいで移動・輸送中のものは残りの月数を出します。経路を押すとその予約を選び、騎士の顔と名前、兵・物資・到着までの月数などの詳細を開きます。タイトルの右のボタンでタイトルだけに最小化できます（MinimizableWindow）。</p>
       <label htmlFor="orders-phase">フェーズ</label>
       <select id="orders-phase" value={phase} onChange={event => setPhase(event.target.value as typeof phase)}>
         <option value="strategy">戦略フェーズ（プレイヤーの予約）</option>

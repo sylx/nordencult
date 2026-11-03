@@ -4,7 +4,7 @@ import Button from '../parts/Button'
 import FactionMark from '../parts/FactionMark'
 import KnightChip from '../parts/KnightChip'
 import type { KnightCardData } from '../parts/KnightCard'
-import ThinFrameWithTitle from '../parts/ThinFrameWithTitle'
+import MinimizableWindow from '../window/MinimizableWindow'
 import type { FactionView } from '../../screens/types'
 import './ActionOrders.css'
 
@@ -54,6 +54,9 @@ export interface ActionOrdersProps {
   activeId?: string | null
   /** A click outside the panel while an order is active */
   onDeactivate?: () => void
+  /** Folded down to the title. Omitted: the panel keeps this itself */
+  minimized?: boolean
+  onMinimizedChange?: (minimized: boolean) => void
   className?: string
   style?: CSSProperties
 }
@@ -71,10 +74,10 @@ function knightsText({ kind, knights }: ActionOrderView) {
  * 行動予約: the invasions, moves and transports ordered, one row each: the route, the knights, and 取消 for those that
  * can still be taken back (a move or transport under way shows its months left instead). Also lists the orders of a progress
  * phase, every faction's, with their emblems and the one being resolved highlighted. The active order (picked with
- * its route) opens its details under it.
+ * its route) opens its details under it. The panel folds down to its title (MinimizableWindow).
  */
 export default function ActionOrders({
-  orders, title = '行動予約', emptyLabel = '予約はありません', onCancel, onSelect, activeId = null, onDeactivate, className = '', style,
+  orders, title = '行動予約', emptyLabel = '予約はありません', onCancel, onSelect, activeId = null, onDeactivate, minimized, onMinimizedChange, className = '', style,
 }: ActionOrdersProps) {
   const ref = useRef<HTMLElement>(null)
 
@@ -95,7 +98,8 @@ export default function ActionOrders({
   }, [activeId, onDeactivate])
 
   return (
-    <ThinFrameWithTitle ref={ref} title={title} className={`norden-action-orders ${className}`} style={style}>
+    <MinimizableWindow ref={ref} title={title} minimized={minimized} onMinimizedChange={onMinimizedChange}
+      className={`norden-action-orders ${className}`} style={style}>
       {orders.length === 0
         ? <p className="norden-action-orders-empty">{emptyLabel}</p>
         : (
@@ -158,6 +162,6 @@ export default function ActionOrders({
             })}
           </ol>
         )}
-    </ThinFrameWithTitle>
+    </MinimizableWindow>
   )
 }

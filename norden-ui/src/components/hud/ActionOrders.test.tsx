@@ -35,7 +35,7 @@ describe('ActionOrders', () => {
   it('shows a single knight\'s invasion by the commander alone, and the empty list', () => {
     const { rerender } = render(<ActionOrders orders={[{ ...ORDERS[0]!, knights: ['エルネスト'] }]} />)
     expect(screen.getByRole('listitem')).toHaveTextContent(/軍団長エルネスト$/)
-    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /を取り消す$/ })).not.toBeInTheDocument()
     rerender(<ActionOrders orders={[]} />)
     expect(screen.getByText('予約はありません')).toBeInTheDocument()
   })
