@@ -62,6 +62,12 @@ describe('hireMercenary', () => {
     expect(player.texts).toContain('ワシがドゥンダリン盾隊のブロック・ドゥンダリンじゃ。')
     expect(player.offered[0][0]).toEqual({ key: 'yes', text: '契約する（2,000金貨）' })
     expect(player.steps).toContainEqual({ kind: 'se', name: 'coins' })
+    // The profile shows on the left with the price, and goes before the contract is made
+    const panels = player.steps.filter((s) => s.kind === 'panel')
+    expect(panels).toEqual([
+      { kind: 'panel', name: 'mercenary', at: 'left', vars: expect.objectContaining({ merc: BARREL }), state: rich() },
+      { kind: 'panel', name: null, at: 'left', vars: expect.any(Object), state: expect.any(Object) },
+    ])
   })
 
   it('changes nothing on やめておく', async () => {
@@ -76,6 +82,7 @@ describe('hireMercenary', () => {
     const { player, done } = run('hireMercenary', { city: FLUEN, merc: LANDSKNECHT }, reach)
     expect(await done).toBe(reach)
     expect(player.offered).toEqual([])
+    expect(player.steps.some((s) => s.kind === 'panel')).toBe(false)
     // His own lines, over those of his 口調 (荒くれ)
     expect(player.texts).toContain('ハッハァ！ 俺がランツクネヒトの隊長、カスパル・フロイントだ！')
     expect(player.texts).toContain('……ああ、てめぇらの噂は聞いてるぜ。')

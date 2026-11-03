@@ -6,9 +6,9 @@ import script from './hireMercenary.json'
 
 /**
  * Hiring a mercenary (the mercenary screen's 交渉): they come up and name themselves; those who will not sign with
- * the faction (prideProblem) turn it away there, before any price. The others name their price, and the player signs
- * or not. Short of gold, 契約する cannot be chosen, and says why. The lines change with the mercenary's 口調, and some
- * mercenaries have lines of their own
+ * the faction (prideProblem) turn it away there, before any price. The others name their price, their profile (with
+ * their abilities) shown to the left of them, and the player signs or not. Short of gold, 契約する cannot be chosen,
+ * and says why. The lines change with the mercenary's 口調, and some mercenaries have lines of their own
  */
 export const hireMercenaryScene = gameScene(script, { city: 'city', merc: 'character' }, async (ctx, { city, merc }) => {
   const factionId = ctx.state.activeFaction

@@ -19,10 +19,11 @@ import { TECH_BRANCH_LABELS, TECH_LIST, TECH_MAP, techChildren } from '../../dat
 import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { FACTION_MAP, factionEmblem } from '../../data/faction'
 import { CITY_MAP } from '../../data/city'
-import { UNIT_TYPES, UNIT_TYPE_MAP } from '../../data/unitTypes'
+import { mercenaryProfile, UNIT_IMAGES } from './mercenaryProfile'
+import { UNIT_TYPES } from '../../data/unitTypes'
 import {
   assignmentLabel, assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
-  availableTechs, dismissProblem, engagementOf, FUNDED_ROLES, governorOf, hiredMercenaries, hireOfferProblem, isMercenary, mercenaryAt, mercenaryMarket, mercenaryRank, officerTraining, producibleRelics, productionProblem, relicItemInfo, relicsOf, relicWorks, repairableRelics, repairProblem,
+  availableTechs, dismissProblem, engagementOf, FUNDED_ROLES, governorOf, hiredMercenaries, hireOfferProblem, isMercenary, mercenaryMarket, officerTraining, producibleRelics, productionProblem, relicItemInfo, relicsOf, relicWorks, repairableRelics, repairProblem,
   researchOf, researchOutput, researchProblem, researchTurns, techStatus,
   MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportKnightProblem, transportOrderOf, treasuryForecast,
   turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type CityConstruction, type CityLogStat,
@@ -241,34 +242,19 @@ export function knightView(game: GameState, id: string): KnightView {
   }
 }
 
-/** A mercenary's unit type, which is fixed: its name and picture */
-function mercenaryUnit(id: string) {
-  const type = defaultUnitType(id)
-  return { unitType: UNIT_TYPE_MAP[type]?.name ?? type, unitImage: UNIT_TYPE_VIEWS.find((view) => view.id === type)?.image }
-}
-
 /** The mercenaries a city can reach, with their rank and why one cannot be talked to now */
 export function mercenaryOffers(game: GameState, cityId: string): MercenaryOfferView[] {
   const factionId = ownerOf(game, cityId)
   if (!factionId) return []
-  return mercenaryMarket(game, cityId).map((id) => {
-    const info = CHARACTER_MAP[id].mercenaryInfo!
-    return {
-      knight: knightView(game, id), company: info.name, ...mercenaryUnit(id),
-      soldiers: game.mercenaries[id].soldiers, maxSoldiers: info.maxSoldiers, rank: mercenaryRank(id),
-      cityName: cityName(game.characters[id].roaming ?? ''), unavailableReason: hireOfferProblem(game, cityId, id) ?? undefined,
-    }
-  })
+  return mercenaryMarket(game, cityId).map((id) => ({ ...mercenaryProfile(game, id, knightView(game, id)), unavailableReason: hireOfferProblem(game, cityId, id) ?? undefined }))
 }
 
 /** The mercenaries a faction hired, and why one cannot be dismissed now */
 export function mercenaryContracts(game: GameState, factionId: string): MercenaryContractView[] {
   return hiredMercenaries(game, factionId).map((id) => {
-    const info = CHARACTER_MAP[id].mercenaryInfo!
-    const { soldiers, contract } = game.mercenaries[id]
+    const { contract } = game.mercenaries[id]
     return {
-      knight: knightView(game, id), company: info.name, ...mercenaryUnit(id), cityName: cityName(mercenaryAt(game, id) ?? ''), soldiers, maxSoldiers: info.maxSoldiers, rank: mercenaryRank(id),
-      monthly: contract!.monthly, months: game.turn - contract!.since, unavailableReason: dismissProblem(game, id) ?? undefined,
+      ...mercenaryProfile(game, id, knightView(game, id)), monthly: contract!.monthly, months: game.turn - contract!.since, unavailableReason: dismissProblem(game, id) ?? undefined,
     }
   })
 }
@@ -650,12 +636,8 @@ export function factionSummary(game: GameState): FactionSummaryView {
   }
 }
 
-/** The battle screen's unit sprites (norden-battle/assets/units/<unit type>.webp), facing right */
-const UNIT_IMAGES = import.meta.glob<string>('../../../norden-battle/assets/units/*.webp', { eager: true, query: '?url', import: 'default' })
-
-export const UNIT_TYPE_VIEWS: readonly UnitTypeView[] = UNIT_TYPES.map((type) => ({
-  ...type, image: UNIT_IMAGES[`../../../norden-battle/assets/units/${type.id}.webp`],
-}))
+/** The unit types, with the battle screen's sprites facing right */
+export const UNIT_TYPE_VIEWS: readonly UnitTypeView[] = UNIT_TYPES.map((type) => ({ ...type, image: UNIT_IMAGES[type.id] }))
 
 /**
  * Basic attack and defense of a unit of an invasion from `from` (norden-battle's rules): its soldiers and unit type,

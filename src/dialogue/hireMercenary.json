@@ -22,6 +22,7 @@
         } }
     ],
     "offer": [
+      { "panel": "mercenary", "at": "left" },
       { "say": "$merc", "text": ["契約金は{price}金貨。", "あとは月に{monthly}金貨だ。払いが続く限り、{city.name}のために剣を振るおう。"],
         "tones": {
           "veteran_soldier": "契約金は{price}金貨、月々{monthly}金貨じゃ。この腕でこの値なら安いもんじゃろう？",
@@ -52,6 +53,7 @@
       { "narrate": "{company}は、話を聞こうともしなかった。" }
     ],
     "accept": [
+      { "panel": null },
       { "se": "coins" },
       { "say": "$merc", "text": "契約成立だ。{company}の働き、見ていてくれ。",
         "tones": {
@@ -68,6 +70,7 @@
       { "narrate": "{company}が{city.name}に加わった。" }
     ],
     "decline": [
+      { "panel": null },
       { "say": "$merc", "text": "そうか。気が変わったら声をかけてくれ。",
         "tones": {
           "veteran_soldier": "ふむ、まあよい。気が変わったらいつでも来るがよいわ。",

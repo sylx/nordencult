@@ -3,6 +3,7 @@ import type { GameState } from '../game'
 import { DIALOGUE_AUDIO } from './audio'
 import { CAST } from './cast'
 import { hireMercenaryScene } from './hireMercenary'
+import { PANELS } from './panels'
 import { travelingMerchantScene } from './travelingMerchant'
 
 /**
@@ -21,8 +22,8 @@ export type DialogueInput<K extends DialogueId> = InputOf<(typeof SCENES)[K]['in
 
 export const isDialogueId = (id: string): id is DialogueId => Object.hasOwn(SCENES, id)
 
-/** The characters, cities, backgrounds and sounds of the game, for the dialogue */
-export const DIALOGUE_PROVIDERS: DialogueProviders = { ...CAST, ...DIALOGUE_AUDIO }
+/** The characters, cities, backgrounds, sounds and panels of the game, for the dialogue */
+export const DIALOGUE_PROVIDERS: DialogueProviders = { ...CAST, ...DIALOGUE_AUDIO, ...PANELS }
 
 /** Plays a scene (runScene) and gives the state it ends with */
 export const runDialogue = <K extends DialogueId>(id: K, input: DialogueInput<K>, options: RunOptions<GameState>): Promise<GameState> =>
