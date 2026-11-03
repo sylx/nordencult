@@ -54,6 +54,8 @@ export interface DomesticScreenProps {
   onChangeBudget?: (role: DomesticFundedRole, amount: number) => void
   /** Make another of the city's knights its lord (the lord holds no officer role, so the host drops them from `officers`) */
   onChangeLord?: (knightId: string) => void
+  /** Why the lord cannot be replaced (e.g. the head of the faction is the lord), shown as the tooltip of the disabled 交代 */
+  lordFixedReason?: string
   /** Set the knights holding an officer role (the whole list, up to two) */
   onAssignOfficers?: (role: DomesticOfficerRole, knightIds: readonly string[]) => void
   onClose: () => void
@@ -100,6 +102,7 @@ export default function DomesticScreen({
   budgetPerTurn,
   onChangeBudget,
   onChangeLord,
+  lordFixedReason,
   onAssignOfficers,
   onClose,
   children,
@@ -142,6 +145,7 @@ export default function DomesticScreen({
   const lord = city.lord
   const lordKnight = lord && (knights.find(knight => knight.id === lord.id) ?? knights.find(knight => !lord.id && knight.name === lord.name))
   const lordCandidates = knights.filter(knight => knight.id !== lordKnight?.id)
+  const lordChangeBlock = lordFixedReason ?? (lordCandidates.length === 0 ? '交代できる騎士がいません' : undefined)
   const showLordPanel = panel?.kind === 'lord'
   const officerSpec = panel?.kind === 'officers' ? OFFICER_ROLES.find(spec => spec.role === panel.role) : undefined
   const roleOf = (knightId: string) => OFFICER_ROLES.find(spec => officers[spec.role]?.includes(knightId))
@@ -294,8 +298,8 @@ export default function DomesticScreen({
                         variant="primary"
                         aria-label="領主を交代"
                         aria-pressed={showLordPanel}
-                        disabled={lordCandidates.length === 0}
-                        title={lordCandidates.length === 0 ? '交代できる騎士がいません' : '領地の騎士から新しい領主を選びます'}
+                        disabled={Boolean(lordChangeBlock)}
+                        title={lordChangeBlock ?? '領地の騎士から新しい領主を選びます'}
                         onClick={() => togglePanel({ kind: 'lord' })}
                       >
                         交代

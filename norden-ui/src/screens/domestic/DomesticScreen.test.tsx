@@ -339,6 +339,19 @@ describe('DomesticScreen', () => {
     expect(screen.queryByRole('complementary', { name: '領主の交代' })).not.toBeInTheDocument()
   })
 
+  it('does not open the lord panel when the lord cannot be replaced', () => {
+    render(
+      <DomesticScreen
+        city={{ id: 'P012', name: 'フルーエン', lord: { id: 'k1', name: 'マルクス' }, knights }}
+        lordFixedReason="君主のいる都市の領主は交代できません"
+        onClose={() => {}}
+      />,
+    )
+    const change = screen.getByRole('button', { name: '領主を交代' })
+    expect(change).toBeDisabled()
+    expect(change).toHaveAttribute('title', '君主のいる都市の領主は交代できません')
+  })
+
   it('does not let the lord serve as an officer', async () => {
     render(
       <DomesticScreen
