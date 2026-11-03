@@ -78,7 +78,11 @@ type StrategyScreens = {
 
 /** Commands not made yet */
 const NOT_YET: CommandState = { disabled: true, reason: 'まだ使えません' }
-const COMMAND_IDS = CITY_COMMAND_GROUPS.flatMap((g) => g.commands?.map((c) => c.id) ?? [g.id as CityCommandId])
+const OTHER_FACTION_CITY: CommandState = { disabled: true, reason: '自勢力の都市ではありません' }
+const commandIds = (groups: typeof CITY_COMMAND_GROUPS) => groups.flatMap((g) => g.commands?.map((c) => c.id) ?? [g.id as CityCommandId])
+const COMMAND_IDS = commandIds(CITY_COMMAND_GROUPS)
+/** All but 情報, which is all a city of another faction allows */
+const OWN_CITY_COMMAND_IDS = commandIds(CITY_COMMAND_GROUPS.filter((g) => g.id !== 'intelligence'))
 
 /** The army of the invasion screen as an order (the screen does not confirm one without a commander) */
 const draftOrder = (factionId: FactionId, from: CityId, to: CityId, draft: InvasionDraft): Omit<InvasionOrder, 'id'> => ({
@@ -482,6 +486,7 @@ export default function StrategyScene() {
     state.mercenary = state.domestic
     state.tech = playerTurn ? {} : { disabled: true, reason: '手番ではありません' }
     state.relic = state.tech
+    if (playerTurn && ownerOf(game, cityId) !== faction) for (const id of OWN_CITY_COMMAND_IDS) state[id] = OTHER_FACTION_CITY
     return state
   }
 
