@@ -50,7 +50,7 @@ describe('the dialogue scripts', () => {
 
 describe('hireMercenary', () => {
   const FLUEN = 'P012'
-  const BARREL = '042' // 樽盾団, 老練
+  const BARREL = '042' // ドゥンダリン盾隊 (2000 gold), 老練
   const LANDSKNECHT = '110' // ランツクネヒト, プライド 5
   const rich = () => debugSetGold(playing('carta'), 'carta', 5000)
 
@@ -59,8 +59,8 @@ describe('hireMercenary', () => {
     const state = await done
     expect(state.characters[BARREL]).toEqual({ cityId: FLUEN, factionId: 'carta' })
     expect(state.gold.carta).toBe(5000 - contractPrice(rich(), 'carta', BARREL).fee)
-    expect(player.texts).toContain('ワシが樽盾団のブロック・ドゥンダリンじゃ。')
-    expect(player.offered[0][0]).toEqual({ key: 'yes', text: '契約する（1,000金貨）' })
+    expect(player.texts).toContain('ワシがドゥンダリン盾隊のブロック・ドゥンダリンじゃ。')
+    expect(player.offered[0][0]).toEqual({ key: 'yes', text: '契約する（2,000金貨）' })
     expect(player.steps).toContainEqual({ kind: 'se', name: 'coins' })
   })
 

@@ -14,9 +14,9 @@ const FLUEN = 'P012'
 const AMBARIA = 'P004'
 const VERSTA = 'P005'
 const SILVA = 'P026'
-/** 樽盾団 (knight, 1000 gold, 500 soldiers, pride 2) starts in フルーエン */
+/** ドゥンダリン盾隊 (knight, 2000 gold, 600 soldiers, pride 2) starts in フルーエン */
 const BARREL = '042'
-/** シルバーファング (hunter, pride 3) */
+/** シルバーファング (hunter, 3000 gold, 1000 soldiers, pride 3) */
 const IRON = '028'
 /** ランツクネヒト (pride 5, 10000 gold) */
 const LANDSKNECHT = '110'
@@ -102,11 +102,11 @@ describe('hiring', () => {
   it('pays the fee at once, and the mercenary serves in the city from this turn', () => {
     const start = at(withGold(playing('carta'), 3000), BARREL, neighbours(FLUEN)[0])
     const state = hireMercenary(start, FLUEN, BARREL)
-    expect(state.gold.carta).toBe(2000)
+    expect(state.gold.carta).toBe(1000)
     expect(state.characters[BARREL]).toEqual({ cityId: FLUEN, factionId: 'carta' })
     expect(charactersIn(state, FLUEN)).toContain(BARREL)
     expect(availableKnights(state, FLUEN)).toContain(BARREL)
-    expect(state.mercenaries[BARREL]).toEqual({ soldiers: MAX, contract: { monthly: 167, since: 1 } })
+    expect(state.mercenaries[BARREL]).toEqual({ soldiers: MAX, contract: { monthly: 334, since: 1 } })
     expect(state.mercenaryStanding.carta).toBe(BALANCE.STANDING_HIRE)
   })
 
@@ -117,11 +117,11 @@ describe('hiring', () => {
   })
 
   it('needs the gold, and only the active faction in a city of its own', () => {
-    const state = withGold(playing('carta'), 999)
+    const state = withGold(playing('carta'), 1999)
     expect(hireProblem(state, FLUEN, BARREL)).toBe('金が足りません')
     expect(() => hireMercenary(state, FLUEN, BARREL)).toThrow()
-    expect(hireProblem(withGold(state, 1000), AMBARIA, BARREL)).toBe('自勢力の都市ではありません')
-    expect(hireProblem(withGold(state, 1000), FLUEN, '015')).toBe('015 は傭兵ではありません')
+    expect(hireProblem(withGold(state, 2000), AMBARIA, BARREL)).toBe('自勢力の都市ではありません')
+    expect(hireProblem(withGold(state, 2000), FLUEN, '015')).toBe('015 は傭兵ではありません')
   })
 
   it('does not get the proud to sign however much gold there is, nor tells the standing it takes', () => {
@@ -153,13 +153,13 @@ describe('hiring', () => {
     expect(contractPrice(withStanding(state, 40), 'carta', LANDSKNECHT)).toEqual({ fee: 8000, monthly: 1334 })
     expect(contractPrice(withStanding(state, -50), 'carta', LANDSKNECHT).fee).toBe(12500)
     expect(renewalPrice(withStanding(state, 40), 'carta', LANDSKNECHT)).toBe(4000)
-    expect(contractPrice(state, 'carta', BARREL)).toEqual({ fee: 1000, monthly: 167 })
+    expect(contractPrice(state, 'carta', BARREL)).toEqual({ fee: 2000, monthly: 334 })
   })
 
   it('keeps the monthly fee of the contract whatever the standing does afterwards', () => {
     const state = withStanding(hired(), 100)
-    expect(state.mercenaries[BARREL].contract!.monthly).toBe(167)
-    expect(mercenaryFees(state, 'carta', 1000)).toEqual({ paid: 167, unpaid: [] })
+    expect(state.mercenaries[BARREL].contract!.monthly).toBe(334)
+    expect(mercenaryFees(state, 'carta', 1000)).toEqual({ paid: 334, unpaid: [] })
   })
 })
 
@@ -167,19 +167,20 @@ describe('the monthly fee', () => {
   it('is paid from the next economy run, shown in the forecast, on top of the salaries', () => {
     const state = hired()
     const forecast = treasuryForecast(state, 'carta')
-    expect(forecast.mercenaryFees).toBe(167)
-    expect(forecast.after).toBe(forecast.before + forecast.income - forecast.salary - 167)
+    expect(forecast.mercenaryFees).toBe(334)
+    expect(forecast.after).toBe(forecast.before + forecast.income - forecast.salary - 334)
     const next = runEconomy(state, 2)
     expect(next.gold.carta).toBe(forecast.after)
-    expect(next.lastEconomy!.factions.carta.mercenaryFees).toBe(167)
+    expect(next.lastEconomy!.factions.carta.mercenaryFees).toBe(334)
   })
 
   it('pays those it can in id order, those after one it cannot too', () => {
-    let state = hireMercenary(at(hired(), IRON, FLUEN), FLUEN, IRON)
-    state = { ...state, mercenaries: { ...state.mercenaries, [IRON]: { ...state.mercenaries[IRON], contract: { monthly: 300, since: 1 } } } }
+    // プライド 3 signs at a standing of 20
+    let state = hireMercenary(withStanding(at(hired(), IRON, FLUEN), 20), FLUEN, IRON)
+    state = { ...state, mercenaries: { ...state.mercenaries, [IRON]: { ...state.mercenaries[IRON], contract: { monthly: 500, since: 1 } } } }
     // 028 comes first, then 042
     expect(hiredMercenaries(state, 'carta')).toEqual([IRON, BARREL])
-    expect(mercenaryFees(state, 'carta', 200)).toEqual({ paid: 167, unpaid: [IRON] })
+    expect(mercenaryFees(state, 'carta', 400)).toEqual({ paid: 334, unpaid: [IRON] })
   })
 
   it('ends the contract of one not paid and tells the player, the market having them back', () => {
@@ -201,8 +202,9 @@ describe('recovering', () => {
   it('gets back a tenth of the most soldiers each economy run, hired or not', () => {
     const state = withSoldiers(withSoldiers(hired(), BARREL, 100), IRON, 100)
     const next = runEconomy(state, 2)
-    expect(next.mercenaries[BARREL].soldiers).toBe(150)
-    expect(next.mercenaries[IRON].soldiers).toBe(150)
+    // A tenth of 600, and of 1000
+    expect(next.mercenaries[BARREL].soldiers).toBe(160)
+    expect(next.mercenaries[IRON].soldiers).toBe(200)
     const full = runEconomy(withSoldiers(state, BARREL, MAX - 1), 2)
     expect(full.mercenaries[BARREL].soldiers).toBe(MAX)
   })

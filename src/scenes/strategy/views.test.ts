@@ -72,7 +72,7 @@ describe('the domestic screen', () => {
 })
 
 describe('the mercenaries', () => {
-  const BARREL = '042' // 樽盾団, in フルーエン
+  const BARREL = '042' // ドゥンダリン盾隊 (2000 gold, 600 soldiers), in フルーエン
   const rich = (): GameState => {
     const state = playing('carta')
     return { ...state, gold: { ...state.gold, carta: 100000 } }
@@ -81,7 +81,7 @@ describe('the mercenaries', () => {
   it('offers those within reach, with their rank and why one cannot be talked to', () => {
     const offers = mercenaryOffers(rich(), FLUEN)
     expect(offers.find((o) => o.knight.id === BARREL)).toMatchObject({
-      company: '樽盾団', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, soldiers: 500, maxSoldiers: 500, rank: 'C', cityName: 'フルーエン',
+      company: 'ドゥンダリン盾隊', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, soldiers: 600, maxSoldiers: 600, rank: 'C', cityName: 'フルーエン',
     })
     expect(offers.find((o) => o.knight.id === BARREL)).not.toHaveProperty('fee')
     // Short of gold, the contract can still be talked over: the hiring scene tells it
@@ -95,11 +95,11 @@ describe('the mercenaries', () => {
 
   it('marks a mercenary in the city they serve in, and lists their contract', () => {
     const state = hireMercenary(rich(), FLUEN, BARREL)
-    expect(cityView(state, FLUEN).knights?.find((k) => k.id === BARREL)?.mercenary).toMatchObject({ company: '樽盾団', soldiers: 500, maxSoldiers: 500, monthly: 167 })
+    expect(cityView(state, FLUEN).knights?.find((k) => k.id === BARREL)?.mercenary).toMatchObject({ company: 'ドゥンダリン盾隊', soldiers: 600, maxSoldiers: 600, monthly: 334 })
     expect(knightView(rich(), BARREL).mercenary?.monthly).toBeUndefined()
     expect(knightView(state, '015').mercenary).toBeUndefined()
     expect(mercenaryContracts(state, 'carta')).toMatchObject([{
-      company: '樽盾団', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, unitImage: expect.any(String), cityName: 'フルーエン', rank: 'C', monthly: 167, months: 0,
+      company: 'ドゥンダリン盾隊', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, unitImage: expect.any(String), cityName: 'フルーエン', rank: 'C', monthly: 334, months: 0,
     }])
     expect(orderProblem(state, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: BARREL, knights: [BARREL] })).toBe('傭兵は軍団長になれません')
   })
@@ -109,7 +109,7 @@ describe('the notices', () => {
   it('tells a renewal asked for and a contract ended for want of the fee', () => {
     const renewal = eventView({ id: 'e', kind: 'mercenaryRenewal', turn: 7, factionId: 'carta', characterId: '042', gold: 500 })
     expect(renewal).toMatchObject({ title: '傭兵の契約更新', details: [{ label: '更新料', value: '金 500' }], knights: ['042'] })
-    expect(eventView({ id: 'e', kind: 'mercenaryUnpaid', turn: 7, factionId: 'carta', characterId: '042' }).message).toContain('樽盾団')
+    expect(eventView({ id: 'e', kind: 'mercenaryUnpaid', turn: 7, factionId: 'carta', characterId: '042' }).message).toContain('ドゥンダリン盾隊')
   })
 
   it('tells a relic completed with its picture repaired', () => {
