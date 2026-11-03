@@ -110,12 +110,12 @@ export const hireMercenaryScene = gameScene(script, { city: 'city', merc: 'chara
 | `defineScene(script, input, run, sample?)`・`SceneContext` | シーンの定義 |
 | `runScene(scene, input, { state, player, random?, replay?, onChoose?, tones? })` | シーンを流し、最後の状態を返す。`replay` の選択の履歴までは演出を飛ばして流し直す。`tones` は変数の騎士の口調の代わり（エディタ） |
 | `playBlock(script, block, vars, { player, tones? })` | 1 ブロックだけ再生する（エディタのプレビュー） |
-| `DialoguePlayer`・`DialogueView` | 画面の状態と、それを描く React の部品（背景・立ち絵・メッセージウィンドウ・選択肢・暗転・揺れ・光）。クリック・Enter・Space で文字送り（表示の途中なら全文を出す）、数字キーで選択。`modal`（既定）なら会話中のキーをすべて受ける |
+| `DialoguePlayer`・`DialogueView` | 画面の状態と、それを描く React の部品（暗い幕・カットの中の背景と立ち絵・メッセージウィンドウ・選択肢・暗転・揺れ・光）。クリック・Enter・Space で文字送り（表示の途中なら全文を出す）、数字キーで選択。`modal`（既定）なら会話中のキーをすべて受ける |
 | `DialogueProviders` | ゲームが渡すもの: 騎士（名前・口調・シート画像・セル・顔）・都市・背景の URL・BGM・効果音 |
 | `ScriptedPlayer` | テスト用のプレイヤー（命令を記録し、選択肢は決めた順に選ぶ） |
 | `formatScript(script)` | 決まった書式の JSON |
 
-メッセージウィンドウと選択肢のボタンは norden-ui の部品（`ThinFrame`・`Button`）を使う。
+画面はイベント通知（norden-ui の `EventScreen`）と同じ組み方で、親の要素を暗い幕で覆い、中央にカット（背景と立ち絵。1680×720 の比で、真鍮の枠 `ImageFrame`）、その下にメッセージウィンドウ（名札付きの枠 `ThinFrameWithTitle`。名前は名札、顔は左、選択肢はセリフの下の `Button`）を置く。大きさは親の要素で決まる（コンテナの単位）。背景の画像もカットと同じ 1680×720 で作る。
 
 ## エディタ
 

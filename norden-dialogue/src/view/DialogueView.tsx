@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
-import { Button, ThinFrame } from 'norden-ui'
-import { TIMING, type BackgroundView, type CharacterInfo, type DialoguePlayer, type MessageView, type PortraitView } from '../player'
+import { Button, ImageFrame, ThinFrameWithTitle } from 'norden-ui'
+import { TIMING, type BackgroundView, type CharacterInfo, type ChoiceOption, type DialoguePlayer, type MessageView, type PortraitView } from '../player'
 import { CharacterFace } from './CharacterFace'
 import { spriteStyle } from './sprite'
 import './DialogueView.css'
@@ -72,26 +72,45 @@ function Typewriter({ message, player }: { message: MessageView; player: Dialogu
   )
 }
 
-function MessageWindow({ message, player }: { message: MessageView; player: DialoguePlayer }) {
-  const info = message.speaker ? player.providers.character(message.speaker) : undefined
+function Choices({ choice, player }: { choice: readonly ChoiceOption[]; player: DialoguePlayer }) {
   return (
-    <div className={`norden-dialogue-message ${message.narrate ? 'is-narrate' : ''}`} aria-live="polite">
-      <ThinFrame />
-      {info && <CharacterFace className="norden-dialogue-face" info={info} />}
-      <div className="norden-dialogue-message-body">
-        {message.name && <div className="norden-dialogue-name">{message.name}</div>}
-        <Typewriter key={message.key} message={message} player={player} />
-      </div>
+    <div className="norden-dialogue-choices" role="group" aria-label="選択肢" onClick={(event) => event.stopPropagation()}>
+      {choice.map((option, index) => (
+        <Button key={option.key} variant={index === 0 ? 'primary' : 'normal'} disabled={Boolean(option.disabled)} title={option.disabled}
+          onClick={() => player.pick(option.key)}>
+          <span className="norden-dialogue-choice-label">{option.text}</span>
+          {option.disabled && <span className="norden-dialogue-choice-reason">{option.disabled}</span>}
+        </Button>
+      ))}
     </div>
   )
+}
+
+/** カットの下のメッセージウィンドウ: 名前は枠の名札に、顔は左に。選択肢は直前のセリフの下に並べる */
+function MessageWindow({ message, choice, player }: { message: MessageView | null; choice: readonly ChoiceOption[] | null; player: DialoguePlayer }) {
+  const info = message?.speaker ? player.providers.character(message.speaker) : undefined
+  const body = (
+    <>
+      <div className="norden-dialogue-message-line">
+        {info && <CharacterFace className="norden-dialogue-face" info={info} />}
+        {message && <Typewriter key={message.key} message={message} player={player} />}
+      </div>
+      {choice && <Choices choice={choice} player={player} />}
+    </>
+  )
+  const className = `norden-dialogue-message ${message?.narrate ? 'is-narrate' : ''} ${message?.name ? '' : 'is-untitled'} ${message || choice ? '' : 'is-empty'}`
+  // One window throughout (its plaque hidden while nobody is named), staying where it is while nobody speaks so that
+  // the cut does not move
+  return <ThinFrameWithTitle as="div" title={message?.name ?? ''} className={className} aria-live="polite">{body}</ThinFrameWithTitle>
 }
 
 /** 画面を揺らす（Web Animations） */
 const SHAKE: Record<'small' | 'large', number> = { small: 6, large: 16 }
 
 /**
- * 会話の画面: 背景・立ち絵（左・中央・右）・メッセージウィンドウ（顔・名前・1 文字ずつ）・選択肢・暗転・揺れ・光。
- * クリック・Enter・Space で文字送り、数字キーで選択肢を選ぶ。親の要素いっぱいに覆い、クリックはすべて受ける
+ * 会話の画面。イベント通知（norden-ui の EventScreen）と同じく、親の要素を暗い幕で覆い、中央にカット（背景・立ち絵
+ * （左・中央・右）・暗転・揺れ・光。真鍮の枠）と、その下にメッセージウィンドウ（名札・顔・1 文字ずつ・選択肢）を置く。
+ * クリック・Enter・Space で文字送り、数字キーで選択肢を選ぶ。幕はクリックをすべて受ける
  */
 export function DialogueView({ player, showBackgroundNames = false, modal = true }: DialogueViewProps) {
   const view = useSyncExternalStore(player.subscribe, player.getSnapshot)
@@ -148,26 +167,21 @@ export function DialogueView({ player, showBackgroundNames = false, modal = true
   const speakerShown = view.portraits.some((p) => p.id === speaking && !p.leaving)
   return (
     <div className="norden-dialogue" ref={root} onClick={() => player.click()}>
-      <div className="norden-dialogue-stage" ref={stage}>
-        {view.backgrounds.map((layer) => <Background key={layer.key} layer={layer} showName={showBackgroundNames} />)}
-        {view.portraits.map((portrait) => (
-          <Portrait key={portrait.id} portrait={portrait} info={player.providers.character(portrait.id)} dimmed={speakerShown && portrait.id !== speaking} />
-        ))}
+      <div className="norden-dialogue-body">
+        <ImageFrame className="norden-dialogue-cut">
+          <div className="norden-dialogue-stage">
+            <div className="norden-dialogue-scene" ref={stage}>
+              {view.backgrounds.map((layer) => <Background key={layer.key} layer={layer} showName={showBackgroundNames} />)}
+              {view.portraits.map((portrait) => (
+                <Portrait key={portrait.id} portrait={portrait} info={player.providers.character(portrait.id)} dimmed={speakerShown && portrait.id !== speaking} />
+              ))}
+            </div>
+            <div className="norden-dialogue-fade" style={{ background: view.fade.color, opacity: view.fade.opacity, transitionDuration: `${view.fade.ms}ms` }} />
+            {view.flash && <div key={view.flash.key} className={`norden-dialogue-flash is-${view.flash.color}`} style={{ animationDuration: `${TIMING.flash}ms` }} />}
+          </div>
+        </ImageFrame>
+        <MessageWindow message={view.message} choice={choice} player={player} />
       </div>
-      {choice && (
-        <div className="norden-dialogue-choices" role="group" aria-label="選択肢" onClick={(event) => event.stopPropagation()}>
-          {choice.map((option, index) => (
-            <Button key={option.key} variant={index === 0 ? 'primary' : 'normal'} disabled={Boolean(option.disabled)} title={option.disabled}
-              onClick={() => player.pick(option.key)}>
-              <span className="norden-dialogue-choice-label">{option.text}</span>
-              {option.disabled && <span className="norden-dialogue-choice-reason">{option.disabled}</span>}
-            </Button>
-          ))}
-        </div>
-      )}
-      {view.message && <MessageWindow message={view.message} player={player} />}
-      <div className="norden-dialogue-fade" style={{ background: view.fade.color, opacity: view.fade.opacity, transitionDuration: `${view.fade.ms}ms` }} />
-      {view.flash && <div key={view.flash.key} className={`norden-dialogue-flash is-${view.flash.color}`} style={{ animationDuration: `${TIMING.flash}ms` }} />}
     </div>
   )
 }
