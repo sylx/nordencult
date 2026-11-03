@@ -31,7 +31,7 @@ export default function MercenaryCard({ knight, company, rank, prices = [], note
             <span className="norden-mercenary-card-note">{[knight.name, ...notes].join('・')}</span>
           </span>
           <span className="norden-mercenary-card-prices">
-            {rank && <span className="norden-mercenary-card-rank">ランク<b>{rank}</b></span>}
+            {rank && <span className="norden-mercenary-card-rank">ランク<b className="norden-mercenary-rank-letter" data-rank={rank}>{rank}</b></span>}
             {prices.map(({ label, value }) => <span key={label}>{label}<b>{value.toLocaleString()}</b></span>)}
           </span>
         </span>

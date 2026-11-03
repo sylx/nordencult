@@ -38,6 +38,13 @@ describe('MercenaryScreen', () => {
     expect(details).not.toHaveTextContent('月額')
   })
 
+  it('shows no abilities in the details', () => {
+    show({ offers: [{ ...offer, knight: { ...offer.knight, abilities: { strength: 90 } } }] })
+    const details = screen.getByRole('region', { name: '傭兵の詳細' })
+    expect(details.querySelector('.norden-knight-stats')).toBeNull()
+    expect(details).not.toHaveTextContent('90')
+  })
+
   it('shows the rank of each in the list, without what they cost or their abilities', () => {
     const knight = { ...offer.knight, abilities: { strength: 90 } }
     show({ offers: [{ ...offer, knight }, proud] })

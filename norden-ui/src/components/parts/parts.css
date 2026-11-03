@@ -391,7 +391,14 @@
 .norden-mercenary-card-note { overflow: hidden; color: #78603f; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .norden-mercenary-card-prices { display: grid; flex: none; align-content: start; justify-items: end; color: #6a5030; font-size: 11px; white-space: nowrap; }
 .norden-mercenary-card-prices b { margin-left: 5px; color: #342515; font-size: 15px; font-variant-numeric: tabular-nums; }
-.norden-mercenary-card-rank b { font-family: Georgia, 'Times New Roman', serif; font-size: 22px; line-height: 1; }
+.norden-mercenary-card-rank { display: flex; align-items: baseline; }
+.norden-mercenary-card-prices .norden-mercenary-card-rank b { font-size: 34px; }
+/* A mercenary's rank (MercenaryCard, MercenaryProfile): a large serif letter coloured by rank, S in gold */
+.norden-mercenary-rank-letter[data-rank] { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; line-height: 1; color: #5c5446; }
+.norden-mercenary-rank-letter[data-rank='C'] { color: #3d7034; }
+.norden-mercenary-rank-letter[data-rank='B'] { color: #2b5b98; }
+.norden-mercenary-rank-letter[data-rank='A'] { color: #8a2f8f; }
+.norden-mercenary-rank-letter[data-rank='S'] { color: #b8860b; text-shadow: 0 0 1px #6a4a0a, 0 1px 3px #f5d77a99; }
 .norden-mercenary-card .norden-knight-stats { gap: 4px; }
 .norden-mercenary-card .norden-knight-stat { min-width: 34px; padding: 1px 3px; }
 .norden-mercenary-card .norden-knight-stat-label { font-size: 10px; }

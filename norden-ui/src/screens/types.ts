@@ -224,6 +224,9 @@ export interface KnightView extends KnightCardData {
 /** A mercenary's rank by what they cost, S the dearest */
 export type MercenaryRank = 'S' | 'A' | 'B' | 'C' | 'D'
 
+/** Who a mercenary is, on their profile (MercenaryProfile) */
+export type MercenaryProfileView = Pick<MercenaryOfferView, 'knight' | 'company' | 'unitType' | 'unitImage' | 'soldiers' | 'maxSoldiers' | 'rank' | 'cityName'>
+
 export interface MercenaryOfferView {
   knight: KnightView
   company: string

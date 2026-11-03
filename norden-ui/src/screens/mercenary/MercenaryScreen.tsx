@@ -1,15 +1,14 @@
 import { useState, type ReactNode } from 'react'
 import iconGold from '../../assets/ui/icons/icon-gold.webp'
 import Button from '../../components/parts/Button'
-import Card from '../../components/parts/Card'
-import { KnightStats } from '../../components/parts/KnightCard'
 import MercenaryCard from '../../components/parts/MercenaryCard'
 import SectionFrame from '../../components/parts/SectionFrame'
 import ConfirmDialog from '../../components/window/ConfirmDialog'
 import WindowFrame from '../../components/window/WindowFrame'
 import { biographyParts } from '../cityCommand/KnightProfileWindow'
-import { ABILITIES, ABILITY_LABELS, KnightFace, knightAbility, knightAbilityStats } from '../domestic/DomesticOfficers'
+import { ABILITIES, ABILITY_LABELS, knightAbility } from '../domestic/DomesticOfficers'
 import type { MercenaryContractView, MercenaryOfferView, MercenaryRank } from '../types'
+import MercenaryProfile from './MercenaryProfile'
 import '../screens.css'
 import './MercenaryScreen.css'
 
@@ -59,7 +58,6 @@ function arrange<T extends Mercenary>(items: readonly T[], query: string, sort: 
 }
 
 const gold = (value: number) => value.toLocaleString()
-const strength = (soldiers: number, most: number) => `${gold(soldiers)} / ${gold(most)}`
 
 function dismissMessage({ knight, company, soldiers, maxSoldiers }: MercenaryContractView) {
   return soldiers < maxSoldiers
@@ -67,37 +65,20 @@ function dismissMessage({ knight, company, soldiers, maxSoldiers }: MercenaryCon
     : `${company}（${knight.name}）との契約を打ち切りますか？契約金は戻りません。`
 }
 
-/** The chosen mercenary: who they are on parchment, the numbers and 略歴 under it, and what can be done kept in sight at the bottom */
-function Details({ mercenary: { knight, company, rank, unitType, unitImage, soldiers, maxSoldiers, cityName, unavailableReason }, facts = [], children }: {
+/**
+ * The chosen mercenary: who they are on parchment (without their abilities: the hiring talk shows them), the numbers
+ * and 略歴 under it, and what can be done kept in sight at the bottom
+ */
+function Details({ mercenary, facts = [], children }: {
   mercenary: Mercenary
   facts?: readonly (readonly [label: string, value: string, price?: boolean])[]
   children: ReactNode
 }) {
-  const figure = knight.imageSrc ? <img src={knight.imageSrc} alt="" /> : knight.image
+  const { knight, unavailableReason } = mercenary
   return (
     <div className="norden-mercenary-details">
       <div className="norden-window-scroll norden-mercenary-details-body">
-        <Card className="norden-mercenary-profile">
-          {figure
-            ? <div className="norden-mercenary-figure" role="img" aria-label={`${knight.name}の立ち絵`}>{figure}</div>
-            : <span className="norden-knight-face"><KnightFace knight={knight} /></span>}
-          <div className="norden-mercenary-summary">
-            <div className="norden-mercenary-heading">
-              <span className="norden-mercenary-rank" aria-label={`ランク${rank}`}><span>ランク</span><b>{rank}</b></span>
-              <h3 className="norden-mercenary-company">{company}</h3>
-              <p className="norden-mercenary-name">{knight.name}{knight.subtitle && <span>{knight.subtitle}</span>}</p>
-            </div>
-            <KnightStats stats={knightAbilityStats(knight)} />
-            <div className="norden-mercenary-unit">
-              {unitImage && <img src={unitImage} alt="" />}
-              <div className="norden-mercenary-unit-facts">
-                <span><span className="norden-mercenary-unit-label">兵科</span>{unitType}</span>
-                <span><span className="norden-mercenary-unit-label">兵数</span>{strength(soldiers, maxSoldiers)}</span>
-                <span><span className="norden-mercenary-unit-label">所在地</span>{cityName}</span>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <MercenaryProfile mercenary={mercenary} />
         {facts.length > 0 && <dl className="norden-mercenary-facts">
           {facts.map(([label, value, price]) => <div key={label}><dt>{label}</dt><dd className={price ? 'is-price' : undefined}>{value}</dd></div>)}
         </dl>}
