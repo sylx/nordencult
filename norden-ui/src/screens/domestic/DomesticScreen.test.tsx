@@ -242,7 +242,7 @@ describe('DomesticScreen', () => {
     const status = screen.getByRole('region', { name: '都市の現状' })
     expect(within(status).getByText('+280/ターン')).toBeInTheDocument()
     expect(within(status).getByText('大都市 まで 約12ターン')).toBeInTheDocument()
-    expect(within(status).getByText('11,000').parentElement).toHaveAttribute('title', expect.stringContaining('経済 +164'))
+    expect(within(status).getByText('11,000').parentElement).toHaveAttribute('aria-description', expect.stringContaining('経済 +164'))
 
     rerender(
       <DomesticScreen city={{ id: 'P012', name: 'フルーエン', population: 31000, tier: 3 }} populationGrowth={{ perTurn: 300 }} onClose={vi.fn()} />,
@@ -349,7 +349,7 @@ describe('DomesticScreen', () => {
     )
     const change = screen.getByRole('button', { name: '領主を交代' })
     expect(change).toBeDisabled()
-    expect(change).toHaveAttribute('title', '君主のいる都市の領主は交代できません')
+    expect(change).toHaveAttribute('aria-description', '君主のいる都市の領主は交代できません')
   })
 
   it('does not let the lord serve as an officer', async () => {
@@ -464,9 +464,9 @@ describe('DomesticScreen', () => {
     )
     const role = (name: string) => screen.getByRole('listitem', { name })
     expect(role('商業担当官')).toHaveClass('has-budget-empty')
-    expect(within(role('商業担当官')).getByText('予算切れ')).toHaveAttribute('title', '予算がないため、次のターンは働きません')
+    expect(within(role('商業担当官')).getByText('予算切れ')).toHaveAttribute('aria-description', '予算がないため、次のターンは働きません')
     expect(role('生産担当官')).toHaveClass('has-budget-short')
-    expect(within(role('生産担当官')).getByText('予算不足')).toHaveAttribute('title', '1ターンに80〜150使うところ、残り40です（残りの分だけ働きます）')
+    expect(within(role('生産担当官')).getByText('予算不足')).toHaveAttribute('aria-description', '1ターンに80〜150使うところ、残り40です（残りの分だけ働きます）')
     // Enough for the most a turn takes; no officers, nothing to spend it
     expect(within(role('募兵担当官')).queryByText(/^予算(切れ|不足)$/)).not.toBeInTheDocument()
     expect(within(role('訓練担当官')).queryByText('予算切れ')).not.toBeInTheDocument()

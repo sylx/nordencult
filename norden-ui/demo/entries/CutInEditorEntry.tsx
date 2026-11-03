@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { CUTIN_DEFAULTS, CUTIN_IN_EFFECTS, CUTIN_OUT_EFFECTS, CUTIN_TEMPLATES, normalizeCutInTemplate } from '../../src'
+import { CUTIN_DEFAULTS, CUTIN_IN_EFFECTS, CUTIN_OUT_EFFECTS, CUTIN_TEMPLATES, Tooltip, normalizeCutInTemplate } from '../../src'
 import type { CutInDir, CutInTemplate } from '../../src'
 import { Log, useLog, Workbench } from '../Workbench'
 import CutInPreview, { ASPECTS, BACKDROPS } from '../cutin/CutInPreview'
@@ -109,10 +109,12 @@ function PresetTab({ fileKey, onPick }: { fileKey: string; onPick: (template: Cu
       {saved.length === 0 && <p className="cutin-note">まだありません。JSONタブでダウンロードして、このフォルダに置いてください。</p>}
       <div className="cutin-presets">
         {saved.map(([key, template]) => (
-          <button key={key} type="button" className="cutin-button" aria-pressed={fileKey === key} title={`${key}.json`}
-            onClick={() => onPick(template, key, '保存済みのテンプレート')}>
-            {template.name || key}<small className="cutin-file">{key}</small>
-          </button>
+          <Tooltip key={key} content={`${key}.json`}>
+            <button type="button" className="cutin-button" aria-pressed={fileKey === key}
+              onClick={() => onPick(template, key, '保存済みのテンプレート')}>
+              {template.name || key}<small className="cutin-file">{key}</small>
+            </button>
+          </Tooltip>
         ))}
       </div>
     </Section>

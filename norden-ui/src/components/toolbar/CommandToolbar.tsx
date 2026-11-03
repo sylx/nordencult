@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react'
+import Tooltip from '../parts/Tooltip'
 import './CommandToolbar.css'
 
 export interface ToolbarCommand {
@@ -147,47 +148,47 @@ export default function CommandToolbar({
       aria-label={label}
     >
       {movable && (['left', 'right'] as const).map(side => (
-        <button
-          key={side}
-          type="button"
-          data-sound="none"
-          className={`norden-command-toolbar-drag-handle norden-command-toolbar-drag-handle--${side}`}
-          aria-label={`${label}を移動（${side === 'left' ? '左端' : '右端'}）`}
-          title="ドラッグまたは矢印キーで移動（Shift＋矢印キーで微調整）"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerEnd}
-          onPointerCancel={handlePointerEnd}
-          onLostPointerCapture={handlePointerEnd}
-          onKeyDown={handleKeyDown}
-          onClick={event => event.stopPropagation()}
-        />
+        <Tooltip key={side} content="ドラッグまたは矢印キーで移動（Shift＋矢印キーで微調整）">
+          <button
+            type="button"
+            data-sound="none"
+            className={`norden-command-toolbar-drag-handle norden-command-toolbar-drag-handle--${side}`}
+            aria-label={`${label}を移動（${side === 'left' ? '左端' : '右端'}）`}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerEnd}
+            onPointerCancel={handlePointerEnd}
+            onLostPointerCapture={handlePointerEnd}
+            onKeyDown={handleKeyDown}
+            onClick={event => event.stopPropagation()}
+          />
+        </Tooltip>
       ))}
       <div className="norden-command-toolbar-items" onScroll={() => setOpenId(null)}>
         {commands.map(command => {
           const hasChildren = Boolean(command.children)
           const expanded = open?.id === command.id
           return (
-            <button
-              key={command.id}
-              ref={element => { if (element) buttonRefs.current.set(command.id, element); else buttonRefs.current.delete(command.id) }}
-              type="button"
-              className={`norden-command-toolbar-button ${command.tone === 'accent' ? 'is-accent' : ''}`}
-              disabled={isDisabled(command)}
-              aria-pressed={hasChildren ? undefined : command.active}
-              aria-expanded={hasChildren ? expanded : undefined}
-              aria-controls={expanded ? flyoutId : undefined}
-              onClick={hasChildren ? () => toggle(command) : command.onClick}
-              title={command.title}
-            >
-              {command.icon && <span className="norden-command-toolbar-icon" aria-hidden="true">{command.icon}</span>}
-              <span>{command.label}</span>
-              {hasChildren && (
-                <svg className="norden-command-toolbar-caret" viewBox="0 0 14 8" aria-hidden="true" focusable="false">
-                  <polygon points="0,8 7,0 14,8" />
-                </svg>
-              )}
-            </button>
+            <Tooltip key={command.id} content={command.title}>
+              <button
+                ref={element => { if (element) buttonRefs.current.set(command.id, element); else buttonRefs.current.delete(command.id) }}
+                type="button"
+                className={`norden-command-toolbar-button ${command.tone === 'accent' ? 'is-accent' : ''}`}
+                disabled={isDisabled(command)}
+                aria-pressed={hasChildren ? undefined : command.active}
+                aria-expanded={hasChildren ? expanded : undefined}
+                aria-controls={expanded ? flyoutId : undefined}
+                onClick={hasChildren ? () => toggle(command) : command.onClick}
+              >
+                {command.icon && <span className="norden-command-toolbar-icon" aria-hidden="true">{command.icon}</span>}
+                <span>{command.label}</span>
+                {hasChildren && (
+                  <svg className="norden-command-toolbar-caret" viewBox="0 0 14 8" aria-hidden="true" focusable="false">
+                    <polygon points="0,8 7,0 14,8" />
+                  </svg>
+                )}
+              </button>
+            </Tooltip>
           )
         })}
       </div>
@@ -195,12 +196,14 @@ export default function CommandToolbar({
         <div ref={flyoutRef} id={flyoutId} className="norden-command-toolbar-flyout" role="group" aria-label={open.label}
           style={{ left: flyoutX }}>
           {open.children!.map(child => (
-            <button key={child.id} type="button" className="norden-command-toolbar-subbutton"
-              disabled={child.disabled} title={child.title} aria-pressed={child.active}
-              onClick={() => { setOpenId(null); child.onClick?.() }}>
-              {child.icon && <span className="norden-command-toolbar-icon" aria-hidden="true">{child.icon}</span>}
-              <span>{child.label}</span>
-            </button>
+            <Tooltip key={child.id} content={child.title}>
+              <button type="button" className="norden-command-toolbar-subbutton"
+                disabled={child.disabled} aria-pressed={child.active}
+                onClick={() => { setOpenId(null); child.onClick?.() }}>
+                {child.icon && <span className="norden-command-toolbar-icon" aria-hidden="true">{child.icon}</span>}
+                <span>{child.label}</span>
+              </button>
+            </Tooltip>
           ))}
         </div>
       )}

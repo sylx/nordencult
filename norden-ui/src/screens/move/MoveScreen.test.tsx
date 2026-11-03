@@ -32,7 +32,7 @@ describe('MoveScreen', () => {
     expect(solo).toBeEnabled()
     await userEvent.click(screen.getByRole('checkbox', { name: 'ブロック' }))
     expect(solo).toBeDisabled()
-    expect(solo.closest('label')).toHaveAttribute('title', '傭兵は単騎移動できません')
+    expect(solo.closest('label')).toHaveAttribute('aria-description', '傭兵は単騎移動できません')
   })
 
   it('takes back riding alone when a mercenary is picked', async () => {

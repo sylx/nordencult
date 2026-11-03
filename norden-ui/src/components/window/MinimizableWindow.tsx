@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
 import ThinFrameWithTitle from '../parts/ThinFrameWithTitle'
 import type { ThinFrameWithTitleProps } from '../parts/ThinFrameWithTitle'
+import Tooltip from '../parts/Tooltip'
 import './MinimizableWindow.css'
 
 export interface MinimizableWindowProps extends Omit<ThinFrameWithTitleProps, 'titleAction'> {
@@ -30,13 +31,15 @@ export default function MinimizableWindow({
   return (
     <ThinFrameWithTitle {...props} className={`norden-minimizable-window ${folded ? 'is-minimized' : ''} ${className}`}
       titleAction={
-        <button type="button" className="norden-minimizable-window-toggle" aria-label={label} title={label}
-          aria-expanded={!folded} aria-controls={bodyId} onClick={toggle}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"
-            strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-            <path d={folded ? 'm5 9 7 7 7-7' : 'm5 15 7-7 7 7'} />
-          </svg>
-        </button>
+        <Tooltip content={label}>
+          <button type="button" className="norden-minimizable-window-toggle" aria-label={label}
+            aria-expanded={!folded} aria-controls={bodyId} onClick={toggle}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"
+              strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+              <path d={folded ? 'm5 9 7 7 7-7' : 'm5 15 7-7 7 7'} />
+            </svg>
+          </button>
+        </Tooltip>
       }>
       <div id={bodyId} hidden={folded}>{children}</div>
     </ThinFrameWithTitle>

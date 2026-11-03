@@ -5,13 +5,15 @@ import DateBar from './DateBar'
 
 const labels = { phaseLabel: '戦略フェーズ', factionName: 'カルタ書院', dateLabel: '灰歴312年1月' }
 
+const dateOf = () => document.querySelector<HTMLElement>('.norden-date-bar-date')!
+
 describe('DateBar', () => {
   it('shows phase, faction turn, date and settings in reading order', () => {
     render(<DateBar {...labels}><button>セーブ</button></DateBar>)
     const bar = screen.getByRole('group', { name: 'ターン情報' })
     const phase = within(bar).getByText(labels.phaseLabel)
     const faction = within(bar).getByText(labels.factionName)
-    const date = within(bar).getByTitle(labels.dateLabel)
+    const date = dateOf()
     const settings = within(bar).getByRole('button', { name: '設定' })
     expect(phase.compareDocumentPosition(faction) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(faction.compareDocumentPosition(date) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
@@ -24,13 +26,13 @@ describe('DateBar', () => {
   it.each(['灰歴312年1月', '灰歴３１２年１月', '灰歴312年 春', '日付未定'])(
     'preserves the complete date label when formatting %s', dateLabel => {
       render(<DateBar {...labels} dateLabel={dateLabel} />)
-      expect(screen.getByTitle(dateLabel).textContent).toBe(dateLabel)
+      expect(dateOf().textContent).toBe(dateLabel)
     },
   )
 
   it('draws a season after a space as large as the numbers', () => {
     render(<DateBar {...labels} dateLabel="灰歴312年1月 冬" />)
-    const date = screen.getByTitle('灰歴312年1月 冬')
+    const date = dateOf()
     expect(within(date).getByText('冬')).toHaveClass('norden-date-bar-date-season')
     expect(within(date).getByText('1')).toHaveClass('norden-date-bar-date-number')
     expect(date.textContent).toBe('灰歴312年1月 冬')
@@ -38,7 +40,7 @@ describe('DateBar', () => {
 
   it.each(['冬至', '灰歴312年 冬至'])('keeps a season letter inside a word small in %s', dateLabel => {
     render(<DateBar {...labels} dateLabel={dateLabel} />)
-    expect(screen.getByTitle(dateLabel).querySelector('.norden-date-bar-date-season')).toBeNull()
+    expect(dateOf().querySelector('.norden-date-bar-date-season')).toBeNull()
   })
 
   it('supports the resolving phase and keeps the settings position without contents', () => {

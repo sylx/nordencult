@@ -3,6 +3,7 @@ import QuantityInput from '../../components/parts/QuantityInput'
 import SectionFrame from '../../components/parts/SectionFrame'
 import type { KnightCardData } from '../../components/parts/KnightCard'
 import type { DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, KnightAbilitiesView, KnightView } from '../types'
+import Tooltip from '../../components/parts/Tooltip'
 
 /** Most knights holding one officer role */
 export const OFFICERS_PER_ROLE = 2
@@ -175,15 +176,16 @@ export default function DomesticOfficers({
                         </span>
                       </button>
                       {onDismiss && (
-                        <button
-                          type="button"
-                          className="norden-domestic-officer-dismiss"
-                          aria-label={`${knight.name}を${spec.label}担当官から外す`}
-                          title="担当官から外す"
-                          onClick={() => onDismiss(spec.role, knight.id)}
-                        >
-                          ×
-                        </button>
+                        <Tooltip content="担当官から外す">
+                          <button
+                            type="button"
+                            className="norden-domestic-officer-dismiss"
+                            aria-label={`${knight.name}を${spec.label}担当官から外す`}
+                            onClick={() => onDismiss(spec.role, knight.id)}
+                          >
+                            ×
+                          </button>
+                        </Tooltip>
                       )}
                     </li>
                   )
@@ -206,7 +208,7 @@ export default function DomesticOfficers({
               <span className={`norden-domestic-officer-effect ${effects?.[spec.role] ? '' : 'is-none'}`}>
                 {effects?.[spec.role] ?? (assigned.length > 0 ? '' : '担当官なし')}
               </span>
-              {alert && <span className="norden-domestic-officer-alert" title={alert.title}>{alert.label}</span>}
+              {alert && <Tooltip content={alert.title}><span className="norden-domestic-officer-alert">{alert.label}</span></Tooltip>}
             </li>
           )
         })}

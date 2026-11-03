@@ -35,7 +35,7 @@ describe('CommandToolbar', () => {
     const group = screen.getByRole('group', { name: '軍事' })
     expect(military).toHaveAttribute('aria-controls', group.id)
     expect(screen.getByRole('button', { name: '移動' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: '移動' })).toHaveAttribute('title', '移動できる騎士がいません')
+    expect(screen.getByRole('button', { name: '移動' })).toHaveAttribute('aria-description', '移動できる騎士がいません')
     // Focus moves to the first enabled sub-command
     expect(screen.getByRole('button', { name: '侵攻' })).toHaveFocus()
     await userEvent.click(screen.getByRole('button', { name: '侵攻' }))

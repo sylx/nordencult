@@ -2,6 +2,7 @@ import { useId, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
 import InfoWindow from './InfoWindow'
 import type { InfoWindowProps } from './InfoWindow'
+import Tooltip from '../parts/Tooltip'
 import './InfoWindowWithTabs.css'
 import { resolveWindowSkin } from '../../skins'
 
@@ -69,15 +70,17 @@ export default function InfoWindowWithTabs({
       chrome={tabs.length > 0 && (
         <div className="norden-tab-list" role="tablist" aria-label={tabListLabel} aria-orientation="vertical">
           {tabs.map((tab, tabIndex) => (
-            <button key={tab.id ?? tabIndex} ref={element => { buttons.current[tabIndex] = element }}
-              type="button" className={`norden-tab ${tabIndex === index ? 'is-active' : ''} ${iconOnlyTabs ? 'is-icon-only' : ''}`}
-              id={tabId(tabIndex)} role="tab" aria-label={tab.name} title={tab.name}
-              aria-selected={tabIndex === index} aria-controls={panelId} tabIndex={tabIndex === index ? 0 : -1}
-              onClick={() => select(tabIndex)} onKeyDown={event => handleKeyDown(event, tabIndex)}
-            >
-              <img src={tab.icon} alt="" aria-hidden="true" className="norden-tab-icon" />
-              {!iconOnlyTabs && <span className="norden-tab-name">{tab.name}</span>}
-            </button>
+            <Tooltip key={tab.id ?? tabIndex} content={tab.name}>
+              <button ref={element => { buttons.current[tabIndex] = element }}
+                type="button" className={`norden-tab ${tabIndex === index ? 'is-active' : ''} ${iconOnlyTabs ? 'is-icon-only' : ''}`}
+                id={tabId(tabIndex)} role="tab" aria-label={tab.name}
+                aria-selected={tabIndex === index} aria-controls={panelId} tabIndex={tabIndex === index ? 0 : -1}
+                onClick={() => select(tabIndex)} onKeyDown={event => handleKeyDown(event, tabIndex)}
+              >
+                <img src={tab.icon} alt="" aria-hidden="true" className="norden-tab-icon" />
+                {!iconOnlyTabs && <span className="norden-tab-name">{tab.name}</span>}
+              </button>
+            </Tooltip>
           ))}
         </div>
       )}

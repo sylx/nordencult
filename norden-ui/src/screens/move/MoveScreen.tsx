@@ -11,6 +11,7 @@ import { knightAbilityStats } from '../domestic/DomesticOfficers'
 import iconSupplies from '../../assets/ui/icons/icon-supplies.webp'
 import iconTroops from '../../assets/ui/icons/icon-troops.webp'
 import type { CityView, KnightView } from '../types'
+import Tooltip from '../../components/parts/Tooltip'
 import '../screens.css'
 import './MoveScreen.css'
 
@@ -138,13 +139,15 @@ export default function MoveScreen({
                   <b>{arrival}</b>
                   <span>ヶ月</span>
                 </div>
-                <label className={`norden-move-solo ${solo ? 'is-checked' : ''} ${withMercenary ? 'is-disabled' : ''}`} title={withMercenary ? MERCENARY_SOLO_REASON : undefined}>
-                  <input type="checkbox" checked={solo} disabled={withMercenary} onChange={event => setAlone(event.target.checked)} />
-                  <span>
-                    <b>単騎移動</b>
-                    <small>兵{prisoners.length > 0 ? '・物資・捕虜' : 'と物資'}を運ばず、騎士だけで目的地に急行します</small>
-                  </span>
-                </label>
+                <Tooltip content={withMercenary ? MERCENARY_SOLO_REASON : undefined}>
+                  <label className={`norden-move-solo ${solo ? 'is-checked' : ''} ${withMercenary ? 'is-disabled' : ''}`}>
+                    <input type="checkbox" checked={solo} disabled={withMercenary} onChange={event => setAlone(event.target.checked)} />
+                    <span>
+                      <b>単騎移動</b>
+                      <small>兵{prisoners.length > 0 ? '・物資・捕虜' : 'と物資'}を運ばず、騎士だけで目的地に急行します</small>
+                    </span>
+                  </label>
+                </Tooltip>
                 <div className="norden-move-amounts">
                   <QuantityInput label="兵数" icon={<img src={iconTroops} alt="" />} unit="人" step={soldierStep} value={draft.troops} max={soldierPool} disabled={solo}
                     onChange={setTroops} />

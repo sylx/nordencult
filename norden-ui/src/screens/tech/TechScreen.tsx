@@ -6,6 +6,7 @@ import SectionFrame from '../../components/parts/SectionFrame'
 import WindowFrame from '../../components/window/WindowFrame'
 import type { TechStatusView, TechView } from '../types'
 import { layoutTechs } from './techLayout'
+import Tooltip from '../../components/parts/Tooltip'
 import '../screens.css'
 import '../details.css'
 import './TechScreen.css'
@@ -233,9 +234,11 @@ export default function TechScreen({ techs, perTurn, pointDetails, carry = 0, mu
             </section>
           </div>
           <footer className="norden-tech-footer">
-            <span className="norden-tech-points" title={pointDetails?.join('\n')}>
-              研究ポイント <b>{perTurn ? range(perTurn) : '+0'}</b>/ターン
-            </span>
+            <Tooltip content={pointDetails?.join('\n')}>
+              <span className="norden-tech-points">
+                研究ポイント <b>{perTurn ? range(perTurn) : '+0'}</b>/ターン
+              </span>
+            </Tooltip>
             {carry > 0 && <span className="norden-tech-carry">宙に浮いた研究ポイント <b>{carry.toLocaleString()}</b></span>}
             {complete && <span className="norden-tech-complete">すべての技術を研究し終えました</span>}
             {mustChoose && (

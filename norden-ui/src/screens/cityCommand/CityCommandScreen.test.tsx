@@ -53,7 +53,7 @@ describe('CityCommandScreen', () => {
     setup({ commandState: { invade: { disabled: true, reason: '出撃できる騎士がいません' } }, endTurnDisabled: true })
     await userEvent.click(screen.getByRole('button', { name: /軍事/ }))
     expect(screen.getByRole('button', { name: '侵攻' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: '侵攻' })).toHaveAttribute('title', '出撃できる騎士がいません')
+    expect(screen.getByRole('button', { name: '侵攻' })).toHaveAttribute('aria-description', '出撃できる騎士がいません')
     expect(screen.getByRole('button', { name: /ターン終了/ })).toBeDisabled()
   })
 

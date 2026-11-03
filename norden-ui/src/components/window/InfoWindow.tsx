@@ -4,6 +4,7 @@ import { useWindowSize } from '../../hooks/useWindowSize'
 import type { WindowSize } from '../../hooks/useWindowSize'
 import { resolveWindowSkin, windowSkinStyle } from '../../skins'
 import type { InfoWindowSkin } from '../../skins'
+import Tooltip from '../parts/Tooltip'
 import './InfoWindow.css'
 
 export interface InfoWindowProps {
@@ -151,7 +152,7 @@ export default function InfoWindow({
         onPointerDown={event => start(event, 'drag')} onPointerMove={move}
         onPointerUp={end} onPointerCancel={end} onLostPointerCapture={end}
       >
-        <span id={titleId} className="norden-info-window-title-text" title={title}>{title}</span>
+        <Tooltip content={title}><span id={titleId} className="norden-info-window-title-text">{title}</span></Tooltip>
       </div>}
       <span ref={titleRef} className="norden-info-window-title-measure" aria-hidden="true">{showTitleBar ? title : ''}</span>
       <div className="norden-info-window-content">

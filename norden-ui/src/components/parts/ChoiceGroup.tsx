@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
+import Tooltip from './Tooltip'
 import './parts.css'
 
 export interface ChoiceOption<T extends string = string> {
@@ -38,13 +39,15 @@ export default function ChoiceGroup<T extends string = string>({ label, options,
   return (
     <div className={`norden-choice-group ${className}`} role="radiogroup" aria-label={label} onKeyDown={onKeyDown}>
       {options.map((option, index) => (
-        <button key={option.value} ref={element => { refs.current[index] = element }} type="button" role="radio"
-          className={`norden-button norden-choice ${option.value === value ? 'is-primary' : 'is-normal'}`} aria-checked={option.value === value} disabled={option.disabled}
-          tabIndex={option.value === focusable ? 0 : -1} title={option.title} onClick={() => onChange(option.value)}>
-          <span className="norden-choice-indicator" aria-hidden="true" />
-          {option.icon && <span className="norden-choice-icon" aria-hidden="true">{option.icon}</span>}
-          <span>{option.label}</span>
-        </button>
+        <Tooltip key={option.value} content={option.title}>
+          <button ref={element => { refs.current[index] = element }} type="button" role="radio"
+            className={`norden-button norden-choice ${option.value === value ? 'is-primary' : 'is-normal'}`} aria-checked={option.value === value} disabled={option.disabled}
+            tabIndex={option.value === focusable ? 0 : -1} onClick={() => onChange(option.value)}>
+            <span className="norden-choice-indicator" aria-hidden="true" />
+            {option.icon && <span className="norden-choice-icon" aria-hidden="true">{option.icon}</span>}
+            <span>{option.label}</span>
+          </button>
+        </Tooltip>
       ))}
     </div>
   )

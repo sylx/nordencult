@@ -37,7 +37,6 @@
 }
 
 .norden-domestic-stat {
-  position: relative;
   display: grid;
   grid-template-columns: 7.5em minmax(0, 1fr) 6.5em;
   align-items: center;
@@ -95,26 +94,9 @@
   font-weight: 500;
 }
 
-/* Breakdown of a stat, below its bar */
+/* Breakdown of a stat, in a Tooltip */
 .norden-domestic-stat-tip {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 7.5em;
-  z-index: 20;
   min-width: 220px;
-  max-width: 320px;
-  padding: 10px 12px;
-  color: #3b2a16;
-  background: #fff6dcf5;
-  border: 1px solid #b38d52;
-  border-radius: 6px;
-  box-shadow: inset 0 0 0 2px #fff9e666, 0 6px 16px #000a;
-  font-size: 13px;
-  pointer-events: none;
-}
-
-.norden-domestic-stat.is-open .norden-domestic-stat-tip {
-  pointer-events: auto;
 }
 
 .norden-domestic-stat-tip-title {

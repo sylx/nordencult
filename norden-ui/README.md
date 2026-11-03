@@ -4,7 +4,7 @@
 
 | 層 | 内容 | 場所 |
 | --- | --- | --- |
-| 基本部品 | ウィンドウ（`InfoWindow` / `InfoWindowWithTabs` / 最小化できる `MinimizableWindow`）、確認・お知らせ・設定のダイアログ（`ConfirmDialog` / OK だけの `AlertDialog` / 閉じるボタン付きの `SettingsDialog`）、ツールバー（`CommandToolbar`）、ターン情報（`DateBar`）、勢力の情報（`FactionBar`）、行動予約（`ActionOrders`）、UIパーツ（`Button`・`ChoiceGroup`・`QuantityInput`・`VolumeSlider`・`KnightCard`・`KnightChip`・`MercenaryCard` など） | `src/components/` |
+| 基本部品 | ウィンドウ（`InfoWindow` / `InfoWindowWithTabs` / 最小化できる `MinimizableWindow`）、確認・お知らせ・設定のダイアログ（`ConfirmDialog` / OK だけの `AlertDialog` / 閉じるボタン付きの `SettingsDialog`）、ツールバー（`CommandToolbar`）、ターン情報（`DateBar`）、勢力の情報（`FactionBar`）、行動予約（`ActionOrders`）、UIパーツ（`Button`・`Tooltip`・`ChoiceGroup`・`QuantityInput`・`VolumeSlider`・`KnightCard`・`KnightChip`・`MercenaryCard` など） | `src/components/` |
 | 画面 | 基本部品を組み合わせた1画面分のUI。都市コマンド画面・地図で選ぶステップ・侵攻画面 | `src/screens/` |
 | 画面スタック | 画面の階層。都市コマンド → 侵攻先の選択 → 侵攻画面と積み、Escで1段戻る | `src/navigation/` |
 
@@ -206,6 +206,7 @@ function BattleUi() {
 | `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `children?` | フェーズ・勢力のターン・年月・設定の順に表示。`children` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
 | `ActionOrders` | `orders: ActionOrderView[]`, `title?`（既定「行動予約」）, `onCancel?(id)`, `onSelect?(id)`, `activeId?`, `onDeactivate?()` | 侵攻（`kind: 'invasion'`）・移動（`'move'`）・輸送（`'transport'`）の予約を1行ずつ並べるHUDのパネル。経路（`from` → `to`、移動中の移動・輸送は出発した拠点から）と騎士（侵攻は「軍団長 〜 以下N名」、移動と輸送は「担当 〜・〜」）。`cancellable` の行に取消、`status`（「あと3ヶ月」など）を右に出す。`faction` で行頭に紋章、`current` で解決中の行を強調（進行フェーズの一覧）。`activeId` の行を選択中として強調して、その行の `members`（騎士の顔と名前。`KnightChip` で並べる）と `details`（`{ label, value }[]`。兵・物資・到着までの月数など）を行の下に開き、パネルの外を押すと `onDeactivate` を呼ぶ。行が多いと一覧がスクロールする。`MinimizableWindow` で題名の札だけに畳める（`minimized?`, `onMinimizedChange?`） |
 | `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `metal: 'gold' \| 'silver' \| 'none'`, `size`, `icon`, `style` | 象牙の立体的なボタンに金／銀の四隅装飾、または装飾なし。生成画像を9分割で伸縮し、`style` で幅・高さを指定可能。`icon` は文字の前に出す飾りの画像 |
+| `Tooltip` | `content`, `children`（対象の要素1つ）, `open`, `delay`, `id`, `className` | ブラウザの `title` の代わりに使うツールチップ。対象の要素に直接イベントを付けるので要素は増えず、無効のボタンにも出せる。ホバーかキーボードのフォーカスで対象の下（入らなければ上）に開き、`body` に描くのでウィンドウの `overflow` で切れない。`open` で開いたままにできる。`Button` の `title` もこれで出る |
 | `Banner` | `children`, `actions` | HUDの案内の帯（`role="status"`） |
 | `FactionBar` | `faction?: FactionView`, `summary?: FactionSummaryView`, `onOpenResearch`, `cityName`, `onPrevCity`, `onNextCity`, `cityPosition`, `movable`, `position`, `onPositionChange` | 左端の球に勢力のエンブレムを表示。球をドラッグしてバー全体を移動。矢印キーは10px、Shift併用は1px、Homeで元の位置。金（次のターンの増減）｜総生産｜総兵力｜研究（/ターンと研究中の技術・進捗・残りターン。研究先が無ければ「研究先なし」、ポイントも出ていなければ薄く。全部研究し終えたら（`complete`）「全技術研究済み」で薄く。`onOpenResearch` があれば押せる）｜◀ 都市名 ▶。`summary` が無ければ都市の切り替えだけ。ハンドラが無い方向は無効 |
 | `ChoiceGroup` | `label`, `options`, `value`, `onChange` | 単一選択のボタン列。radiogroupとして矢印キーで移動し、無効な選択肢を飛ばす |
@@ -300,7 +301,7 @@ import { InfoWindowWithTabs, windowSkins } from 'norden-ui'
 src/components/window/   ウィンドウ（InfoWindow, InfoWindowWithTabs, MinimizableWindow）
 src/components/toolbar/  CommandToolbar
 src/components/hud/      DateBar, FactionBar, ActionOrders
-src/components/parts/    小さな部品（Button, Banner, ChoiceGroup, QuantityInput, KnightCard, KnightChip, MercenaryCard, FactionMark）
+src/components/parts/    小さな部品（Button, Tooltip, Banner, ChoiceGroup, QuantityInput, KnightCard, KnightChip, MercenaryCard, FactionMark）
 src/navigation/          画面スタック（useScreenStack, ScreenHost）
 src/cutin/               カットイン（template.ts にJSONの型と初期値、templates/ に作ったテンプレートのJSON、engine/ に描画、useCutIn, CutInLayer）
 src/screens/             画面（types.ts にview型、cityCommand/ mapPick/ invasion/）

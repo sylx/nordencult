@@ -11,6 +11,7 @@ import type {
 } from '../types'
 import DomesticOfficers, { ABILITY_LABELS, KnightFace, OFFICER_ROLES, OFFICERS_PER_ROLE, knightAbility, roleAptitude, weightsLabel } from './DomesticOfficers'
 import DomesticStatus from './DomesticStatus'
+import Tooltip from '../../components/parts/Tooltip'
 import '../screens.css'
 import './DomesticScreen.css'
 
@@ -363,15 +364,16 @@ export default function DomesticScreen({
                                     アップグレード
                                   </Button>
                                 )}
-                                <button
-                                  type="button"
-                                  className="norden-domestic-slot-delete"
-                                  aria-label={`${building.name}を削除`}
-                                  title={`${building.name}を取り壊す`}
-                                  onClick={() => setDemolishTarget(building)}
-                                >
-                                  削除
-                                </button>
+                                <Tooltip content={`${building.name}を取り壊す`}>
+                                  <button
+                                    type="button"
+                                    className="norden-domestic-slot-delete"
+                                    aria-label={`${building.name}を削除`}
+                                    onClick={() => setDemolishTarget(building)}
+                                  >
+                                    削除
+                                  </button>
+                                </Tooltip>
                               </div>
                             </div>
                           </li>

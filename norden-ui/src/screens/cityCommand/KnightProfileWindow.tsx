@@ -4,6 +4,7 @@ import type { NavigationWindowProps } from '../../components/window/NavigationWi
 import { KnightStats } from '../../components/parts/KnightCard'
 import { ABILITIES, ABILITY_LABELS, knightAbility } from '../domestic/DomesticOfficers'
 import type { KnightView } from '../types'
+import Tooltip from '../../components/parts/Tooltip'
 import './KnightProfileWindow.css'
 
 export interface KnightProfileWindowProps extends Omit<NavigationWindowProps, 'title' | 'children'> {
@@ -75,8 +76,9 @@ export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, 
               if (typeof part === 'string') return part
               const target = knightOf?.(part.id)
               return target && onSelectKnight
-                ? <button key={index} type="button" className="norden-knight-profile-link"
-                  title={`${target.name}の詳細`} onClick={() => onSelectKnight(part.id)}>{part.name}</button>
+                ? <Tooltip key={index} content={`${target.name}の詳細`}>
+                  <button type="button" className="norden-knight-profile-link" onClick={() => onSelectKnight(part.id)}>{part.name}</button>
+                </Tooltip>
                 : part.name
             })}</p>
             : <p className="norden-knight-profile-empty">記録はありません。</p>}
@@ -134,7 +136,7 @@ function AbilityChart({ abilities }: { abilities: readonly { label: string; valu
         // The top label sits above its corner, the bottom ones below theirs
         const dy = at.y < cy - CHART.radius / 2 ? -10 : at.y > cy + CHART.radius / 2 ? 10 : 0
         return <g key={label}>
-          <circle className="is-point" cx={x} cy={y} r={4}><title>{`${label} ${value ?? '—'}`}</title></circle>
+          <Tooltip content={`${label} ${value ?? '—'}`}><circle className="is-point" cx={x} cy={y} r={4} /></Tooltip>
           <text x={at.x} y={at.y + dy} textAnchor={anchor} dominantBaseline="middle">
             <tspan className="is-label">{label}</tspan>
             <tspan className="is-number" dx={4}>{value ?? '—'}</tspan>

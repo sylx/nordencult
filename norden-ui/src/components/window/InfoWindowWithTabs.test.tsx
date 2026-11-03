@@ -16,7 +16,6 @@ describe('InfoWindowWithTabs', () => {
     expect(screen.getByRole('region', { name: '都市情報' })).toBeInTheDocument()
     const tab = screen.getByRole('tab', { name: '都市情報' })
     expect(tab).toHaveTextContent('')
-    expect(tab).toHaveAttribute('title', '都市情報')
     expect(tab.querySelector('.norden-tab-name')).not.toBeInTheDocument()
     expect(tab).toHaveAttribute('aria-selected', 'true')
     const panel = screen.getByRole('tabpanel', { name: '都市情報' })

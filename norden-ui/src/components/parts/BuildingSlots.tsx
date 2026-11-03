@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { BuildingView, CityBuildingsView, ConstructionView } from '../../screens/types'
+import Tooltip from './Tooltip'
 import './BuildingSlots.css'
 
 export interface BuildingSlotsProps {
@@ -63,12 +64,14 @@ export function ConstructionProgress({ invested, required, turnsLeft }: { invest
 /** The relic a city is repairing or producing, drawn as a slot of its own */
 export function RelicWorkSlot({ work }: { work: ConstructionView }) {
   return (
-    <div className="norden-building-slot is-building" title={work.building.description}>
-      <BuildingImage building={work.building} />
-      <span className="norden-building-slot-name">{work.building.name}</span>
-      <span className="norden-building-slot-badge">{workLabel(work)}中</span>
-      <ConstructionProgress invested={work.invested} required={work.required} turnsLeft={work.turnsLeft} />
-    </div>
+    <Tooltip content={work.building.description}>
+      <div className="norden-building-slot is-building">
+        <BuildingImage building={work.building} />
+        <span className="norden-building-slot-name">{work.building.name}</span>
+        <span className="norden-building-slot-badge">{workLabel(work)}中</span>
+        <ConstructionProgress invested={work.invested} required={work.required} turnsLeft={work.turnsLeft} />
+      </div>
+    </Tooltip>
   )
 }
 
@@ -87,9 +90,13 @@ export default function BuildingSlots({ buildings, onSelect, selectedId, classNa
   const empty = Math.max(0, slots - built.length - (construction && !upgradingId ? 1 : 0))
   const tile = (building: BuildingView, body: ReactNode, extra = '') => {
     const classes = `norden-building-slot ${extra} ${selectedId === building.id ? 'is-selected' : ''}`
-    return onSelect
-      ? <button type="button" className={classes} title={building.description} onClick={() => onSelect(building.id)}>{body}</button>
-      : <div className={classes} title={building.description}>{body}</div>
+    return (
+      <Tooltip content={building.description}>
+        {onSelect
+          ? <button type="button" className={classes} onClick={() => onSelect(building.id)}>{body}</button>
+          : <div className={classes}>{body}</div>}
+      </Tooltip>
+    )
   }
   const constructionTile = (current: ConstructionView, upgradedFrom?: BuildingView) =>
     tile(current.building, <>

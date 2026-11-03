@@ -6,6 +6,7 @@ import iconProduction from '../../assets/ui/icons/icon-production.webp'
 import iconTroops from '../../assets/ui/icons/icon-military.webp'
 import ribbon from '../../assets/ui/hud/faction-ribbon.webp'
 import type { FactionSummaryView, FactionView } from '../../screens/types'
+import Tooltip from '../parts/Tooltip'
 import './FactionBar.css'
 
 export interface FactionBarProps {
@@ -59,9 +60,13 @@ function ResearchStat({ research, onOpen }: { research: NonNullable<FactionSumma
     </span>
   </>
   const className = `norden-faction-bar-stat is-research ${idle ? 'is-idle' : ''} ${!tech && !idle ? 'is-unset' : ''}`
-  return onOpen
-    ? <button type="button" className={className} aria-label={`研究：${title}`} title={title} onClick={onOpen}>{content}</button>
-    : <span className={className} role="group" aria-label="研究" title={title}>{content}</span>
+  return (
+    <Tooltip content={title}>
+      {onOpen
+        ? <button type="button" className={className} aria-label={`研究：${title}`} onClick={onOpen}>{content}</button>
+        : <span className={className} role="group" aria-label="研究">{content}</span>}
+    </Tooltip>
+  )
 }
 
 /** Viewports into the supplied PNG: fixed-aspect caps and a stretchable plain middle. */
@@ -81,11 +86,13 @@ function RibbonDecoration() {
 
 function Stat({ label, icon, value, title, children }: { label: string; icon: string; value: number; title?: string; children?: ReactNode }) {
   return (
-    <span className="norden-faction-bar-stat" role="group" aria-label={label} title={title}>
-      <img className="norden-faction-bar-stat-icon" src={icon} alt="" />
-      <span className="norden-faction-bar-stat-label">{label}</span>
-      <span className="norden-faction-bar-stat-value">{value.toLocaleString()}{children}</span>
-    </span>
+    <Tooltip content={title}>
+      <span className="norden-faction-bar-stat" role="group" aria-label={label}>
+        <img className="norden-faction-bar-stat-icon" src={icon} alt="" />
+        <span className="norden-faction-bar-stat-label">{label}</span>
+        <span className="norden-faction-bar-stat-value">{value.toLocaleString()}{children}</span>
+      </span>
+    </Tooltip>
   )
 }
 
@@ -140,14 +147,15 @@ export default function FactionBar({ faction, summary, onOpenResearch, cityName,
   return (
     <div className={`norden-faction-bar ${dragging ? 'is-dragging' : ''} ${className}`} role="group" aria-label="勢力"
       style={{ ...style, translate: `${offset.x}px ${offset.y}px` }}>
-      <button type="button" className="norden-faction-bar-orb" disabled={!movable} data-sound="none"
-        aria-label={`${faction?.name ?? '勢力'}のバーを移動`}
-        title={`${faction?.name ?? '勢力'}：球をドラッグ、または矢印キーで移動（Shiftで微調整・Homeで元の位置）`}
-        onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end} onLostPointerCapture={end}
-        onKeyDown={keyDown} onClick={event => event.stopPropagation()}>
-        {faction?.emblem && <img className="norden-faction-bar-emblem" src={faction.emblem} alt={faction.name} draggable={false} />}
-        <span className="norden-faction-bar-glass" aria-hidden="true" />
-      </button>
+      <Tooltip content={`${faction?.name ?? '勢力'}：球をドラッグ、または矢印キーで移動（Shiftで微調整・Homeで元の位置）`}>
+        <button type="button" className="norden-faction-bar-orb" disabled={!movable} data-sound="none"
+          aria-label={`${faction?.name ?? '勢力'}のバーを移動`}
+          onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end} onLostPointerCapture={end}
+          onKeyDown={keyDown} onClick={event => event.stopPropagation()}>
+          {faction?.emblem && <img className="norden-faction-bar-emblem" src={faction.emblem} alt={faction.name} draggable={false} />}
+          <span className="norden-faction-bar-glass" aria-hidden="true" />
+        </button>
+      </Tooltip>
       <div className="norden-faction-bar-ribbon">
         <RibbonDecoration />
         <div className="norden-faction-bar-content">

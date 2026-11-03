@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import StatBar from '../../components/parts/StatBar'
+import Tooltip from '../../components/parts/Tooltip'
 import iconAgriculture from '../../assets/ui/icons/icon-agriculture.svg'
 import iconCommerce from '../../assets/ui/icons/icon-commerce.webp'
 import iconProduction from '../../assets/ui/icons/icon-production.webp'
@@ -48,9 +49,7 @@ function growthNotes(growth: PopulationGrowthView, tier?: number): string[] {
 export default function DomesticStatus({ stats, population, populationGrowth, tier, supplies, gold }: DomesticStatusProps) {
   const id = useId()
   const ref = useRef<HTMLElement>(null)
-  const [hovered, setHovered] = useState<string | null>(null)
   const [pinned, setPinned] = useState<string | null>(null)
-  const open = pinned ?? hovered
 
   // A pinned tooltip closes on a click elsewhere or Escape
   useEffect(() => {
@@ -90,72 +89,66 @@ export default function DomesticStatus({ stats, population, populationGrowth, ti
             const boosts = (stat.boosts ?? []).filter(boost => boost.value !== 0)
             const base = stat.base ?? stat.value - boosts.reduce((sum, boost) => sum + boost.value, 0)
             const buildingBoost = boosts.filter(boost => boost.source === 'building').reduce((sum, boost) => sum + boost.value, 0)
-            const isOpen = open === stat.label
+            const isPinned = pinned === stat.label
             const tipId = `${id}-tip-${index}`
-            return (
-              <li
-                key={stat.label}
-                data-stat={stat.label}
-                className={`norden-domestic-stat ${isOpen ? 'is-open' : ''}`}
-                onMouseEnter={() => setHovered(stat.label)}
-                onMouseLeave={() => setHovered(current => (current === stat.label ? null : current))}
-              >
-                <span className="norden-domestic-stat-label">
-                  <img src={labelIcons[stat.label] ?? statIcons[statKind(stat)]} alt="" />
-                  {stat.label}
-                </span>
-                <button
-                  type="button"
-                  className="norden-domestic-stat-bar"
-                  aria-label={`${stat.label}の内訳`}
-                  aria-expanded={isOpen}
-                  aria-describedby={isOpen ? tipId : undefined}
-                  onClick={() => setPinned(current => (current === stat.label ? null : stat.label))}
-                >
-                  <StatBar
-                    label={stat.label}
-                    value={stat.value}
-                    max={stat.max}
-                    tone={statKind(stat)}
-                    segments={boosts.map(boost => ({ value: boost.value, kind: boost.source === 'building' ? 'building' : 'other' }))}
-                  />
-                </button>
-                {/* Stats without boosts (e.g. 練度, which grows by training) leave the column empty */}
-                <span className={`norden-domestic-stat-boost ${buildingBoost ? '' : 'is-none'}`}>
-                  {stat.boosts && `施設 ${signed(buildingBoost)}`}
-                </span>
-                {isOpen && (
-                  <div id={tipId} role="tooltip" className="norden-domestic-stat-tip">
-                    <strong className="norden-domestic-stat-tip-title">
-                      {stat.label} <b>{stat.value.toLocaleString()}</b>
-                      <span> / {stat.max.toLocaleString()}</span>
-                    </strong>
-                    {stat.boosts && <ul className="norden-domestic-stat-tip-rows">
-                      <li>
-                        <span>基礎</span>
-                        <b>{base.toLocaleString()}</b>
-                      </li>
-                      {boosts.map(boost => (
-                        <li key={boost.label} className={boost.source === 'building' ? 'is-building' : ''}>
-                          <span>{boost.label}</span>
-                          <b>{signed(boost.value)}</b>
-                          {boost.details && boost.details.length > 0 && (
-                            <ul className="norden-domestic-stat-tip-details">
-                              {boost.details.map(detail => <li key={detail}>{detail}</li>)}
-                            </ul>
-                          )}
-                        </li>
-                      ))}
-                    </ul>}
-                    {stat.boosts && boosts.length === 0 && <p className="norden-domestic-stat-tip-none">ブーストはありません</p>}
-                    {stat.notes && stat.notes.length > 0 && (
-                      <ul className="norden-domestic-stat-tip-notes">
-                        {stat.notes.map(note => <li key={note}>{note}</li>)}
+            const breakdown = <>
+              <strong className="norden-domestic-stat-tip-title">
+                {stat.label} <b>{stat.value.toLocaleString()}</b>
+                <span> / {stat.max.toLocaleString()}</span>
+              </strong>
+              {stat.boosts && <ul className="norden-domestic-stat-tip-rows">
+                <li>
+                  <span>基礎</span>
+                  <b>{base.toLocaleString()}</b>
+                </li>
+                {boosts.map(boost => (
+                  <li key={boost.label} className={boost.source === 'building' ? 'is-building' : ''}>
+                    <span>{boost.label}</span>
+                    <b>{signed(boost.value)}</b>
+                    {boost.details && boost.details.length > 0 && (
+                      <ul className="norden-domestic-stat-tip-details">
+                        {boost.details.map(detail => <li key={detail}>{detail}</li>)}
                       </ul>
                     )}
-                  </div>
-                )}
-              </li>
+                  </li>
+                ))}
+              </ul>}
+              {stat.boosts && boosts.length === 0 && <p className="norden-domestic-stat-tip-none">ブーストはありません</p>}
+              {stat.notes && stat.notes.length > 0 && (
+                <ul className="norden-domestic-stat-tip-notes">
+                  {stat.notes.map(note => <li key={note}>{note}</li>)}
+                </ul>
+              )}
+            </>
+            return (
+              <Tooltip key={stat.label} content={breakdown} open={isPinned} delay={0} id={tipId} className="norden-domestic-stat-tip">
+                <li data-stat={stat.label} className="norden-domestic-stat">
+                  <span className="norden-domestic-stat-label">
+                    <img src={labelIcons[stat.label] ?? statIcons[statKind(stat)]} alt="" />
+                    {stat.label}
+                  </span>
+                  <button
+                    type="button"
+                    className="norden-domestic-stat-bar"
+                    aria-label={`${stat.label}の内訳`}
+                    aria-expanded={isPinned}
+                    aria-describedby={isPinned ? tipId : undefined}
+                    onClick={() => setPinned(current => (current === stat.label ? null : stat.label))}
+                  >
+                    <StatBar
+                      label={stat.label}
+                      value={stat.value}
+                      max={stat.max}
+                      tone={statKind(stat)}
+                      segments={boosts.map(boost => ({ value: boost.value, kind: boost.source === 'building' ? 'building' : 'other' }))}
+                    />
+                  </button>
+                  {/* Stats without boosts (e.g. 練度, which grows by training) leave the column empty */}
+                  <span className={`norden-domestic-stat-boost ${buildingBoost ? '' : 'is-none'}`}>
+                    {stat.boosts && `施設 ${signed(buildingBoost)}`}
+                  </span>
+                </li>
+              </Tooltip>
             )
           })}
         </ul>
@@ -164,11 +157,13 @@ export default function DomesticStatus({ stats, population, populationGrowth, ti
       {shown.length > 0 && (
         <dl className="norden-domestic-figures">
           {shown.map(figure => (
-            <div key={figure.label} title={figure.title}>
-              <dt>{figure.label}</dt>
-              <dd>{figure.value.toLocaleString()}</dd>
-              {figure.notes?.map(note => <dd key={note} className="norden-domestic-figure-note">{note}</dd>)}
-            </div>
+            <Tooltip key={figure.label} content={figure.title}>
+              <div>
+                <dt>{figure.label}</dt>
+                <dd>{figure.value.toLocaleString()}</dd>
+                {figure.notes?.map(note => <dd key={note} className="norden-domestic-figure-note">{note}</dd>)}
+              </div>
+            </Tooltip>
           ))}
         </dl>
       )}

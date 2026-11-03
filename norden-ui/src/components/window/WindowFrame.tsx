@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type HTMLAttributes, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
+import Tooltip from '../parts/Tooltip'
 import './WindowFrame.css'
 import './NavigationWindow.css'
 
@@ -99,35 +100,40 @@ export default function WindowFrame({
             const label = (back ? navigation.backLabel : navigation.forwardLabel) ?? (back ? '戻る' : '進む')
             const onClick = back ? navigation.onBack : navigation.onForward
             const disabled = (back ? navigation.backDisabled : navigation.forwardDisabled) || !onClick
-            return <button key={direction} type="button"
-              className={`norden-window-frame-navigation-button is-${direction}`}
-              aria-label={label} title={label} onClick={onClick} disabled={disabled}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-                <path d={back ? 'M19 12H5m7-7-7 7 7 7' : 'M5 12h14m-7-7 7 7-7 7'} />
-              </svg>
-            </button>
+            return <Tooltip key={direction} content={label}>
+              <button type="button"
+                className={`norden-window-frame-navigation-button is-${direction}`}
+                aria-label={label} onClick={onClick} disabled={disabled}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                  <path d={back ? 'M19 12H5m7-7-7 7 7 7' : 'M5 12h14m-7-7 7 7-7 7'} />
+                </svg>
+              </button>
+            </Tooltip>
           })}
         </div>
       )}
       {title !== undefined && title !== null && (
-        <div className={`norden-window-frame-title ${draggable ? 'is-draggable' : ''}`}
-          role={draggable ? 'button' : undefined} tabIndex={draggable ? 0 : undefined} data-sound="none"
-          aria-label={draggable ? 'ウィンドウを移動' : undefined}
-          title={draggable ? 'タイトルをドラッグ、または矢印キーで移動（Shiftで微調整・Homeで元の位置）' : undefined}
-          onPointerDown={start} onPointerMove={move} onPointerUp={end}
-          onPointerCancel={end} onLostPointerCapture={end} onKeyDown={keyDown}>
-          <span id={titleId} className="norden-window-frame-title-text">{title}</span>
-        </div>
+        <Tooltip content={draggable ? 'タイトルをドラッグ、または矢印キーで移動（Shiftで微調整・Homeで元の位置）' : undefined}>
+          <div className={`norden-window-frame-title ${draggable ? 'is-draggable' : ''}`}
+            role={draggable ? 'button' : undefined} tabIndex={draggable ? 0 : undefined} data-sound="none"
+            aria-label={draggable ? 'ウィンドウを移動' : undefined}
+            onPointerDown={start} onPointerMove={move} onPointerUp={end}
+            onPointerCancel={end} onLostPointerCapture={end} onKeyDown={keyDown}>
+            <span id={titleId} className="norden-window-frame-title-text">{title}</span>
+          </div>
+        </Tooltip>
       )}
       {onClose && (
-        <button type="button" className="norden-window-frame-close"
-          aria-label={closeLabel} title={closeLabel} onClick={onClose}>
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-            strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false">
-            <path d="m5 5 14 14M19 5 5 19" />
-          </svg>
-        </button>
+        <Tooltip content={closeLabel}>
+          <button type="button" className="norden-window-frame-close"
+            aria-label={closeLabel} onClick={onClose}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false">
+              <path d="m5 5 14 14M19 5 5 19" />
+            </svg>
+          </button>
+        </Tooltip>
       )}
       <div className="norden-window-frame-content">{children}</div>
     </section>

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import Tooltip from '../parts/Tooltip'
 import './DateBar.css'
 
 export interface DateBarProps {
@@ -91,17 +92,19 @@ export default function DateBar({
       }}
     >
       <div className="norden-date-bar-content">
-        <span className="norden-date-bar-phase" title={phaseLabel}>{phaseLabel}</span>
+        <Tooltip content={phaseLabel}><span className="norden-date-bar-phase">{phaseLabel}</span></Tooltip>
         <DateBarSeparator />
-        <span className="norden-date-bar-turn" title={turnLabel}>
-          {factionName ? <>
-            <span className="norden-date-bar-faction">{factionName}</span>
-            <span className="norden-date-bar-turn-suffix">のターン</span>
-          </> : <span className="norden-date-bar-turn-status">{turnLabel}</span>}
-        </span>
+        <Tooltip content={turnLabel}>
+          <span className="norden-date-bar-turn">
+            {factionName ? <>
+              <span className="norden-date-bar-faction">{factionName}</span>
+              <span className="norden-date-bar-turn-suffix">のターン</span>
+            </> : <span className="norden-date-bar-turn-status">{turnLabel}</span>}
+          </span>
+        </Tooltip>
         {dateLabel && <>
           <DateBarSeparator />
-          <span className="norden-date-bar-date" title={dateLabel}><DateBarCalendar label={dateLabel} /></span>
+          <Tooltip content={dateLabel}><span className="norden-date-bar-date"><DateBarCalendar label={dateLabel} /></span></Tooltip>
         </>}
         <DateBarSeparator />
         <button

@@ -9,7 +9,7 @@ describe('FactionBar', () => {
     const bar = screen.getByRole('group', { name: '勢力' })
     const gold = within(bar).getByRole('group', { name: '金' })
     expect(gold).toHaveTextContent('1,234（−56）')
-    expect(gold).toHaveAttribute('title', '次のターン −56')
+    expect(gold).toHaveAttribute('aria-description', '次のターン −56')
     expect(within(bar).getByRole('group', { name: '総生産' })).toHaveTextContent('820')
     const troops = within(bar).getByRole('group', { name: '総兵力' })
     expect(troops).toHaveTextContent('4,500')
