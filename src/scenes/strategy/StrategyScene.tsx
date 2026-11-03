@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Banner, BuildingImage, CITY_COMMAND_GROUPS, CUT_IMAGES, CUTIN_TEMPLATES, CityCommandScreen, ConfirmDialog, CutInLayer, DomesticScreen, EventScreen, FactionMark,
+  Banner, BuildingImage, Button, CITY_COMMAND_GROUPS, CUT_IMAGES, CUTIN_TEMPLATES, CityCommandScreen, ConfirmDialog, CutInLayer, DomesticScreen, EventScreen, FactionMark,
   InvasionScreen, KnightChip, MapPickScreen, MercenaryScreen, MoveScreen, RelicScreen, ScreenHost, TechScreen, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
   type MoveDraft, type TransportDraft,
 } from 'norden-ui'
@@ -21,6 +21,7 @@ import {
 } from '../../game'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
+import { useStrategyLayout } from './uiLayout'
 import {
   UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
   eventView, mapCities, mercenaryContracts, mercenaryOffers, officerEffects, officersView, phaseLabel, populationGrowthView, relicOptions, relicProductionsView, relicsView, researchPerTurn, researchPointDetails, techsView,
@@ -139,8 +140,8 @@ export default function StrategyScene() {
   const cutIn = useCutIn()
   // The order picked on the 行動予約 list: only its route is shown on the map
   const [activeOrder, setActiveOrder] = useState<string | null>(null)
-  // The 行動予約 list folded down to its title: it stays so across the screens and phases
-  const [ordersMinimized, setOrdersMinimized] = useState(false)
+  // Where the player put the windows (and the 行動予約 list folded down to its title): they stay across the screens and plays
+  const { layout, updateLayout, resetLayout } = useStrategyLayout()
   // The right edge (px) of the city window on the left of the map: it can be dragged or resized
   const [cityWindowRight, setCityWindowRight] = useState(0)
 
@@ -504,6 +505,7 @@ export default function StrategyScene() {
           return (
             <CityCommandScreen city={cityView(game, cityId)} turn={turnView(game)} faction={factionSummary(game)}
               playerFaction={factionView(faction)}
+              layout={layout} onLayoutChange={(part, position) => updateLayout({ [part]: position })}
               onWindowBoundsChange={({ x, width }) => setCityWindowRight(x + width)}
               knightOf={(id) => CHARACTER_MAP[id] ? knightView(game, id) : undefined}
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
@@ -526,13 +528,14 @@ export default function StrategyScene() {
                 <div className="strategy-scene__settings">
                   <p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(faction)} /></p>
                   <SoundSettings />
+                  <Button variant="quiet" size="small" onClick={resetLayout}>UIの配置を初期化</Button>
                 </div>
               }>
               <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))}
                 onCancelMove={(id) => update((s) => cancelMoveOrder(s, id))}
                 onCancelTransport={(id) => update((s) => cancelTransportOrder(s, id))} onSelectCity={switchCity}
                 activeId={activeOrder} onActiveChange={setActiveOrder}
-                minimized={ordersMinimized} onMinimizedChange={setOrdersMinimized} />
+                minimized={layout.ordersMinimized ?? false} onMinimizedChange={(ordersMinimized) => updateLayout({ ordersMinimized })} />
               {notice && <div className="norden-screen-top-center norden-screen-banner"><Banner>{notice}</Banner></div>}
             </CityCommandScreen>
           )
