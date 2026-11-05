@@ -179,9 +179,10 @@ export function factionView(factionId: string | null | undefined): FactionView |
 /** What marks a mercenary on the screens: their company and their own soldiers */
 function mercenaryMark(game: GameState, id: string): MercenaryMark | undefined {
   const info = CHARACTER_MAP[id]?.mercenaryInfo
+  const contract = game.mercenaries[id]?.contract
   return info && {
     company: info.name, soldiers: game.mercenaries[id]?.soldiers ?? 0, maxSoldiers: info.maxSoldiers, morale: BALANCE.MERCENARY_MORALE,
-    monthly: game.mercenaries[id]?.contract?.monthly,
+    monthly: contract?.monthly, months: contract ? game.turn - contract.since : undefined,
   }
 }
 
