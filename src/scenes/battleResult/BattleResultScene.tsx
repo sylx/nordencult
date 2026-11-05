@@ -148,7 +148,7 @@ function MoveList({ moves }: { moves: readonly CharacterMove[] }) {
       case 'return': return `${cityName(m.to)}へ帰還`
       case 'retreat': return `${cityName(m.to)}へ退却`
       case 'rejoin': return `退却先が無く${cityName(m.to)}へ`
-      case 'wander': return '退却先が無く放浪に'
+      case 'wander': return '退却先が無く放浪'
       case 'released': return '傭兵の契約が切れた'
     }
   }
