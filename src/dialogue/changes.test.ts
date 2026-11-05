@@ -5,7 +5,9 @@ import { stateChanges } from './changes'
 
 describe('stateChanges', () => {
   it('tells the gold, the flags, who serves where and the contracts', () => {
-    const before = playing('carta')
+    const start = playing('carta')
+    // フルーエン with a 酒場 to hire at
+    const before = { ...start, cities: { ...start.cities, P012: { ...start.cities.P012, buildings: [...start.cities.P012.buildings, 'tavern'] } } }
     const after = setFlag(hireMercenary({ ...before, gold: { ...before.gold, carta: 6000 } }, 'P012', '042'), 'travelingMerchant:met', 1)
     expect(stateChanges(before, after)).toEqual([
       expect.stringMatching(/^金 .+: \d+ → 4000（[+-]\d+）$/),

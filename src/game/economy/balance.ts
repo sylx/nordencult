@@ -93,9 +93,9 @@ export const PAPAL_REPAIR_RATE = 2.5
 export const MERCENARY_MONTHLY_DIVISOR = 6
 /** A mercenary's rank by their 契約金 before the standing: the first whose least it reaches (the mercenary screen shows it, not the price) */
 export const MERCENARY_RANKS = [['S', 10000], ['A', 5000], ['B', 3000], ['C', 2000], ['D', 0]] as const
-/** How many roads from a city it can hire mercenaries at, without and with a 酒場 (a 傭兵ギルド: every city) */
-export const MERCENARY_REACH = 1
-export const MERCENARY_REACH_TAVERN = 2
+/** How many roads from a city it can hire mercenaries at, with a 酒場 and with a 傭兵ギルド (with neither: none) */
+export const MERCENARY_REACH_TAVERN = 1
+export const MERCENARY_REACH_GUILD = 2
 /** Soldiers a mercenary gets back each economy run, as a share of their 最大兵力 */
 export const MERCENARY_RECOVERY_RATE = 0.1
 /** Morale of a mercenary's soldiers, whatever the city's */

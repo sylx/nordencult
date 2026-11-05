@@ -13,7 +13,7 @@ import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   BALANCE, MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
   charactersIn, citiesOf, decideInvasion, decideRenewal, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn,
-  dismantleRelic, dismissMercenary, endFactionTurnProblem, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn, lordChangeProblem, mustChooseResearch, requestPapalRepair, researchOf, setResearch,
+  dismantleRelic, dismissMercenary, endFactionTurnProblem, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn, lordChangeProblem, mercenaryCityProblem, mustChooseResearch, requestPapalRepair, researchOf, setResearch,
   moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction, prisonersIn,
   renewalProblem, runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, startRelicProduction, startRelicRepair, stationedIn, suppliesLeft, transportFromProblem,
   transportOrderProblem, dismissEvent, useGame, viewFaction, type CityId, type DefenseDraft, type FactionId, type GameState, type InvasionOrder,
@@ -484,7 +484,8 @@ export default function StrategyScene() {
     state.transport = transport ? { disabled: true, reason: transport } : {}
     const domestic = playerTurn ? domesticProblem(game, cityId) : '手番ではありません'
     state.domestic = domestic ? { disabled: true, reason: domestic } : {}
-    state.mercenary = state.domestic
+    const mercenary = playerTurn ? mercenaryCityProblem(game, cityId) : '手番ではありません'
+    state.mercenary = mercenary ? { disabled: true, reason: mercenary } : {}
     state.tech = playerTurn ? {} : { disabled: true, reason: '手番ではありません' }
     state.relic = state.tech
     if (playerTurn && ownerOf(game, cityId) !== faction) for (const id of OWN_CITY_COMMAND_IDS) state[id] = OTHER_FACTION_CITY

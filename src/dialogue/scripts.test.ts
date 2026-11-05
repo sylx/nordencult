@@ -52,7 +52,10 @@ describe('hireMercenary', () => {
   const FLUEN = 'P012'
   const BARREL = '042' // ドゥンダリン盾隊 (2000 gold), 老練
   const LANDSKNECHT = '110' // ランツクネヒト, プライド 5
-  const rich = () => debugSetGold(playing('carta'), 'carta', 5000)
+  /** カルタ書院 playing, フルーエン with a 酒場 to hire mercenaries at */
+  const withTavern = (state: GameState): GameState =>
+    ({ ...state, cities: { ...state.cities, [FLUEN]: { ...state.cities[FLUEN], buildings: [...state.cities[FLUEN].buildings, 'tavern'] } } })
+  const rich = () => debugSetGold(withTavern(playing('carta')), 'carta', 5000)
 
   it('hires the mercenary on 契約する, in the mercenary’s 口調', async () => {
     const { player, done } = run('hireMercenary', { city: FLUEN, merc: BARREL }, rich(), ['yes'])
@@ -98,7 +101,7 @@ describe('hireMercenary', () => {
   })
 
   it('cannot sign short of gold, and says why', async () => {
-    const poor = debugSetGold(playing('carta'), 'carta', 0)
+    const poor = debugSetGold(withTavern(playing('carta')), 'carta', 0)
     expect(hireProblem(poor, FLUEN, BARREL)).toBe('金が足りません')
     const { player, done } = run('hireMercenary', { city: FLUEN, merc: BARREL }, poor, ['no'])
     await done

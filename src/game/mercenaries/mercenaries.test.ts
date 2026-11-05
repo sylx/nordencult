@@ -3,12 +3,12 @@ import { CHARACTER_MAP } from '../../data/character'
 import {
   addMoveOrder, addOrder, addTransportOrder, assignmentProblem, availableKnights, BALANCE, charactersIn, citiesOf, contractPrice, createInitialState,
   decideRenewal, defaultUnitType, defenderArmy, defenseKnights, defenseProblem, dismissMercenary, dismissProblem, endFactionTurn,
-  finishEntry, formDefense, hireMercenary, hireOfferProblem, hireProblem, hiredMercenaries, invadeFromProblem, isRecovering, leadingKnight, MAX_SOLDIERS, mercenaryFees, mercenaryMarket,
+  finishEntry, formDefense, hireMercenary, hireOfferProblem, hireProblem, hiredMercenaries, invadeFromProblem, isRecovering, leadingKnight, MAX_SOLDIERS, mercenaryCityProblem, mercenaryFees, mercenaryMarket,
   mercenaryRank, mercenaryReach, moveOrderProblem, neighbours, orderProblem, prideProblem, rejoinCity, renewalPrice, renewalProblem, resolveBattle, runEconomy, runMovements, runRoaming,
   soldiersLeft, startNextBattle, successorLord, transportOrderProblem, treasuryForecast, unitTypesOf,
   type ArmyUnit, type BattleSurvivor, type GameState, type Movement,
 } from '..'
-import { playing } from '../testing'
+import { playing as play } from '../testing'
 
 const FLUEN = 'P012'
 const AMBARIA = 'P004'
@@ -31,6 +31,12 @@ const withSoldiers = (state: GameState, id: string, soldiers: number): GameState
   ({ ...state, mercenaries: { ...state.mercenaries, [id]: { ...state.mercenaries[id], soldiers } } })
 const withBuildings = (state: GameState, city: string, buildings: string[]): GameState =>
   ({ ...state, cities: { ...state.cities, [city]: { ...state.cities[city], buildings } } })
+
+/** As `play`, フルーエン with a 酒場 to hire mercenaries at */
+const playing = (...factions: string[]): GameState => {
+  const state = play(...factions)
+  return withBuildings(state, FLUEN, [...state.cities[FLUEN].buildings, 'tavern'])
+}
 
 /** カルタ書院 with 樽盾団 hired in フルーエン and gold to spare */
 const hired = (id = BARREL): GameState => hireMercenary(at(withGold(playing('carta'), 100000), id, FLUEN), FLUEN, id)
@@ -65,27 +71,37 @@ function leonisAttacks(start = playing('leonis', 'carta')): GameState {
 }
 
 describe('the market', () => {
-  it('reaches the city and the cities next to it, none further', () => {
+  it('is closed to a city with no 酒場', () => {
+    const state = at(withGold(play('carta'), 100000), BARREL, FLUEN)
+    expect(mercenaryReach(state, FLUEN)).toBeNull()
+    expect(mercenaryMarket(state, FLUEN)).toEqual([])
+    expect(mercenaryCityProblem(state, FLUEN)).toBe('傭兵の雇用には酒場が必要です')
+    expect(hireProblem(state, FLUEN, BARREL)).toBe('傭兵の雇用には酒場が必要です')
+    expect(mercenaryCityProblem(playing('carta'), FLUEN)).toBeNull()
+  })
+
+  it('reaches the city and the cities next to it with a 酒場, none further', () => {
     const state = playing('carta')
     const next = neighbours(FLUEN)[0]
     const far = neighbours(next).find((id) => id !== FLUEN && !neighbours(FLUEN).includes(id))!
+    expect(mercenaryReach(state, FLUEN)).toBe(1)
     expect(mercenaryMarket(at(state, IRON, next), FLUEN)).toContain(IRON)
     expect(mercenaryMarket(at(state, IRON, far), FLUEN)).not.toContain(IRON)
     expect(mercenaryMarket(state, FLUEN)).toContain(BARREL)
   })
 
-  it('reaches further with a 酒場 of the city and everywhere with a 傭兵ギルド', () => {
+  it('reaches two roads with a 傭兵ギルド of the city, none further', () => {
     const next = neighbours(FLUEN)[0]
     const far = neighbours(next).find((id) => id !== FLUEN && !neighbours(FLUEN).includes(id))!
-    const state = at(playing('carta'), IRON, far)
-    const tavern = withBuildings(state, FLUEN, ['tavern'])
-    expect(mercenaryReach(tavern, FLUEN)).toBe(2)
-    expect(mercenaryMarket(tavern, FLUEN)).toContain(IRON)
-    // Only the city's own buildings count
-    expect(mercenaryMarket(withBuildings(state, SILVA, ['tavern']), FLUEN)).not.toContain(IRON)
+    const within = new Set([FLUEN, ...neighbours(FLUEN)].flatMap((id) => [id, ...neighbours(id)]))
+    const further = [...within].flatMap(neighbours).find((id) => !within.has(id))!
+    const state = playing('carta')
     const guild = withBuildings(state, FLUEN, ['guild'])
-    expect(mercenaryReach(guild, FLUEN)).toBe(Infinity)
-    expect(mercenaryMarket(guild, FLUEN)).toHaveLength(14)
+    expect(mercenaryReach(guild, FLUEN)).toBe(2)
+    expect(mercenaryMarket(at(guild, IRON, far), FLUEN)).toContain(IRON)
+    expect(mercenaryMarket(at(guild, IRON, further), FLUEN)).not.toContain(IRON)
+    // Only the city's own buildings count
+    expect(mercenaryMarket(at(withBuildings(state, SILVA, ['guild']), IRON, far), FLUEN)).not.toContain(IRON)
   })
 
   it('leaves out those hired and those recovering, and tells why', () => {

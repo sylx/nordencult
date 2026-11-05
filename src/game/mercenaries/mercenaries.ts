@@ -1,7 +1,7 @@
 import { CHARACTER_MAP } from '../../data/character'
 import { isMercenary } from '../army'
 import {
-  MERCENARY_MONTHLY_DIVISOR, MERCENARY_RANKS, MERCENARY_REACH, MERCENARY_REACH_TAVERN, MERCENARY_RENEWAL_RATE, MERCENARY_STANDING_LIMIT, STANDING_DISMISS_REDUCED,
+  MERCENARY_MONTHLY_DIVISOR, MERCENARY_RANKS, MERCENARY_REACH_GUILD, MERCENARY_REACH_TAVERN, MERCENARY_RENEWAL_RATE, MERCENARY_STANDING_LIMIT, STANDING_DISMISS_REDUCED,
   STANDING_HIRE, STANDING_PRICE_RATE, STANDING_PRIDE_BASE, STANDING_PRIDE_STEP,
 } from '../economy/balance'
 import { commandProblem } from '../economy/domestic'
@@ -10,7 +10,7 @@ import { escapeOf } from '../movement'
 import { moveOrderOf, movementOf, orderOf, transportOrderOf } from '../queries'
 import { wanderer } from '../roaming'
 import type { CharacterId, CharacterState, CityId, FactionId, GameState, MercenaryRenewal, MercenaryState, Movement } from '../types'
-import { CITY_IDS, neighbours } from '../world'
+import { neighbours } from '../world'
 
 /**
  * Mercenaries (傭兵): knights with soldiers of their own (GameState.mercenaries), hired for a 契約金 and a monthly fee.
@@ -41,16 +41,23 @@ export const hiredMercenaries = (state: GameState, factionId: FactionId): Charac
 export const mercenaryAt = (state: GameState, id: CharacterId): CityId | null =>
   movementOf(state, id)?.route[0] ?? state.characters[id]?.cityId ?? null
 
-/** The city's reach for hiring mercenaries, in roads (Infinity: every city). Only the city's own buildings count */
-export function mercenaryReach(state: GameState, cityId: CityId): number {
+/**
+ * The city's reach for hiring mercenaries, in roads: a 酒場 (MERCENARY_REACH_TAVERN) or a 傭兵ギルド (MERCENARY_REACH_GUILD).
+ * null: neither, it cannot hire. Only the city's own buildings count
+ */
+export function mercenaryReach(state: GameState, cityId: CityId): number | null {
   const buildings = state.cities[cityId]?.buildings ?? []
-  if (buildings.includes('guild')) return Infinity
-  return buildings.includes('tavern') ? MERCENARY_REACH_TAVERN : MERCENARY_REACH
+  if (buildings.includes('guild')) return MERCENARY_REACH_GUILD
+  return buildings.includes('tavern') ? MERCENARY_REACH_TAVERN : null
+}
+
+/** Why the active faction cannot hire mercenaries in the city at all now (the mercenary command), or null */
+export function mercenaryCityProblem(state: GameState, cityId: CityId): string | null {
+  return commandProblem(state, cityId) ?? (mercenaryReach(state, cityId) === null ? '傭兵の雇用には酒場が必要です' : null)
 }
 
 /** The cities up to `hops` roads from a city, the city included */
 function citiesWithin(cityId: CityId, hops: number): Set<CityId> {
-  if (hops === Infinity) return new Set(CITY_IDS)
   const seen = new Set([cityId])
   let front = [cityId]
   for (let hop = 0; hop < hops; hop++) {
@@ -62,7 +69,9 @@ function citiesWithin(cityId: CityId, hops: number): Set<CityId> {
 
 /** The mercenaries a city can reach, whoever holds the cities they are in, in id order: those not hired and not recovering */
 export function mercenaryMarket(state: GameState, cityId: CityId): CharacterId[] {
-  const reach = citiesWithin(cityId, mercenaryReach(state, cityId))
+  const hops = mercenaryReach(state, cityId)
+  if (hops === null) return []
+  const reach = citiesWithin(cityId, hops)
   return Object.keys(state.mercenaries).sort().filter((id) => {
     const at = state.characters[id]?.roaming
     return at !== undefined && reach.has(at) && !state.mercenaries[id].contract && !isRecovering(state, id)
@@ -112,7 +121,7 @@ export function prideProblem(state: GameState, factionId: FactionId, id: Charact
  * the gold, which the hiring scene tells (the mercenary screen opens it whatever the treasury holds)
  */
 export function hireOfferProblem(state: GameState, cityId: CityId, id: CharacterId): string | null {
-  const problem = commandProblem(state, cityId)
+  const problem = mercenaryCityProblem(state, cityId)
   if (problem) return problem
   if (!isMercenary(id) || !state.mercenaries[id]) return `${id} は傭兵ではありません`
   if (state.mercenaries[id].contract) return 'すでに契約中です'

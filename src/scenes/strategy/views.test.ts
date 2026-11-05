@@ -73,8 +73,13 @@ describe('the domestic screen', () => {
 
 describe('the mercenaries', () => {
   const BARREL = '042' // ドゥンダリン盾隊 (2000 gold, 600 soldiers), in フルーエン
-  const rich = (): GameState => {
+  /** カルタ書院 playing, フルーエン with a 酒場 to hire mercenaries at */
+  const withTavern = (): GameState => {
     const state = playing('carta')
+    return { ...state, cities: { ...state.cities, [FLUEN]: { ...state.cities[FLUEN], buildings: [...state.cities[FLUEN].buildings, 'tavern'] } } }
+  }
+  const rich = (): GameState => {
+    const state = withTavern()
     return { ...state, gold: { ...state.gold, carta: 100000 } }
   }
 
@@ -85,7 +90,7 @@ describe('the mercenaries', () => {
     })
     expect(offers.find((o) => o.knight.id === BARREL)).not.toHaveProperty('fee')
     // Short of gold, the contract can still be talked over: the hiring scene tells it
-    const poor = playing('carta')
+    const poor = withTavern()
     const none = { ...poor, gold: { ...poor.gold, carta: 0 } }
     expect(mercenaryOffers(none, FLUEN).find((o) => o.knight.id === BARREL)?.unavailableReason).toBeUndefined()
     // Those who will not sign can still be talked to: they turn the faction away in the hiring scene
