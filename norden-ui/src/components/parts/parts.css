@@ -363,6 +363,7 @@
 }
 .norden-knight-info { display: grid; flex: 1; gap: 4px; min-width: 150px; }
 .norden-knight-name { font-size: 18px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+.norden-knight-subtitle-outer { display: flex; gap: 6px; align-items: center; }
 .norden-knight-subtitle { font-size: 12px; color: #78603f; }
 .norden-knight-stats { display: flex; flex-wrap: wrap; gap: 6px; }
 .norden-knight-stat { display: grid; justify-items: center; min-width: 42px; padding: 2px 5px; border-bottom: 2px solid var(--stat-color, #6a5030); color: var(--stat-color, #6a5030); background: var(--stat-wash, #7656320a); }
@@ -437,5 +438,5 @@
 .norden-knight-chip-name { min-width: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .norden-knight-chip-note { flex: none; padding: 0 5px; font-size: 11px; line-height: 1.5; border: 1px solid currentColor; border-radius: 3px; opacity: 0.75; }
 
-.norden-knight-mercenary { display: block; overflow: hidden; color: #d9bd83; font-size: 11px; font-variant-numeric: tabular-nums; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
+.norden-knight-mercenary { display: block; overflow: hidden; color: #765632; font-size: 11px; font-variant-numeric: tabular-nums; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
 .norden-knight-mercenary-mark { display: inline-block; margin-right: 4px; padding: 0 4px; color: #1c1712; background: #c98f52; border-radius: 2px; font-weight: 700; }

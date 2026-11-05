@@ -26,7 +26,7 @@
 .norden-knight-profile-sub { font-size: 13px; color: #80613c; }
 .norden-knight-profile-facts { display: grid; gap: 6px; margin: 0; font-size: 15px; }
 .norden-knight-profile-facts div { display: flex; align-items: center; gap: 12px; }
-.norden-knight-profile-facts dt { width: 32px; flex-shrink: 0; font-size: 12px; font-weight: 600; color: #80613c; }
+.norden-knight-profile-facts dt { width: 3rem; flex-shrink: 0; font-size: 12px; font-weight: 600; color: #80613c; }
 .norden-knight-profile-facts dd { display: flex; align-items: center; gap: 6px; margin: 0; min-width: 0; font-weight: 600; }
 .norden-knight-profile-emblem { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
 .norden-knight-profile-figure {

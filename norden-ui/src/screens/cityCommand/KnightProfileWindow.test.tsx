@@ -34,14 +34,14 @@ describe('biographyParts', () => {
 })
 
 describe('knight profile', () => {
-  it('shows what a hired mercenary costs each month', async () => {
-    const hired: KnightView = { id: '042', name: 'ブロック', mercenary: { company: '樽盾団', soldiers: 500, maxSoldiers: 500, monthly: 1667 } }
+  it('shows what a hired mercenary costs each month, and the month of their contract', async () => {
+    const hired: KnightView = { id: '042', name: 'ブロック', mercenary: { company: '樽盾団', soldiers: 500, maxSoldiers: 500, monthly: 1667, months: 2 } }
     render(<CityInfoWindow city={{ ...city, knights: [hired, { ...hired, id: '043', name: 'タマラ', mercenary: { company: '星砂団', soldiers: 500, maxSoldiers: 500 } }] }} />)
     await userEvent.click(screen.getByRole('tab', { name: '騎士' }))
     await userEvent.click(screen.getByRole('button', { name: 'ブロックの詳細' }))
-    expect(within(screen.getByRole('region', { name: 'ブロック' })).getByText('月額').nextElementSibling).toHaveTextContent('1,667')
+    expect(within(screen.getByRole('region', { name: 'ブロック' })).getByText('契約').nextElementSibling).toHaveTextContent('1,667/月 3ヶ月目')
     await userEvent.click(screen.getByRole('button', { name: 'タマラの詳細' }))
-    expect(within(screen.getByRole('region', { name: 'タマラ' })).queryByText('月額')).not.toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: 'タマラ' })).queryByText('契約')).not.toBeInTheDocument()
   })
 
   it('opens from 詳細 with 所属・所在, abilities, chart and biography', async () => {

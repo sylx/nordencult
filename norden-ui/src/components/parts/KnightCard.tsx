@@ -25,6 +25,8 @@ export interface MercenaryMark {
   morale?: number
   /** What they cost each month. Omitted: not hired */
   monthly?: number
+  /** Months since the contract was made or renewed (0 in the month it was). Omitted: not hired */
+  months?: number
 }
 
 function statTier(value: ReactNode, max = 100) {
@@ -64,10 +66,12 @@ export default function KnightCard({ knight, selection, current = false, aside, 
       : knight.portrait ?? <span className="norden-knight-initial">{knight.name.slice(0, 1)}</span>}</span>
     <span className="norden-knight-info">
       <span className="norden-knight-name">{knight.name}</span>
-      {knight.subtitle && <span className="norden-knight-subtitle">{knight.subtitle}</span>}
-      {knight.mercenary && <span className="norden-knight-mercenary">
-        <span className="norden-knight-mercenary-mark">傭兵</span>{knight.mercenary.company} 兵 {knight.mercenary.soldiers.toLocaleString()} / {knight.mercenary.maxSoldiers.toLocaleString()}
-      </span>}
+      <span className="norden-knight-subtitle-outer">
+        {knight.subtitle && <span className="norden-knight-subtitle">{knight.subtitle}</span>}
+        {knight.mercenary && <span className="norden-knight-mercenary">
+          <span className="norden-knight-mercenary-mark">傭兵</span>{knight.mercenary.company} {knight.mercenary.soldiers.toLocaleString()} / {knight.mercenary.maxSoldiers.toLocaleString()}
+        </span>}
+      </span>
       {knight.stats && knight.stats.length > 0 && <KnightStats stats={knight.stats} />}
     </span>
     {aside && <span className="norden-knight-aside">{aside}</span>}

@@ -46,7 +46,7 @@
 .norden-city-history-turn dd { margin: 2px 0 0; color: #78603f; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
 .norden-city-history-note { margin: 6px 0 0; color: #8a7050; font-size: 12px; }
 .norden-city-knights .norden-knight-face { width: 92px; }
-.norden-city-knight-aside { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.norden-city-knight-aside { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .norden-city-knight-badge { padding: 2px 8px; color: #fff4d8; background: #7a4f17; border-radius: 3px; font-weight: 700; }
 /* The mercenaries and the prisoners each after a labelled rule, the faction each prisoner served beside them */
 .norden-city-knights-splitter { 
