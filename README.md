@@ -328,3 +328,4 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 | [m003.md](docs/milestones/m003.md) | 研究（技術ツリー・研究ポイント・研究担当官・技術の効果） |
 | [m005.md](docs/milestones/m005.md) | 傭兵（契約・独立採算）と放浪の騎士 |
 | [m006.md](docs/milestones/m006.md) | 会話システム（norden-dialogue。台本と流れ・プレイヤー・エディタ・傭兵の雇用シーン） |
+| [m007.md](docs/milestones/m007.md) | 戦闘の拡充（norden-battle。攻撃の汎用化・新兵種・魔法・状態異常・拠点兵器・効果音・CPU・バランス調整。段階ごとに指示を仰ぐ） |
