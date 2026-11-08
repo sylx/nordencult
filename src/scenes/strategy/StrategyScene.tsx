@@ -499,7 +499,7 @@ export default function StrategyScene() {
     : legs.length > 0 && !announcing
       ? legs.some((leg) => leg.kind === 'transport') ? '騎士の移動と輸送' : '騎士の移動'
       : game.phase === 'strategy' && !playerTurn && game.activeFaction
-      ? `${FACTION_MAP[game.activeFaction]?.name}の手番`
+      ? "他勢力の思考中..."
       : null
 
   return (
