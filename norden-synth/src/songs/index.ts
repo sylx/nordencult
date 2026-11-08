@@ -4,6 +4,7 @@ import { condorBoard } from './condor-board.ts'
 import { crimsonAlcazar } from './crimson-alcazar.ts'
 import { crookedPendulum } from './crooked-pendulum.ts'
 import { fairyRing } from './fairy-ring.ts'
+import { fallenRequiem } from './fallen-requiem.ts'
 import { glassRipples } from './glass-ripples.ts'
 import { goldenSails } from './golden-sails.ts'
 import { highlandCovenant } from './highland-covenant.ts'
@@ -26,4 +27,4 @@ import type { Song } from './song.ts'
 
 export { barAt, compileSong, type CompiledSong, type Song, type SongBar, type SongNote, type SongPart, type SongSection } from './song.ts'
 
-export const SONGS: Song[] = [hokuten, fairyRing, imperialTriumph, wanderingBird, northernOath, tundraMarch, goldenSails, starReader, whiteSanctum, holdingBreath, battleCry, mistPilgrim, winterCouncil, glassRipples, crookedPendulum, spiralCurrent, maskedPassepied, condorBoard, ironBanners, highlandCovenant, crimsonAlcazar, mirageDiwan, victorAccolade]
+export const SONGS: Song[] = [hokuten, fairyRing, fallenRequiem, imperialTriumph, wanderingBird, northernOath, tundraMarch, goldenSails, starReader, whiteSanctum, holdingBreath, battleCry, mistPilgrim, winterCouncil, glassRipples, crookedPendulum, spiralCurrent, maskedPassepied, condorBoard, ironBanners, highlandCovenant, crimsonAlcazar, mirageDiwan, victorAccolade]
