@@ -11,6 +11,6 @@ export const SCENE_BGM: Record<SceneId, string | null | undefined> = {
   strategy: 'winter-council',
   /** 鬨の声 */
   battle: 'battle-cry',
-  /** The battle's song goes on */
-  battleResult: undefined,
+  /** 凱旋の叙勲 (勝利ファンファーレ〜戦後処理) */
+  battleResult: 'victor-accolade',
 }
