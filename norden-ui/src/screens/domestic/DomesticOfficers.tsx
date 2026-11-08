@@ -29,11 +29,11 @@ export interface OfficerRoleSpec {
 }
 
 export const OFFICER_ROLES: readonly OfficerRoleSpec[] = [
-  { role: 'commerce', label: '商業', weights: [['politics', 2], ['intelligence', 1]], funded: true, description: '予算を使い、商業の基礎値を上げる' },
-  { role: 'production', label: '生産', weights: [['politics', 2], ['intelligence', 1]], funded: true, description: '予算を使い、生産の基礎値を上げる' },
-  { role: 'training', label: '訓練', weights: [['strength', 2], ['leadership', 1]], funded: false, description: '毎ターン兵の練度を上げる（金は使わない）' },
-  { role: 'recruitment', label: '募兵', weights: [['charm', 3], ['strength', 1]], funded: true, description: '予算を使い、兵を集める（練度は下がる）' },
-  { role: 'research', label: '研究', weights: [['intelligence', 1]], funded: true, description: '予算を使い、研究ポイントを生む' },
+  { role: 'commerce', label: '商業', weights: [['politics', 2], ['intelligence', 1]], funded: true, description: '予算を使用し、商業の基礎値を上げる' },
+  { role: 'production', label: '生産', weights: [['politics', 2], ['intelligence', 1]], funded: true, description: '予算を使用し、生産の基礎値を上げる' },
+  { role: 'training', label: '訓練', weights: [['strength', 2], ['leadership', 1]], funded: false, description: '兵の練度を上げる（予算不要）' },
+  { role: 'recruitment', label: '募兵', weights: [['charm', 3], ['strength', 1]], funded: true, description: '予算を使用し、兵を集める' },
+  { role: 'research', label: '研究', weights: [['intelligence', 1]], funded: true, description: '予算を使用し、研究ポイントを算出' },
 ]
 
 /** e.g. 政治2・知力1 */

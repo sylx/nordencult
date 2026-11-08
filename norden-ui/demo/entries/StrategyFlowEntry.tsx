@@ -94,6 +94,7 @@ export default function StrategyFlowEntry() {
           const problem = invadeProblem(cityId)
           return (
             <CityCommandScreen city={cityView(cityId, knightsOf(cityId))} turn={{ ...TURN, turn }} faction={FACTION_SUMMARY}
+              isPlayerCity={CITY_MAP[cityId]?.owner === PLAYER}
               playerFaction={FACTIONS[PLAYER]} knightOf={knightOf}
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
               onPrevCity={() => step(cityId, -1)} onNextCity={() => step(cityId, 1)}

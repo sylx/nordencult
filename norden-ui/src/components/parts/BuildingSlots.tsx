@@ -7,6 +7,8 @@ export interface BuildingSlotsProps {
   buildings: CityBuildingsView
   /** Makes the built buildings and the construction buttons (e.g. to show their details) */
   onSelect?: (buildingId: string) => void
+  /** Makes empty slots buttons (e.g. to open domestic affairs). */
+  onSelectEmpty?: () => void
   /** The building highlighted, e.g. the one whose details are shown */
   selectedId?: string
   className?: string
@@ -16,8 +18,8 @@ export interface BuildingSlotsProps {
 const spriteOffset = (position: number, cell: number, sheet: number) => (sheet > cell ? `${(position / (sheet - cell)) * 100}%` : '0%')
 
 /**
- * The picture of a building: its cell of the sprite sheet fitted to the tile's width
- * (the tall picture cut top and bottom), or its initial on a plain tile
+ * The picture of a building: its cell of the sprite sheet at its original aspect
+ * ratio, or its initial on a plain tile. The surrounding frame sets the display size.
  */
 export function BuildingImage({ building, className = '' }: { building: BuildingView; className?: string }) {
   const image = building.image
@@ -61,15 +63,24 @@ export function ConstructionProgress({ invested, required, turnsLeft }: { invest
   )
 }
 
+/** A compact status for the city overview; detailed supplies and progress belong to the domestic screen. */
+function ConstructionStatus({ work }: { work: ConstructionView }) {
+  const remaining = work.paused ? '一時停止' : work.turnsLeft === null ? '完成の見込みなし'
+    : work.turnsLeft === undefined ? undefined : `あと${work.turnsLeft}ヶ月`
+  return <span className="norden-building-slot-badge">
+    <span>{workLabel(work)}中</span>
+    {remaining && <span className={work.turnsLeft != null && !work.paused ? 'norden-building-slot-months' : undefined}>（{remaining}）</span>}
+  </span>
+}
+
 /** The relic a city is repairing or producing, drawn as a slot of its own */
 export function RelicWorkSlot({ work }: { work: ConstructionView }) {
   return (
     <Tooltip content={work.building.description}>
-      <div className="norden-building-slot is-building">
+      <div className="norden-building-slot is-building norden-building-slot-relic">
         <BuildingImage building={work.building} />
         <span className="norden-building-slot-name">{work.building.name}</span>
-        <span className="norden-building-slot-badge">{workLabel(work)}中</span>
-        <ConstructionProgress invested={work.invested} required={work.required} turnsLeft={work.turnsLeft} />
+        <ConstructionStatus work={work} />
       </div>
     </Tooltip>
   )
@@ -77,11 +88,11 @@ export function RelicWorkSlot({ work }: { work: ConstructionView }) {
 
 /**
  * A city's building slots in order: the buildings standing, the one under
- * construction (with its progress) and the empty slots. An upgrade under construction
+ * construction (with its remaining months) and the empty slots. An upgrade under construction
  * is built over the building it upgrades, in its slot (taking no slot of its own).
  * A relic repaired or produced is no building, so it is left out (RelicWorkSlot)
  */
-export default function BuildingSlots({ buildings, onSelect, selectedId, className = '' }: BuildingSlotsProps) {
+export default function BuildingSlots({ buildings, onSelect, onSelectEmpty, selectedId, className = '' }: BuildingSlotsProps) {
   const { slots, built } = buildings
   const construction = buildings.construction && !isRelicWork(buildings.construction) ? buildings.construction : null
   const upgradingId = construction?.building.upgradeFrom && built.some(building => building.id === construction.building.upgradeFrom)
@@ -98,18 +109,17 @@ export default function BuildingSlots({ buildings, onSelect, selectedId, classNa
       </Tooltip>
     )
   }
-  const constructionTile = (current: ConstructionView, upgradedFrom?: BuildingView) =>
+  const constructionTile = (current: ConstructionView) =>
     tile(current.building, <>
       <BuildingImage building={current.building} />
       <span className="norden-building-slot-name">{current.building.name}</span>
-      <span className="norden-building-slot-badge">{upgradedFrom ? 'アップグレード中' : `${workLabel(current)}中`}</span>
-      <ConstructionProgress invested={current.invested} required={current.required} turnsLeft={current.turnsLeft} />
+      <ConstructionStatus work={current} />
     </>, 'is-building')
   return (
     <ul className={`norden-building-slots ${className}`} aria-label={`施設 ${built.length} / ${slots}`}>
       {built.map(building => (
         <li key={building.id}>
-          {construction && building.id === upgradingId ? constructionTile(construction, building) : tile(building, <>
+          {construction && building.id === upgradingId ? constructionTile(construction) : tile(building, <>
             <BuildingImage building={building} />
             <span className="norden-building-slot-name">{building.name}</span>
           </>)}
@@ -117,7 +127,11 @@ export default function BuildingSlots({ buildings, onSelect, selectedId, classNa
       ))}
       {construction && !upgradingId && <li>{constructionTile(construction)}</li>}
       {Array.from({ length: empty }, (_, index) => (
-        <li key={`empty-${index}`}><div className="norden-building-slot is-empty"><span>空き</span></div></li>
+        <li key={`empty-${index}`}>
+          {onSelectEmpty
+            ? <button type="button" className="norden-building-slot is-empty" onClick={onSelectEmpty}><span>空き</span></button>
+            : <div className="norden-building-slot is-empty"><span>空き</span></div>}
+        </li>
       ))}
     </ul>
   )

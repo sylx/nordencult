@@ -20,6 +20,8 @@ export interface CommandState {
 
 export interface CityCommandScreenProps {
   city: CityView
+  /** Whether the city belongs to the player; enables building shortcuts to domestic affairs. */
+  isPlayerCity?: boolean
   turn: TurnView
   /** The player's faction (金・総生産・総兵力・研究), shown on the faction bar with the city switcher */
   faction?: FactionSummaryView
@@ -76,7 +78,7 @@ export function turnText(turn: TurnView) {
 
 /** City command screen: the faction bar with ◀ ▶ between cities and the city window (left), turn bar (top right) and the action toolbar (bottom) */
 export default function CityCommandScreen({
-  city, turn, faction, onOpenResearch, playerFaction, onPrevCity, onNextCity, cityPosition, commandState = {}, activeCommand, onCommand, onEndTurn,
+  city, isPlayerCity = false, turn, faction, onOpenResearch, playerFaction, onPrevCity, onNextCity, cityPosition, commandState = {}, activeCommand, onCommand, onEndTurn,
   endTurnDisabled = false, endTurnReason, turnMenu, knightOf, windowPosition = { x: 56, y: 96 }, layout = {}, onLayoutChange, onWindowBoundsChange, skin, children,
 }: CityCommandScreenProps) {
   const cityWindow = layout.window ?? windowPosition
@@ -108,6 +110,7 @@ export default function CityCommandScreen({
           dateLabel={turn.dateLabel}>{turnMenu}</DateBar>
       </div>
       <CityInfoWindow city={city} knightOf={knightOf} x={cityWindow.x} y={cityWindow.y} skin={skin} onBoundsChange={onWindowBoundsChange}
+        onOpenDomestic={isPlayerCity && !commandState.domestic?.disabled ? () => onCommand('domestic') : undefined}
         onPositionChange={position => onLayoutChange?.('window', position)} profileAnchor={windowPosition}
         profilePosition={layout.knightProfile} onProfilePositionChange={position => onLayoutChange?.('knightProfile', position)}
         style={{ '--norden-city-window-x': `${windowPosition.x}px`, '--norden-city-window-y': `${windowPosition.y}px` } as CSSProperties} />

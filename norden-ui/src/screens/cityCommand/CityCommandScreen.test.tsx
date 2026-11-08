@@ -77,9 +77,9 @@ describe('CityCommandScreen', () => {
     expect(screen.queryByText(/基礎/)).not.toBeInTheDocument()
     const slots = screen.getByRole('list', { name: '施設 1 / 4' })
     expect(within(slots).getByText('市場')).toBeInTheDocument()
-    expect(within(slots).getByText('建設中')).toBeInTheDocument()
-    expect(within(slots).getByRole('progressbar', { name: '建設の進捗' })).toHaveAttribute('aria-valuenow', '260')
-    expect(within(slots).getByText(/あと1ターン/)).toBeInTheDocument()
+    expect(within(slots).getByText('建設中').parentElement).toHaveTextContent('建設中（あと1ヶ月）')
+    expect(screen.queryByRole('progressbar', { name: '建設の進捗' })).not.toBeInTheDocument()
+    expect(within(slots).queryByText('260 / 400')).not.toBeInTheDocument()
     expect(within(slots).getAllByText('空き')).toHaveLength(2)
     const faction = screen.getByRole('group', { name: '勢力' })
     expect(within(faction).getByRole('group', { name: '金' })).toHaveTextContent('620（+110）')
@@ -101,7 +101,7 @@ describe('CityCommandScreen', () => {
     expect(within(slots).getAllByRole('listitem')).toHaveLength(4)
     expect(within(slots).queryByText('市場')).not.toBeInTheDocument()
     expect(within(slots).getByText('大市場')).toBeInTheDocument()
-    expect(within(slots).getByText('アップグレード中')).toBeInTheDocument()
+    expect(within(slots).getByText('建設中').parentElement).toHaveTextContent('建設中（あと3ヶ月）')
     expect(within(slots).queryByText('空き')).not.toBeInTheDocument()
   })
 
@@ -119,7 +119,54 @@ describe('CityCommandScreen', () => {
     const slots = screen.getByRole('list', { name: '施設 1 / 2' })
     expect(within(slots).queryByText('ゴーレムの残骸')).not.toBeInTheDocument()
     expect(within(slots).getByText('空き')).toBeInTheDocument()
-    expect(within(screen.getByRole('region', { name: '遺物の修復' })).getByText('修復中')).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: '遺物の修復' })).getByText('修復中').parentElement).toHaveTextContent('修復中（あと9ヶ月）')
+    expect(screen.queryByRole('progressbar', { name: '建設の進捗' })).not.toBeInTheDocument()
+  })
+
+  it.each([
+    { isPlayerCity: true, disabled: false, clickable: true },
+    { isPlayerCity: false, disabled: false, clickable: false },
+    { isPlayerCity: undefined, disabled: false, clickable: false },
+    { isPlayerCity: true, disabled: true, clickable: false },
+  ])('opens domestic affairs from buildings only in a manageable player city ($isPlayerCity, disabled: $disabled)', async ({ isPlayerCity, disabled, clickable }) => {
+    const { onCommand } = setup({
+      isPlayerCity,
+      commandState: { domestic: { disabled } },
+      city: {
+        ...city,
+        buildings: {
+          slots: 3, built: [{ id: 'market', name: '市場' }],
+          construction: { building: { id: 'workshop', name: '工房' }, invested: 260, required: 400, turnsLeft: 1 },
+        },
+      },
+    })
+    const slots = screen.getByRole('list', { name: '施設 1 / 3' })
+    if (clickable) {
+      await userEvent.click(within(slots).getByRole('button', { name: '市場' }))
+      await userEvent.click(within(slots).getByRole('button', { name: /工房/ }))
+      await userEvent.click(within(slots).getByRole('button', { name: '空き' }))
+      expect(onCommand.mock.calls).toEqual([['domestic'], ['domestic'], ['domestic']])
+    } else {
+      expect(within(slots).queryByRole('button')).not.toBeInTheDocument()
+      await userEvent.click(within(slots).getByText('市場'))
+      await userEvent.click(within(slots).getByText('空き'))
+      expect(onCommand).not.toHaveBeenCalled()
+    }
+  })
+
+  it.each([
+    { turnsLeft: null, paused: false, label: '建設中（完成の見込みなし）' },
+    { turnsLeft: null, paused: true, label: '建設中（一時停止）' },
+    { turnsLeft: undefined, paused: false, label: '建設中' },
+  ])('describes construction without an estimated month count: $label', ({ turnsLeft, paused, label }) => {
+    setup({ city: {
+      ...city,
+      buildings: {
+        slots: 1, built: [],
+        construction: { building: { id: 'workshop', name: '工房' }, invested: 260, required: 400, turnsLeft, paused },
+      },
+    } })
+    expect(screen.getByText('建設中').parentElement).toHaveTextContent(label)
   })
 
   it('lists the knights with all their abilities, the lord first', async () => {

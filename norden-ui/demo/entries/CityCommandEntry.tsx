@@ -23,6 +23,7 @@ export default function CityCommandEntry() {
     stage={<>
       <MockMap selected={cityId} />
       <CityCommandScreen key={skin} city={{ ...city, lord }} turn={TURN} faction={FACTION_SUMMARY} skin={windowSkins[skin]}
+        isPlayerCity={true}
         playerFaction={FACTIONS[PLAYER]} knightOf={knightOf}
         cityPosition={{ index, count: playerCities.length }} onPrevCity={() => step(-1)} onNextCity={() => step(1)}
         commandState={{

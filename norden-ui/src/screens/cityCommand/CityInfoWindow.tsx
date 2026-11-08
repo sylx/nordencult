@@ -24,6 +24,8 @@ import './CityInfoWindow.css'
 
 export interface CityInfoWindowProps extends Omit<InfoWindowWithTabsProps, 'tabs' | 'title'> {
   city: CityView
+  /** Opens domestic affairs; provided only for a city the player can manage. */
+  onOpenDomestic?: () => void
   /** Finds any knight by id for the profile window (e.g. one a 略歴 names); only the city's knights are found when omitted */
   knightOf?: (id: string) => KnightView | undefined
   /** Where the profile window opens beside. Omitted: the city window's `x` and `y` */
@@ -38,7 +40,7 @@ export interface CityInfoWindowProps extends Omit<InfoWindowWithTabsProps, 'tabs
  * 詳細 on a knight opens their profile beside it, with back/forward through the knights opened since.
  */
 export default function CityInfoWindow({
-  city, knightOf, profileAnchor, profilePosition, onProfilePositionChange, maxWidth = 544, maxHeight = 760, ...windowProps
+  city, onOpenDomestic, knightOf, profileAnchor, profilePosition, onProfilePositionChange, maxWidth = 544, maxHeight = 760, ...windowProps
 }: CityInfoWindowProps) {
   const profile = useBrowseHistory<string>()
   const anchor = profileAnchor ?? { x: windowProps.x ?? 0, y: windowProps.y ?? 0 }
@@ -46,7 +48,7 @@ export default function CityInfoWindow({
   const knight = profile.current === undefined ? undefined : findKnight(profile.current)
   return <>
     <InfoWindowWithTabs {...windowProps} maxWidth={maxWidth} maxHeight={maxHeight} title={`${city.faction?.name ?? ''} ${city.name}`.trim()}
-      tabs={createCityInfoTabs(city, { onShowKnight: profile.show })} />
+      tabs={createCityInfoTabs(city, { onShowKnight: profile.show, onOpenDomestic })} />
     {knight && <KnightProfileWindow knight={knight} knightOf={findKnight} onSelectKnight={profile.show}
       onBack={profile.back} onForward={profile.forward} backDisabled={!profile.canBack} forwardDisabled={!profile.canForward}
       onClose={profile.close} position={profilePosition} onPositionChange={onProfilePositionChange}
@@ -58,14 +60,16 @@ export default function CityInfoWindow({
 }
 
 export interface CityInfoTabOptions {
+  /** Opens domestic affairs when a building or empty slot is clicked; omitted for other factions' cities. */
+  onOpenDomestic?: () => void
   /** 詳細 on a knight; the button is disabled when omitted */
   onShowKnight?: (id: string) => void
 }
 
 /** Shared city panels for the game window and component catalog. */
-export function createCityInfoTabs(city: CityView, { onShowKnight }: CityInfoTabOptions = {}): [TabInfo, TabInfo, TabInfo] {
+export function createCityInfoTabs(city: CityView, { onShowKnight, onOpenDomestic }: CityInfoTabOptions = {}): [TabInfo, TabInfo, TabInfo] {
   return [
-    { id: 'city', name: '都市情報', icon: iconCity, content: <CityInfo city={city} /> },
+    { id: 'city', name: '都市情報', icon: iconCity, content: <CityInfo city={city} onOpenDomestic={onOpenDomestic} /> },
     {
       id: 'knights', name: '騎士', icon: iconKnights,
       content: <CityKnights city={city} onShowKnight={onShowKnight} />,
@@ -82,7 +86,7 @@ function statKind(stat: CityStatView) {
   return stat.kind ?? statKinds[stat.label as keyof typeof statKinds] ?? 'commerce'
 }
 
-function CityInfo({ city }: { city: CityView }) {
+function CityInfo({ city, onOpenDomestic }: { city: CityView; onOpenDomestic?: () => void }) {
   return (
     <div className="norden-city-info">
       <div className={`norden-city-info-overview ${city.lord?.image || city.lord?.imageSrc ? 'has-lord' : ''}`}>
@@ -126,15 +130,13 @@ function CityInfo({ city }: { city: CityView }) {
       {city.buildings && (
         <section className="norden-city-info-buildings" aria-label="施設">
           <h3>施設 <span>{city.buildings.built.length} / {city.buildings.slots}</span></h3>
-          <BuildingSlots buildings={city.buildings} />
+          <BuildingSlots buildings={city.buildings} onSelect={onOpenDomestic} onSelectEmpty={onOpenDomestic} />
         </section>
       )}
       {city.buildings?.construction && isRelicWork(city.buildings.construction) && (
         <section className="norden-city-info-buildings" aria-label="遺物の修復">
           <h3>遺物の修復</h3>
-          <div className="norden-building-slots">
-            <RelicWorkSlot work={city.buildings.construction} />
-          </div>
+          <RelicWorkSlot work={city.buildings.construction} />
         </section>
       )}
       {city.tags && city.tags.length > 0 && (
