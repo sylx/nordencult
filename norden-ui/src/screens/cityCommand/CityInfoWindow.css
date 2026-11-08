@@ -9,11 +9,19 @@
 .norden-city-info-emblem { width: 44px; height: 44px; object-fit: contain; flex-shrink: 0; }
 .norden-city-info-name { margin: 0; font-size: 24px; font-weight: 700; line-height: 1.3; }
 .norden-city-info-sub { font-size: 13px; color: #80613c; }
-.norden-city-info-body { display: grid; gap: 10px; position: relative; }
+.norden-city-info-body { display: grid; gap: 10px; position: relative;}
 .norden-city-info-facts { display: grid; gap: 6px; margin: 0; font-size: 15px;height: min-content; }
 .norden-city-info-facts div { display: flex; gap: 12px; }
 .norden-city-info-facts dt { width: 32px; flex-shrink: 0; padding-top: 2px; font-size: 12px; font-weight: 600; color: #80613c; }
 .norden-city-info-facts dd { margin: 0; min-width: 0; }
+.norden-city-info-lord-name {
+  position: relative;
+  z-index: 1;
+  text-shadow:
+    -1px -1px 0 #e4d2b6, 0 -1px 0 #e4d2b6, 1px -1px 0 #e4d2b6,
+    -1px 0 0 #e4d2b6, 1px 0 0 #e4d2b6,
+    -1px 1px 0 #e4d2b6, 0 1px 0 #e4d2b6, 1px 1px 0 #e4d2b6;
+}
 .norden-city-info-lord { 
   position: absolute; 
   top: 0; right: 0; width: 53%; max-width: 244px; height: 342px;
