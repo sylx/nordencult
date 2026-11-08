@@ -511,6 +511,7 @@ export default function StrategyScene() {
           const index = playerCities.indexOf(cityId)
           return (
             <CityCommandScreen city={cityView(game, cityId)} turn={turnView(game)} faction={factionSummary(game)}
+              isPlayerCity={ownerOf(game, cityId) === faction}
               playerFaction={factionView(faction)}
               layout={layout} onLayoutChange={(part, position) => updateLayout({ [part]: position })}
               onWindowBoundsChange={({ x, width }) => setCityWindowRight(x + width)}
