@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
+import { playBgm } from '../../audio/bgm'
 import { FactionLabel } from '../../components/FactionLabel'
 import { KnightList } from '../../components/KnightList'
 import { CITY_MAP } from '../../data/city'
-import { useGame, type BattleEndReason, type CharacterMove, type MoveKind } from '../../game'
+import { isPlayerFaction, useGame, type BattleEndReason, type CharacterMove, type MoveKind } from '../../game'
 import { useScene } from '../sceneContext'
 import { relicWorkLabel } from '../strategy/views'
 import type { SceneProps } from '../types'
@@ -52,6 +54,11 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
   const winnerFaction = winner === 'attacker' ? battle.attacker.factionId : battle.defender.factionId
   const city = cityName(battle.cityId)
   const kinds = (Object.keys(MOVE_LABELS) as MoveKind[]).filter((k) => moves.some((m) => m.kind === k))
+  const isWinner = isPlayerFaction(game, winnerFaction)
+
+  useEffect(() => {
+    playBgm(isWinner ? 'victor-accolade' : 'fallen-requiem')
+  }, [isWinner])
 
   return (
     <div className="battle-result">

@@ -11,6 +11,6 @@ export const SCENE_BGM: Record<SceneId, string | null | undefined> = {
   strategy: 'winter-council',
   /** 鬨の声 */
   battle: 'battle-cry',
-  /** 凱旋の叙勲 (勝利ファンファーレ〜戦後処理) */
-  battleResult: 'victor-accolade',
+  /** 戦果に応じて BattleResultScene が victor-accolade / fallen-requiem を切り替える */
+  battleResult: undefined,
 }
