@@ -24,7 +24,7 @@ jobs:
       - name: Check out sub-projects
         run: |
           git config --global url."https://github.com/".insteadOf "git@github.com:"
-          git submodule update --init --depth 1 norden-strategy norden-ui norden-battle norden-synth
+          git submodule update --init --depth 1 norden-strategy norden-ui norden-battle norden-synth norden-dialogue
 
       - uses: actions/setup-node@v7
         with:
