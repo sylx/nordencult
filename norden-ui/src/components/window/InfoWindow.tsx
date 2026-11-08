@@ -62,6 +62,7 @@ export default function InfoWindow({
   const [position, setPosition] = useState({ x, y })
   const [interaction, setInteraction] = useState<'drag' | 'resize' | null>(null)
   const [manualSize, setManualSize] = useState<WindowSize | null>(null)
+  const [entered, setEntered] = useState(false)
   const resolvedSkin = resolveWindowSkin(skin)
   const layout = resolvedSkin.layout
   const horizontalPadding = layout.paddingLeft + layout.paddingRight
@@ -141,8 +142,11 @@ export default function InfoWindow({
   return (
     <section ref={frameRef} aria-labelledby={showTitleBar ? titleId : undefined}
       aria-label={showTitleBar ? undefined : title} data-skin={resolvedSkin.name}
-      className={`norden-info-window ${interaction === 'drag' ? 'is-dragging' : interaction === 'resize' ? 'is-resizing' : ''} ${className}`}
+      className={`norden-info-window ${entered ? '' : 'is-opening'} ${interaction === 'drag' ? 'is-dragging' : interaction === 'resize' ? 'is-resizing' : ''} ${className}`}
       style={sizingStyle}
+      onAnimationEnd={event => {
+        if (event.target === event.currentTarget && event.animationName === 'norden-window-enter') setEntered(true)
+      }}
     >
       <div className="norden-info-window-decoration" aria-hidden="true">
         <div className="norden-info-window-paper" />

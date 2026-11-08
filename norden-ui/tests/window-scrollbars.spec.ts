@@ -22,6 +22,66 @@ async function expectVerticalScrollOnly(page: Page, message: string) {
   await expect.poll(() => viewport.evaluate(element => element.scrollWidth - element.clientWidth), { message }).toBeLessThanOrEqual(0)
 }
 
+test('switching cities opens at the measured size without resizing the content during entry', async ({ page }) => {
+  await page.goto('/#strategy-flow')
+  await page.locator('.norden-info-window').waitFor()
+  await page.evaluate(async () => { await document.fonts.ready })
+
+  for (const label of ['次の都市', '前の都市']) {
+    const samples = await page.evaluate(async label => {
+      // Sample from the moment the replacement mounts, before Playwright waits for its animation to settle.
+      const button = document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!
+      button.click()
+      await new Promise(resolve => setTimeout(resolve, 0))
+      const samples = []
+      for (let index = 0; index < 16; index++) {
+        const frame = document.querySelector<HTMLElement>('.norden-info-window')!
+        const content = frame.querySelector<HTMLElement>('.norden-info-window-measure')!
+        samples.push({
+          width: frame.getBoundingClientRect().width,
+          targetWidth: parseFloat(frame.style.width),
+          contentWidth: content.getBoundingClientRect().width,
+          contentHeight: content.getBoundingClientRect().height,
+          animation: getComputedStyle(frame).animationName,
+        })
+        await new Promise(resolve => setTimeout(resolve, 20))
+      }
+      return samples
+    }, label)
+    expect(samples[0]!.animation).toBe('norden-window-enter')
+    for (const sample of samples) expect(Math.abs(sample.width - sample.targetWidth), label).toBeLessThan(1)
+    for (const key of ['width', 'contentWidth', 'contentHeight'] as const) {
+      const sizes = samples.map(sample => sample[key])
+      expect(Math.max(...sizes) - Math.min(...sizes), `${label}: ${key}`).toBeLessThan(1)
+    }
+  }
+})
+
+test('a scrollbar appearing or disappearing keeps the fixed window content at the same width', async ({ page }) => {
+  await page.goto('/#info-window')
+  // This regression concerns layout, independently of the entrance and tab animations.
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.locator('.norden-info-window').waitFor()
+  await page.getByLabel('固定サイズ（420 × 520）').evaluate(element => (element as HTMLInputElement).click())
+  const widths = await page.evaluate(async () => {
+    const count = document.querySelector<HTMLSelectElement>('#knight-count')!
+    count.value = '20'
+    count.dispatchEvent(new Event('change', { bubbles: true }))
+    const sizes = []
+    for (const label of ['統計', '騎士', '統計']) {
+      document.querySelector<HTMLButtonElement>(`button[role="tab"][aria-label="${label}"]`)!.click()
+      await new Promise(resolve => setTimeout(resolve, 50))
+      const content = document.querySelector<HTMLElement>('.norden-info-window-measure')!
+      const viewport = content.parentElement!
+      sizes.push({ width: content.getBoundingClientRect().width, overflow: viewport.scrollHeight > viewport.clientHeight })
+    }
+    return sizes
+  })
+  expect(widths.map(size => size.overflow)).toEqual([false, true, false])
+  expect(widths[0]!.width).toBe(widths[1]!.width)
+  expect(widths[1]!.width).toBe(widths[2]!.width)
+})
+
 test('many knights keep the window within its maximum height and scroll inside it', async ({ page }) => {
   await page.goto('/#info-window')
   const window = page.locator('.norden-info-window')

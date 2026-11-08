@@ -63,7 +63,8 @@
 }
 .norden-info-window-title.is-draggable { cursor: grab; touch-action: none; }
 .norden-info-window.is-dragging .norden-info-window-title { cursor: grabbing; }
-.norden-info-window.is-resizing { transition: none; }
+/* Settle the measured size before fading in; growing from the minimum reflows the content mid-entry. */
+.norden-info-window.is-opening, .norden-info-window.is-resizing { transition: none; }
 .norden-info-window-title-text, .norden-info-window-title-measure {
   font-size: 24px;
   font-weight: 700;
@@ -83,7 +84,7 @@
   visibility: hidden;
   pointer-events: none;
 }
-.norden-info-window-content { position: absolute; inset: var(--norden-padding-top) var(--norden-padding-right) var(--norden-padding-bottom) var(--norden-padding-left); overflow: auto; scrollbar-width: thin; scrollbar-color: #94703b #e6d5b2; }
+.norden-info-window-content { position: absolute; inset: var(--norden-padding-top) var(--norden-padding-right) var(--norden-padding-bottom) var(--norden-padding-left); overflow: auto; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: #94703b #e6d5b2; }
 .norden-info-window-measure { width: max-content; max-width: var(--norden-content-max-width); padding-bottom: 16px; display: flow-root; overflow-wrap: anywhere; }
 .norden-info-window-measure.is-fixed-width { width: 100%; max-width: 100%; }
 .norden-info-window-resize {
