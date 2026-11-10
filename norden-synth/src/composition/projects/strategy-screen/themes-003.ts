@@ -1,5 +1,5 @@
-import type { Song } from '../songs/song.ts'
-import type { CompositionStudy } from './study.ts'
+import type { Song } from '../../../songs/song.ts'
+import type { CompositionStudy } from '../../study.ts'
 
 interface ThemeDraft {
   id: string

@@ -1,7 +1,8 @@
 # 主題＋和声を選び、洗練する作曲工房
 
-ユーザーは主題と和声を一緒に聴いて選ぶ。次の順序を守る。
+1曲ごとに**プロジェクト**を作り、ブリーフ（用途・イメージ）、主題・和声・編曲の組、各組への感想をまとめて残す。ユーザーは主題と和声を一緒に聴いて選ぶ。次の順序を守る。
 
+0. ユーザーが作曲工房の「新しいプロジェクト」でブリーフを書き、依頼文をAIに送る。AIはプロジェクトを登録し、1の主題集を作る。
 1. **名前付きの主題を一気に5案以上**作る。すべて最初から和声・低音・伴奏付き。見込みがある案がなければ、新しい主題を5案以上出し直す。
 2. ユーザーが選んだ主題から、**名前付きの和声のバリエーションを5案**作る。主題＋和声としてプレビューする。気に入る組み合わせがなければ、さらに和声を5案出す。主題自体を見直したければ1へ戻る。
 3. ユーザーが選んだ**主題＋和声をオーケストレーション**する。編曲版をプレビューする。組み合わせを見直すなら2へ、編曲の問題なら同じ組み合わせで改稿する。
@@ -17,25 +18,61 @@ npm run dev
 
 「作曲工房」タブ (`#composition`) を開く。通常の曲一覧には試案を混ぜない。
 
+- 上の「プロジェクト」で作業する曲を選ぶ。「＋ 新しいプロジェクト」では、プロジェクト名・用途/場面・欲しいイメージ・避けたいこと・参考曲（曲一覧から選び、良いところを書く）を入力し、最初の主題5案以上を依頼する文を作る。下書きはこのブラウザに保存される。
+- プロジェクトを開くと、ブリーフと「プロジェクトの履歴」（全ての組・派生元・記録済みの感想）が見られる。履歴の「開く」で、その組を派生関係ごと表示する。
+
 - 各カードは名前付きの1候補。再生すると主題と和声を同時に聴ける。別の候補を再生すると前の再生を止め、曲頭から再生する。ループも可能。
 - 「残したい点・変えたい点」は候補ごとのメモ。「この組への要望」は全案への感想や出し直しの理由。
 - 見込みのある主題の「この主題から和声を5案依頼」で2へ進む。和声案の「この主題＋和声で編曲を依頼」で3へ進む。既に派生案がある場合は、その一覧を開く。
 - 「見込みなし・新しい主題を5案以上依頼」「和声の別案をさらに5つ依頼」で同じ段階を繰り返す。
 - 選択・メモを含む**依頼文をコピーして、このチャットのAIに送る**。作曲はこのコーディングエージェントが行う。画面のボタンだけでモデルを呼び出したり自動生成したりはしない。
 - AIが候補を追加すると、該当段階の最新の組に表示される。開いている画面が更新されなければ再読み込みする。「候補の組」で以前の案へ戻れ、「最新の組を表示」で新しい組へ移れる。
-- 選択した主題・和声、メモ、依頼履歴はこのブラウザの localStorage に保存する。リポジトリへ自動保存はしない。AIはコピーされた依頼文に含まれる情報を読む。
+- 選択した主題・和声、メモ、依頼履歴はこのブラウザの localStorage にプロジェクトごとに保存する。リポジトリへ自動保存はしない。AIはコピーされた依頼文に含まれる情報を読み、感想はプロジェクトの `feedback.ts` に記録する。
 - タブ移動時は再生を停止する。読み込み待ちの再生も取り消す。
 
-初回の5案は「雪明かりの帰路」「風を待つ港」「真鍮の月」「遠い灯台」「石畳の追い風」。まだユーザーが選んだ案ではない。5案すべて見送りでもよい。和声案・編曲版は選択後に作る。
+既存のプロジェクト「戦略画面のBGM」(`strategy-screen`) は、プロジェクト化以前の主題集 01–05 から「国境線の斥候」を採用し、曲一覧に登録したところまでの記録。
+
+## プロジェクトの構成
+
+```text
+composition/preferences.json            全プロジェクト共通の好み（優先事項・参考曲）
+src/composition/projects.ts             PROJECTS — プロジェクトの一覧
+src/composition/projects/<id>/
+  project.ts                            id・title・brief・adoptedSongId・batches・feedback
+  feedback.ts                           各組への感想（ユーザーの発言のみ）
+  themes-001.ts など                    候補集
+```
+
+`brief` は画面で入力された値をそのまま書く。AIの解釈を足さない。`adoptedSongId` は完成曲を `SONGS` に登録したときだけ付ける。
+
+## 新しいプロジェクトを始めるとき
+
+依頼文のブリーフ（JSON）をそのまま使い、`src/composition/projects/<id>/project.ts` を作って `PROJECTS` の末尾に登録する。id は英小文字・数字・ハイフンで既存と重ねない。`feedback.ts` は空配列で作る。そのうえで最初の主題集（stage: themes）を作る。
+
+```ts
+import type { CompositionProject } from '../../workflow.ts'
+import { feedback } from './feedback.ts'
+import { firstThemes } from './themes-001.ts'
+
+export const councilRoom: CompositionProject = {
+  id: 'council-room',
+  title: '作戦会議のBGM',
+  brief: { purpose: '…', image: '…', avoid: '', references: [{ songId: 'masked-passepied', notes: '…' }] },
+  batches: [{ id: 'council-room-themes-001', title: '主題集 01 — …', stage: 'themes', candidates: firstThemes }],
+  feedback,
+}
+```
 
 ## AIが次の組を追加するとき
 
-最初に `composition/preferences.json` と、依頼文に指定された派生元を読む。ユーザーの発言と、AI自身の仮説を混同しない。指定された段階の候補だけを作る。
+最初に `composition/preferences.json`、依頼文のプロジェクトの `project.ts`（ブリーフ）と `feedback.ts`、指定された派生元を読む。ユーザーの発言と、AI自身の仮説を混同しない。指定された段階の候補だけを作る。
 
-`src/composition/studies.ts` の `BATCHES` の末尾に追加する。既存の組・候補を上書きせず、一意のIDを付ける。曲は既存の `Song` 形式なので、音符・休符・タイ・拍子をそのまま使える。長い候補集は別ファイルに分けて import してよい。
+依頼文に要望・試聴メモがあれば、対象の組の `batchId` を付けて `feedback.ts` の末尾に記録する。`userWords` などにはユーザーの発言だけを書き、選ばれた候補があれば `preferred` にその id、なければ `neither`。
+
+そのプロジェクトの `project.ts` の `batches` の末尾に追加する。既存の組・候補を上書きせず、全プロジェクトで一意のIDを付ける（新しいプロジェクトでは id にプロジェクト名を含めると重なりにくい）。曲は既存の `Song` 形式なので、音符・休符・タイ・拍子をそのまま使える。候補集は同じディレクトリの別ファイルに分けて import する。
 
 ```ts
-import type { CompositionBatch } from './workflow.ts'
+import type { CompositionBatch } from '../../workflow.ts'
 
 // 初回または主題の出し直し: 5案以上。parentId は付けない。
 const themes: CompositionBatch = {
@@ -88,16 +125,17 @@ const arrangement: CompositionBatch = {
 
 ```sh
 npm run compose -- brief
-npm run compose -- list
-npm run compose -- request themes
-npm run compose -- request harmony snowlight-return
+npm run compose -- projects
+npm run compose -- list strategy-screen
+npm run compose -- request strategy-screen themes
+npm run compose -- request strategy-screen harmony snowlight-return
 npm run compose -- inspect masked-passepied fl 3 14
 npm run compose -- review all
 npm test
 npm run build
 ```
 
-`review` は候補集の構造、音符、句の範囲、指定した音を調べる。5案以上あること、名前とIDが重ならないこと、和声案の主題が派生元から変わっていないことも確認する。好みや曲の良さは採点しない。
+`review` は候補集の構造、音符、句の範囲、指定した音を調べる。プロジェクトのIDと参考曲、5案以上あること、名前とIDが重ならないこと、和声案の主題が派生元から変わっていないことも確認する。好みや曲の良さは採点しない。
 
 `inspect` は音域・音価・音程・移調を含む4発音の反復を調べる診断。反復件数の最大化は目標にしない。参照曲の構造を考える補助に使い、旋律単独の評価工程をユーザーに要求しない。
 

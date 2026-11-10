@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { ComparisonTransport } from '../src/composition/transport.ts'
-import { STUDIES } from '../src/composition/studies.ts'
+import { STUDIES } from '../src/composition/projects.ts'
 
 class FakePlayer {
   loop = false

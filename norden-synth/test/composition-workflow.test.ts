@@ -1,14 +1,19 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { BATCHES, STUDIES } from '../src/composition/studies.ts'
+import { PROJECTS, STUDIES } from '../src/composition/projects.ts'
 import {
-  chooseCandidate, currentBatch, initialState, makeRequest, requestMore, restoreState, validateBatches,
-  type CompositionBatch,
+  chooseCandidate, currentBatch, initialState, makeProjectRequest, makeRequest, openBatch, requestMore, restoreState,
+  validateBatches, validateProjects, emptyBrief, type CompositionBatch, type CompositionProject,
 } from '../src/composition/workflow.ts'
+import { restoreDraft } from '../src/composition-brief.ts'
+import { SONGS } from '../src/songs/index.ts'
 import { inspectMelody, motifSignature } from '../src/composition/study.ts'
 import { compileSong } from '../src/songs/song.ts'
 
+const project = PROJECTS.find((p) => p.id === 'strategy-screen')!
+const BATCHES = project.batches
+const lib = (batches: CompositionBatch[]): CompositionProject => ({ ...project, batches })
 const latestThemes = BATCHES.filter((b) => b.stage === 'themes').at(-1)!
 const theme = latestThemes.candidates[0]
 const otherTheme = latestThemes.candidates[1]
@@ -42,7 +47,7 @@ test('主題を選ぶとメモと正しい派生元を含めた5つの和声案�
   const state = initialState()
   state.notes[latestThemes.id] = '長い歌にしたい'
   state.notes[theme.song.id] = '冒頭を残し、後半を明るく'
-  const next = chooseCandidate(BATCHES, state, theme.song.id)
+  const next = chooseCandidate(project, state, theme.song.id)
   assert.equal(state.stage, 'themes')
   assert.equal(next.stage, 'harmony')
   assert.equal(next.themeId, theme.song.id)
@@ -56,7 +61,7 @@ test('主題を選ぶとメモと正しい派生元を含めた5つの和声案�
 })
 
 test('和声案の追加後、同じ選択状態で最新の組を表示し、別主題の案を混ぜない', () => {
-  const state = chooseCandidate(BATCHES, initialState(), theme.song.id)
+  const state = chooseCandidate(project, initialState(), theme.song.id)
   const first = harmonyBatch()
   const other = harmonyBatch('other', otherTheme.song.id)
   const second = harmonyBatch('harmony-002')
@@ -70,9 +75,9 @@ test('和声案の追加後、同じ選択状態で最新の組を表示し、�
 test('採用した和声から編曲へ進み、既存の編曲版をその楽器編成のまま取得する', () => {
   const harmonies = harmonyBatch()
   const library = [...BATCHES, harmonies]
-  let state = chooseCandidate(library, initialState(), theme.song.id)
+  let state = chooseCandidate(lib(library), initialState(), theme.song.id)
   assert.equal(state.history.length, 0) // 作成済みの案は依頼を増やさず開く
-  state = chooseCandidate(library, state, harmonies.candidates[2].song.id)
+  state = chooseCandidate(lib(library), state, harmonies.candidates[2].song.id)
   assert.equal(state.stage, 'orchestration')
   assert.equal(state.harmonyId, harmonies.candidates[2].song.id)
   assert.equal(state.history.at(-1)!.parentId, state.harmonyId)
@@ -82,15 +87,15 @@ test('採用した和声から編曲へ進み、既存の編曲版をその楽�
   const orchestration: CompositionBatch = { id: 'orchestra-001', title: '編曲', stage: 'orchestration', parentId: state.harmonyId, candidates: [arranged] }
   validateBatches([...library, orchestration])
   assert.equal(currentBatch([...library, orchestration], state)!.candidates[0].song.parts[0].instrument, 'violin')
-  const retry = requestMore([...library, orchestration], state, 'harmony')
+  const retry = requestMore(lib([...library, orchestration]), state, 'harmony')
   assert.equal(retry.history.at(-1)!.parentId, theme.song.id)
   assert.equal(retry.stage, 'harmony')
 })
 
 test('見送り・出し直しでは過去の案とメモを保持し、主題の選択をリセットできる', () => {
-  let state = chooseCandidate(BATCHES, initialState(), theme.song.id)
+  let state = chooseCandidate(project, initialState(), theme.song.id)
   state.notes[theme.song.id] = '残しておくメモ'
-  state = requestMore(BATCHES, state, 'themes')
+  state = requestMore(project, state, 'themes')
   assert.equal(state.stage, 'themes')
   assert.equal(state.themeId, undefined)
   assert.equal(state.harmonyId, undefined)
@@ -106,7 +111,7 @@ test('保存した選択を復元し、壊れた状態や別主題の和声を�
   assert.deepEqual(restoreState('{"version":0}', BATCHES), initialState())
   const harmonies = harmonyBatch()
   const library = [...BATCHES, harmonies]
-  const state = chooseCandidate(library, chooseCandidate(library, initialState(), theme.song.id), harmonies.candidates[0].song.id)
+  const state = chooseCandidate(lib(library), chooseCandidate(lib(library), initialState(), theme.song.id), harmonies.candidates[0].song.id)
   const restored = restoreState(JSON.stringify(state), library)
   assert.equal(restored.stage, 'orchestration')
   assert.equal(restored.harmonyId, state.harmonyId)
@@ -137,8 +142,67 @@ test('候補数・名前・派生元の不正や和声案の主旋律変更を�
 })
 
 test('未選択で後の段階へ進めず、候補IDの取り違えを拒否する', () => {
-  assert.throws(() => makeRequest(BATCHES, 'harmony'), /先に元/)
-  assert.throws(() => makeRequest(BATCHES, 'orchestration', theme.song.id), /先に元/)
-  assert.throws(() => makeRequest(BATCHES, 'themes', theme.song.id), /派生元/)
-  assert.throws(() => chooseCandidate(BATCHES, initialState(), 'missing'), /表示中/)
+  assert.throws(() => makeRequest(project, 'harmony'), /先に元/)
+  assert.throws(() => makeRequest(project, 'orchestration', theme.song.id), /先に元/)
+  assert.throws(() => makeRequest(project, 'themes', theme.song.id), /派生元/)
+  assert.throws(() => chooseCandidate(project, initialState(), 'missing'), /表示中/)
+})
+
+test('全プロジェクトの ID・参考曲・採用曲・感想の対象が正しい', () => {
+  validateProjects(PROJECTS, SONGS.map((s) => s.id))
+  const dup = structuredClone(project)
+  assert.throws(() => validateProjects([project, { ...dup, id: 'copy' }]), /duplicate batch/)
+  assert.throws(() => validateProjects([{ ...project, id: 'Bad Id' }]), /invalid project id/)
+  assert.throws(() => validateProjects([{ ...project, feedback: [{ batchId: 'missing', candidates: [], preferred: 'neither', userWords: '' }] }]), /unknown batch/)
+  assert.throws(() => validateProjects([{ ...project, brief: { ...project.brief, references: [{ songId: 'missing', notes: '' }] } }], SONGS.map((s) => s.id)), /reference/)
+})
+
+test('依頼文はプロジェクトの登録先・ブリーフ・感想の記録先を示す', () => {
+  const text = makeRequest(project, 'harmony', theme.song.id, undefined, '後半を明るく').text
+  assert.match(text, /src\/composition\/projects\/strategy-screen\/project\.ts/)
+  assert.match(text, /feedback\.ts/)
+  assert.match(text, /後半を明るく/)
+})
+
+test('履歴から任意の組を、派生関係を復元して開く', () => {
+  const orchestration = BATCHES.find((b) => b.stage === 'orchestration')!
+  const harmony = BATCHES.find((b) => b.candidates.some((c) => c.song.id === orchestration.parentId))!
+  const state = openBatch(project, { ...initialState(), notes: { a: 'メモ' } }, orchestration.id)
+  assert.equal(state.stage, 'orchestration')
+  assert.equal(state.harmonyId, orchestration.parentId)
+  assert.equal(state.themeId, harmony.parentId)
+  assert.equal(currentBatch(BATCHES, state), orchestration)
+  assert.equal(state.notes.a, 'メモ')
+  const themes = openBatch(project, state, BATCHES[0].id)
+  assert.equal(themes.stage, 'themes')
+  assert.equal(themes.themeId, undefined)
+  assert.equal(currentBatch(BATCHES, themes), BATCHES[0])
+  assert.deepEqual(restoreState(JSON.stringify(state), BATCHES).harmonyId, state.harmonyId)
+  assert.throws(() => openBatch(project, state, 'missing'), /unknown batch/)
+})
+
+test('新しいプロジェクトの依頼文は入力したブリーフだけを含み、最初の主題5案を求める', () => {
+  const draft = { ...emptyBrief(), title: '作戦会議', purpose: '会議画面', references: [{ songId: SONGS[0].id, notes: '冒頭' }, { songId: 'missing', notes: 'x' }] }
+  const text = makeProjectRequest(draft, SONGS, PROJECTS)
+  assert.match(text, /「作戦会議」/)
+  assert.match(text, /用途・場面:\n会議画面/)
+  assert.doesNotMatch(text, /欲しいイメージ:/)
+  assert.doesNotMatch(text, /避けたいこと:/)
+  assert.match(text, new RegExp(`「${SONGS[0].title}」 \\(${SONGS[0].id}\\) — 冒頭`))
+  assert.doesNotMatch(text, /missing/)
+  assert.match(text, /5案以上/)
+  assert.match(text, /strategy-screen/) // 既存 id と重ねない
+  const json = JSON.parse(text.match(/```json\n([\s\S]*?)\n```/)![1])
+  assert.deepEqual(json, { purpose: '会議画面', image: '', avoid: '', references: [{ songId: SONGS[0].id, notes: '冒頭' }] })
+  assert.throws(() => makeProjectRequest({ ...draft, title: ' ' }, SONGS), /プロジェクト名/)
+  assert.throws(() => makeProjectRequest({ ...emptyBrief(), title: 'a', avoid: 'x' }, SONGS), /用途・場面か/)
+})
+
+test('ブリーフの下書きは壊れた値や存在しない参考曲を捨てて復元する', () => {
+  assert.deepEqual(restoreDraft('{broken', SONGS), { draft: emptyBrief(), request: '' })
+  const restored = restoreDraft(JSON.stringify({ draft: { title: 'a', purpose: 1, references: [{ songId: SONGS[0].id, notes: 'n' }, { songId: 'missing', notes: '' }, null] }, request: 'r' }), SONGS)
+  assert.equal(restored.draft.title, 'a')
+  assert.equal(restored.draft.purpose, '')
+  assert.deepEqual(restored.draft.references, [{ songId: SONGS[0].id, notes: 'n' }])
+  assert.equal(restored.request, 'r')
 })

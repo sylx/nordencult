@@ -1,6 +1,6 @@
-import type { Song } from '../songs/song.ts'
-import type { CompositionStudy } from './study.ts'
-import { borderlineScoutsHarmonies } from './borderline-scouts-harmony-001.ts'
+import type { Song } from '../../../songs/song.ts'
+import type { CompositionStudy } from '../../study.ts'
+import { borderlineScoutsHarmonies } from './harmony-001.ts'
 
 const parent = borderlineScoutsHarmonies.find((study) => study.song.id === 'borderline-scouts-pedal-drive')!
 const themeMelody = parent.song.sections[0].parts.melody

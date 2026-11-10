@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { inspectMelody, motifSignature, reviewStudy, type CompositionStudy } from '../src/composition/study.ts'
-import { STUDIES } from '../src/composition/studies.ts'
+import { STUDIES } from '../src/composition/projects.ts'
 import { compileSong } from '../src/songs/song.ts'
 
 const fixture: CompositionStudy = {

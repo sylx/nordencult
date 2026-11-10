@@ -1,14 +1,7 @@
-import type { Song } from '../songs/song.ts'
-import type { CompositionStudy } from './study.ts'
-import { secondThemes } from './themes-002.ts'
-import { thirdThemes } from './themes-003.ts'
-import { fourthThemes } from './themes-004.ts'
-import { fifthThemes } from './themes-005.ts'
-import { borderlineScoutsHarmonies } from './borderline-scouts-harmony-001.ts'
-import { borderlineScoutsOrchestrated } from './borderline-scouts-orchestration-001.ts'
-import type { CompositionBatch } from './workflow.ts'
+import type { Song } from '../../../songs/song.ts'
+import type { CompositionStudy } from '../../study.ts'
 
-// 各案を旋律・和声・低音の組として書く。新しい組は BATCHES の末尾に追加する。
+// 主題集 01。各案を旋律・和声・低音の組として書く。
 function theme(spec: {
   id: string; title: string; description: string; tempo: number; meter: readonly [number, number]
   melody: string[]; chords: string[]; bass: string[]; voicings: string[]; texture: 'flow' | 'dance' | 'broad'
@@ -49,7 +42,7 @@ function theme(spec: {
   }
 }
 
-const firstThemes = [
+export const firstThemes: CompositionStudy[] = [
   theme({
     id: 'snowlight-return', title: '雪明かりの帰路', tempo: 88, meter: [4, 4], texture: 'flow',
     description: '短い呼びかけを長く受け止める、静かな短調の主題。下降する低音に乗せて上を向き、後半は長調の明かりに触れる。',
@@ -136,28 +129,3 @@ const firstThemes = [
     voicings: ['C4 E4 G4 B3', 'F#3 A3 C4 E4', 'E3 G3 B3 D4', 'D4 F#4 A4 C#4', 'G#3 B3 D4 F4', 'C4 E4 G4 B3', 'A3 C4 E4 G3', 'G#3 B3 D4 F4'],
   }),
 ]
-
-export const BATCHES: CompositionBatch[] = [
-  { id: 'themes-001', title: '主題集 01 — 五つの風景', stage: 'themes', candidates: firstThemes },
-  { id: 'themes-002', title: '主題集 02 — 盤上の六つの局面', stage: 'themes', candidates: secondThemes },
-  { id: 'themes-003', title: '主題集 03 — 戦線と地図の六つの主題', stage: 'themes', candidates: thirdThemes },
-  { id: 'themes-004', title: '主題集 04 — 斥候の輪郭と響きの六つの主題', stage: 'themes', candidates: fourthThemes },
-  { id: 'themes-005', title: '主題集 05 — 軍議と旅路の六つの主題', stage: 'themes', candidates: fifthThemes },
-  {
-    id: 'borderline-scouts-harmony-001',
-    title: '国境線の斥候 — 和声案 01',
-    stage: 'harmony',
-    parentId: 'borderline-scouts',
-    candidates: borderlineScoutsHarmonies,
-  },
-  {
-    id: 'borderline-scouts-orchestration-001',
-    title: '国境線の斥候 — 編曲 01',
-    stage: 'orchestration',
-    parentId: 'borderline-scouts-pedal-drive',
-    candidates: [borderlineScoutsOrchestrated],
-  },
-]
-
-// 診断 CLI 用の索引。通常のゲーム用 SONGS には登録しない。
-export const STUDIES: CompositionStudy[] = BATCHES.flatMap((batch) => batch.candidates)

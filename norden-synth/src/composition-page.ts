@@ -1,28 +1,78 @@
-import { BATCHES } from './composition/studies.ts'
+import { PROJECTS } from './composition/projects.ts'
 import { ComparisonTransport } from './composition/transport.ts'
 import {
-  STAGES, batchesFor, currentBatch, findCandidate, chooseCandidate, noteScope, parentFor, requestMore, restoreState,
-  type Stage,
+  STAGES, batchesFor, currentBatch, findCandidate, chooseCandidate, noteScope, openBatch, parentFor, requestMore, restoreState,
+  type CompositionProject, type Stage,
 } from './composition/workflow.ts'
-import { compileSong } from './songs/song.ts'
+import { copyText, escape, readStorage, writeStorage } from './composition/browser.ts'
+import { mountBriefForm } from './composition-brief.ts'
+import { compileSong, SONGS } from './songs/index.ts'
 import { SongPlayer } from './songs/player.ts'
 import type { Synth } from './synth/index.ts'
 
-const STORAGE_KEY = 'norden-synth:workshop:v1'
-const escape = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)
+const CURRENT_KEY = 'norden-synth:workshop:project'
+const NEW_PROJECT = 'new'
+// プロジェクト化前の保存。最初のプロジェクトの状態として読む。
+const LEGACY_KEY = 'norden-synth:workshop:v1'
+const LEGACY_PROJECT = 'strategy-screen'
+const stateKey = (projectId: string) => `norden-synth:workshop:v1:${projectId}`
+export interface Mounted { stop(): void; dispose(): void }
 
 export function setupCompositionPage(synth: Synth, root: HTMLElement): { stop: () => void } {
-  let saved: string | null = null
-  try { saved = localStorage.getItem(STORAGE_KEY) } catch { /* 保存不可でも試聴できる */ }
-  let state = restoreState(saved, BATCHES)
+  root.innerHTML = `
+    <div class="controls workshop-project">
+      <label>プロジェクト <select data-project aria-label="作曲プロジェクト"></select></label>
+    </div>
+    <div data-project-body></div>
+  `
+  const select = root.querySelector<HTMLSelectElement>('[data-project]')!
+  const body = root.querySelector<HTMLElement>('[data-project-body]')!
+  let mounted: Mounted | undefined
+
+  select.innerHTML = [...PROJECTS].reverse().map((p) =>
+    `<option value="${escape(p.id)}">${escape(p.title)} · ${p.batches.length}組${p.adoptedSongId ? ' · 採用済み' : ''}</option>`).join('') +
+    `<option value="${NEW_PROJECT}">＋ 新しいプロジェクト（最初の主題5案を依頼）</option>`
+
+  function show(id: string) {
+    mounted?.dispose()
+    body.innerHTML = ''
+    const project = PROJECTS.find((p) => p.id === id)
+    select.value = project ? project.id : NEW_PROJECT
+    writeStorage(CURRENT_KEY, select.value)
+    mounted = project ? mountWorkshop(synth, body, project) : mountBriefForm(body, PROJECTS, SONGS)
+  }
+
+  select.addEventListener('change', () => show(select.value))
+  const saved = readStorage(CURRENT_KEY)
+  show(saved === NEW_PROJECT || PROJECTS.some((p) => p.id === saved) ? saved! : PROJECTS.at(-1)?.id ?? NEW_PROJECT)
+  return { stop: () => mounted?.stop() }
+}
+
+function mountWorkshop(synth: Synth, root: HTMLElement, project: CompositionProject): Mounted {
+  const BATCHES = project.batches
+  const key = stateKey(project.id)
+  let state = restoreState(readStorage(key) ?? (project.id === LEGACY_PROJECT ? readStorage(LEGACY_KEY) : null), BATCHES)
   const transport = new ComparisonTransport<SongPlayer>()
   let request = 0
   let activeId: string | undefined
   let shownPosition = ''
   let loop = false
-  let storageMessage = '選択・メモ・依頼履歴はこのブラウザに保存されます。'
+  let frame = 0
+  let storageMessage = '選択・メモ・依頼履歴はこのブラウザにプロジェクトごとに保存されます。'
+
+  const brief = project.brief
+  const songTitle = (id: string) => SONGS.find((s) => s.id === id)?.title ?? id
+  const briefRows = [
+    ['用途・場面', brief.purpose], ['欲しいイメージ', brief.image], ['避けたいこと', brief.avoid],
+    ['参考曲', brief.references.map((r) => `「${songTitle(r.songId)}」${r.notes ? ` — ${r.notes}` : ''}`).join('\n')],
+  ].filter(([, v]) => v.trim())
 
   root.innerHTML = `
+    <section class="workshop-overview">
+      <h3>${escape(project.title)}${project.adoptedSongId ? `<span class="workshop-adopted">採用曲「${escape(songTitle(project.adoptedSongId))}」を曲一覧に登録済み</span>` : ''}</h3>
+      ${briefRows.length ? `<dl class="workshop-brief">${briefRows.map(([k, v]) => `<dt>${k}</dt><dd>${escape(v)}</dd>`).join('')}</dl>` : '<p class="hint">ブリーフは未記入です。</p>'}
+      <details class="workshop-timeline"><summary>プロジェクトの履歴 · ${BATCHES.length}組・感想 ${project.feedback.length}件</summary><ol data-timeline></ol></details>
+    </section>
     <p class="hint">名前付きの主題を和声ごと聴き、見込みのある案から別の響きを試して、編曲へ進めます。</p>
     <nav class="workshop-steps" aria-label="作曲の段階"></nav>
     <p data-lineage class="workshop-lineage"></p>
@@ -62,8 +112,8 @@ export function setupCompositionPage(synth: Synth, root: HTMLElement): { stop: (
   const scope = () => noteScope(BATCHES, state)
 
   function save() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) }
-    catch { storageMessage = 'このブラウザでは保存できません。必要なメモと依頼文をコピーして残してください。' }
+    if (!writeStorage(key, JSON.stringify(state)))
+      storageMessage = 'このブラウザでは保存できません。必要なメモと依頼文をコピーして残してください。'
     $('[data-storage]').textContent = storageMessage
   }
 
@@ -109,19 +159,35 @@ export function setupCompositionPage(synth: Synth, root: HTMLElement): { stop: (
     }
   }
 
-  function advance(id: string) {
+  function apply(next: typeof state) {
     stop()
-    state = chooseCandidate(BATCHES, state, id)
+    state = next
     save()
     render()
   }
 
   function retry(stage: Stage) {
-    stop()
-    state = requestMore(BATCHES, state, stage)
-    save()
-    render()
+    apply(requestMore(project, state, stage))
     requestText.focus()
+  }
+
+  function renderTimeline() {
+    const shown = currentBatch(BATCHES, state)?.id
+    $('[data-timeline]').innerHTML = BATCHES.map((b) => {
+      const parent = findCandidate(BATCHES, b.parentId)
+      const notes = project.feedback.filter((f) => f.batchId === b.id)
+      const label = STAGES.find((s) => s.id === b.stage)!.label.replace(/^\d\. /, '')
+      return `<li${b.id === shown ? ' class="current"' : ''}>
+        <div class="workshop-timeline-row">
+          <span class="workshop-stage-tag">${escape(label)}</span>
+          <span class="workshop-timeline-title">${escape(b.title)} · ${b.candidates.length}案${parent ? ` · 派生元「${escape(parent.song.title)}」` : ''}</span>
+          <button data-open="${escape(b.id)}" ${b.id === shown ? 'disabled' : ''}>${b.id === shown ? '表示中' : '開く'}</button>
+        </div>
+        ${notes.map((f) => `<p class="hint">${f.preferred !== 'neither' ? `選択：「${escape(findCandidate(BATCHES, f.preferred)?.song.title ?? f.preferred)}」 ／ ` : ''}${escape(f.userWords)}</p>`).join('')}
+      </li>`
+    }).join('') || '<li class="hint">まだ候補の組はありません。</li>'
+    for (const button of root.querySelectorAll<HTMLButtonElement>('[data-open]'))
+      button.addEventListener('click', () => apply(openBatch(project, state, button.dataset.open!)))
   }
 
   function renderRequest() {
@@ -170,34 +236,27 @@ export function setupCompositionPage(synth: Synth, root: HTMLElement): { stop: (
         ? '<button data-retry="harmony">和声の別案をさらに5つ依頼</button><button data-retry="themes">主題から出し直す</button>'
         : '<button data-stage="harmony">和声の選択に戻る</button><button data-retry="harmony">和声の別案をさらに5つ依頼</button><button data-retry="orchestration">この組み合わせで編曲を改稿依頼</button>'
     for (const button of root.querySelectorAll<HTMLButtonElement>('[data-stage]')) button.addEventListener('click', () => {
-      stop(); state.stage = button.dataset.stage as Stage; state.batchId = undefined; save(); render()
+      apply({ ...state, stage: button.dataset.stage as Stage, batchId: undefined })
     })
     for (const button of root.querySelectorAll<HTMLButtonElement>('[data-play]')) button.addEventListener('click', () => play(button.dataset.play!))
-    for (const button of root.querySelectorAll<HTMLButtonElement>('[data-choose]')) button.addEventListener('click', () => advance(button.dataset.choose!))
+    for (const button of root.querySelectorAll<HTMLButtonElement>('[data-choose]')) button.addEventListener('click', () => apply(chooseCandidate(project, state, button.dataset.choose!)))
     for (const button of root.querySelectorAll<HTMLButtonElement>('[data-retry]')) button.addEventListener('click', () => retry(button.dataset.retry as Stage))
     for (const note of root.querySelectorAll<HTMLTextAreaElement>('[data-note]')) note.addEventListener('input', () => { state.notes[note.dataset.note!] = note.value; save() })
+    renderTimeline()
     renderRequest()
     highlight()
     $('[data-storage]').textContent = storageMessage
   }
 
   feedback.addEventListener('input', () => { state.notes[scope()] = feedback.value; save() })
-  batchSelect.addEventListener('change', () => { stop(); state.batchId = batchSelect.value; save(); render() })
-  $('[data-latest]').addEventListener('click', () => { stop(); state.batchId = undefined; save(); render() })
+  batchSelect.addEventListener('change', () => apply({ ...state, batchId: batchSelect.value }))
+  $('[data-latest]').addEventListener('click', () => apply({ ...state, batchId: undefined }))
   $('[data-stop]').addEventListener('click', stop)
   $<HTMLInputElement>('[data-loop]').addEventListener('change', (event) => {
     loop = (event.target as HTMLInputElement).checked
     if (transport.current) transport.current.loop = loop
   })
-  $('[data-copy]').addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(requestText.value)
-      $('[data-copy-status]').textContent = 'コピーしました。このチャットのAIに貼り付けてください。'
-    } catch {
-      requestText.focus(); requestText.select()
-      $('[data-copy-status]').textContent = '依頼文を選択しました。手動でコピーしてください。'
-    }
-  })
+  $('[data-copy]').addEventListener('click', () => copyText(requestText, $('[data-copy-status]')))
 
   function update() {
     const player = transport.current
@@ -211,9 +270,9 @@ export function setupCompositionPage(synth: Synth, root: HTMLElement): { stop: (
         shownPosition = key
       }
     }
-    requestAnimationFrame(update)
+    frame = requestAnimationFrame(update)
   }
   render()
   update()
-  return { stop }
+  return { stop, dispose: () => { stop(); cancelAnimationFrame(frame) } }
 }

@@ -1,15 +1,16 @@
 import { SONGS } from '../src/songs/index.ts'
-import { BATCHES, STUDIES } from '../src/composition/studies.ts'
-import { makeRequest, validateBatches, STAGES, type Stage } from '../src/composition/workflow.ts'
+import { PROJECTS, STUDIES } from '../src/composition/projects.ts'
+import { makeRequest, validateProjects, STAGES, type CompositionProject, type Stage } from '../src/composition/workflow.ts'
 import { inspectMelody, pitchName, reviewStudy } from '../src/composition/study.ts'
 
 const usage = `作曲ハーネス (数値は診断用。美しさ・転調の成立の採点ではありません)
-  npm run compose -- list
+  npm run compose -- projects
+  npm run compose -- list [project-id]
   npm run compose -- inspect <song-id> <part-id> [from-bar to-bar]
   npm run compose -- review <study-id|all>
   npm run compose -- brief
-  npm run compose -- request <themes|harmony|orchestration> [parent-id]
-小節は intro + loop 1 周を通した 1 始まり。試案は src/composition/studies.ts に登録。
+  npm run compose -- request <project-id> <themes|harmony|orchestration> [parent-id]
+小節は intro + loop 1 周を通した 1 始まり。試案は src/composition/projects/<id>/project.ts に登録。
 --json を末尾に付けると inspect/review/request は JSON を出力します。`
 
 function melodyText(report: ReturnType<typeof inspectMelody>): string {
@@ -25,15 +26,26 @@ function melodyText(report: ReturnType<typeof inspectMelody>): string {
   ].join('\n')
 }
 
+function projectOf(id: string): CompositionProject {
+  const project = PROJECTS.find((p) => p.id === id)
+  if (!project) throw new Error(`unknown project: ${id} (${PROJECTS.map((p) => p.id).join(', ')})`)
+  return project
+}
+
 function main() {
-  validateBatches(BATCHES)
+  validateProjects(PROJECTS, SONGS.map((s) => s.id))
   const args = process.argv.slice(2)
   const json = args.at(-1) === '--json'
   if (json) args.pop()
   const [command, id, part, from, to] = args
-  if (command === 'list' && args.length === 1) {
-    for (const song of SONGS) console.log(`${song.id}: ${song.parts.map((p) => p.id).join(', ')}`)
-    for (const batch of BATCHES) console.log(`\n${batch.id} (${batch.stage}${batch.parentId ? ` / 派生元 ${batch.parentId}` : ''}): ${batch.candidates.map((s) => `${s.song.id}「${s.song.title}」`).join(', ')}`)
+  if (command === 'projects' && args.length === 1) {
+    for (const p of PROJECTS) console.log(`${p.id}「${p.title}」: ${p.batches.length}組 / 感想 ${p.feedback.length}件${p.adoptedSongId ? ` / 採用曲 ${p.adoptedSongId}` : ''}`)
+  } else if (command === 'list' && (args.length === 1 || args.length === 2)) {
+    if (!id) for (const song of SONGS) console.log(`${song.id}: ${song.parts.map((p) => p.id).join(', ')}`)
+    for (const project of id ? [projectOf(id)] : PROJECTS) {
+      console.log(`\n[${project.id}]「${project.title}」`)
+      for (const batch of project.batches) console.log(`\n${batch.id} (${batch.stage}${batch.parentId ? ` / 派生元 ${batch.parentId}` : ''}): ${batch.candidates.map((s) => `${s.song.id}「${s.song.title}」`).join(', ')}`)
+    }
   } else if (command === 'inspect' && (args.length === 3 || args.length === 5)) {
     const song = SONGS.find((s) => s.id === id) ?? STUDIES.find((s) => s.song.id === id)?.song
     if (!song) throw new Error(`unknown song: ${id}`)
@@ -50,16 +62,17 @@ function main() {
       for (const p of report.phrases) console.log(`句 ${p.from}–${p.to} ${p.label}: ${p.intention}`)
       for (const m of report.moments) console.log(`${m.missing.length ? 'FAIL' : 'OK'} ${m.bar} 小節 +${m.beat} 拍: ${m.intention} / 実音 ${m.sounding.join(', ')}${m.missing.length ? ` / 不足 ${m.missing.join(', ')}` : ''}`)
     }
-  } else if (command === 'request' && (args.length === 2 || args.length === 3)) {
-    if (!STAGES.some((s) => s.id === id)) throw new Error(`unknown stage: ${id}`)
-    const result = makeRequest(BATCHES, id as Stage, part)
+  } else if (command === 'request' && (args.length === 3 || args.length === 4)) {
+    if (!STAGES.some((s) => s.id === part)) throw new Error(`unknown stage: ${part}`)
+    const result = makeRequest(projectOf(id), part as Stage, from)
     console.log(json ? JSON.stringify(result, null, 2) : result.text)
   } else if (command === 'brief' && args.length === 1) {
-    console.log(`COMPOSING.md と composition/preferences.json を読んで作曲する。
+    console.log(`COMPOSING.md と composition/preferences.json を読んで作曲する。曲ごとに src/composition/projects/<id>/ のプロジェクトで進める。
+0. 新しい曲は、作曲工房の「新しいプロジェクト」で作られた依頼文から project.ts（ブリーフ）を登録し、最初の主題集を作る。
 1. 名前付きの主題を5案以上、一気に作る。すべて和声・低音・伴奏付きで試聴できるようにする。見込みなしなら新しい主題を5案以上。
 2. ユーザーが選んだ主題から、名前付きの和声の別案を5つ作る。主題＋和声を一緒に聴く。気に入らなければ別の5案。主題からやり直してもよい。
 3. ユーザーが選んだ主題＋和声をオーケストレーションする。見直すなら2へ戻る。
-各組は src/composition/studies.ts の BATCHES に追記し、派生元を parentId で残す。
+各組はプロジェクトの batches に追記し、派生元を parentId で残す。依頼文の感想は feedback.ts にユーザーの発言として記録する。
 画面の選択・メモから作られた依頼文をこのチャットに送り、AIが作曲して登録する。
 旋律単独の選抜やAIによる勝手な採用はしない。compose review all・テスト・ビルドで確認。ブラウザ確認はユーザーが行う。`)
   } else {

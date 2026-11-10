@@ -1,5 +1,5 @@
-import type { Song } from '../songs/song.ts'
-import type { CompositionStudy } from './study.ts'
+import type { Song } from '../../../songs/song.ts'
+import type { CompositionStudy } from '../../study.ts'
 import { thirdThemes } from './themes-003.ts'
 
 const parent = thirdThemes.find((study) => study.song.id === 'borderline-scouts')!
