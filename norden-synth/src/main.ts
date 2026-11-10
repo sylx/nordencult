@@ -1,6 +1,7 @@
 import './style.css'
 import { setupMixer } from './mixer-panel.ts'
 import { setupSongsPage } from './songs-page.ts'
+import { setupCompositionPage } from './composition-page.ts'
 import { Synth, type Channel, type Instrument, type InstrumentIndexEntry } from './synth/index.ts'
 
 const synth = new Synth()
@@ -17,6 +18,7 @@ app.innerHTML = `
 
   <nav class="tabs">
     <a href="#songs" data-tab="songs">LLM 作成曲</a>
+    <a href="#composition" data-tab="composition">作曲工房</a>
     <a href="#instrument" data-tab="instrument">音源チェック</a>
   </nav>
 
@@ -60,20 +62,32 @@ app.innerHTML = `
       <div id="songs"></div>
     </section>
   </div>
+  <div data-page="composition" hidden>
+    <section>
+      <h2>作曲工房</h2>
+      <div id="composition"></div>
+    </section>
+  </div>
 `
 
 const $ = <T extends HTMLElement>(sel: string) => app.querySelector<T>(sel)!
 
 // --- タブ ---
-// URL のハッシュで開くページを決める (#songs / #instrument)。既定は LLM 作成曲
+// URL のハッシュで開くページを決める。既定は LLM 作成曲
 
-const pages = ['songs', 'instrument'] as const
+const pages = ['songs', 'composition', 'instrument'] as const
 type Page = (typeof pages)[number]
 let page: Page = 'songs'
 
 function showPage() {
   const hash = location.hash.slice(1)
-  page = pages.find((p) => p === hash) ?? 'songs'
+  const next = pages.find((p) => p === hash) ?? 'songs'
+  if (page !== next) {
+    songsPage.stop()
+    compositionPage.stop()
+    synth.allNotesOff()
+  }
+  page = next
   for (const el of app.querySelectorAll<HTMLElement>('[data-page]')) el.hidden = el.dataset.page !== page
   for (const el of app.querySelectorAll<HTMLElement>('[data-tab]')) el.classList.toggle('selected', el.dataset.tab === page)
   // 別のページに移ったら鍵盤で押しっぱなしの音を離す
@@ -263,7 +277,8 @@ window.addEventListener('keyup', (e) => {
 })
 
 setBaseKey(baseKey)
-setupSongsPage(synth, $('#songs'))
+const songsPage = setupSongsPage(synth, $('#songs'))
+const compositionPage = setupCompositionPage(synth, $('#composition'))
 setupMixer(synth, $('#mixer'))
 showPage()
 

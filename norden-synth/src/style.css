@@ -56,6 +56,7 @@ header {
 
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   margin: 8px 0 0;
   border-bottom: 1px solid var(--border);
@@ -310,4 +311,109 @@ button.stop {
   font-size: 0.85rem;
   color: var(--muted);
   line-height: 1.5;
+}
+
+/* 作曲工房 */
+
+button:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.workshop-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.workshop-steps button {
+  flex: 1 1 200px;
+  padding: 12px;
+  text-align: left;
+}
+
+.workshop-steps button.selected,
+.workshop-choose {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.workshop-lineage {
+  color: var(--accent);
+  font-size: .9rem;
+}
+
+.workshop-candidates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.workshop-candidate,
+.workshop-feedback,
+.workshop-request,
+.workshop-empty {
+  padding: 18px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.workshop-candidate {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.workshop-candidate.playing {
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 var(--accent);
+}
+
+#composition h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.workshop-candidate p { margin: 0; }
+.workshop-number { color: var(--accent); font-size: .8rem; margin-right: 12px; }
+.workshop-description { flex: 1; font-size: .9rem; line-height: 1.7; }
+.workshop-empty { grid-column: 1 / -1; }
+.workshop-feedback, .workshop-request { margin-top: 20px; }
+
+.workshop-note-label,
+.workshop-feedback > label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: .85rem;
+}
+
+#composition textarea,
+.workshop-batch select {
+  width: 100%;
+  padding: 8px 10px;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font: inherit;
+  font-size: .85rem;
+  line-height: 1.6;
+}
+
+#composition textarea { resize: vertical; }
+.workshop-batch label { flex: 1; min-width: 200px; }
+.workshop-feedback > textarea { margin: 10px 0; }
+#composition summary { color: var(--muted); font-size: .85rem; cursor: pointer; }
+.workshop-history { margin-top: 16px; }
+.workshop-history details { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.workshop-history pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: .85rem; }
+
+@media (max-width: 600px) {
+  .workshop-candidates { grid-template-columns: 1fr; }
+  .tabs a { padding: 8px 10px; }
 }

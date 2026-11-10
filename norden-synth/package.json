@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc && tsc -p tools && tsc -p test",
     "test": "node --test test/*.test.ts",
+    "compose": "node tools/compose.ts",
     "build:instruments": "node tools/sf2-extract/main.ts public/instruments --presets soundfonts/presets.json"
   },
   "devDependencies": {

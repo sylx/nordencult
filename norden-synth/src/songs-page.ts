@@ -29,13 +29,16 @@ function formatTime(sec: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 }
 
-export function setupSongsPage(synth: Synth, root: HTMLElement): void {
+export function setupSongsPage(synth: Synth, root: HTMLElement): { stop: () => void } {
   const songs = SONGS.map(compileSong)
   let current = songs.find((c) => c.song.id === loadSelection()) ?? songs[0]
   let loop = true
   // 曲 id → プレイヤー。曲を切り替えても作り直さない
   const players = new Map<string, SongPlayer>()
   let player: SongPlayer | undefined
+  let request = 0
+  let loading = false
+  const loads = new Map<string, Promise<SongPlayer>>()
   const muted = new Set<string>()
 
   root.innerHTML = `
@@ -91,8 +94,8 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): void {
   }
 
   function select(c: CompiledSong) {
-    const wasPlaying = !!player?.playing
-    player?.stop()
+    const wasPlaying = !!player?.playing || loading
+    stop()
     player = undefined
     muted.clear()
     current = c
@@ -105,22 +108,42 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): void {
 
   // --- 再生 ---
 
+  function stop() {
+    request++
+    loading = false
+    player?.stop()
+    message.textContent = ''
+  }
+
   async function play() {
+    stop()
+    const token = request
+    loading = true
     const c = current
     message.textContent = '音色を読み込み中…'
     message.classList.remove('error')
     let p: SongPlayer
     try {
       await synth.resume()
-      p = players.get(c.song.id) ?? (await SongPlayer.load(synth, c))
+      if (token !== request) return
+      let load = loads.get(c.song.id)
+      if (!load) {
+        load = SongPlayer.load(synth, c)
+        loads.set(c.song.id, load)
+        load.catch(() => loads.delete(c.song.id))
+      }
+      p = players.get(c.song.id) ?? (await load)
     } catch (err) {
+      if (token !== request) return
+      loading = false
       message.textContent = `読み込みに失敗: ${err}`
       message.classList.add('error')
       return
     }
     players.set(c.song.id, p)
     // 読み込み中に別の曲が選ばれた
-    if (c !== current) return
+    if (token !== request || c !== current) return
+    loading = false
     message.textContent = ''
     for (const [id, track] of p.tracks) track.muted = muted.has(id)
     p.loop = loop
@@ -129,7 +152,7 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): void {
   }
 
   $('#song-play').addEventListener('click', play)
-  $('#song-stop').addEventListener('click', () => player?.stop())
+  $('#song-stop').addEventListener('click', stop)
   const loopInput = $<HTMLInputElement>('#song-loop')
   loopInput.addEventListener('change', () => {
     loop = loopInput.checked
@@ -189,4 +212,5 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): void {
 
   select(current)
   update()
+  return { stop }
 }
