@@ -30,7 +30,7 @@ test('指定された15曲だけを1軍、指定した2軍の曲だけにタグ�
   ])
   const taggedSecondTeam = new Map([['黄金の穂波、帰り道', ['戦略画面', '秋']]])
   assert.equal(filterSongs(1).length, firstTeam.size)
-  assert.equal(filterSongs(2).length, 14)
+  assert.equal(filterSongs(2).length, 15)
   for (const song of SONGS) {
     assert.equal(song.tier, firstTeam.has(song.title) ? 1 : 2, song.title)
     assert.deepEqual(song.tags, firstTeam.get(song.title) ?? taggedSecondTeam.get(song.title) ?? [], song.title)
@@ -47,7 +47,7 @@ test('軍とタグで絞り込み、複数タグはすべて一致する曲を�
   assert.deepEqual(filterSongs('all', ['戦略画面', '春']).map((s) => s.title), ['水晶の地図'])
   assert.deepEqual(filterSongs('all', ['冬', '夏']), [])
   assert.deepEqual(filterSongs('all', ['未登録']), [])
-  assert.equal(SONGS.length, 29)
+  assert.equal(SONGS.length, 30)
 })
 
 for (const song of SONGS) {

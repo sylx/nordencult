@@ -26,6 +26,7 @@ import { starReader } from './star-reader.ts'
 import { tundraMarch } from './tundra-march.ts'
 import { victorAccolade } from './victor-accolade.ts'
 import { wanderingBird } from './wandering-bird.ts'
+import { warlordsAlmanac } from './warlords-almanac.ts'
 import { whiteSanctum } from './white-sanctum.ts'
 import { winterCouncil } from './winter-council.ts'
 import type { Song } from './song.ts'
@@ -70,6 +71,7 @@ export const SONGS: CatalogSong[] = [
   { ...goldenHomeward, tier: 2, tags: ['戦略画面', '秋'] },
   { ...birchRidge, tier: 1, tags: ['戦略画面', '秋'] },
   { ...crystalMap, tier: 1, tags: ['戦略画面', '春'] },
+  { ...warlordsAlmanac, tier: 2, tags: [] },
 ]
 
 // タグを複数指定した場合は、すべてを含む曲に絞る。
