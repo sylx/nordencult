@@ -1,12 +1,14 @@
 // テストページの「LLM 作成曲」タブ。src/songs の曲を選んで聞く
 
-import { SONGS, compileSong, type CompiledSong } from './songs/index.ts'
+import { SONGS, compileSong, filterSongs, type CatalogSong, type CompiledSong, type SongTier } from './songs/index.ts'
 import { SongPlayer } from './songs/player.ts'
 import type { Synth } from './synth/index.ts'
 
 const STORAGE_KEY = 'norden-synth:song'
+type ListedSong = CompiledSong & { song: CatalogSong }
 
 const escape = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)
+const tagsHtml = (tags: readonly string[]) => tags.map((tag) => `<span class="song-tag">${escape(tag)}</span>`).join('')
 
 function loadSelection(): string {
   try {
@@ -30,8 +32,10 @@ function formatTime(sec: number): string {
 }
 
 export function setupSongsPage(synth: Synth, root: HTMLElement): { stop: () => void } {
-  const songs = SONGS.map(compileSong)
-  let current = songs.find((c) => c.song.id === loadSelection()) ?? songs[0]
+  const songs: ListedSong[] = SONGS.map((song) => ({ ...compileSong(song), song }))
+  let current = songs.find((c) => c.song.id === loadSelection()) ?? songs.find((c) => c.song.tier === 1) ?? songs[0]
+  let tier: SongTier | 'all' = current.song.tier
+  const selectedTags = new Set<string>()
   let loop = true
   // 曲 id → プレイヤー。曲を切り替えても作り直さない
   const players = new Map<string, SongPlayer>()
@@ -42,7 +46,21 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): { stop: () => v
   const muted = new Set<string>()
 
   root.innerHTML = `
-    <div id="song-list" class="instruments songs"></div>
+    <div class="song-filters">
+      <fieldset>
+        <legend>表示</legend>
+        <div id="song-tiers" class="buttons"></div>
+      </fieldset>
+      <fieldset>
+        <legend>タグ</legend>
+        <div id="song-tags" class="buttons"></div>
+        <p class="hint">複数選ぶと、選んだタグをすべて含む曲を表示します。</p>
+        <button id="song-clear-tags" disabled>タグをクリア</button>
+      </fieldset>
+    </div>
+    <p id="song-count" class="info" role="status"></p>
+    <div id="song-list"></div>
+    <p id="song-empty" class="hint" hidden>条件に一致する曲はありません。表示区分を変えるか、タグをクリアしてください。</p>
     <div class="buttons controls">
       <button id="song-play">再生</button>
       <button id="song-stop" class="stop">停止</button>
@@ -52,7 +70,7 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): { stop: () => v
     <div id="song-now" class="now"></div>
     <h2>パート</h2>
     <div id="song-parts" class="parts"></div>
-    <p class="hint">曲は src/songs/ に 1 曲 1 ファイルで置き、src/songs/index.ts の SONGS に並べます。書式は src/songs/song.ts を参照</p>
+    <p class="hint">曲は src/songs/ に 1 曲 1 ファイルで置き、src/songs/index.ts の SONGS に分類 (tier) とタグ (tags) を付けて並べます。書式は src/songs/song.ts を参照</p>
   `
   const $ = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel)!
   const message = $('#song-message')
@@ -63,14 +81,76 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): { stop: () => v
 
   const list = $('#song-list')
   const listButtons = new Map<string, HTMLButtonElement>()
-  for (const c of songs) {
-    const { song, bars, introBars } = c
-    const loopSec = (bars.slice(introBars).reduce((sum, b) => sum + b.beats, 0) * 60) / song.tempo
+  const tierButtons = new Map<SongTier | 'all', HTMLButtonElement>()
+  const tagButtons = new Map<string, HTMLButtonElement>()
+  const clearTags = $<HTMLButtonElement>('#song-clear-tags')
+
+  for (const value of [1, 2, 'all'] as const) {
     const b = document.createElement('button')
-    b.innerHTML = `<span class="name">${escape(song.title)}</span><span class="meta">${bars.length} 小節 · ループ ${formatTime(loopSec)}</span>`
-    b.addEventListener('click', () => select(c))
-    list.append(b)
-    listButtons.set(song.id, b)
+    b.textContent = `${value === 'all' ? 'すべて' : `${value}軍`} (${filterSongs(value).length})`
+    b.addEventListener('click', () => {
+      tier = value
+      selectedTags.clear()
+      renderList()
+    })
+    $('#song-tiers').append(b)
+    tierButtons.set(value, b)
+  }
+
+  for (const tag of new Set(SONGS.flatMap((song) => song.tags))) {
+    const b = document.createElement('button')
+    b.textContent = tag
+    b.addEventListener('click', () => {
+      if (!selectedTags.delete(tag)) selectedTags.add(tag)
+      renderList()
+    })
+    $('#song-tags').append(b)
+    tagButtons.set(tag, b)
+  }
+
+  clearTags.addEventListener('click', () => {
+    selectedTags.clear()
+    renderList()
+  })
+
+  function renderList() {
+    for (const [value, b] of tierButtons) {
+      b.classList.toggle('selected', value === tier)
+      b.setAttribute('aria-pressed', String(value === tier))
+    }
+    for (const [tag, b] of tagButtons) {
+      b.classList.toggle('selected', selectedTags.has(tag))
+      b.setAttribute('aria-pressed', String(selectedTags.has(tag)))
+    }
+    clearTags.disabled = selectedTags.size === 0
+    const visible = new Set(filterSongs(tier, [...selectedTags]).map((song) => song.id))
+    list.innerHTML = ''
+    listButtons.clear()
+    $('#song-count').textContent = `${visible.size} 曲を表示`
+    $('#song-empty').hidden = visible.size > 0
+
+    for (const group of [1, 2] as const) {
+      const entries = songs.filter((c) => c.song.tier === group && visible.has(c.song.id))
+      if (!entries.length) continue
+      const section = document.createElement('section')
+      section.className = 'song-group'
+      section.innerHTML = `<h3>${group}軍 <span class="info">${entries.length} 曲</span></h3>`
+      const grid = document.createElement('div')
+      grid.className = 'instruments songs'
+      for (const c of entries) {
+        const { song, bars, introBars } = c
+        const loopSec = (bars.slice(introBars).reduce((sum, b) => sum + b.beats, 0) * 60) / song.tempo
+        const b = document.createElement('button')
+        b.innerHTML = `<span class="name">${escape(song.title)}</span><span class="meta">${bars.length} 小節 · ループ ${formatTime(loopSec)}</span><span class="song-tags">${tagsHtml(song.tags)}</span>`
+        b.classList.toggle('selected', song.id === current.song.id)
+        b.setAttribute('aria-pressed', String(song.id === current.song.id))
+        b.addEventListener('click', () => select(c))
+        grid.append(b)
+        listButtons.set(song.id, b)
+      }
+      section.append(grid)
+      list.append(section)
+    }
   }
 
   // --- パート (チェックを外すと鳴らさない。今の小節で音があるパートを強調する) ---
@@ -93,14 +173,17 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): { stop: () => v
     }
   }
 
-  function select(c: CompiledSong) {
+  function select(c: ListedSong) {
     const wasPlaying = !!player?.playing || loading
     stop()
     player = undefined
     muted.clear()
     current = c
     saveSelection(c.song.id)
-    for (const [id, b] of listButtons) b.classList.toggle('selected', id === c.song.id)
+    for (const [id, b] of listButtons) {
+      b.classList.toggle('selected', id === c.song.id)
+      b.setAttribute('aria-pressed', String(id === c.song.id))
+    }
     renderParts()
     shown = ''
     if (wasPlaying) play()
@@ -192,6 +275,7 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): { stop: () => v
         .join(' → ') + ' ]'
     let html = `
       <div class="title">『${escape(song.title)}』</div>
+      <div class="song-tags"><span class="song-tier">${song.tier}軍</span>${tagsHtml(song.tags)}</div>
       <p class="description">${escape(song.description)}</p>
       <dl>
         <dt>構成</dt><dd>${formHtml}</dd>`
@@ -210,6 +294,7 @@ export function setupSongsPage(synth: Synth, root: HTMLElement): { stop: () => v
     requestAnimationFrame(update)
   }
 
+  renderList()
   select(current)
   update()
   return { stop }

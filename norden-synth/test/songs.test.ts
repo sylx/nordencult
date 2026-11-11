@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { SONGS, barAt, compileSong, type Song } from '../src/songs/index.ts'
+import { SONGS, barAt, compileSong, filterSongs, type Song } from '../src/songs/index.ts'
 import { DRUM_KEYS, parsePitch } from '../src/songs/song.ts'
 
 const instruments = new Set(
@@ -9,6 +9,41 @@ const instruments = new Set(
     (i) => i.id,
   ),
 )
+
+test('指定された13曲だけを1軍としてタグを付け、残りは2軍・タグなしにする', () => {
+  const firstTeam = new Map([
+    ['妖精の環', ['戦略画面', 'ノルディス家']],
+    ['残影のレクイエム', ['戦闘敗北']],
+    ['凍土の鉄騎', ['戦闘画面']],
+    ['黄金の帆', ['戦略画面', 'アクア商会']],
+    ['砂海の星詠み', ['戦略画面', 'ロザリア家']],
+    ['白亜の聖都', ['イベント', '法王府']],
+    ['鬨の声', ['戦闘画面']],
+    ['霧の巡礼', ['タイトル画面']],
+    ['歪んだ振り子', ['イベント']],
+    ['仮面たちのパスピエ', ['イベント']],
+    ['凱旋の叙勲', ['戦闘勝利']],
+    ['国境線の斥候', ['戦略画面', '冬']],
+    ['真昼の凱風', ['戦略画面', '夏']],
+  ])
+  assert.equal(filterSongs(1).length, firstTeam.size)
+  assert.equal(filterSongs(2).length, 13)
+  for (const song of SONGS) {
+    assert.equal(song.tier, firstTeam.has(song.title) ? 1 : 2, song.title)
+    assert.deepEqual(song.tags, firstTeam.get(song.title) ?? [], song.title)
+  }
+})
+
+test('軍とタグで絞り込み、複数タグはすべて一致する曲を返す', () => {
+  assert.deepEqual(filterSongs('all'), SONGS)
+  assert.deepEqual(filterSongs(1, ['戦略画面']).map((s) => s.title), ['妖精の環', '黄金の帆', '砂海の星詠み', '国境線の斥候', '真昼の凱風'])
+  assert.deepEqual(filterSongs('all', ['戦略画面', '冬']).map((s) => s.title), ['国境線の斥候'])
+  assert.deepEqual(filterSongs(1, ['イベント', '法王府']).map((s) => s.title), ['白亜の聖都'])
+  assert.deepEqual(filterSongs(2, ['戦略画面']), [])
+  assert.deepEqual(filterSongs('all', ['冬', '夏']), [])
+  assert.deepEqual(filterSongs('all', ['未登録']), [])
+  assert.equal(SONGS.length, 26)
+})
 
 for (const song of SONGS) {
   test(`${song.id}: 展開できて、楽器が揃っている`, () => {
