@@ -1,5 +1,6 @@
 // LLM が作った曲の一覧。新しい曲はファイルを足してここに並べる
 import { battleCry } from './battle-cry.ts'
+import { birchRidge } from './birch-ridge.ts'
 import { borderlineScouts } from './borderline-scouts.ts'
 import { condorBoard } from './condor-board.ts'
 import { crimsonAlcazar } from './crimson-alcazar.ts'
@@ -66,6 +67,7 @@ export const SONGS: CatalogSong[] = [
   { ...borderlineScouts, tier: 1, tags: ['戦略画面', '冬'] },
   { ...noonFairWind, tier: 1, tags: ['戦略画面', '夏'] },
   { ...goldenHomeward, tier: 2, tags: ['戦略画面', '秋'] },
+  { ...birchRidge, tier: 1, tags: ['戦略画面', '秋'] },
 ]
 
 // タグを複数指定した場合は、すべてを含む曲に絞る。
