@@ -1,18 +1,30 @@
 import { compileSong, DRUM_KEYS } from '../songs/song.ts'
-import { inspectMelody, type CompositionStudy } from './study.ts'
+import { inspectMelody, themeReuse, type CompositionStudy } from './study.ts'
 
-export type Stage = 'themes' | 'harmony' | 'orchestration'
+export type Stage = 'themes' | 'structure' | 'orchestration'
 export const STAGES: { id: Stage; label: string }[] = [
-  { id: 'themes', label: '1. 主題＋和声を選ぶ' },
-  { id: 'harmony', label: '2. 和声の別案を聴く' },
+  { id: 'themes', label: '1. 主題を選ぶ' },
+  { id: 'structure', label: '2. フル尺の構成を決める' },
   { id: 'orchestration', label: '3. オーケストレーション' },
 ]
+
+// 'harmony' は構成の段階に置き換える前の和声案（主旋律を固定した16小節程度の別案）。
+// 新しくは作らない。履歴として残し、画面では構成の段階に並べる。
+export type BatchStage = Stage | 'harmony'
+export const stageOf = (batch: { stage: BatchStage }): Stage => batch.stage === 'harmony' ? 'structure' : batch.stage
+export const stageLabel = (stage: BatchStage) =>
+  stage === 'harmony' ? '和声案（旧）' : STAGES.find((s) => s.id === stage)!.label.replace(/^\d\. /, '')
+
+// 構成案の下限。主題をそのまま再掲する小節がこの割合を超える案は、主題の繰り返しとして受け付けない。
+export const MIN_STRUCTURE_BARS = 24
+export const MAX_THEME_REUSE = 0.7
+const minCandidates = (stage: BatchStage) => stage === 'orchestration' ? 1 : stage === 'structure' ? 3 : 5
 
 export interface CompositionBatch {
   id: string
   title: string
-  stage: Stage
-  // 派生元の候補 id。主題集には不要、和声案・編曲には必須。
+  stage: BatchStage
+  // 派生元の候補 id。主題集には不要、構成案（主題）・編曲（構成案）には必須。
   parentId?: string
   candidates: CompositionStudy[]
 }
@@ -29,14 +41,14 @@ export interface ProjectBrief {
 export interface FeedbackEntry {
   batchId?: string
   candidates: string[]
-  mode?: 'theme-with-harmony' | 'harmony-variation' | 'orchestration'
+  mode?: 'theme-with-harmony' | 'harmony-variation' | 'structure' | 'orchestration'
   preferred: string
   keep?: string
   change?: string
   userWords: string
 }
 
-// 1曲ぶんの作曲。主題・和声・編曲の組と感想をまとめて持つ。
+// 1曲ぶんの作曲。主題・構成・編曲の組と感想をまとめて持つ。
 export interface CompositionProject {
   id: string
   title: string
@@ -59,7 +71,8 @@ export interface WorkshopState {
   version: 1
   stage: Stage
   themeId?: string
-  harmonyId?: string
+  // 選んだ構成案（旧形式では和声案）
+  structureId?: string
   // 過去の組を明示的に見たいときだけ設定。通常は最新の組を表示する。
   batchId?: string
   notes: Record<string, string>
@@ -71,11 +84,11 @@ export const findCandidate = (batches: CompositionBatch[], id?: string) =>
   batches.flatMap((b) => b.candidates).find((c) => c.song.id === id)
 
 export function parentFor(state: WorkshopState): string | undefined {
-  return state.stage === 'harmony' ? state.themeId : state.stage === 'orchestration' ? state.harmonyId : undefined
+  return state.stage === 'structure' ? state.themeId : state.stage === 'orchestration' ? state.structureId : undefined
 }
 
 export function batchesFor(batches: CompositionBatch[], state: WorkshopState): CompositionBatch[] {
-  return batches.filter((b) => b.stage === state.stage && b.parentId === parentFor(state))
+  return batches.filter((b) => stageOf(b) === state.stage && b.parentId === parentFor(state))
 }
 
 export function currentBatch(batches: CompositionBatch[], state: WorkshopState): CompositionBatch | undefined {
@@ -90,12 +103,12 @@ export function validateBatches(batches: CompositionBatch[]): void {
   for (const batch of batches) {
     if (batchIds.has(batch.id)) throw new Error(`duplicate batch: ${batch.id}`)
     batchIds.add(batch.id)
-    if (!batch.id.trim() || !batch.title.trim() || !STAGES.some((s) => s.id === batch.stage)) throw new Error('invalid batch')
-    if (batch.candidates.length < (batch.stage === 'orchestration' ? 1 : 5)) throw new Error(`${batch.id}: at least 5 candidates required`)
+    if (!batch.id.trim() || !batch.title.trim() || !STAGES.some((s) => s.id === stageOf(batch))) throw new Error('invalid batch')
+    if (batch.candidates.length < minCandidates(batch.stage)) throw new Error(`${batch.id}: at least ${minCandidates(batch.stage)} candidates required`)
     const titles = new Set<string>()
     const parent = batch.parentId ? candidates.get(batch.parentId) : undefined
     if (batch.stage === 'themes' ? !!batch.parentId : !parent) throw new Error(`${batch.id}: invalid parent`)
-    if (parent && stages.get(parent.song.id) !== (batch.stage === 'harmony' ? 'themes' : 'harmony'))
+    if (parent && stages.get(parent.song.id) !== (stageOf(batch) === 'structure' ? 'themes' : 'structure'))
       throw new Error(`${batch.id}: wrong parent stage`)
     for (const study of batch.candidates) {
       if (candidates.has(study.song.id)) throw new Error(`duplicate candidate: ${study.song.id}`)
@@ -106,15 +119,24 @@ export function validateBatches(batches: CompositionBatch[]): void {
         id !== study.melodyPart && notes.length && !DRUM_KEYS[study.song.parts.find((p) => p.id === id)!.instrument])))
         throw new Error(`${study.song.id}: accompaniment required`)
       if (batch.stage === 'harmony' && parent) {
-        // 音符・発音位置・音価を保った和声違い。編曲は構成を広げられる。
+        // 旧形式: 音符・発音位置・音価を保った和声違い。
         const a = inspectMelody(parent.song, parent.melodyPart)
         const b = inspectMelody(study.song, study.melodyPart)
         if (JSON.stringify(a.events) !== JSON.stringify(b.events) || parent.song.tempo !== study.song.tempo ||
           JSON.stringify(compileSong(parent.song).bars.map((bar) => bar.timeSignature)) !== JSON.stringify(score.bars.map((bar) => bar.timeSignature)))
           throw new Error(`${study.song.id}: harmony variation changed the theme`)
       }
+      if (batch.stage === 'structure' && parent) {
+        // フル尺で、句（形式の区分）が全小節を切れ目なく覆い、主題の単純な繰り返しでないこと。
+        if (score.bars.length < Math.max(MIN_STRUCTURE_BARS, compileSong(parent.song).bars.length + 1))
+          throw new Error(`${study.song.id}: structure must be full length (${MIN_STRUCTURE_BARS}+ bars, longer than the theme)`)
+        if (study.phrases.reduce((next, p) => p.from === next ? p.to + 1 : NaN, 1) !== score.bars.length + 1)
+          throw new Error(`${study.song.id}: phrases must cover the whole form in order`)
+        if (themeReuse(parent, study) > MAX_THEME_REUSE)
+          throw new Error(`${study.song.id}: structure only repeats the theme`)
+      }
       candidates.set(study.song.id, study)
-      stages.set(study.song.id, batch.stage)
+      stages.set(study.song.id, stageOf(batch))
     }
   }
 }
@@ -126,14 +148,16 @@ export function makeRequest(project: CompositionProject, stage: Stage, parentId?
   if (stage === 'themes' && parentId) throw new Error('新しい主題集には派生元を指定しません。')
   const parent = findCandidate(batches, parentId)
   const sourceBatch = batches.find((b) => b.candidates.some((c) => c.song.id === parentId))
-  if (stage !== 'themes' && (!parent || sourceBatch?.stage !== (stage === 'harmony' ? 'themes' : 'harmony')))
+  if (stage !== 'themes' && (!parent || !sourceBatch || stageOf(sourceBatch) !== (stage === 'structure' ? 'themes' : 'structure')))
     throw new Error('先に元になる候補を選んでください。')
   const prior = batches.find((b) => b.id === batchId)
   const task = stage === 'themes'
     ? '名前の付いた新しい主題を5案以上、一気に作ってください。すべて最初から和声・低音・伴奏付きで、主題と和声を一緒に評価できるプレビューにしてください。輪郭・リズム・拍子・和声の発想が異なる案をください。'
-    : stage === 'harmony'
-      ? 'この主題から、名前の付いた和声のバリエーションを5案作ってください。主旋律の音符・リズム・テンポ・拍子を保ち、低音・内声・コード進行・緊張と解放の方向を変えてください。どの案も主題＋和声を一緒にプレビューできる形にしてください。'
-      : '選んだ主題＋和声を基にオーケストレーションしてください。採用した旋律と和声の魅力を保って展開し、編曲版をプレビューできる形にしてください。'
+    : stage === 'structure'
+      ? `この主題から、名前の付いたフル尺の構成案を3案以上作ってください。1ループぶんの曲全体（${MIN_STRUCTURE_BARS}小節以上）を、主題の段階と同じ簡潔な編成で最後まで書き、そのまま通して試聴できる形にしてください。主題を2周するだけの曲にせず、主題と対比する新しい旋律の部分（B など）、展開、主題への戻り方を作ってください。案ごとに、形式（部分の並びと長さ）、対比部の旋律・調・和声・リズム、山場の位置を聴いてわかるほど変えてください。和声は主題案を出発点に、構成に合わせて変えて構いません。細かな和声の差だけで案の数を埋めないでください。`
+      : sourceBatch?.stage === 'harmony'
+        ? '選んだ主題＋和声を基にオーケストレーションしてください。採用した旋律と和声の魅力を保って展開し、編曲版をプレビューできる形にしてください。'
+        : '選んだ構成案をオーケストレーションしてください。部分の並び・長さ・旋律・和声は構成案のまま保ち、楽器の割り当て、音の厚み、強弱で各部分の違いと山場を描いてください。編曲版をプレビューできる形にしてください。'
   const dir = `${PROJECT_DIR}/${project.id}`
   const text = [
     'norden-synth/COMPOSING.md と composition/preferences.json に従って作曲してください。',
@@ -167,23 +191,23 @@ export function chooseCandidate(project: CompositionProject, state: WorkshopStat
   const batches = project.batches
   if (state.stage === 'orchestration' || !currentBatch(batches, state)?.candidates.some((c) => c.song.id === id))
     throw new Error('表示中の組から候補を選んでください。')
-  const stage = state.stage === 'themes' ? 'harmony' : 'orchestration'
-  const exists = batches.some((b) => b.stage === stage && b.parentId === id)
+  const stage = state.stage === 'themes' ? 'structure' : 'orchestration'
+  const exists = batches.some((b) => stageOf(b) === stage && b.parentId === id)
   return {
     ...state, stage, batchId: undefined,
     themeId: state.stage === 'themes' ? id : state.themeId,
-    harmonyId: state.stage === 'themes' ? undefined : id,
+    structureId: state.stage === 'themes' ? undefined : id,
     history: exists ? state.history : [...state.history, requestFor(project, state, stage, id)],
   }
 }
 
 export function requestMore(project: CompositionProject, state: WorkshopState, stage: Stage): WorkshopState {
-  const parentId = stage === 'harmony' ? state.themeId : stage === 'orchestration' ? state.harmonyId : undefined
+  const parentId = stage === 'structure' ? state.themeId : stage === 'orchestration' ? state.structureId : undefined
   const next = requestFor(project, state, stage, parentId)
   return {
     ...state, stage, batchId: undefined,
     themeId: stage === 'themes' ? undefined : state.themeId,
-    harmonyId: stage === 'themes' ? undefined : state.harmonyId,
+    structureId: stage === 'themes' ? undefined : state.structureId,
     history: [...state.history, next],
   }
 }
@@ -195,19 +219,23 @@ export function restoreState(raw: string | null, batches: CompositionBatch[]): W
   try {
     const value = JSON.parse(raw)
     if (value?.version !== 1) return state
+    // 構成の段階に置き換える前の保存は stage: 'harmony' と harmonyId を持つ。
+    const stage = (s: unknown) => s === 'harmony' ? 'structure' : s
     const isStage = (s: unknown): s is Stage => STAGES.some((stage) => stage.id === s)
-    const belongs = (id: unknown, stage: Stage) => typeof id === 'string' && batches.some((b) => b.stage === stage && b.candidates.some((c) => c.song.id === id))
+    const belongs = (id: unknown, stage: Stage) => typeof id === 'string' && batches.some((b) => stageOf(b) === stage && b.candidates.some((c) => c.song.id === id))
+    const structureId = value.structureId ?? value.harmonyId
     if (belongs(value.themeId, 'themes')) state.themeId = value.themeId
-    if (belongs(value.harmonyId, 'harmony') && batches.some((b) => b.parentId === state.themeId && b.candidates.some((c) => c.song.id === value.harmonyId))) state.harmonyId = value.harmonyId
-    if (isStage(value.stage)) state.stage = value.stage
-    if (state.stage === 'harmony' && !state.themeId) state.stage = 'themes'
-    if (state.stage === 'orchestration' && !state.harmonyId) state.stage = state.themeId ? 'harmony' : 'themes'
+    if (belongs(structureId, 'structure') && batches.some((b) => b.parentId === state.themeId && b.candidates.some((c) => c.song.id === structureId))) state.structureId = structureId
+    if (isStage(stage(value.stage))) state.stage = stage(value.stage) as Stage
+    if (state.stage === 'structure' && !state.themeId) state.stage = 'themes'
+    if (state.stage === 'orchestration' && !state.structureId) state.stage = state.themeId ? 'structure' : 'themes'
     if (batchesFor(batches, state).some((b) => b.id === value.batchId)) state.batchId = value.batchId
     if (value.notes && typeof value.notes === 'object' && !Array.isArray(value.notes))
       state.notes = Object.fromEntries(Object.entries(value.notes).filter((entry) => typeof entry[1] === 'string')) as Record<string, string>
     if (Array.isArray(value.history)) state.history = value.history.filter((r: Partial<CompositionRequest> | null) =>
-      r && isStage(r.stage) && typeof r.text === 'string' && typeof r.feedback === 'string' &&
+      r && isStage(stage(r.stage)) && typeof r.text === 'string' && typeof r.feedback === 'string' &&
       (r.parentId === undefined || typeof r.parentId === 'string') && (r.batchId === undefined || typeof r.batchId === 'string'))
+      .map((r: CompositionRequest) => ({ ...r, stage: stage(r.stage) as Stage }))
     return state
   } catch { return initialState() }
 }
@@ -246,9 +274,10 @@ export function openBatch(project: CompositionProject, state: WorkshopState, bat
   const batch = project.batches.find((b) => b.id === batchId)
   if (!batch) throw new Error(`unknown batch: ${batchId}`)
   const sourceOf = (id?: string) => project.batches.find((b) => b.candidates.some((c) => c.song.id === id))
-  const themeId = batch.stage === 'harmony' ? batch.parentId : batch.stage === 'orchestration' ? sourceOf(batch.parentId)?.parentId : undefined
-  const harmonyId = batch.stage === 'orchestration' ? batch.parentId : undefined
-  return { ...state, stage: batch.stage, themeId, harmonyId, batchId }
+  const stage = stageOf(batch)
+  const themeId = stage === 'structure' ? batch.parentId : stage === 'orchestration' ? sourceOf(batch.parentId)?.parentId : undefined
+  const structureId = stage === 'orchestration' ? batch.parentId : undefined
+  return { ...state, stage, themeId, structureId, batchId }
 }
 
 export interface BriefDraft extends ProjectBrief {

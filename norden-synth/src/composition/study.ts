@@ -99,6 +99,19 @@ export function inspectMelody(song: Song, partId: string, from = 1, to?: number)
   }
 }
 
+/**
+ * 構成案の旋律のうち、主題の小節をそのまま（同じ音高・発音位置・音価で）再掲している小節の割合。
+ * 旋律が発音しない小節は数えない。移調・変形した再現は再掲に数えない。
+ */
+export function themeReuse(theme: CompositionStudy, study: CompositionStudy): number {
+  const bars = (s: CompositionStudy) => writtenScore(s.song).bars
+    .map((bar) => (bar.notes.get(s.melodyPart) ?? []).map((n) => `${round(n.beat)}:${round(n.duration)}:${n.key}`).sort().join(' '))
+    .filter(Boolean)
+  const original = new Set(bars(theme))
+  const sung = bars(study)
+  return sung.length ? sung.filter((bar) => original.has(bar)).length / sung.length : 0
+}
+
 export function reviewStudy(study: CompositionStudy) {
   const { song } = study
   if (!study.hypothesis.trim()) throw new Error(`${song.id}: hypothesis is empty`)

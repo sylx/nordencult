@@ -430,6 +430,7 @@ button:disabled {
 .workshop-number { color: var(--accent); font-size: .8rem; margin-right: 12px; }
 .workshop-description { flex: 1; font-size: .9rem; line-height: 1.7; }
 .workshop-empty { grid-column: 1 / -1; }
+.workshop-form { margin: 0; padding-left: 1.4em; font-size: .85rem; line-height: 1.7; }
 .workshop-feedback, .workshop-request { margin-top: 20px; }
 
 .workshop-note-label,
