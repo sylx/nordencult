@@ -10,7 +10,7 @@ const instruments = new Set(
   ),
 )
 
-test('指定された14曲だけを1軍、指定した2軍の曲だけにタグを付け、残りは2軍・タグなしにする', () => {
+test('指定された15曲だけを1軍、指定した2軍の曲だけにタグを付け、残りは2軍・タグなしにする', () => {
   const firstTeam = new Map([
     ['妖精の環', ['戦略画面', 'ノルディス家']],
     ['残影のレクイエム', ['戦闘敗北']],
@@ -26,6 +26,7 @@ test('指定された14曲だけを1軍、指定した2軍の曲だけにタグ�
     ['国境線の斥候', ['戦略画面', '冬']],
     ['真昼の凱風', ['戦略画面', '夏']],
     ['白樺の稜線', ['戦略画面', '秋']],
+    ['水晶の地図', ['戦略画面', '春']],
   ])
   const taggedSecondTeam = new Map([['黄金の穂波、帰り道', ['戦略画面', '秋']]])
   assert.equal(filterSongs(1).length, firstTeam.size)
@@ -38,14 +39,15 @@ test('指定された14曲だけを1軍、指定した2軍の曲だけにタグ�
 
 test('軍とタグで絞り込み、複数タグはすべて一致する曲を返す', () => {
   assert.deepEqual(filterSongs('all'), SONGS)
-  assert.deepEqual(filterSongs(1, ['戦略画面']).map((s) => s.title), ['妖精の環', '黄金の帆', '砂海の星詠み', '国境線の斥候', '真昼の凱風', '白樺の稜線'])
+  assert.deepEqual(filterSongs(1, ['戦略画面']).map((s) => s.title), ['妖精の環', '黄金の帆', '砂海の星詠み', '国境線の斥候', '真昼の凱風', '白樺の稜線', '水晶の地図'])
   assert.deepEqual(filterSongs('all', ['戦略画面', '冬']).map((s) => s.title), ['国境線の斥候'])
   assert.deepEqual(filterSongs(1, ['イベント', '法王府']).map((s) => s.title), ['白亜の聖都'])
   assert.deepEqual(filterSongs(2, ['戦略画面']).map((s) => s.title), ['黄金の穂波、帰り道'])
   assert.deepEqual(filterSongs('all', ['戦略画面', '秋']).map((s) => s.title), ['黄金の穂波、帰り道', '白樺の稜線'])
+  assert.deepEqual(filterSongs('all', ['戦略画面', '春']).map((s) => s.title), ['水晶の地図'])
   assert.deepEqual(filterSongs('all', ['冬', '夏']), [])
   assert.deepEqual(filterSongs('all', ['未登録']), [])
-  assert.equal(SONGS.length, 28)
+  assert.equal(SONGS.length, 29)
 })
 
 for (const song of SONGS) {

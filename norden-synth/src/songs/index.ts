@@ -5,6 +5,7 @@ import { borderlineScouts } from './borderline-scouts.ts'
 import { condorBoard } from './condor-board.ts'
 import { crimsonAlcazar } from './crimson-alcazar.ts'
 import { crookedPendulum } from './crooked-pendulum.ts'
+import { crystalMap } from './crystal-map.ts'
 import { fairyRing } from './fairy-ring.ts'
 import { fallenRequiem } from './fallen-requiem.ts'
 import { glassRipples } from './glass-ripples.ts'
@@ -68,6 +69,7 @@ export const SONGS: CatalogSong[] = [
   { ...noonFairWind, tier: 1, tags: ['戦略画面', '夏'] },
   { ...goldenHomeward, tier: 2, tags: ['戦略画面', '秋'] },
   { ...birchRidge, tier: 1, tags: ['戦略画面', '秋'] },
+  { ...crystalMap, tier: 1, tags: ['戦略画面', '春'] },
 ]
 
 // タグを複数指定した場合は、すべてを含む曲に絞る。

@@ -23,5 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
+__pycache__/
+
 # 変換元の SoundFont (大きすぎるのでコミットしない。入手方法は README)
 soundfonts/*.sf2
+src/songs/source_midi
+tools/analysis
