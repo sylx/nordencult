@@ -16,6 +16,7 @@ import { ironBanners } from './iron-banners.ts'
 import { maskedPassepied } from './masked-passepied.ts'
 import { mirageDiwan } from './mirage-diwan.ts'
 import { mistPilgrim } from './mist-pilgrim.ts'
+import { noonFairWind } from './noon-fair-wind.ts'
 import { northernOath } from './northern-oath.ts'
 import { spiralCurrent } from './spiral-current.ts'
 import { starReader } from './star-reader.ts'
@@ -28,4 +29,4 @@ import type { Song } from './song.ts'
 
 export { barAt, compileSong, type CompiledSong, type Song, type SongBar, type SongNote, type SongPart, type SongSection } from './song.ts'
 
-export const SONGS: Song[] = [hokuten, fairyRing, fallenRequiem, imperialTriumph, wanderingBird, northernOath, tundraMarch, goldenSails, starReader, whiteSanctum, holdingBreath, battleCry, mistPilgrim, winterCouncil, glassRipples, crookedPendulum, spiralCurrent, maskedPassepied, condorBoard, ironBanners, highlandCovenant, crimsonAlcazar, mirageDiwan, victorAccolade, borderlineScouts]
+export const SONGS: Song[] = [hokuten, fairyRing, fallenRequiem, imperialTriumph, wanderingBird, northernOath, tundraMarch, goldenSails, starReader, whiteSanctum, holdingBreath, battleCry, mistPilgrim, winterCouncil, glassRipples, crookedPendulum, spiralCurrent, maskedPassepied, condorBoard, ironBanners, highlandCovenant, crimsonAlcazar, mirageDiwan, victorAccolade, borderlineScouts, noonFairWind]
