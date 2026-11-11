@@ -69,8 +69,8 @@ export const SONGS: CatalogSong[] = [
   { ...borderlineScouts, tier: 1, tags: ['戦略画面', '冬'] },
   { ...noonFairWind, tier: 1, tags: ['戦略画面', '夏'] },
   { ...goldenHomeward, tier: 2, tags: ['戦略画面', '秋'] },
-  { ...birchRidge, tier: 1, tags: ['戦略画面', '秋'] },
-  { ...crystalMap, tier: 1, tags: ['戦略画面', '春'] },
+  { ...birchRidge, tier: 2, tags: ['戦略画面', '秋'] },
+  { ...crystalMap, tier: 1, tags: ['戦略画面', '秋'] },
   { ...warlordsAlmanac, tier: 2, tags: [] },
 ]
 
