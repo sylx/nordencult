@@ -112,6 +112,18 @@ export function themeReuse(theme: CompositionStudy, study: CompositionStudy): nu
   return sung.length ? sung.filter((bar) => original.has(bar)).length / sung.length : 0
 }
 
+/**
+ * 展開案がフックで始まっているか。フックの全小節について、テンポ・拍子と、
+ * 旋律の音高・発音位置・音価が同じであること（フックの最後の音を次の小節へタイで伸ばすと別物になる）。
+ */
+export function opensWith(hook: CompositionStudy, study: CompositionStudy): boolean {
+  const a = writtenScore(hook.song).bars
+  const b = writtenScore(study.song).bars
+  const bar = (s: CompositionStudy, x: (typeof a)[number]) =>
+    `${x.timeSignature.join('/')} ${(x.notes.get(s.melodyPart) ?? []).map((n) => `${round(n.beat)}:${round(n.duration)}:${n.key}`).sort().join(' ')}`
+  return hook.song.tempo === study.song.tempo && b.length >= a.length && a.every((x, i) => bar(hook, x) === bar(study, b[i]))
+}
+
 export function reviewStudy(study: CompositionStudy) {
   const { song } = study
   if (!study.hypothesis.trim()) throw new Error(`${song.id}: hypothesis is empty`)

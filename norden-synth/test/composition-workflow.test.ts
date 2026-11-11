@@ -8,7 +8,8 @@ import {
 } from '../src/composition/workflow.ts'
 import { restoreDraft } from '../src/composition-brief.ts'
 import { SONGS } from '../src/songs/index.ts'
-import { inspectMelody, motifSignature, themeReuse } from '../src/composition/study.ts'
+import { inspectMelody, motifSignature, opensWith, themeReuse } from '../src/composition/study.ts'
+import { buildSketch, transposeBar, transposeChord, transposePassage, type Passage } from '../src/composition/sketch.ts'
 import { compileSong } from '../src/songs/song.ts'
 
 const project = PROJECTS.find((p) => p.id === 'strategy-screen')!
@@ -59,7 +60,7 @@ function harmonyBatch(id = 'harmony-001', parentId = theme.song.id): Composition
 
 test('初回は名前付き・和声付きの異なる主題が5案以上あり、音色も存在する', () => {
   validateBatches(BATCHES)
-  const batch = currentBatch(BATCHES, initialState())!
+  const batch = currentBatch(BATCHES, initialState(BATCHES))!
   assert.equal(batch.stage, 'themes')
   assert.ok(batch.candidates.length >= 5)
   assert.equal(new Set(batch.candidates.map((c) => c.song.title)).size, batch.candidates.length)
@@ -69,7 +70,7 @@ test('初回は名前付き・和声付きの異なる主題が5案以上あり�
 })
 
 test('主題を選ぶとメモと正しい派生元を含めたフル尺の構成案の依頼になる', () => {
-  const state = initialState()
+  const state = initialState(BATCHES)
   state.notes[latestThemes.id] = '長い歌にしたい'
   state.notes[theme.song.id] = '冒頭を残し、後半を明るく'
   const next = chooseCandidate(project, state, theme.song.id)
@@ -88,7 +89,7 @@ test('主題を選ぶとメモと正しい派生元を含めたフル尺の構�
 })
 
 test('構成案の追加後、同じ選択状態で最新の組を表示し、別主題の案を混ぜない。旧形式の和声案も同じ段階に並ぶ', () => {
-  const state = chooseCandidate(project, initialState(), theme.song.id)
+  const state = chooseCandidate(project, initialState(BATCHES), theme.song.id)
   const first = harmonyBatch()
   const other = structureBatch('other', otherTheme.song.id)
   const second = structureBatch('structure-002')
@@ -102,7 +103,7 @@ test('構成案の追加後、同じ選択状態で最新の組を表示し、�
 test('選んだ構成から編曲へ進み、既存の編曲版をその楽器編成のまま取得する', () => {
   const harmonies = structureBatch()
   const library = [...BATCHES, harmonies]
-  let state = chooseCandidate(lib(library), initialState(), theme.song.id)
+  let state = chooseCandidate(lib(library), initialState(BATCHES), theme.song.id)
   assert.equal(state.history.length, 0) // 作成済みの案は依頼を増やさず開く
   state = chooseCandidate(lib(library), state, harmonies.candidates[2].song.id)
   assert.equal(state.stage, 'orchestration')
@@ -121,25 +122,28 @@ test('選んだ構成から編曲へ進み、既存の編曲版をその楽器�
 })
 
 test('見送り・出し直しでは過去の案とメモを保持し、主題の選択をリセットできる', () => {
-  let state = chooseCandidate(project, initialState(), theme.song.id)
+  let state = chooseCandidate(project, initialState(BATCHES), theme.song.id)
   state.notes[theme.song.id] = '残しておくメモ'
-  state = requestMore(project, state, 'themes')
-  assert.equal(state.stage, 'themes')
+  // 旧形式の主題にはフックがないので、主題の展開は依頼できない。出し直しはフックから。
+  assert.throws(() => requestMore(project, state, 'themes'), /先に元/)
+  state = requestMore(project, state, 'hooks')
+  assert.equal(state.stage, 'hooks')
   assert.equal(state.themeId, undefined)
   assert.equal(state.structureId, undefined)
   assert.equal(state.notes[theme.song.id], '残しておくメモ')
   assert.equal(state.history.length, 2)
   assert.equal(state.history.at(-1)!.parentId, undefined)
-  assert.match(state.history.at(-1)!.text, /5案以上/)
-  assert.equal(currentBatch(BATCHES, state), latestThemes)
+  assert.match(state.history.at(-1)!.text, /フック.*10案以上/)
+  assert.equal(currentBatch(BATCHES, state), undefined)
+  assert.equal(currentBatch(BATCHES, { ...state, stage: 'themes' }), latestThemes)
 })
 
 test('保存した選択を復元し、壊れた状態や別主題の構成案を安全に外す。旧形式の保存も読む', () => {
-  assert.deepEqual(restoreState('{broken', BATCHES), initialState())
-  assert.deepEqual(restoreState('{"version":0}', BATCHES), initialState())
+  assert.deepEqual(restoreState('{broken', BATCHES), initialState(BATCHES))
+  assert.deepEqual(restoreState('{"version":0}', BATCHES), initialState(BATCHES))
   const harmonies = structureBatch()
   const library = [...BATCHES, harmonies]
-  const state = chooseCandidate(lib(library), chooseCandidate(lib(library), initialState(), theme.song.id), harmonies.candidates[0].song.id)
+  const state = chooseCandidate(lib(library), chooseCandidate(lib(library), initialState(BATCHES), theme.song.id), harmonies.candidates[0].song.id)
   const restored = restoreState(JSON.stringify(state), library)
   assert.equal(restored.stage, 'orchestration')
   assert.equal(restored.structureId, state.structureId)
@@ -212,8 +216,10 @@ test('構成案は3案以上・フル尺・全小節を覆う句・主題の繰�
 test('未選択で後の段階へ進めず、候補IDの取り違えを拒否する', () => {
   assert.throws(() => makeRequest(project, 'structure'), /先に元/)
   assert.throws(() => makeRequest(project, 'orchestration', theme.song.id), /先に元/)
-  assert.throws(() => makeRequest(project, 'themes', theme.song.id), /派生元/)
-  assert.throws(() => chooseCandidate(project, initialState(), 'missing'), /表示中/)
+  assert.throws(() => makeRequest(project, 'themes', theme.song.id), /先に元/)
+  assert.throws(() => makeRequest(project, 'themes'), /先に元/)
+  assert.throws(() => makeRequest(project, 'hooks', theme.song.id), /派生元/)
+  assert.throws(() => chooseCandidate(project, initialState(BATCHES), 'missing'), /表示中/)
 })
 
 test('全プロジェクトの ID・参考曲・採用曲・感想の対象が正しい', () => {
@@ -236,7 +242,7 @@ test('依頼文はプロジェクトの登録先・ブリーフ・感想の記�
 test('履歴から任意の組を、派生関係を復元して開く', () => {
   const orchestration = BATCHES.find((b) => b.stage === 'orchestration')!
   const harmony = BATCHES.find((b) => b.candidates.some((c) => c.song.id === orchestration.parentId))!
-  const state = openBatch(project, { ...initialState(), notes: { a: 'メモ' } }, orchestration.id)
+  const state = openBatch(project, { ...initialState(BATCHES), notes: { a: 'メモ' } }, orchestration.id)
   assert.equal(state.stage, 'orchestration')
   assert.equal(state.structureId, orchestration.parentId)
   assert.equal(state.themeId, harmony.parentId)
@@ -250,7 +256,7 @@ test('履歴から任意の組を、派生関係を復元して開く', () => {
   assert.throws(() => openBatch(project, state, 'missing'), /unknown batch/)
 })
 
-test('新しいプロジェクトの依頼文は入力したブリーフだけを含み、最初の主題5案を求める', () => {
+test('新しいプロジェクトの依頼文は入力したブリーフだけを含み、最初のフック10案を求める', () => {
   const draft = { ...emptyBrief(), title: '作戦会議', purpose: '会議画面', references: [{ songId: SONGS[0].id, notes: '冒頭' }, { songId: 'missing', notes: 'x' }] }
   const text = makeProjectRequest(draft, SONGS, PROJECTS)
   assert.match(text, /「作戦会議」/)
@@ -259,7 +265,8 @@ test('新しいプロジェクトの依頼文は入力したブリーフだけ�
   assert.doesNotMatch(text, /避けたいこと:/)
   assert.match(text, new RegExp(`「${SONGS[0].title}」 \\(${SONGS[0].id}\\) — 冒頭`))
   assert.doesNotMatch(text, /missing/)
-  assert.match(text, /5案以上/)
+  assert.match(text, /フック.*10案以上/)
+  assert.match(text, /stage: hooks/)
   assert.match(text, /strategy-screen/) // 既存 id と重ねない
   const json = JSON.parse(text.match(/```json\n([\s\S]*?)\n```/)![1])
   assert.deepEqual(json, { purpose: '会議画面', image: '', avoid: '', references: [{ songId: SONGS[0].id, notes: '冒頭' }] })
@@ -274,4 +281,128 @@ test('ブリーフの下書きは壊れた値や存在しない参考曲を捨�
   assert.equal(restored.draft.purpose, '')
   assert.deepEqual(restored.draft.references, [{ songId: SONGS[0].id, notes: 'n' }])
   assert.equal(restored.request, 'r')
+})
+
+// ---- フック → 主題の展開 ----
+const hookPassage = (i: number): Passage => ({
+  chords: ['Abmaj7', 'Bb6/Ab'],
+  melody: [`v90 ${['C5', 'D5', 'Eb5', 'F5', 'G5', 'Ab5', 'Bb5', 'C6', 'D6', 'Eb6'][i]}:3 Eb5:.5 F5:.5`, 'G5:4'],
+  harmony: ['Ab3+C4+G4:4', 'Ab3+D4+G4:4'],
+  bass: ['Ab1:4', 'Ab1:4'],
+})
+const tail: Passage = { chords: Array(8).fill('Eb'), melody: Array(8).fill('v80 Eb5:4'), harmony: Array(8).fill('G3+Bb3:4'), bass: Array(8).fill('Eb2:4') }
+const hookBatch = (): CompositionBatch => ({
+  id: 'hooks-001', title: 'フック集', stage: 'hooks',
+  candidates: Array.from({ length: 10 }, (_, i) => buildSketch({
+    id: `hook-${i}`, title: `フック ${i}`, description: 'd', tempo: 100, meter: [4, 4],
+    passages: [{ label: 'フック', intention: '冒頭', passage: hookPassage(i) }],
+  })),
+})
+const developmentBatch = (hook = 0, id = 'dev-001'): CompositionBatch => ({
+  id, title: id, stage: 'themes', parentId: `hook-${hook}`,
+  candidates: Array.from({ length: 4 }, (_, i) => buildSketch({
+    id: `${id}-${i}`, title: `展開 ${id} ${i}`, description: 'd', tempo: 100, meter: [4, 4],
+    passages: [
+      { label: 'フック', intention: '冒頭', passage: hookPassage(hook) },
+      { label: '平行移動', intention: '全音上', passage: transposePassage(hookPassage(hook), i + 1) },
+      { label: '帰着', intention: '主調', passage: tail },
+    ],
+  })),
+})
+
+test('句の平行移動は旋律・和声・低音・コード名を同じ幅で移し、休符と長さを保つ', () => {
+  assert.equal(transposeBar('v90 Bb4:.5 r:1 -:2 Ab3+C4+G4:.5', 2), 'v90 C5:.5 r:1 -:2 Bb3+D4+A4:.5')
+  assert.equal(transposeBar('B4:4', -12), 'B3:4')
+  assert.equal(transposeChord('Abmaj7 Bb6/Ab', 2), 'Bbmaj7 C6/Bb')
+  assert.equal(transposeChord('C(add9)', -1), 'B(add9)')
+  assert.equal(transposeChord('E7(b9)', 1), 'F7(b9)')
+  const moved = transposePassage(hookPassage(0), 5, { bass: -1 })
+  assert.deepEqual(moved.chords, ['Dbmaj7', 'Eb6/Db'])
+  assert.equal(moved.bass[0], 'C#1:4') // 音名の綴りは pitchName に従う（鳴る音は同じ）
+  assert.equal(moved.melody[1], 'C6:4')
+  const study = developmentBatch().candidates[0]
+  assert.deepEqual(study.phrases.map((p) => [p.from, p.to]), [[1, 2], [3, 4], [5, 12]])
+  const notes = inspectMelody(study.song, 'melody').events
+  // 3–4小節は1–2小節を半音上へ移した同じ形
+  assert.equal(motifSignature(notes.slice(0, 4)), motifSignature(notes.slice(4, 8)))
+  assert.equal(notes[4].key - notes[0].key, 1)
+  assert.throws(() => buildSketch({ id: 'x', title: 'x', description: 'd', tempo: 100, meter: [4, 4], passages: [{ label: 'a', intention: 'b', passage: { ...tail, bass: [] } }] }), /same number of bars/)
+})
+
+test('フックに○×を付けて選ぶと、フックを冒頭に保つ展開案の依頼になり、展開案から構成へ進める', () => {
+  const hooks = hookBatch()
+  const p = lib([hooks])
+  validateBatches(p.batches)
+  let state = initialState(p.batches)
+  assert.equal(state.stage, 'hooks')
+  assert.equal(initialState().stage, 'hooks')
+  assert.equal(currentBatch(p.batches, state), hooks)
+  state.marks = { 'hook-0': 'good', 'hook-3': 'good', 'hook-1': 'bad' }
+  state = chooseCandidate(p, state, 'hook-0')
+  assert.equal(state.stage, 'themes')
+  assert.equal(state.hookId, 'hook-0')
+  assert.equal(currentBatch(p.batches, state), undefined)
+  const request = state.history.at(-1)!
+  assert.equal(request.parentId, 'hook-0')
+  assert.match(request.text, /展開案を、名前付きで4案以上/)
+  assert.match(request.text, /transposePassage/)
+  assert.match(request.text, /○ 見込みあり: 「フック 0」「フック 3」/)
+  assert.match(request.text, /× 見送り: 「フック 1」/)
+  assert.match(request.text, /stage: themes、parentId: hook-0/)
+
+  const dev = developmentBatch()
+  const other = developmentBatch(3, 'dev-other')
+  const full = lib([hooks, dev, other])
+  validateBatches(full.batches)
+  assert.equal(currentBatch(full.batches, state), dev)
+  assert.ok(opensWith(hooks.candidates[0], dev.candidates[0]))
+  const chosen = chooseCandidate(full, state, 'dev-001-2')
+  assert.equal(chosen.stage, 'structure')
+  assert.equal(chosen.hookId, 'hook-0')
+  assert.equal(chosen.themeId, 'dev-001-2')
+  assert.match(chosen.history.at(-1)!.text, /フル尺の構成案を3案以上/)
+  // 展開の出し直しはフックを保ち、フックの出し直しは選択を外す
+  const again = requestMore(full, chosen, 'themes')
+  assert.equal(again.hookId, 'hook-0')
+  assert.equal(again.themeId, undefined)
+  assert.equal(again.history.at(-1)!.parentId, 'hook-0')
+  assert.equal(requestMore(full, chosen, 'hooks').hookId, undefined)
+  // 保存と、履歴からの復元
+  const restored = restoreState(JSON.stringify({ ...chosen, marks: { 'hook-0': 'good', x: 'maybe' } }), full.batches)
+  assert.equal(restored.hookId, 'hook-0')
+  assert.equal(restored.themeId, 'dev-001-2')
+  assert.deepEqual(restored.marks, { 'hook-0': 'good' })
+  assert.equal(restoreState(JSON.stringify({ ...chosen, themeId: undefined, stage: 'themes', hookId: 'missing' }), full.batches).stage, 'hooks')
+  const opened = openBatch(full, initialState(full.batches), 'dev-other')
+  assert.equal(opened.stage, 'themes')
+  assert.equal(opened.hookId, 'hook-3')
+  assert.equal(currentBatch(full.batches, opened), other)
+})
+
+test('フックは10案以上・4小節以内、展開案は4案以上・12小節以上でフックをそのまま冒頭に置く', () => {
+  const hooks = hookBatch()
+  const few = hookBatch()
+  few.candidates.pop()
+  assert.throws(() => validateBatches([few]), /at least 10/)
+  const long = hookBatch()
+  long.candidates[0] = buildSketch({ id: 'hook-0', title: 'フック 0', description: 'd', tempo: 100, meter: [4, 4], passages: [{ label: 'a', intention: 'b', passage: tail }] })
+  assert.throws(() => validateBatches([long]), /4 bars or shorter/)
+  assert.throws(() => validateBatches([{ ...hookBatch(), parentId: 'hook-0' }]), /invalid parent/)
+  const fewDev = developmentBatch()
+  fewDev.candidates.pop()
+  assert.throws(() => validateBatches([hooks, fewDev]), /at least 4/)
+  const changed = developmentBatch()
+  changed.candidates[1].song.sections[0].parts.melody[0] = 'v90 C5:2 D5:1 Eb5:.5 F5:.5'
+  assert.throws(() => validateBatches([hooks, changed]), /open with the hook unchanged/)
+  const faster = developmentBatch()
+  faster.candidates[0].song.tempo = 120
+  assert.throws(() => validateBatches([hooks, faster]), /open with the hook unchanged/)
+  const short = developmentBatch()
+  short.candidates[0] = buildSketch({ id: 'dev-001-0', title: '展開 dev-001 0', description: 'd', tempo: 100, meter: [4, 4], passages: [{ label: 'フック', intention: '冒頭', passage: hookPassage(0) }, { label: '移動', intention: 'x', passage: transposePassage(hookPassage(0), 2) }] })
+  assert.throws(() => validateBatches([hooks, short]), /12\+ bars/)
+  // 展開案の親はフック。主題や構成案を親にできない
+  assert.throws(() => validateBatches([...BATCHES, { ...developmentBatch(), parentId: theme.song.id }]), /wrong parent stage/)
+  // 構成案は展開案を親にできる
+  assert.throws(() => makeRequest(lib([hooks]), 'structure', 'hook-0'), /先に元/)
+  assert.match(makeRequest(lib([hooks, developmentBatch()]), 'structure', 'dev-001-0').text, /フル尺の構成案/)
 })

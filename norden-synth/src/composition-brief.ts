@@ -20,7 +20,7 @@ export function restoreDraft(raw: string | null, songs: { id: string }[]): { dra
   return result
 }
 
-// 新しいプロジェクトのブリーフを書き、最初の主題を5案以上作る依頼文を作る。
+// 新しいプロジェクトのブリーフを書き、最初のフック集を作る依頼文を作る。
 // 画面はリポジトリに書き込まない。依頼文を受け取ったAIがプロジェクトを登録する。
 export function mountBriefForm(root: HTMLElement, projects: CompositionProject[], songs: Song[]) {
   let { draft, request } = restoreDraft(readStorage(DRAFT_KEY), songs)
@@ -29,7 +29,7 @@ export function mountBriefForm(root: HTMLElement, projects: CompositionProject[]
   root.innerHTML = `
     <section class="workshop-brief-form">
       <h3>新しいプロジェクト</h3>
-      <p class="hint">これから作る曲の用途とイメージを書くと、名前付きの主題を5案以上（和声・伴奏付き）作る依頼文を作ります。コピーしてこのチャットのAIに送ってください。AIがプロジェクトを登録すると、上の「プロジェクト」から選べるようになります（開いている画面は再読み込みが必要です）。</p>
+      <p class="hint">これから作る曲の用途とイメージを書くと、主題の冒頭になる短いフックを10案以上（和声・伴奏付き）作る依頼文を作ります。コピーしてこのチャットのAIに送ってください。AIがプロジェクトを登録すると、上の「プロジェクト」から選べるようになります（開いている画面は再読み込みが必要です）。</p>
       <label>プロジェクト名 <span class="required">必須</span>
         <input data-field="title" type="text" placeholder="例：作戦会議のBGM" /></label>
       <label>用途・場面

@@ -388,6 +388,10 @@ button:disabled {
   border-color: var(--accent);
 }
 
+.workshop-mark { min-width: 2.6em; font-weight: 700; }
+.workshop-mark.selected[data-mark='good'] { background: var(--accent-soft); border-color: var(--accent); }
+.workshop-mark.selected[data-mark='bad'] { opacity: .55; border-style: dashed; }
+
 .workshop-lineage {
   color: var(--accent);
   font-size: .9rem;

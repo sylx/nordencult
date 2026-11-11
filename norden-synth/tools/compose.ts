@@ -9,7 +9,7 @@ const usage = `作曲ハーネス (数値は診断用。美しさ・転調の成
   npm run compose -- inspect <song-id> <part-id> [from-bar to-bar]
   npm run compose -- review <study-id|all>
   npm run compose -- brief
-  npm run compose -- request <project-id> <themes|structure|orchestration> [parent-id]
+  npm run compose -- request <project-id> <hooks|themes|structure|orchestration> [parent-id]
 小節は intro + loop 1 周を通した 1 始まり。試案は src/composition/projects/<id>/project.ts に登録。
 --json を末尾に付けると inspect/review/request は JSON を出力します。`
 
@@ -68,10 +68,11 @@ function main() {
     console.log(json ? JSON.stringify(result, null, 2) : result.text)
   } else if (command === 'brief' && args.length === 1) {
     console.log(`COMPOSING.md と composition/preferences.json を読んで作曲する。曲ごとに src/composition/projects/<id>/ のプロジェクトで進める。
-0. 新しい曲は、作曲工房の「新しいプロジェクト」で作られた依頼文から project.ts（ブリーフ）を登録し、最初の主題集を作る。
-1. 名前付きの主題を5案以上、一気に作る。すべて和声・低音・伴奏付きで試聴できるようにする。見込みなしなら新しい主題を5案以上。
-2. ユーザーが選んだ主題から、名前付きのフル尺の構成案を3案以上作る。1ループ全体を簡潔な編成で書き、主題と対比する旋律・展開・戻りを含める。主題を2周するだけにしない。気に入らなければ別の3案以上。主題からやり直してもよい。
-3. ユーザーが選んだ構成案をオーケストレーションする。構成は保つ。見直すなら2へ戻る。
+0. 新しい曲は、作曲工房の「新しいプロジェクト」で作られた依頼文から project.ts（ブリーフ）を登録し、最初のフック集を作る。
+1. 名前付きのフック（主題の冒頭になる4小節以内の句）を10案以上、一気に作る。すべて和声・低音・伴奏付き。見込みなしなら新しいフックを10案以上。
+2. ユーザーが選んだフックを冒頭にそのまま置き、続きを書いた主題の展開案を4案以上作る。続きはフックの動機から作り、平行移動は sketch.ts の transposePassage で旋律と和声ごと移し、移動先に留まる。気に入らなければ別の4案以上。フックからやり直してもよい。
+3. ユーザーが選んだ主題から、名前付きのフル尺の構成案を3案以上作る。1ループ全体を簡潔な編成で書き、主題と対比する旋律・展開・戻りを含める。主題を2周するだけにしない。気に入らなければ別の3案以上。
+4. ユーザーが選んだ構成案をオーケストレーションする。構成は保つ。見直すなら3へ戻る。
 各組はプロジェクトの batches に追記し、派生元を parentId で残す。依頼文の感想は feedback.ts にユーザーの発言として記録する。
 画面の選択・メモから作られた依頼文をこのチャットに送り、AIが作曲して登録する。
 旋律単独の選抜やAIによる勝手な採用はしない。compose review all・テスト・ビルドで確認。ブラウザ確認はユーザーが行う。`)

@@ -2,7 +2,7 @@ import { PROJECTS } from './composition/projects.ts'
 import { ComparisonTransport } from './composition/transport.ts'
 import {
   STAGES, batchesFor, currentBatch, findCandidate, chooseCandidate, noteScope, openBatch, parentFor, requestMore, restoreState, stageLabel,
-  type CompositionProject, type Stage,
+  MIN_DEVELOPMENTS, MIN_HOOKS, type CompositionProject, type Mark, type Stage,
 } from './composition/workflow.ts'
 import { copyText, escape, readStorage, writeStorage } from './composition/browser.ts'
 import { mountBriefForm } from './composition-brief.ts'
@@ -31,7 +31,7 @@ export function setupCompositionPage(synth: Synth, root: HTMLElement): { stop: (
 
   select.innerHTML = [...PROJECTS].reverse().map((p) =>
     `<option value="${escape(p.id)}">${escape(p.title)} · ${p.batches.length}組${p.adoptedSongId ? ' · 採用済み' : ''}</option>`).join('') +
-    `<option value="${NEW_PROJECT}">＋ 新しいプロジェクト（最初の主題5案を依頼）</option>`
+    `<option value="${NEW_PROJECT}">＋ 新しいプロジェクト（最初のフックを依頼）</option>`
 
   function show(id: string) {
     mounted?.dispose()
@@ -73,7 +73,7 @@ function mountWorkshop(synth: Synth, root: HTMLElement, project: CompositionProj
       ${briefRows.length ? `<dl class="workshop-brief">${briefRows.map(([k, v]) => `<dt>${k}</dt><dd>${escape(v)}</dd>`).join('')}</dl>` : '<p class="hint">ブリーフは未記入です。</p>'}
       <details class="workshop-timeline"><summary>プロジェクトの履歴 · ${BATCHES.length}組・感想 ${project.feedback.length}件</summary><ol data-timeline></ol></details>
     </section>
-    <p class="hint">名前付きの主題を和声ごと聴き、見込みのある主題からフル尺の構成案（主題・対比・展開・戻り）を聴き比べて、編曲へ進めます。</p>
+    <p class="hint">短いフックを和声ごと聴いて○×を付け、選んだフックを冒頭に置いた主題の展開案、フル尺の構成案（主題・対比・展開・戻り）の順に聴き比べて、編曲へ進めます。</p>
     <nav class="workshop-steps" aria-label="作曲の段階"></nav>
     <p data-lineage class="workshop-lineage"></p>
     <div class="controls workshop-batch">
@@ -88,7 +88,7 @@ function mountWorkshop(synth: Synth, root: HTMLElement, project: CompositionProj
     <div data-candidates class="workshop-candidates"></div>
     <section class="workshop-feedback">
       <label for="workshop-feedback">この組への要望・出し直す理由</label>
-      <textarea id="workshop-feedback" rows="3" placeholder="例：今回は見送り。もっと長く歌う主題がほしい／対比の部分をもっと短く、戻りを劇的にしたい"></textarea>
+      <textarea id="workshop-feedback" rows="3" placeholder="例：今回は見送り。もっと歌えるフックがほしい／平行移動のあと、もっと長く留まってほしい"></textarea>
       <div class="buttons" data-actions></div>
     </section>
     <section class="workshop-request">
@@ -199,10 +199,17 @@ function mountWorkshop(synth: Synth, root: HTMLElement, project: CompositionProj
   }
 
   function render() {
-    $('.workshop-steps').innerHTML = STAGES.map((s) => `<button data-stage="${s.id}" ${s.id === state.stage ? 'aria-current="step" class="selected"' : ''} ${s.id === 'structure' && !state.themeId || s.id === 'orchestration' && !state.structureId ? 'disabled' : ''}>${escape(s.label)}</button>`).join('')
+    // フックを経ずに作った主題集（旧形式）があれば、フックを選ばなくても主題の段階を開ける。
+    const legacyThemes = BATCHES.some((b) => b.stage === 'themes' && !b.parentId)
+    const locked = (s: Stage) => s === 'themes' && !state.hookId && !legacyThemes || s === 'structure' && !state.themeId || s === 'orchestration' && !state.structureId
+    $('.workshop-steps').innerHTML = STAGES.map((s) => `<button data-stage="${s.id}" ${s.id === state.stage ? 'aria-current="step" class="selected"' : ''} ${locked(s.id) ? 'disabled' : ''}>${escape(s.label)}</button>`).join('')
+    const hook = findCandidate(BATCHES, state.hookId)
     const theme = findCandidate(BATCHES, state.themeId)
     const structure = findCandidate(BATCHES, state.structureId)
-    $('[data-lineage]').textContent = [theme ? `主題：${theme.song.title}` : 'まだ主題を選んでいません', structure ? `構成：${structure.song.title}` : ''].filter(Boolean).join(' → ')
+    $('[data-lineage]').textContent = [
+      hook ? `フック：${hook.song.title}` : theme ? '' : 'まだフックを選んでいません',
+      theme ? `主題：${theme.song.title}` : '', structure ? `構成：${structure.song.title}` : '',
+    ].filter(Boolean).join(' → ')
     const choices = batchesFor(BATCHES, state)
     const batch = currentBatch(BATCHES, state)
     // 構成の段階に置き換える前の和声案の組
@@ -212,7 +219,7 @@ function mountWorkshop(synth: Synth, root: HTMLElement, project: CompositionProj
       (!choices.length || choices.at(-1)?.id === latestRequest.batchId)
     $('[data-batch-status]').textContent = awaiting && batch
       ? '出し直しの依頼文を作成しました。新しい候補はまだ追加されていないため、前の候補を表示しています。'
-      : batch ? `${batch.candidates.length}案を${state.stage === 'structure' && !legacy ? '曲の最後まで通して' : '和声付きで'}試聴できます。${state.stage === 'orchestration' ? '' : '見込みがなければ、下のボタンから出し直せます。'}` : ''
+      : batch ? `${batch.candidates.length}案を${state.stage === 'structure' && !legacy ? '曲の最後まで通して' : '和声付きで'}試聴できます。${state.stage === 'hooks' ? '○×は次の依頼文に含まれます。メモは任意です。' : ''}${state.stage === 'orchestration' ? '' : '見込みがなければ、下のボタンから出し直せます。'}` : ''
     batchSelect.innerHTML = choices.map((b) => `<option value="${escape(b.id)}">${escape(b.title)} · ${b.candidates.length}案</option>`).join('') || '<option>候補はまだありません</option>'
     batchSelect.value = batch?.id ?? ''
     batchSelect.disabled = !choices.length
@@ -221,23 +228,27 @@ function mountWorkshop(synth: Synth, root: HTMLElement, project: CompositionProj
     $('[data-candidates]').innerHTML = batch ? batch.candidates.map((candidate, index) => {
       const score = compileSong(candidate.song)
       const hasNext = BATCHES.some((b) => b.parentId === candidate.song.id)
-      const action = state.stage === 'themes' ? hasNext ? 'この主題の構成案を見る' : 'この主題からフル尺の構成を3案依頼'
+      const action = state.stage === 'hooks' ? hasNext ? 'このフックの展開案を見る' : `このフックから主題の展開を${MIN_DEVELOPMENTS}案依頼`
+        : state.stage === 'themes' ? hasNext ? 'この主題の構成案を見る' : 'この主題からフル尺の構成を3案依頼'
         : state.stage === 'structure' ? hasNext ? 'この案の編曲を見る' : legacy ? 'この主題＋和声で編曲を依頼' : 'この構成で編曲を依頼' : ''
       const seconds = Math.round(score.bars.reduce((sum, b) => sum + b.beats, 0) * 60 / candidate.song.tempo)
       return `<article class="workshop-candidate" data-candidate="${escape(candidate.song.id)}">
         <h3><span class="workshop-number">${String(index + 1).padStart(2, '0')}</span>${escape(candidate.song.title)}</h3>
         <p class="info">${score.bars.length} 小節 · ♩=${candidate.song.tempo} · ${score.bars[0].timeSignature.join('/')} · 約${Math.floor(seconds / 60)}分${String(seconds % 60).padStart(2, '0')}秒 · ${state.stage === 'orchestration' ? '編曲版' : '和声・伴奏付き'}</p>
         <p class="workshop-description">${escape(candidate.hypothesis)}</p>
-        ${state.stage === 'themes' ? '' : `<ol class="workshop-form">${candidate.phrases.map((p) => `<li><b>${escape(p.label)}</b> ${p.from}–${p.to}小節 <span class="hint">${escape(p.intention)}</span></li>`).join('')}</ol>`}
-        <div class="buttons"><button data-play="${escape(candidate.song.id)}">再生</button>${action ? `<button class="workshop-choose" data-choose="${escape(candidate.song.id)}">${action}</button>` : ''}</div>
+        ${state.stage === 'hooks' || !batch.parentId ? '' : `<ol class="workshop-form">${candidate.phrases.map((p) => `<li><b>${escape(p.label)}</b> ${p.from}–${p.to}小節 <span class="hint">${escape(p.intention)}</span></li>`).join('')}</ol>`}
+        <div class="buttons"><button data-play="${escape(candidate.song.id)}">再生</button>${state.stage === 'hooks' ? (['good', 'bad'] as Mark[]).map((m) =>
+          `<button class="workshop-mark${state.marks[candidate.song.id] === m ? ' selected' : ''}" data-mark="${m}" data-mark-id="${escape(candidate.song.id)}" aria-pressed="${state.marks[candidate.song.id] === m}" title="${m === 'good' ? '見込みあり' : '見送り'}">${m === 'good' ? '○' : '×'}</button>`).join('') : ''}${action ? `<button class="workshop-choose" data-choose="${escape(candidate.song.id)}">${action}</button>` : ''}</div>
         <label class="workshop-note-label">残したい点・変えたい点<textarea data-note="${escape(candidate.song.id)}" rows="2" placeholder="この案の気に入った箇所、直したいところ">${escape(state.notes[candidate.song.id] ?? '')}</textarea></label>
         <details><summary>和音と展開</summary><p class="hint">${score.bars.map((b, i) => `${i + 1}: ${escape(b.chord)}`).join(' ／ ')}</p></details>
       </article>`
-    }).join('') : `<div class="workshop-empty"><h3>${state.stage === 'structure' ? '選んだ主題の構成案を待っています' : state.stage === 'orchestration' ? '選んだ構成の編曲を待っています' : '新しい主題集を待っています'}</h3><p>下の依頼文をAIに送ってください。候補が追加されたら、この画面で試聴できます。</p></div>`
-    $('[data-actions]').innerHTML = state.stage === 'themes'
-      ? '<button data-retry="themes">見込みなし・新しい主題を5案以上依頼</button>'
+    }).join('') : `<div class="workshop-empty"><h3>${state.stage === 'structure' ? '選んだ主題の構成案を待っています' : state.stage === 'orchestration' ? '選んだ構成の編曲を待っています' : state.stage === 'themes' ? '選んだフックの展開案を待っています' : '新しいフック集を待っています'}</h3><p>下の依頼文をAIに送ってください。候補が追加されたら、この画面で試聴できます。</p></div>`
+    const moreHooks = `<button data-retry="hooks">${state.stage === 'hooks' ? `見込みなし・新しいフックを${MIN_HOOKS}案以上依頼` : 'フックから出し直す'}</button>`
+    const moreThemes = state.hookId ? `<button data-retry="themes">${state.stage === 'themes' ? `展開の別案をさらに${MIN_DEVELOPMENTS}つ以上依頼` : '主題の展開から出し直す'}</button>` : ''
+    $('[data-actions]').innerHTML = state.stage === 'hooks' ? moreHooks
+      : state.stage === 'themes' ? moreThemes + moreHooks
       : state.stage === 'structure'
-        ? '<button data-retry="structure">構成の別案をさらに3つ以上依頼</button><button data-retry="themes">主題から出し直す</button>'
+        ? '<button data-retry="structure">構成の別案をさらに3つ以上依頼</button>' + moreThemes + moreHooks
         : '<button data-stage="structure">構成の選択に戻る</button><button data-retry="structure">構成の別案をさらに3つ以上依頼</button><button data-retry="orchestration">この構成で編曲を改稿依頼</button>'
     for (const button of root.querySelectorAll<HTMLButtonElement>('[data-stage]')) button.addEventListener('click', () => {
       apply({ ...state, stage: button.dataset.stage as Stage, batchId: undefined })
@@ -245,6 +256,19 @@ function mountWorkshop(synth: Synth, root: HTMLElement, project: CompositionProj
     for (const button of root.querySelectorAll<HTMLButtonElement>('[data-play]')) button.addEventListener('click', () => play(button.dataset.play!))
     for (const button of root.querySelectorAll<HTMLButtonElement>('[data-choose]')) button.addEventListener('click', () => apply(chooseCandidate(project, state, button.dataset.choose!)))
     for (const button of root.querySelectorAll<HTMLButtonElement>('[data-retry]')) button.addEventListener('click', () => retry(button.dataset.retry as Stage))
+    for (const button of root.querySelectorAll<HTMLButtonElement>('[data-mark]')) button.addEventListener('click', () => {
+      // 再生を止めずに印だけ切り替える。同じ印をもう一度押すと外す。
+      const id = button.dataset.markId!
+      const mark = button.dataset.mark as Mark
+      if (state.marks[id] === mark) delete state.marks[id]
+      else state.marks[id] = mark
+      save()
+      for (const b of root.querySelectorAll<HTMLButtonElement>(`[data-mark-id="${CSS.escape(id)}"]`)) {
+        const on = state.marks[id] === b.dataset.mark
+        b.classList.toggle('selected', on)
+        b.setAttribute('aria-pressed', String(on))
+      }
+    })
     for (const note of root.querySelectorAll<HTMLTextAreaElement>('[data-note]')) note.addEventListener('input', () => { state.notes[note.dataset.note!] = note.value; save() })
     renderTimeline()
     renderRequest()
