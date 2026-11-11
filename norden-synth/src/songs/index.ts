@@ -7,6 +7,7 @@ import { crookedPendulum } from './crooked-pendulum.ts'
 import { fairyRing } from './fairy-ring.ts'
 import { fallenRequiem } from './fallen-requiem.ts'
 import { glassRipples } from './glass-ripples.ts'
+import { goldenHomeward } from './golden-homeward.ts'
 import { goldenSails } from './golden-sails.ts'
 import { highlandCovenant } from './highland-covenant.ts'
 import { holdingBreath } from './holding-breath.ts'
@@ -64,6 +65,7 @@ export const SONGS: CatalogSong[] = [
   { ...victorAccolade, tier: 1, tags: ['戦闘勝利'] },
   { ...borderlineScouts, tier: 1, tags: ['戦略画面', '冬'] },
   { ...noonFairWind, tier: 1, tags: ['戦略画面', '夏'] },
+  { ...goldenHomeward, tier: 2, tags: ['戦略画面', '秋'] },
 ]
 
 // タグを複数指定した場合は、すべてを含む曲に絞る。
