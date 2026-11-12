@@ -14,7 +14,7 @@
   background: rgb(10 7 4 / 0.72);
   cursor: pointer;
   user-select: none;
-  color: #f3ead7;
+  color: var(--norden-text);
   animation: norden-dialogue-fade-in 320ms ease-out both;
 }
 .norden-dialogue-body {
@@ -70,7 +70,7 @@
   border-radius: 4px;
   background: rgb(0 0 0 / 0.5);
   font-size: 12px;
-  color: #e8dcc2;
+  color: var(--norden-text);
 }
 
 /* A portrait stands on the bottom edge of the cut, centred on its place */
@@ -142,7 +142,7 @@
   width: min(880px, calc(100cqw - 48px));
   min-height: 118px;
   padding: 26px 28px 18px;
-  color: #f3ead7;
+  color: var(--norden-text);
   font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
   animation: norden-dialogue-window 420ms ease-out 200ms both;
 }
@@ -165,13 +165,13 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.norden-dialogue-message.is-narrate .norden-dialogue-text { color: #d8cfbd; text-align: center; }
+.norden-dialogue-message.is-narrate .norden-dialogue-text { color: var(--norden-text); text-align: center; }
 .norden-dialogue-text-rest { visibility: hidden; }
 .norden-dialogue-next {
   display: inline-block;
   margin-left: 6px;
   font-size: 11px;
-  color: #e9c97d;
+  color: var(--norden-text-accent);
   animation: norden-dialogue-blink 900ms ease-in-out infinite;
 }
 
