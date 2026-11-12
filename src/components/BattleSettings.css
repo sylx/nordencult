@@ -3,3 +3,5 @@
 .battle-settings__row { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); align-items: center; column-gap: 10px; }
 .battle-settings__label { white-space: nowrap; }
 .battle-settings .norden-choice { min-width: 0; min-height: 32px; padding: 3px 10px; font-size: 13px; }
+/* Just the buttons: no housing of their own (its background showed through the window's frame) */
+.battle-settings .norden-choice-group { padding: 0; border: 0; background: none; box-shadow: none; }
