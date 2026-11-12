@@ -53,12 +53,14 @@ export interface KnightCardProps {
   current?: boolean
   /** Shown at the end of the card */
   aside?: ReactNode
+  /** Shown after the subtitle, on its line (e.g. the faction a prisoner served) */
+  subtitleExtra?: ReactNode
   compact?: boolean
   className?: string
 }
 
 /** A character's face, name, subtitle and stats (all characters are "knights" in the UI) */
-export default function KnightCard({ knight, selection, current = false, aside, compact = false, className = '' }: KnightCardProps) {
+export default function KnightCard({ knight, selection, current = false, aside, subtitleExtra, compact = false, className = '' }: KnightCardProps) {
   const body = <>
     {selection && <input type={selection.type ?? 'checkbox'} name={selection.name} aria-label={knight.name} checked={selection.selected} disabled={selection.disabled} onChange={selection.onToggle} />}
     <span className="norden-knight-face">{knight.portraitSrc
@@ -71,6 +73,7 @@ export default function KnightCard({ knight, selection, current = false, aside, 
         {knight.mercenary && <span className="norden-knight-mercenary">
           <span className="norden-knight-mercenary-mark">傭兵</span>{knight.mercenary.company} {knight.mercenary.soldiers.toLocaleString()} / {knight.mercenary.maxSoldiers.toLocaleString()}
         </span>}
+        {subtitleExtra}
       </span>
       {knight.stats && knight.stats.length > 0 && <KnightStats stats={knight.stats} />}
     </span>

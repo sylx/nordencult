@@ -157,11 +157,12 @@ function CityKnights({ city, onShowKnight }: { city: CityView; onShowKnight?: (i
   const lord = city.lord
   const isLord = (knight: KnightView) => lord !== undefined && (lord.id ? knight.id === lord.id : knight.name === lord.name)
   const ordered = [...knights.filter(isLord), ...knights.filter(knight => !isLord(knight))]
-  const card = (knight: KnightView, badge?: ReactNode, current = false) => (
+  const card = (knight: KnightView, badge?: ReactNode, current = false, subtitleExtra?: ReactNode) => (
     <KnightCard
       key={knight.id}
       current={current}
       knight={{ ...knight, stats: knightAbilityStats(knight) }}
+      subtitleExtra={subtitleExtra}
       aside={<span className="norden-city-knight-aside">
         {badge}
         <Button size="small" aria-label={`${knight.name}の詳細`} disabled={!onShowKnight}
@@ -169,12 +170,12 @@ function CityKnights({ city, onShowKnight }: { city: CityView; onShowKnight?: (i
       </span>}
     />
   )
-  const group = (label: string, members: readonly KnightView[], badge?: (knight: KnightView) => ReactNode) => members.length > 0 && <>
+  const group = (label: string, members: readonly KnightView[], subtitleExtra?: (knight: KnightView) => ReactNode) => members.length > 0 && <>
     <div className="norden-city-knights-splitter" role="separator">
       <span>{label}</span>
     </div>
     <ul className="norden-city-knight-group" aria-label={label}>
-      {members.map(member => <li key={member.id}>{card(member, badge?.(member))}</li>)}
+      {members.map(member => <li key={member.id}>{card(member, undefined, false, subtitleExtra?.(member))}</li>)}
     </ul>
   </>
   return (
