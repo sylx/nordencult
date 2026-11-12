@@ -20,7 +20,7 @@
   font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
 }
 .norden-confirm-message {
-  color: #f3ead7;
+  color: var(--norden-text);
   font-size: 15px;
   line-height: 1.6;
   text-align: center;

@@ -7,12 +7,12 @@
 
 .norden-move-list { display: grid; align-content: start; gap: 6px; margin: 0; padding: 0 4px 0 0; list-style: none; }
 .norden-move-list .norden-knight-card { width: 100%; }
-.norden-move-reason { font-size: 12px; color: #8a7050; white-space: nowrap; }
+.norden-move-reason { font-size: 12px; color: var(--norden-ink-muted); white-space: nowrap; }
 
-.norden-move-route { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0; color: #f6e7c5; font-size: 17px; font-weight: 700; }
+.norden-move-route { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0; color: var(--norden-text-strong); font-size: 17px; font-weight: 700; }
 .norden-move-route .norden-faction-mark { vertical-align: middle; }
-.norden-move-arrow { color: #8fc0e0; }
-.norden-move-via { margin: 0; font-size: 13px; color: #cbb282; text-align: center; }
+.norden-move-arrow { color: var(--norden-text-info); }
+.norden-move-via { margin: 0; font-size: 13px; color: var(--norden-text-muted); text-align: center; }
 
 .norden-move-months {
   display: flex;
@@ -21,20 +21,20 @@
   justify-content: center;
   gap: 4px 6px;
   padding: 10px 12px;
-  color: #f2e6c8;
+  color: var(--norden-text);
   background: rgb(0 0 0 / 0.2);
   border: 1px solid #cbb2824d;
   border-radius: 6px;
 }
-.norden-move-months b { font-size: 30px; line-height: 1; color: #ffe08a; font-variant-numeric: tabular-nums; }
-.norden-move-months small { flex-basis: 100%; font-size: 12px; color: #c8b490; text-align: center; }
+.norden-move-months b { font-size: 30px; line-height: 1; color: var(--norden-text-gold); font-variant-numeric: tabular-nums; }
+.norden-move-months small { flex-basis: 100%; font-size: 12px; color: var(--norden-text-muted); text-align: center; }
 
 .norden-move-solo {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  color: #362615;
+  color: var(--norden-ink);
   background: #fff6dcde;
   border: 1px solid #b38d52;
   border-radius: 6px;
@@ -43,7 +43,7 @@
 .norden-move-solo.is-checked { background: #fff0c6f2; border-color: #d8b25a; }
 .norden-move-solo input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: #8a6020; }
 .norden-move-solo > span { display: grid; gap: 2px; }
-.norden-move-solo small { font-size: 12px; color: #8a7050; }
+.norden-move-solo small { font-size: 12px; color: var(--norden-ink-muted); }
 
 /* The soldiers and supplies on a parchment card, one row each; their number and maximum columns have fixed widths so the sliders line up */
 .norden-move-amounts {
@@ -65,13 +65,13 @@
   display: grid;
   gap: 6px;
   padding: 8px 12px 10px;
-  color: #362615;
+  color: var(--norden-ink);
   background: #fff6dcde;
   border: 1px solid #b38d52;
   border-radius: 6px;
 }
 .norden-move-prisoners > header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.norden-move-prisoners > header span { font-size: 12px; color: #8a7050; }
+.norden-move-prisoners > header span { font-size: 12px; color: var(--norden-ink-muted); }
 .norden-move-prisoners .norden-move-list { max-height: 196px; overflow-y: auto; }
 .norden-move-prisoners.is-disabled .norden-move-list { opacity: 0.6; }
 
@@ -81,13 +81,13 @@
   gap: 16px;
   /* Room for a pressed button moving down (translate), which would otherwise overflow the window and bring up its scrollbar */
   padding: 10px 4px 4px;
-  color: #f2e6c8;
+  color: var(--norden-text);
   white-space: nowrap;
   border-top: 1px solid #cbb2824d;
 }
 .norden-move-total { display: inline-flex; align-items: baseline; gap: 4px; font-size: 15px; }
-.norden-move-total b { font-size: 20px; color: #ffe08a; }
-.norden-move-problem { flex: 1; min-width: 14em; font-size: 12px; color: #f0b090; text-align: right; }
+.norden-move-total b { font-size: 20px; color: var(--norden-text-gold); }
+.norden-move-problem { flex: 1; min-width: 14em; font-size: 12px; color: var(--norden-text-bad); text-align: right; }
 
 @media (max-width: 900px) {
   .norden-move .norden-window-screen-layout { flex-direction: column; overflow-y: auto; }

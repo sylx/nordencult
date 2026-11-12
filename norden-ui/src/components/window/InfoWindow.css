@@ -3,7 +3,7 @@
   box-sizing: border-box;
   z-index: 100;
   pointer-events: auto;
-  color: #342515;
+  color: var(--norden-ink);
   font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
   font-size: 16px;
   line-height: 1.6;
@@ -76,7 +76,7 @@
   line-height: var(--norden-title-height);
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #eee1ca;
+  color: var(--norden-text);
 }
 .norden-info-window-title-measure {
   position: absolute;

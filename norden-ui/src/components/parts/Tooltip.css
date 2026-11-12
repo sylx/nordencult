@@ -6,7 +6,7 @@
   z-index: 400;
   max-width: 320px;
   padding: 10px 12px;
-  color: #3b2a16;
+  color: var(--norden-ink);
   background: #fff6dcf5;
   border: 1px solid #b38d52;
   border-radius: 6px;

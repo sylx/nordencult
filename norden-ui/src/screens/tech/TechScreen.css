@@ -2,7 +2,7 @@
    The column at minmax(0, 1fr): left auto, it would widen to the tree (its fixed width) and bring up the window's scrollbar */
 .norden-tech-layout { display: grid; 
   grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto;
-   gap: 5px; height: 100%; min-height: 0; color: #f3ead7; }
+   gap: 5px; height: 100%; min-height: 0; color: var(--norden-text); }
 
 .norden-tech .norden-window-screen-layout { gap: 5px;}
 .norden-tech .norden-window-screen-layout > .norden-window-section { min-width: 0; min-height: 0; }
@@ -14,12 +14,12 @@
   gap: 8px 24px;
   /* Room for a pressed button moving down (translate), which would otherwise overflow the window and bring up its scrollbar */
   padding: 10px 4px 4px;
-  color: #cbb282;
+  color: var(--norden-text-muted);
   font-size: 14px;
 }
-.norden-tech-footer b { color: #fff0bc; font-family: Georgia, 'Times New Roman', serif; font-size: 18px; font-variant-numeric: tabular-nums; }
-.norden-tech-complete { color: #fff0bc; }
-.norden-tech-must-choose { padding: 4px 12px; color: #fff4d8; background: #7a2f1fcc; border: 1px solid #e0a45a; border-radius: 3px; font-size: 14px; }
+.norden-tech-footer b { color: var(--norden-text-highlight); font-family: Georgia, 'Times New Roman', serif; font-size: 18px; font-variant-numeric: tabular-nums; }
+.norden-tech-complete { color: var(--norden-text-highlight); }
+.norden-tech-must-choose { padding: 4px 12px; color: var(--norden-text-strong); background: #7a2f1fcc; border: 1px solid #e0a45a; border-radius: 3px; font-size: 14px; }
 
 .norden-tech-back { margin-left: auto; }
 
@@ -65,7 +65,7 @@
 .norden-tech-node.is-researching { background: #263424; border-color: #8fc06a; }
 .norden-tech-node.is-available { background: #2f271d; }
 .norden-tech-node.is-visible { filter: brightness(.6); }
-.norden-tech-node.is-hidden { color: #8c7a5c; background: #1c1712; border-style: dashed; }
+.norden-tech-node.is-hidden { color: var(--norden-text-faint); background: #1c1712; border-style: dashed; }
 
 .norden-tech-node-image.norden-building-image { flex: none; width: 38px; height: 56px; border-radius: 3px; }
 .norden-tech-node-image.is-hidden,
@@ -74,7 +74,7 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  color: #8c7a5c;
+  color: var(--norden-text-faint);
   background: #15110d;
   border: 1px dashed #5b4a32;
   border-radius: 3px;
@@ -84,24 +84,24 @@
 .norden-tech-node-image.is-hidden { width: 38px; height: 56px; }
 .norden-tech-node-body { display: grid; gap: 3px; min-width: 0; }
 .norden-tech-node-name { overflow: hidden; font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-.norden-tech-node-cost { color: #cbb282; font-size: 11px; font-variant-numeric: tabular-nums; }
+.norden-tech-node-cost { color: var(--norden-text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 .norden-tech-node-bar { display: block; height: 4px; overflow: hidden; background: #3a2b1d; border-radius: 2px; }
 .norden-tech-node-bar > span { display: block; height: 100%; background: linear-gradient(#bfe39a, #6f9d4b); }
 
 .norden-tech-side { flex: 0 1 370px; max-width: 44%; container: norden-detail-panel / inline-size; }
 .norden-tech-details-image.is-hidden { box-sizing: border-box; width: 100%; aspect-ratio: 2 / 3; border: 0; border-radius: 0; font-family: Georgia, serif; font-size: 48px; }
-.norden-tech-details-name { margin: 0; color: #f6e7c5; font-family: 'Noto Serif JP', 'Yu Mincho', serif; font-size: 21px; line-height: 1.55; }
+.norden-tech-details-name { margin: 0; color: var(--norden-text-strong); font-family: 'Noto Serif JP', 'Yu Mincho', serif; font-size: 21px; line-height: 1.55; }
 .norden-tech-name-suffix { white-space: nowrap; }
-.norden-tech-details-status { padding: 1px 8px; color: #1c1712; background: #cbb282; border-radius: 2px; font-size: 12px; }
+.norden-tech-details-status { padding: 1px 8px; color: var(--norden-ink-strong); background: #cbb282; border-radius: 2px; font-size: 12px; }
 .norden-tech-details-status.is-researching { background: #9fd07a; }
 .norden-tech-details-status.is-visible { background: #8c7a5c; }
-.norden-tech-details-description { margin: 0; padding-bottom: 18px; color: #e6d9bd; font-size: 14px; line-height: 1.9; }
-.norden-tech-details-effects { display: grid; gap: 8px; margin: 0; padding-left: 1.2em; color: #fff0bc; font-size: 14px; line-height: 1.7; }
-.norden-tech-details-effects li::marker { color: #b79b67; }
+.norden-tech-details-description { margin: 0; padding-bottom: 18px; color: var(--norden-text); font-size: 14px; line-height: 1.9; }
+.norden-tech-details-effects { display: grid; gap: 8px; margin: 0; padding-left: 1.2em; color: var(--norden-text-highlight); font-size: 14px; line-height: 1.7; }
+.norden-tech-details-effects li::marker { color: var(--norden-text-muted); }
 .norden-tech-details-research { display: grid; gap: 12px; min-width: 0; padding: 14px; background: #15110d66; border: 1px solid #a3824b40; }
 .norden-tech-details-research .norden-button { justify-self: stretch; min-width: 0; margin-top: 4px; white-space: normal; }
-.norden-tech-details-cost { margin: 0; color: #cbb282; font-size: 13px; }
-.norden-tech-details-instant { margin: 0; color: #bfe39a; font-size: 13px; line-height: 1.8; }
-.norden-tech-details-reason { margin: 0; color: #d4a28c; font-size: 13px; line-height: 1.8; }
+.norden-tech-details-cost { margin: 0; color: var(--norden-text-muted); font-size: 13px; }
+.norden-tech-details-instant { margin: 0; color: var(--norden-text-good); font-size: 13px; line-height: 1.8; }
+.norden-tech-details-reason { margin: 0; color: var(--norden-text-caution); font-size: 13px; line-height: 1.8; }
 .norden-tech-details .norden-construction-progress { width: 100%; }
-.norden-tech-details .norden-construction-progress-text { color: #cbb282; line-height: 1.7; white-space: normal; }
+.norden-tech-details .norden-construction-progress-text { color: var(--norden-text-muted); line-height: 1.7; white-space: normal; }

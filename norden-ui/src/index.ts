@@ -1,3 +1,5 @@
+import './theme.css'
+
 // Basic components: windows
 export { default as WindowFrame } from './components/window/WindowFrame'
 export type { WindowFrameProps } from './components/window/WindowFrame'

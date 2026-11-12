@@ -11,7 +11,7 @@
   max-width: 100%;
   min-height: var(--faction-orb-size);
   pointer-events: auto;
-  color: #f3ead7;
+  color: var(--norden-text);
   font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
   line-height: 1.2;
   filter: drop-shadow(0 3px 5px #0008);
@@ -119,7 +119,7 @@
   border-right: 1px solid #715737;
 }
 .norden-faction-bar-stat-icon { grid-area: icon; width: 26px; height: 26px; object-fit: contain; filter: drop-shadow(0 1px 1px #000); }
-.norden-faction-bar-stat-label { grid-area: label; font-size: 10px; line-height: 1; color: #c8b490; }
+.norden-faction-bar-stat-label { grid-area: label; font-size: 10px; line-height: 1; color: var(--norden-text-muted); }
 .is-research .norden-faction-bar-stat-label {
   position: relative;
   top: -4px;
@@ -130,11 +130,11 @@
   font-size: 18px;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
-  color: #fff0bc;
+  color: var(--norden-text-highlight);
   text-shadow: 0 2px 2px #000;
 }
-.norden-faction-bar-forecast { margin-left: 2px; font-size: 12px; color: #b9d99a; }
-.norden-faction-bar-forecast.is-negative { color: #f0a08a; }
+.norden-faction-bar-forecast { margin-left: 2px; font-size: 12px; color: var(--norden-text-good); }
+.norden-faction-bar-forecast.is-negative { color: var(--norden-text-bad); }
 
 .norden-faction-bar-city { display: inline-flex; align-items: center; gap: 6px; padding-left: 8px; }
 .norden-faction-bar-step {
@@ -144,11 +144,11 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: #dfc68c;
+  color: var(--norden-text-accent);
   font-size: 14px;
   cursor: pointer;
 }
-.norden-faction-bar-step:hover:not(:disabled) { color: #fff0bc; background: #d1ab551a; }
+.norden-faction-bar-step:hover:not(:disabled) { color: var(--norden-text-highlight); background: #d1ab551a; }
 .norden-faction-bar-step:disabled { opacity: .35; cursor: default; }
 .norden-faction-bar-step:focus-visible { outline: 2px solid #f4d987; outline-offset: -3px; }
 .norden-faction-bar-city-name {
@@ -162,7 +162,7 @@
   white-space: nowrap;
   text-shadow: 0 2px 2px #000;
 }
-.norden-faction-bar-city-position { font-size: 10px; font-weight: 400; color: #c8b490; }
+.norden-faction-bar-city-position { font-size: 10px; font-weight: 400; color: var(--norden-text-muted); }
 
 /* 研究: a button when it opens the technology screen; dimmed while nothing is researched nor comes in */
 .norden-faction-bar-stat.is-research { color: inherit; font: inherit; background: transparent; border-top: 0; border-bottom: 0; border-left: 0; }
@@ -170,6 +170,6 @@ button.norden-faction-bar-stat.is-research { cursor: pointer; }
 button.norden-faction-bar-stat.is-research:hover { background: #d1ab551a; }
 button.norden-faction-bar-stat.is-research:focus-visible { outline: 2px solid #f4d987; outline-offset: -3px; }
 .norden-faction-bar-stat.is-research.is-idle { opacity: .55; }
-.norden-faction-bar-stat.is-research.is-unset .norden-faction-bar-stat-value { color: #f0c08a; }
+.norden-faction-bar-stat.is-research.is-unset .norden-faction-bar-stat-value { color: var(--norden-text-warn); }
 .norden-faction-bar-research { font-family: inherit; font-size: 14px; font-weight: 700; }
-.norden-faction-bar-research-progress { margin-left: 6px; color: #c8b490; font-family: Georgia, 'Times New Roman', serif; font-size: 12px; font-weight: 400; }
+.norden-faction-bar-research-progress { margin-left: 6px; color: var(--norden-text-muted); font-family: Georgia, 'Times New Roman', serif; font-size: 12px; font-weight: 400; }

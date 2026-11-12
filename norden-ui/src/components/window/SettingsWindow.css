@@ -53,7 +53,7 @@
   align-items: center;
   gap: 12px;
   margin: 0;
-  color: #e3c47e;
+  color: var(--norden-text-accent);
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -78,15 +78,15 @@
 }
 .norden-settings-item + .norden-settings-item { border-top: 1px solid #b5915124; }
 .norden-settings-item-text { display: grid; gap: 3px; min-width: 0; }
-.norden-settings-item-label { color: #f3ead7; font-size: 14px; line-height: 1.4; }
-.norden-settings-item-description { color: #b8ab8c; font-size: 12px; line-height: 1.5; }
+.norden-settings-item-label { color: var(--norden-text); font-size: 14px; line-height: 1.4; }
+.norden-settings-item-description { color: var(--norden-text-muted); font-size: 12px; line-height: 1.5; }
 .norden-settings-item-control {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   min-width: 0;
-  color: #f3ead7;
+  color: var(--norden-text);
   font-size: 14px;
 }
 .norden-settings-item-control > .norden-volume { flex: 1; }

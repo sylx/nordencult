@@ -1,7 +1,7 @@
 /* A HUD panel over the map: its height follows the rows up to a limit, then the rows scroll */
 .norden-action-orders { width: 320px; max-width: 100%; padding: 26px 16px 16px; font-size: 14px; }
 
-.norden-action-orders-empty { margin: 0; font-size: 13px; color: #c8b490; text-align: center; }
+.norden-action-orders-empty { margin: 0; font-size: 13px; color: var(--norden-text-muted); text-align: center; }
 
 .norden-action-orders-list {
   display: grid;
@@ -42,7 +42,7 @@
   font-size: 11px;
   font-weight: 700;
   line-height: 1.5;
-  color: #1a140e;
+  color: var(--norden-ink-strong);
   background: var(--norden-action-orders-color);
   border-radius: 3px;
   white-space: nowrap;
@@ -65,16 +65,16 @@
   text-align: left;
 }
 button.norden-action-orders-route { cursor: pointer; }
-button.norden-action-orders-route:hover { color: #ffe08a; }
+button.norden-action-orders-route:hover { color: var(--norden-text-gold); }
 button.norden-action-orders-route:focus-visible { outline: 2px solid #ffe08a; outline-offset: 2px; }
 .norden-action-orders-route .norden-faction-mark img,
 .norden-action-orders-route .norden-faction-mark-blank { width: 18px; height: 18px; }
 /* A long name wraps at the arrow, not inside the name */
 .norden-action-orders-city { white-space: nowrap; }
-.norden-action-orders-arrow { color: #c8b490; font-weight: 400; }
+.norden-action-orders-arrow { color: var(--norden-text-muted); font-weight: 400; }
 
-.norden-action-orders-knights { grid-area: knights; min-width: 0; font-size: 12px; line-height: 1.5; color: #e6d8b8; overflow-wrap: anywhere; }
-.norden-action-orders-knights-label { margin-right: 6px; color: #a8946e; }
+.norden-action-orders-knights { grid-area: knights; min-width: 0; font-size: 12px; line-height: 1.5; color: var(--norden-text); overflow-wrap: anywhere; }
+.norden-action-orders-knights-label { margin-right: 6px; color: var(--norden-text-faint); }
 
 /* The active order's details across the row: the knights' faces, then label and value in two columns */
 .norden-action-orders-details {
@@ -88,13 +88,13 @@ button.norden-action-orders-route:focus-visible { outline: 2px solid #ffe08a; ou
   background: rgb(0 0 0 / 0.25);
   border-radius: 3px;
 }
-.norden-action-orders-members { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px 8px; margin: 0; padding: 0; list-style: none; color: #f2e6c8; }
+.norden-action-orders-members { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px 8px; margin: 0; padding: 0; list-style: none; color: var(--norden-text); }
 .norden-action-orders-members > li { display: flex; min-width: 0; }
 .norden-action-orders-detail-list { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; row-gap: 2px; margin: 0; }
 .norden-action-orders-detail { display: contents; }
-.norden-action-orders-detail dt { color: #a8946e; white-space: nowrap; }
-.norden-action-orders-detail dd { margin: 0; min-width: 0; color: #f2e6c8; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.norden-action-orders-detail dt { color: var(--norden-text-faint); white-space: nowrap; }
+.norden-action-orders-detail dd { margin: 0; min-width: 0; color: var(--norden-text); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 
 .norden-action-orders-aside { grid-area: aside; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.norden-action-orders-status { font-size: 12px; color: #c8b490; white-space: nowrap; }
+.norden-action-orders-status { font-size: 12px; color: var(--norden-text-muted); white-space: nowrap; }
 .norden-button.norden-action-orders-cancel { --norden-button-corner: 12px; min-width: 0; min-height: 28px; padding: 3px 12px; font-size: 12px; }

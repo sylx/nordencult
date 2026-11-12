@@ -19,7 +19,7 @@
   align-items: center;
   gap: 16px;
   padding: 10px 14px 10px 18px;
-  color: #f2e6c8;
+  color: var(--norden-text);
   font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
   background: #211b14 url('../assets/ui/hud/dark-texture.webp') repeat;
   border: 3px double #b59151;
@@ -62,8 +62,8 @@
   padding: 18px 22px 20px;
 }
 .norden-window-section-header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px; }
-.norden-window-section-title { display: flex; align-items: baseline; gap: 10px; margin: 0; color: #f6e7c5; font-size: 18px; font-weight: 700; }
-.norden-window-section-count { color: #cbb282; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
-.norden-window-section-empty { margin: 0; color: #cbb282; font-size: 14px; }
+.norden-window-section-title { display: flex; align-items: baseline; gap: 10px; margin: 0; color: var(--norden-text-strong); font-size: 18px; font-weight: 700; }
+.norden-window-section-count { color: var(--norden-text-muted); font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.norden-window-section-empty { margin: 0; color: var(--norden-text-muted); font-size: 14px; }
 /* A part of the window that scrolls on its own */
 .norden-window-scroll { min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #94703b #211b14; }

@@ -26,7 +26,7 @@
 .norden-details-portrait .norden-building-image { width: 100%; height: auto; border-radius: 0; }
 .norden-details-portrait .norden-building-image.is-placeholder { aspect-ratio: 2 / 3; }
 .norden-details-heading { display: grid; justify-items: start; align-content: center; gap: 12px; min-width: 0; }
-.norden-details-label { margin: 0; color: #b79b67; font-size: 11px; letter-spacing: .2em; }
+.norden-details-label { margin: 0; color: var(--norden-text-muted); font-size: 11px; letter-spacing: .2em; }
 .norden-details-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .norden-details-section { display: grid; gap: 12px; min-width: 0; }
 .norden-details-section-title {
@@ -34,7 +34,7 @@
   align-items: center;
   gap: 12px;
   margin: 0;
-  color: #cbb282;
+  color: var(--norden-text-muted);
   font-size: 12px;
   font-weight: 500;
   letter-spacing: .12em;

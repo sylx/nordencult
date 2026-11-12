@@ -19,7 +19,7 @@
   min-width: 0;
   height: var(--date-bar-height);
   padding: 0;
-  color: #f2ead8;
+  color: var(--norden-text);
   font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
   line-height: 1;
   text-shadow: 0 2px 3px #000;
@@ -62,7 +62,7 @@
   font-size: var(--date-phase-size);
   font-weight: 600;
   letter-spacing: .06em;
-  color: #c9bb91;
+  color: var(--norden-text-muted);
 }
 
 .norden-date-bar-turn {
@@ -79,20 +79,20 @@
   font-size: var(--date-faction-size);
   font-weight: 700;
   letter-spacing: .04em;
-  color: #fff0bc;
+  color: var(--norden-text-highlight);
 }
 
 .norden-date-bar-turn-suffix {
   flex: none;
   font-size: var(--date-suffix-size);
-  color: #d0c9b5;
+  color: var(--norden-text-muted);
 }
 
 .norden-date-bar-turn-status {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: var(--date-phase-size);
-  color: #fff0bc;
+  color: var(--norden-text-highlight);
 }
 
 .norden-date-bar-date {
@@ -106,16 +106,16 @@
   font-family: Georgia, 'Times New Roman', serif;
   font-size: var(--date-calendar-size);
   font-variant-numeric: tabular-nums;
-  color: #fff0bc;
+  color: var(--norden-text-highlight);
 }
 .norden-date-bar-date-season {
   margin-left: 0.25em;
   font-size: var(--date-calendar-size);
-  color: #fff0bc;
+  color: var(--norden-text-highlight);
 }
 .norden-date-bar-date-label {
   font-size: var(--date-calendar-label-size);
-  color: #d0c9b5;
+  color: var(--norden-text-muted);
 }
 
 .norden-date-bar-separator {
@@ -128,7 +128,7 @@
   height: var(--date-separator-height);
   /* The curved stem grows out of the frame's rail, just below the content box. */
   translate: 0 1px;
-  color: #d2b36d;
+  color: var(--norden-text-accent);
   pointer-events: none;
 }
 .norden-date-bar-separator svg { width: 100%; height: 100%; overflow: visible; }
@@ -145,11 +145,11 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #e6cc8a;
+  color: var(--norden-text-accent);
   cursor: pointer;
 }
-.norden-date-bar-settings:hover:not(:disabled) { color: #fff0bc; }
-.norden-date-bar-settings:disabled { color: #998d71; cursor: default; }
+.norden-date-bar-settings:hover:not(:disabled) { color: var(--norden-text-highlight); }
+.norden-date-bar-settings:disabled { color: var(--norden-text-faint); cursor: default; }
 .norden-date-bar-settings:focus-visible { outline: 2px solid #f4d987; outline-offset: -4px; }
 .norden-date-bar-settings svg { width: 22px; height: 22px; }
 

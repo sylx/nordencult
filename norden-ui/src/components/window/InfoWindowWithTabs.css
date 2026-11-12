@@ -20,7 +20,7 @@
   gap: 0;
   cursor: pointer;
   transition: transform 120ms ease, filter 120ms ease;
-  color: #ede0c4;
+  color: var(--norden-text);
   font: inherit;
 }
 .norden-tab:hover, .norden-tab.is-active { transform: translateX(-4px); background-image: var(--norden-tab-active); }

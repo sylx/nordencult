@@ -47,7 +47,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #f0dcb2;
+  color: var(--norden-text);
   font-size: 14px;
   font-weight: 700;
   white-space: nowrap;
@@ -78,11 +78,11 @@
 
 .norden-domestic-stat-bar .norden-stat-bar-value {
   min-width: 3.5ch;
-  color: #fff3d1;
+  color: var(--norden-text-strong);
 }
 
 .norden-domestic-stat-boost {
-  color: #b9e08f;
+  color: var(--norden-text-good);
   font-size: 13px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -90,7 +90,7 @@
 }
 
 .norden-domestic-stat-boost.is-none {
-  color: #8f7b5c;
+  color: var(--norden-text-faint);
   font-weight: 500;
 }
 
@@ -113,7 +113,7 @@
 }
 
 .norden-domestic-stat-tip-title span {
-  color: #8a7050;
+  color: var(--norden-ink-muted);
   font-size: 12px;
   font-weight: 500;
 }
@@ -138,20 +138,20 @@
 }
 
 .norden-domestic-stat-tip-rows > li.is-building {
-  color: #2f5c34;
+  color: var(--norden-ink-good);
 }
 
 .norden-domestic-stat-tip-details {
   grid-column: 1 / -1;
   padding-left: 1em;
-  color: #5b4428;
+  color: var(--norden-ink-soft);
   font-size: 12px;
 }
 
 .norden-domestic-stat-tip-notes {
   margin: 0;
   padding: 0;
-  color: #4a351c;
+  color: var(--norden-ink);
   font-size: 12px;
   line-height: 1.5;
   list-style: none;
@@ -165,7 +165,7 @@
 
 .norden-domestic-stat-tip-none {
   margin: 4px 0 0;
-  color: #8a7050;
+  color: var(--norden-ink-muted);
   font-size: 12px;
 }
 
@@ -191,14 +191,14 @@
 
 .norden-domestic-figures dt {
   align-self: flex-start;
-  color: #bfa575;
+  color: var(--norden-text-muted);
   font-size: 13px;
   font-weight: 700;
 }
 
 .norden-domestic-figures dd {
   margin: 0;
-  color: #fff3d1;
+  color: var(--norden-text-strong);
   font-size: 30px;
   font-weight: 700;
   line-height: 1.1;
@@ -208,7 +208,7 @@
 
 /* Under a figure: e.g. the population's growth a turn and the turns until the next tier */
 .norden-domestic-figures dd.norden-domestic-figure-note {
-  color: #d9c393;
+  color: var(--norden-text-muted);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.35;
@@ -218,7 +218,7 @@
 
 .norden-domestic-figures dd.norden-domestic-figure-note:nth-of-type(2) {
   margin-top: 2px;
-  color: #b7e08c;
+  color: var(--norden-text-good);
 }
 
 /* The building slots and, past a rule, the relic frame: one card as wide as a building's */
@@ -272,7 +272,7 @@
   width: 100%;
   min-height: 300px;
   padding: 6px 6px 8px;
-  color: #3b2a16;
+  color: var(--norden-ink);
   background: #fff6dcde;
   border: 1px solid #b38d52;
   border-radius: 6px;
@@ -315,13 +315,13 @@
 }
 
 .norden-domestic-slot-effects {
-  color: #5d4322;
+  color: var(--norden-ink-soft);
   font-size: 11px;
   line-height: 1.3;
 }
 
 .norden-domestic-slot-from {
-  color: #6b5132;
+  color: var(--norden-ink-soft);
   font-size: 11px;
 }
 
@@ -342,7 +342,7 @@
 
 .norden-domestic-slot-delete {
   padding: 2px 8px;
-  color: #f9e6dc;
+  color: var(--norden-text-strong);
   background: #7b2d26;
   border: 1px solid #b6594c;
   border-radius: 3px;
@@ -384,7 +384,7 @@
   left: 10px;
   z-index: 1;
   padding: 1px 6px;
-  color: #fff4d8;
+  color: var(--norden-text-strong);
   background: #7a4f17;
   border-radius: 3px;
   box-shadow: 0 1px 2px #0006;
@@ -397,7 +397,7 @@
 }
 
 .norden-domestic-slot-note {
-  color: #63492a;
+  color: var(--norden-ink-soft);
   font-size: 10px;
   line-height: 1.25;
 }
@@ -407,14 +407,14 @@
   align-items: center;
   justify-content: center;
   padding: 10px;
-  color: #a78e6b;
+  color: var(--norden-ink-faint);
   background: rgb(255 246 220 / 0.05);
   border: 1px dashed #b38d5270;
   box-shadow: none;
 }
 
 .norden-domestic-slot.is-empty.is-addable {
-  color: #f3dfb4;
+  color: var(--norden-text);
   background: rgb(255 243 204 / 0.1);
   border: 2px dashed #d4ad68;
   cursor: pointer;
@@ -471,7 +471,7 @@
 
 .norden-domestic-build-title {
   margin: 0;
-  color: #f6e7c5;
+  color: var(--norden-text-strong);
   font-size: 17px;
   font-weight: 700;
 }
@@ -482,7 +482,7 @@
   width: 28px;
   height: 28px;
   padding: 0;
-  color: #e6cfa3;
+  color: var(--norden-text);
   background: transparent;
   border: 1px solid #947347;
   border-radius: 4px;
@@ -492,7 +492,7 @@
 }
 
 .norden-domestic-build-close:hover {
-  color: #fff4d6;
+  color: var(--norden-text-strong);
   background: rgb(255 255 255 / 0.08);
 }
 
@@ -514,7 +514,7 @@
   column-gap: 12px;
   row-gap: 8px;
   padding: 10px 12px;
-  color: #362615;
+  color: var(--norden-ink);
   background: #fff6dcde;
   border: 1px solid #b38d52;
   border-radius: 6px;
@@ -565,14 +565,14 @@
 }
 
 .norden-domestic-build-effects {
-  color: #2f5c34;
+  color: var(--norden-ink-good);
   font-size: 12px;
   font-weight: 700;
 }
 
 .norden-domestic-build-desc {
   margin: 0;
-  color: #5b4428;
+  color: var(--norden-ink-soft);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -589,14 +589,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  color: #4a351c;
+  color: var(--norden-ink);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   width: 50%;
 }
 
 .norden-domestic-build-reason {
-  color: #8b2f25;
+  color: var(--norden-ink-bad);
   font-size: 12px;
   font-weight: 700;
 }
@@ -673,13 +673,13 @@
 }
 
 .norden-domestic-lord-label {
-  color: #bfa575;
+  color: var(--norden-text-muted);
   font-size: 12px;
   font-weight: 700;
 }
 
 .norden-domestic-lord-name {
-  color: #fff3d1;
+  color: var(--norden-text-strong);
   font-size: 17px;
   line-height: 1.2;
 }
@@ -687,12 +687,12 @@
 .norden-domestic-lord-abilities {
   display: flex;
   gap: 10px;
-  color: #cbb282;
+  color: var(--norden-text-muted);
   font-size: 12px;
 }
 
 .norden-domestic-lord-abilities b {
-  color: #fff3d1;
+  color: var(--norden-text-strong);
   font-size: 15px;
   font-variant-numeric: tabular-nums;
 }
@@ -744,8 +744,8 @@
   white-space: nowrap;
   cursor: help;
 }
-.has-budget-empty .norden-domestic-officer-alert { color: #fff4e8; background: #b8402c; }
-.has-budget-short .norden-domestic-officer-alert { color: #3b2a16; background: #e8c060; }
+.has-budget-empty .norden-domestic-officer-alert { color: var(--norden-text-strong); background: #b8402c; }
+.has-budget-short .norden-domestic-officer-alert { color: var(--norden-ink); background: #e8c060; }
 
 .norden-domestic-officer-heading {
   display: flex;
@@ -755,13 +755,13 @@
 }
 
 .norden-domestic-officer-title {
-  color: #f6e7c5;
+  color: var(--norden-text-strong);
   font-size: 16px;
 }
 
 .norden-domestic-officer-ability {
   padding: 0 6px;
-  color: #3b2a16;
+  color: var(--norden-ink);
   background: #d9b672;
   border-radius: 3px;
   font-size: 11px;
@@ -770,7 +770,7 @@
 
 .norden-domestic-officer-desc {
   margin: 0;
-  color: #cbb282;
+  color: var(--norden-text-muted);
   font-size: 11px;
   line-height: 1.4;
   min-height: 2.0rem;
@@ -799,7 +799,7 @@
   width: 100%;
   min-height: 128px;
   padding: 6px 4px;
-  color: #3b2a16;
+  color: var(--norden-ink);
   background: #fff6dcde;
   border: 1px solid #b38d52;
   border-radius: 6px;
@@ -816,7 +816,7 @@
 
 .norden-domestic-officer-post.is-empty {
   justify-content: center;
-  color: #f3dfb4;
+  color: var(--norden-text);
   background: rgb(255 243 204 / 0.08);
   border: 2px dashed #d4ad68;
   box-shadow: none;
@@ -871,12 +871,12 @@
 }
 
 .norden-domestic-officer-value {
-  color: #6a5030;
+  color: var(--norden-ink-soft);
   font-size: 11px;
 }
 
 .norden-domestic-officer-value b {
-  color: #3b2a16;
+  color: var(--norden-ink);
   font-size: 15px;
   font-variant-numeric: tabular-nums;
 }
@@ -890,7 +890,7 @@
   width: 20px;
   height: 20px;
   padding: 0;
-  color: #f9e6dc;
+  color: var(--norden-text-strong);
   background: #7b2d26;
   border: 1px solid #b6594c;
   border-radius: 50%;
@@ -905,13 +905,13 @@
 
 .norden-domestic-officer-effect {
   min-height: 1.4em;
-  color: #b9e08f;
+  color: var(--norden-text-good);
   font-size: 13px;
   font-weight: 700;
 }
 
 .norden-domestic-officer-effect.is-none {
-  color: #8f7b5c;
+  color: var(--norden-text-faint);
   font-weight: 500;
 }
 
@@ -922,7 +922,7 @@
   grid-template-areas: 'label label label' 'minus range plus' 'value value value';
   column-gap: 4px;
   width: 100%;
-  color: #f6e7c5;
+  color: var(--norden-text-strong);
 }
 
 .norden-domestic-officer-budget .norden-quantity-value {
@@ -931,7 +931,7 @@
 
 .norden-domestic-officer-budget .norden-quantity-label,
 .norden-domestic-officer-budget .norden-quantity-unit {
-  color: #cbb282;
+  color: var(--norden-text-muted);
   font-size: 11px;
 }
 
@@ -944,7 +944,7 @@
 
 .norden-domestic-officer-budget .norden-quantity-value input {
   width: 3.6em;
-  color: #3b2a16;
+  color: var(--norden-ink);
   background: #fff6dcde;
 }
 
@@ -955,14 +955,14 @@
 /* Knight lists in the right-hand panel (lord, officers) */
 .norden-domestic-build-note {
   margin-left: 10px;
-  color: #cbb282;
+  color: var(--norden-text-muted);
   font-size: 14px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
 .norden-domestic-panel-desc {
-  color: #cbb282;
+  color: var(--norden-text-muted);
 }
 
 .norden-domestic-knight-list .norden-knight-card {
@@ -978,14 +978,14 @@
 
 .norden-domestic-knight-badge {
   padding: 2px 8px;
-  color: #fff4d8;
+  color: var(--norden-text-strong);
   background: #7a4f17;
   border-radius: 3px;
   font-weight: 700;
 }
 
 .norden-domestic-knight-reason {
-  color: #8b2f25;
+  color: var(--norden-ink-bad);
   font-weight: 700;
 }
 
@@ -997,7 +997,7 @@
   gap: 16px;
   /* Room for a pressed button moving down (translate), which would otherwise overflow the window and bring up its scrollbar */
   padding: 10px 4px 4px;
-  color: #f2e6c8;
+  color: var(--norden-text);
   white-space: nowrap;
   border-top: 1px solid #cbb2824d;
 }

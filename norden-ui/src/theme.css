@@ -1,0 +1,38 @@
+/*
+ * 文字色のテーマ。ゲームの画面の文字色はすべてここの変数を使う（各 CSS に #xxxxxx を直接書かない）。
+ * norden-ui の index.ts が読み込むので、norden-ui を import するもの（ゲーム本体・battle-runtime・norden-dialogue）で使える。
+ *
+ * 地の色で 2 系統に分ける。
+ *   --norden-text-*  暗い地（ウィンドウ枠・HUD・暗いパネル）の上の明るい文字
+ *   --norden-ink-*   明るい地（羊皮紙・カード・ツールチップ）の上の暗い文字
+ */
+:root {
+  /* --- 暗い地の上 --- */
+  --norden-text: #f3ead7;           /* 本文 */
+  --norden-text-strong: #fff4d0;    /* 見出し・名前・強調、色の付いた札の上の文字 */
+  --norden-text-highlight: #fff0bc; /* 数値・日付など目立たせる値（淡い金） */
+  --norden-text-gold: #ffe08a;      /* 選択中・合計・ホバーなど、さらに目立たせる金 */
+  --norden-text-accent: #e3c47e;    /* 節の題・飾り・アイコンのボタン（金） */
+  --norden-text-muted: #cbb282;     /* ラベル・補足 */
+  --norden-text-faint: #8f7b5c;     /* 無効・「なし」・プレースホルダー */
+  --norden-text-good: #b9e08f;      /* 増加・成功 */
+  --norden-text-bad: #ff8a70;       /* 損害・不足・失敗 */
+  --norden-text-caution: #d4a28c;   /* できない理由など、控えめな注意 */
+  --norden-text-warn: #ffb070;      /* 反撃・施設など、橙の注意 */
+  --norden-text-info: #9cc8ff;      /* 移動・迎撃など、青の情報 */
+  --norden-text-rare: #c9a2ee;      /* 卓越した能力など、紫 */
+
+  /* --- 明るい地の上 --- */
+  --norden-ink: #3b2a16;            /* 本文 */
+  --norden-ink-strong: #22180e;     /* ボタン・色の付いた札の上の濃い文字 */
+  --norden-ink-soft: #6a5030;       /* ラベル・補足 */
+  --norden-ink-muted: #8a7050;      /* さらに控えめな注記 */
+  --norden-ink-faint: #a8916a;      /* 空き枠・無効 */
+  --norden-ink-accent: #7a4f17;     /* リンク・建設中などの茶の強調 */
+  --norden-ink-accent-hover: #a2521a;
+  --norden-ink-good: #2f5c34;
+  --norden-ink-bad: #8b2f25;
+  --norden-ink-info: #2b5b98;
+  --norden-ink-rare: #785097;
+  --norden-ink-gold: #b8860b;
+}

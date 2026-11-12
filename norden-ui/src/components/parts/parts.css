@@ -18,7 +18,7 @@
   min-width: 56px;
   min-height: 56px;
   padding: 12px 28px;
-  color: #241b12;
+  color: var(--norden-ink-strong);
   background: transparent;
   border: 0;
   font: inherit;
@@ -101,7 +101,7 @@
   min-height: 64px;
   max-width: 100%;
   padding: 14px 22px;
-  color: #fff4d0;
+  color: var(--norden-text-strong);
   font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
   font-size: 17px;
   font-weight: 700;
@@ -126,7 +126,7 @@
   box-sizing: border-box;
   /* Room for the lower half of the plaque */
   padding: calc(var(--norden-thin-title-height) / 2 + 10px) 14px 12px;
-  color: #f3ead7;
+  color: var(--norden-text);
   filter: drop-shadow(0 3px 5px #0008);
 }
 .norden-thin-titled-title {
@@ -148,7 +148,7 @@
   letter-spacing: .3em;
   text-indent: .3em;
   white-space: nowrap;
-  color: #fff4d0;
+  color: var(--norden-text-strong);
   user-select: none;
 }
 .norden-thin-titled-title::before {
@@ -177,7 +177,7 @@
   box-shadow: inset 0 2px 4px #120c0780, 0 1px #fff8;
 }
 .norden-choice { --norden-button-corner: 16px; gap: 7px; min-width: 92px; min-height: 40px; padding: 4px 14px; }
-.norden-choice[aria-checked='false'] { color: #fff2d6; }
+.norden-choice[aria-checked='false'] { color: var(--norden-text-strong); }
 /* Reversing the bevel lighting makes the dark ivory sit inside the shared housing. */
 .norden-choice[aria-checked='false']::before {
   transform: rotate(180deg);
@@ -217,9 +217,9 @@
   align-items: center;
   column-gap: 6px;
   row-gap: 2px;
-  color: #3a2810;
+  color: var(--norden-ink);
 }
-.norden-quantity-label { grid-area: label; display: flex; align-items: center; gap: 4px; font-size: 13px; color: #755b36; }
+.norden-quantity-label { grid-area: label; display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--norden-ink-soft); }
 .norden-quantity-icon { display: inline-flex; flex: none; width: 22px; height: 22px; }
 .norden-quantity-icon > :is(img, svg) { width: 100%; height: 100%; object-fit: contain; }
 .norden-quantity-step.norden-button { width: 36px; height: 36px; min-width: 36px; padding: 0; font-size: 19px; }
@@ -290,8 +290,8 @@
   font-weight: 700;
   text-align: right;
 }
-.norden-quantity-unit { font-size: 12px; color: #755b36; }
-.norden-quantity-max { grid-area: max; font-size: 12px; color: #8a7050; white-space: nowrap; }
+.norden-quantity-unit { font-size: 12px; color: var(--norden-ink-soft); }
+.norden-quantity-max { grid-area: max; font-size: 12px; color: var(--norden-ink-muted); white-space: nowrap; }
 .norden-quantity :focus-visible { outline: 2px solid #765b9a; outline-offset: 2px; }
 
 /* Read aloud but not drawn */
@@ -328,7 +328,7 @@
   box-sizing: border-box;
   min-width: 0;
   padding: 16px 18px;
-  color: #342515;
+  color: var(--norden-ink);
   font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
 }
 .norden-card::before {
@@ -370,7 +370,7 @@
 .norden-knight-initial {
   display: grid;
   place-content: center;
-  color: #f4e6c4;
+  color: var(--norden-text);
   background: linear-gradient(135deg, #7a5530, #3e2814);
   font-size: 30px;
   font-weight: 700;
@@ -378,16 +378,16 @@
 .norden-knight-info { display: grid; flex: 1; gap: 4px; min-width: 150px; }
 .norden-knight-name { font-size: 18px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
 .norden-knight-subtitle-outer { display: flex; gap: 6px; align-items: center; }
-.norden-knight-subtitle { font-size: 12px; color: #78603f; min-height: 24px;}
+.norden-knight-subtitle { font-size: 12px; color: var(--norden-ink-soft); min-height: 24px;}
 .norden-knight-stats { display: flex; flex-wrap: wrap; gap: 6px; }
-.norden-knight-stat { display: grid; justify-items: center; min-width: 42px; padding: 2px 5px; border-bottom: 2px solid var(--stat-color, #6a5030); color: var(--stat-color, #6a5030); background: var(--stat-wash, #7656320a); }
-.norden-knight-stat.is-low { --stat-color: #8b4336; --stat-wash: #8b433610; }
-.norden-knight-stat.is-mid { --stat-color: #765632; --stat-wash: #7656320a; }
-.norden-knight-stat.is-high { --stat-color: #3e6743; --stat-wash: #3e674312; }
-.norden-knight-stat.is-exceptional { --stat-color: #785097; --stat-wash: #78509714; }
-.norden-knight-stat-label { color: #6a5030; font-size: 11px; white-space: nowrap; }
+.norden-knight-stat { display: grid; justify-items: center; min-width: 42px; padding: 2px 5px; --stat-color: var(--norden-ink-soft); border-bottom: 2px solid var(--stat-color); color: var(--stat-color); background: var(--stat-wash, color-mix(in srgb, var(--stat-color) 4%, transparent)); }
+.norden-knight-stat.is-low { --stat-color: var(--norden-ink-bad); --stat-wash: color-mix(in srgb, var(--stat-color) 6%, transparent); }
+.norden-knight-stat.is-mid { --stat-color: var(--norden-ink-soft); }
+.norden-knight-stat.is-high { --stat-color: var(--norden-ink-good); --stat-wash: color-mix(in srgb, var(--stat-color) 7%, transparent); }
+.norden-knight-stat.is-exceptional { --stat-color: var(--norden-ink-rare); --stat-wash: color-mix(in srgb, var(--stat-color) 8%, transparent); }
+.norden-knight-stat-label { color: var(--norden-ink-soft); font-size: 11px; white-space: nowrap; }
 .norden-knight-stat b { font-size: 24px; line-height: 1.15; font-variant-numeric: tabular-nums; }
-.norden-knight-aside { margin-left: auto; max-width: 100%; font-size: 12px; color: #6a5030; text-align: right; overflow-wrap: anywhere; }
+.norden-knight-aside { margin-left: auto; max-width: 100%; font-size: 12px; color: var(--norden-ink-soft); text-align: right; overflow-wrap: anywhere; }
 .norden-knight-card.is-compact { min-height: 96px; gap: 10px; padding: 12px 14px; }
 .norden-knight-card.is-compact .norden-knight-face { width: 60px; }
 .norden-knight-card.is-compact .norden-knight-name { font-size: 16px; }
@@ -403,17 +403,17 @@
 .norden-mercenary-card-head { display: flex; justify-content: space-between; gap: 10px; min-width: 0; }
 .norden-mercenary-card-title { display: grid; align-content: start; gap: 2px; min-width: 0; }
 .norden-mercenary-card-company { overflow: hidden; font-size: 15px; font-weight: 700; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
-.norden-mercenary-card-note { overflow: hidden; color: #78603f; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.norden-mercenary-card-prices { display: grid; flex: none; align-content: start; justify-items: end; color: #6a5030; font-size: 11px; white-space: nowrap; }
-.norden-mercenary-card-prices b { margin-left: 5px; color: #342515; font-size: 15px; font-variant-numeric: tabular-nums; }
+.norden-mercenary-card-note { overflow: hidden; color: var(--norden-ink-soft); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.norden-mercenary-card-prices { display: grid; flex: none; align-content: start; justify-items: end; color: var(--norden-ink-soft); font-size: 11px; white-space: nowrap; }
+.norden-mercenary-card-prices b { margin-left: 5px; color: var(--norden-ink); font-size: 15px; font-variant-numeric: tabular-nums; }
 .norden-mercenary-card-rank { display: flex; align-items: baseline; }
 .norden-mercenary-card-prices .norden-mercenary-card-rank b { font-size: 34px; }
 /* A mercenary's rank (MercenaryCard, MercenaryProfile): a large serif letter coloured by rank, S in gold */
-.norden-mercenary-rank-letter[data-rank] { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; line-height: 1; color: #5c5446; }
-.norden-mercenary-rank-letter[data-rank='C'] { color: #3d7034; }
-.norden-mercenary-rank-letter[data-rank='B'] { color: #2b5b98; }
-.norden-mercenary-rank-letter[data-rank='A'] { color: #8a2f8f; }
-.norden-mercenary-rank-letter[data-rank='S'] { color: #b8860b; text-shadow: 0 0 1px #6a4a0a, 0 1px 3px #f5d77a99; }
+.norden-mercenary-rank-letter[data-rank] { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; line-height: 1; color: var(--norden-ink-soft); }
+.norden-mercenary-rank-letter[data-rank='C'] { color: var(--norden-ink-good); }
+.norden-mercenary-rank-letter[data-rank='B'] { color: var(--norden-ink-info); }
+.norden-mercenary-rank-letter[data-rank='A'] { color: var(--norden-ink-rare); }
+.norden-mercenary-rank-letter[data-rank='S'] { color: var(--norden-ink-gold); text-shadow: 0 0 1px #6a4a0a, 0 1px 3px #f5d77a99; }
 .norden-mercenary-card .norden-knight-stats { gap: 4px; }
 .norden-mercenary-card .norden-knight-stat { min-width: 34px; padding: 1px 3px; }
 .norden-mercenary-card .norden-knight-stat-label { font-size: 10px; }
@@ -444,7 +444,7 @@
 .norden-knight-chip-initial {
   display: grid;
   place-content: center;
-  color: #f4e6c4;
+  color: var(--norden-text);
   background: linear-gradient(135deg, #7a5530, #3e2814);
   font-size: 14px;
   font-weight: 700;
@@ -452,5 +452,5 @@
 .norden-knight-chip-name { min-width: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .norden-knight-chip-note { flex: none; padding: 0 5px; font-size: 11px; line-height: 1.5; border: 1px solid currentColor; border-radius: 3px; opacity: 0.75; }
 
-.norden-knight-mercenary { display: block; overflow: hidden; color: #765632; font-size: 11px; font-variant-numeric: tabular-nums; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
-.norden-knight-mercenary-mark { display: inline-block; margin-right: 4px; padding: 0 4px; color: #1c1712; background: #c98f52; border-radius: 2px; font-weight: 700; }
+.norden-knight-mercenary { display: block; overflow: hidden; color: var(--norden-ink-soft); font-size: 11px; font-variant-numeric: tabular-nums; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
+.norden-knight-mercenary-mark { display: inline-block; margin-right: 4px; padding: 0 4px; color: var(--norden-ink-strong); background: #c98f52; border-radius: 2px; font-weight: 700; }

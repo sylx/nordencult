@@ -40,7 +40,7 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #f2d69b;
+  color: var(--norden-text-accent);
   cursor: pointer;
   pointer-events: auto;
 }
@@ -60,11 +60,11 @@
   height: calc(var(--norden-window-frame-size) * .28125);
   filter: drop-shadow(0 1px 1px #100b05);
 }
-.norden-window-frame-navigation-button:hover:enabled { color: #fff3cc; }
+.norden-window-frame-navigation-button:hover:enabled { color: var(--norden-text-strong); }
 .norden-window-frame-navigation-button:hover:enabled::before { opacity: 1; }
 .norden-window-frame-navigation-button:active:enabled svg { transform: translateY(1px); }
 .norden-window-frame-navigation-button:focus-visible { outline: 2px solid #ffe0a1; outline-offset: -4px; }
-.norden-window-frame-navigation-button:disabled { color: #81745b; cursor: default; }
+.norden-window-frame-navigation-button:disabled { color: var(--norden-text-faint); cursor: default; }
 .norden-window-frame-navigation-button:disabled::before { background: #100c0873; opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   .norden-window-frame-navigation-button::before { transition: none; }
