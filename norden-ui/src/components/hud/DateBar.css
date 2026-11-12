@@ -165,6 +165,8 @@
   max-width: min(100%, 100vw);
   max-height: min(400px, 65dvh);
   overflow: auto;
+  /* Everything inside is drawn within the frame: buttons (positioned, with their own layers) otherwise showed over the border */
+  contain: paint;
   padding: 18px;
   border: 1px solid #b59151;
   border-top: 3px solid #b59151;
