@@ -43,7 +43,10 @@
     "population": 7000,
     "market": 160,
     "production": 160,
-    "belongTo": "taurus"
+    "belongTo": "taurus",
+    "buildings": [
+      "tavern"
+    ]
   },
   {
     "id": "P003",
