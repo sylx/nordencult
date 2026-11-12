@@ -1,7 +1,10 @@
-/* On dark panels, beside the volume sliders (a wider label column: "CPU同士の戦闘") */
-.battle-settings { display: grid; gap: 10px; font-size: 14px; color: inherit; }
-.battle-settings__row { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); align-items: center; column-gap: 10px; }
+/*
+ * On dark panels. The label sits above its choices and the choices take one row, so the settings stay short
+ * enough for the turn bar's settings panel (280px wide, 400px high at most) without overflowing it
+ */
+.battle-settings { display: grid; gap: 12px; font-size: 14px; color: inherit; }
+.battle-settings__row { display: grid; gap: 4px; min-width: 0; }
 .battle-settings__label { white-space: nowrap; }
-.battle-settings .norden-choice { min-width: 0; min-height: 32px; padding: 3px 10px; font-size: 13px; }
-/* Just the buttons: no housing of their own (its background showed through the window's frame) */
+/* Just the buttons: no housing of their own */
 .battle-settings .norden-choice-group { padding: 0; border: 0; background: none; box-shadow: none; }
+.battle-settings .norden-choice { gap: 5px; min-width: 0; min-height: 30px; padding: 2px 9px; font-size: 13px; }
