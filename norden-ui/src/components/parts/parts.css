@@ -378,7 +378,7 @@
 .norden-knight-info { display: grid; flex: 1; gap: 4px; min-width: 150px; }
 .norden-knight-name { font-size: 18px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
 .norden-knight-subtitle-outer { display: flex; gap: 6px; align-items: center; }
-.norden-knight-subtitle { font-size: 12px; color: #78603f; }
+.norden-knight-subtitle { font-size: 12px; color: #78603f; min-height: 24px;}
 .norden-knight-stats { display: flex; flex-wrap: wrap; gap: 6px; }
 .norden-knight-stat { display: grid; justify-items: center; min-width: 42px; padding: 2px 5px; border-bottom: 2px solid var(--stat-color, #6a5030); color: var(--stat-color, #6a5030); background: var(--stat-wash, #7656320a); }
 .norden-knight-stat.is-low { --stat-color: #8b4336; --stat-wash: #8b433610; }
