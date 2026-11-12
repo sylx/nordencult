@@ -11,8 +11,8 @@ export interface BattleSettings {
   watchCpuBattles: boolean
 }
 
-/** The speeds to choose from (as the battle-editor's) */
-export const BATTLE_SPEEDS = [0.5, 1, 1.5, 2, 3] as const
+/** The speeds to choose from (a speed saved before that is not one of them falls back to ×1) */
+export const BATTLE_SPEEDS = [1, 2, 3] as const
 
 /** How well the CPUs think in battles between CPU factions (not the player's difficulty, so it does not change the world) */
 export const CPU_BATTLE_DIFFICULTY: Difficulty = 'normal'
