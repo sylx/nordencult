@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CHARACTER_LIST, CHARACTER_START } from './character'
+import { CHARACTER_LIST, CHARACTER_START, isSpecialCharacterId, nextCharacterId } from './character'
 import { CITY_LIST } from './city'
 import { FACTION_MAP } from './faction'
 import { UNIT_TYPES_BY_CHARACTER_TYPE } from './unitTypes'
@@ -41,5 +41,25 @@ describe('character data', () => {
       expect(FACTION_MAP[start.grudge], `${start.id} の怨恨勢力`).toBeDefined()
       expect(start.factionId, `${start.id} は放浪で始まる`).toBeUndefined()
     }
+  })
+
+  it('places no special character (991..999), and makes them 召喚 templates', () => {
+    const specials = CHARACTER_LIST.filter((c) => isSpecialCharacterId(c.id))
+    expect(specials.map((c) => [c.id, c.type])).toEqual([['991', 'summon'], ['992', 'summon'], ['993', 'summon']])
+    for (const { id } of specials) expect(CHARACTER_START.some((s) => s.id === id), `${id} は配置しない`).toBe(false)
+  })
+})
+
+describe('the ids of special characters', () => {
+  it('are 991..999', () => {
+    expect(['990', '991', '999', '1000', '001', 'x'].map(isSpecialCharacterId)).toEqual([false, true, true, false, false, false])
+  })
+
+  it('are skipped when numbering a new character, which is refused once 990 is taken', () => {
+    expect(nextCharacterId([])).toBe('001')
+    expect(nextCharacterId(['001', '130'])).toBe('131')
+    expect(nextCharacterId(['001', '130', '991', '993'])).toBe('131')
+    expect(nextCharacterId(['989', '991'])).toBe('990')
+    expect(nextCharacterId(['990', '991'])).toBeNull()
   })
 })

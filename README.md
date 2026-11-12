@@ -220,7 +220,9 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 
 ### 遺物
 
-勢力ごとのアイテムボックス（`GameState.relics`。1点ずつの `RelicItem`。壊れた状態・修復済み・法王府に依頼中）を持ちます。遺物のマスターデータは `src/data/relicData.json`（`src/data/relics.ts`）で、レアリティ・使い道・解体の研究ポイント・修復と生産の費用を持ちます。修復していない遺物のレアリティは、画面では1段階落として出します（C なら D）。壊れた状態を持たない遺物（魔導書）は、解体も修復もできず、生産するか修復済みで初期配布します。画像は壊れた状態と修復済みで別のセルを持つ `src/assets/relics.webp`（大きさは `src/data/relicSprite.json`。技術と同じ 256×384 のセル）で、どれも norden-data の「ゲームに書き出す」で作ります（いまの画像は仮）。入手は初期配布（`factionData.json` の `relics`。遺物の id と修復済みかどうかを1点ずつ持つ）だけで、使い道（施設化・装備・召喚）はまだありません。
+勢力ごとのアイテムボックス（`GameState.relics`。1点ずつの `RelicItem`。壊れた状態・修復済み・法王府に依頼中）を持ちます。遺物のマスターデータは `src/data/relicData.json`（`src/data/relics.ts`）で、レアリティ・使い道・解体の研究ポイント・修復と生産の費用を持ちます。修復していない遺物のレアリティは、画面では1段階落として出します（C なら D）。壊れた状態を持たない遺物（魔導書）は、解体も修復もできず、生産するか修復済みで初期配布します。画像は壊れた状態と修復済みで別のセルを持つ `src/assets/relics.webp`（大きさは `src/data/relicSprite.json`。技術と同じ 256×384 のセル）で、どれも norden-data の「ゲームに書き出す」で作ります（いまの画像は仮）。入手は初期配布（`factionData.json` の `relics`。遺物の id と修復済みかどうかを1点ずつ持つ）だけで、使い道（施設化・装備・召喚）はまだありません（M009 で作っています）。
+
+遺物のマスターデータは使い道ごとの効果も持ちます（M009。まだゲームの決まりには使っていません）。装備の遺物は `equipment`（付けられる騎士 `wearer`: 魔術師か魔術師以外、知力の制限 `minIntelligence`、率いられるようになる兵種 `unitTypes`、戦闘で使える魔法 `spells`。魔法の ID は battle-runtime の `SPELL_IDS` を `@norden/battle-runtime/rules` から読みます）、召喚の遺物は `summon`（型紙の特殊キャラクター `characterId`、魔物の兵種 `unitType`、HP `hp`）を持ちます。施設の遺物は遺物の側に何も持たず、施設の `requiredRelic` が遺物の id を指します。食い違い（`relicEffectProblems`）は `src/data/relics.test.ts` が検査します。
 
 - 解体（`dismantleRelic`）: 壊れた遺物を失い、研究ポイントを研究中の技術に入れます（`addResearchPoints`。系統の割増なし。届けばその場で完了）。研究先が無ければ `carry` に入り、遺物画面の上に技術画面が閉じられない状態で開きます。研究できる技術が残っていなければ解体できません
 - 修復（`startRelicRepair`）: 遺物の `repair.tech` を研究し終えていれば（省略ならいらない）、都市の建設の枠で修復します。金は開始時に国庫から払い、遺物はボックスから抜け、都市の生産が物資として入ります。施設のスロットは使いません。一時停止・中止は建設と同じで、中止すると投入した物資の半分が戻り、遺物は壊れたままボックスに戻ります
@@ -242,7 +244,7 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 
 施設のマスターデータは `src/data/buildingData.json`（`src/data/buildings.ts`）、画像は全施設を並べた `src/assets/buildings.webp`（大きさは `src/data/buildingSprite.json`）です。どれも norden-data の「ゲームに書き出す」で作ります。技術のマスターデータ（`src/data/techData.json`・`techSprite.json`・`src/assets/techs.webp`）と遺物のマスターデータ（`src/data/relicData.json`・`relicSprite.json`・`src/assets/relics.webp`）も同じです。
 
-キャラクターのマスターデータは `src/data/characterData.json`、初期配置は `src/data/characterStart.json`、顔・全身の画像は `src/components/CharacterImage.tsx`（`src/assets/character.webp` のスプライト。大きさは `src/data/characterSprite.json`）です。
+キャラクターのマスターデータは `src/data/characterData.json`、初期配置は `src/data/characterStart.json`、顔・全身の画像は `src/components/CharacterImage.tsx`（`src/assets/character.webp` のスプライト。大きさは `src/data/characterSprite.json`）です。ID 991〜999 は特殊キャラクター（`SPECIAL_CHARACTER_IDS`）で、991 ドラゴン・992 ゴーレム・993 ベヒーモスは召喚ユニットの型紙（種別 `summon`「召喚」。画像と既定の値だけを持ち、初期配置しない。いまの画像は仮）です。兵種（`src/data/unitTypes.ts`）には魔物のドラゴン・ゴーレム・ベヒーモス（`MONSTER_UNIT_TYPES`）があり、騎士は率いません。
 
 これらのデータは `norden-data` のエディタで編集します（`cd norden-data && npm install && npm run dev`）。拠点データはエディタが直接読み書きし、施設データ・技術データ・遺物データは `norden-data/buildings/buildings.json`・`norden-data/techs/techs.json`・`norden-data/relics/relics.json` から書き出し（画像は元画像から切り抜く）、キャラクターのデータは `norden-data/characters/characters.json` から書き出します。
 

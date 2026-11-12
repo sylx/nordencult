@@ -1,5 +1,5 @@
 import { BUILDING_MAP } from '../data/buildings'
-import { CHARACTER_LIST, CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../data/character'
+import { CHARACTER_LIST, CHARACTER_MAP, CHARACTER_TYPE_LABELS, isSpecialCharacterId } from '../data/character'
 import { CITY_LIST, CITY_MAP } from '../data/city'
 import { FACTION_LIST, factionName } from '../data/faction'
 import { RELIC_LIST, relicName } from '../data/relics'
@@ -30,7 +30,10 @@ const factionArg: Arg = { name: 'faction', candidates: () => FACTION_LIST.map((f
 /** Omitted: the faction the screens are about */
 const viewedFactionArg: Arg = { ...factionArg, optional: true }
 const cityArg: Arg = { name: 'city', candidates: () => CITY_LIST.map((c) => ({ value: c.id, label: c.name })) }
-const knightArg: Arg = { name: 'knight', candidates: () => CHARACTER_LIST.map((c) => ({ value: c.id, label: c.name })) }
+// The special characters (991..999, templates of summoned units) are never in the game
+const knightArg: Arg = {
+  name: 'knight', candidates: () => CHARACTER_LIST.flatMap((c) => (isSpecialCharacterId(c.id) ? [] : [{ value: c.id, label: c.name }])),
+}
 const relicArg: Arg = { name: 'relic', candidates: () => RELIC_LIST.map((r) => ({ value: r.id, label: r.brokenName ?? r.name })) }
 const mercenaryArg: Arg = {
   name: 'mercenary', candidates: () => CHARACTER_LIST.flatMap((c) => (c.mercenaryInfo ? [{ value: c.id, label: `${c.mercenaryInfo.name} ${c.name}` }] : [])),

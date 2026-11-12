@@ -4338,5 +4338,74 @@
       "pride": 3,
       "unitType": "infantry"
     }
+  },
+  {
+    "id": "991",
+    "name": "ドラゴン",
+    "type": "summon",
+    "imageInfo": {
+      "sprite": {
+        "sheet": 2,
+        "x": 0,
+        "y": 4608
+      },
+      "faceRect": {
+        "x": 132.26666666666665,
+        "y": 27.73333333333332,
+        "width": 256,
+        "height": 256
+      }
+    },
+    "politics": 10,
+    "intelligence": 75,
+    "leadership": 75,
+    "strength": 75,
+    "charm": 10
+  },
+  {
+    "id": "992",
+    "name": "ゴーレム",
+    "type": "summon",
+    "imageInfo": {
+      "sprite": {
+        "sheet": 2,
+        "x": 512,
+        "y": 4608
+      },
+      "faceRect": {
+        "x": 132.26666666666665,
+        "y": 27.73333333333332,
+        "width": 256,
+        "height": 256
+      }
+    },
+    "politics": 10,
+    "intelligence": 75,
+    "leadership": 75,
+    "strength": 75,
+    "charm": 10
+  },
+  {
+    "id": "993",
+    "name": "ベヒーモス",
+    "type": "summon",
+    "imageInfo": {
+      "sprite": {
+        "sheet": 2,
+        "x": 1024,
+        "y": 4608
+      },
+      "faceRect": {
+        "x": 132.26666666666665,
+        "y": 27.73333333333332,
+        "width": 256,
+        "height": 256
+      }
+    },
+    "politics": 10,
+    "intelligence": 75,
+    "leadership": 75,
+    "strength": 75,
+    "charm": 10
   }
 ]

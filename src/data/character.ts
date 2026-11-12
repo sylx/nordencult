@@ -3,8 +3,8 @@ import characterStart from './characterStart.json'
 import type { PersonalityTag, VoiceToneId } from './characterVoice'
 import type { UnitTypeId } from './unitTypes'
 
-/** 騎士・学者・政治家・魔術師・狩人・ライフル兵・砲兵・ランツクネヒト */
-export type CharacterType = 'knight' | 'scholar' | 'politician' | 'magician' | 'hunter' | 'rifleman' | 'artillery' | 'landsknecht'
+/** 騎士・学者・政治家・魔術師・狩人・ライフル兵・砲兵・ランツクネヒト・召喚（召喚ユニットとその型紙。SPECIAL_CHARACTER_IDS） */
+export type CharacterType = 'knight' | 'scholar' | 'politician' | 'magician' | 'hunter' | 'rifleman' | 'artillery' | 'landsknecht' | 'summon'
 
 export const CHARACTER_TYPE_LABELS: Readonly<Record<CharacterType, string>> = {
   knight: '騎士',
@@ -15,6 +15,29 @@ export const CHARACTER_TYPE_LABELS: Readonly<Record<CharacterType, string>> = {
   rifleman: 'ライフル兵',
   artillery: '砲兵',
   landsknecht: 'ランツクネヒト',
+  summon: '召喚',
+}
+
+/**
+ * Ids kept for special characters, 991..999: the templates of summoned units (991 ドラゴン, 992 ゴーレム, 993 ベヒーモス),
+ * which hold their pictures and default values and are never placed in the game. norden-data numbers new characters below them
+ */
+export const SPECIAL_CHARACTER_IDS = { min: 991, max: 999 } as const
+
+/** Whether an id is one of a special character (991..999) */
+export function isSpecialCharacterId(id: string): boolean {
+  const n = Number(id)
+  return Number.isInteger(n) && n >= SPECIAL_CHARACTER_IDS.min && n <= SPECIAL_CHARACTER_IDS.max
+}
+
+/**
+ * The id norden-data gives a new character: one above the largest id below the special ones ('001'.. three digits),
+ * null when 990 is taken and no id is left before them
+ */
+export function nextCharacterId(ids: readonly string[]): string | null {
+  const ordinary = ids.map((id) => parseInt(id, 10) || 0).filter((n) => n < SPECIAL_CHARACTER_IDS.min)
+  const next = Math.max(0, ...ordinary) + 1
+  return next < SPECIAL_CHARACTER_IDS.min ? String(next).padStart(3, '0') : null
 }
 
 /** Where a character is drawn on the sprite sheets (src/assets/character-<n>.webp; sizes in characterSprite.json, read through characterSheets.ts) */
