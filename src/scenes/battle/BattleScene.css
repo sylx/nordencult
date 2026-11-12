@@ -3,7 +3,7 @@
   display: grid;
   width: 100%;
   height: 100%;
-  color: #f2e6c8;
+  color: var(--norden-text);
   background: radial-gradient(circle at 50% 40%, #3a2c1a, #120c06);
 }
 
@@ -11,7 +11,7 @@
 
 .battle-scene__field { position: absolute; inset: 0; display: grid; place-items: center; }
 .battle-scene__field .battle-scene__screen { position: absolute; inset: 0; }
-.battle-scene__placeholder { color: rgb(242 230 200 / 0.4); font-size: 20px; letter-spacing: 0.2em; }
+.battle-scene__placeholder { color: var(--norden-text-faint); font-size: 20px; letter-spacing: 0.2em; }
 
 .battle-debug {
   position: absolute;
@@ -28,12 +28,12 @@
   border-radius: 6px;
 }
 
-.battle-debug h2 { margin: 0; font-size: 12px; color: #d4b06a; }
-.battle-debug__map { max-width: 260px; margin: 0; font-size: 11px; color: #c8b490; }
+.battle-debug h2 { margin: 0; font-size: 12px; color: var(--norden-text-accent); }
+.battle-debug__map { max-width: 260px; margin: 0; font-size: 11px; color: var(--norden-text-muted); }
 
 .battle-button {
   padding: 8px 18px;
-  color: #2a1a0a;
+  color: var(--norden-ink-strong);
   background: linear-gradient(#ffe7a0, #e0a840);
   border: 1px solid #6a4a20;
   border-radius: 4px;

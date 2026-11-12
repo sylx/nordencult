@@ -7,7 +7,7 @@
   background: radial-gradient(circle at 50% 30%, #3a2c1a, #120c06);
 }
 
-.battle-result--missing { place-content: center; gap: 16px; color: #f2e6c8; }
+.battle-result--missing { place-content: center; gap: 16px; color: var(--norden-text); }
 
 .battle-result__panel {
   display: grid;
@@ -16,14 +16,14 @@
   width: min(520px, calc(100% - 32px));
   margin: 24px 0;
   padding: 24px 28px;
-  color: #2a1a0a;
+  color: var(--norden-ink);
   background: rgb(242 230 200 / 0.96);
   border: 1px solid #8a6a38;
   border-radius: 8px;
   box-shadow: 0 4px 24px rgb(0 0 0 / 0.6);
 }
 
-.battle-result__city { margin: 0; font-size: 14px; color: #8a7050; letter-spacing: 0.1em; }
+.battle-result__city { margin: 0; font-size: 14px; color: var(--norden-ink-muted); letter-spacing: 0.1em; }
 
 .battle-result__title {
   margin: 0;
@@ -33,27 +33,27 @@
 }
 
 .battle-result__winner { margin: 0; font-size: 18px; font-weight: 700; }
-.battle-result__reason { margin: 0; font-size: 13px; color: #8a7050; letter-spacing: 0.08em; }
+.battle-result__reason { margin: 0; font-size: 13px; color: var(--norden-ink-muted); letter-spacing: 0.08em; }
 .battle-result__section { width: 100%; }
 
 .battle-result__section h2 {
   margin: 0 0 6px;
   padding-bottom: 4px;
   font-size: 13px;
-  color: #8a7050;
+  color: var(--norden-ink-muted);
   border-bottom: 1px solid rgb(0 0 0 / 0.15);
 }
 
 .battle-result__owner { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; font-size: 15px; font-weight: 600; }
-.battle-result__arrow { color: #a04020; }
+.battle-result__arrow { color: var(--norden-ink-bad); }
 
 .battle-result__soldiers { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
-.battle-result__soldiers-after { margin-left: 6px; font-size: 12px; color: #8a7050; }
+.battle-result__soldiers-after { margin-left: 6px; font-size: 12px; color: var(--norden-ink-muted); }
 
 .battle-result__button {
   margin-top: 8px;
   padding: 8px 28px;
-  color: #2a1a0a;
+  color: var(--norden-ink-strong);
   background: linear-gradient(#ffe7a0, #e0a840);
   border: 1px solid #6a4a20;
   border-radius: 4px;
