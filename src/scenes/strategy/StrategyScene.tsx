@@ -6,7 +6,7 @@ import {
 } from 'norden-ui'
 import { MapView, type CityHighlight, type FocusInset, type RoadHighlight, type StrategyMap } from 'norden-strategy'
 import { playSe } from '../../audio/se'
-import { SoundSettings } from '../../components/SoundSettings'
+import { GameSettings } from '../../components/GameSettings'
 import { CHARACTER_MAP } from '../../data/character'
 import { FACTION_MAP, factionColor, factionName } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
@@ -535,7 +535,7 @@ export default function StrategyScene() {
               turnMenu={
                 <div className="strategy-scene__settings">
                   <p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(faction)} /></p>
-                  <SoundSettings />
+                  <GameSettings />
                   <Button variant="quiet" size="small" onClick={resetLayout}>UIの配置を初期化</Button>
                 </div>
               }>

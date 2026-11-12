@@ -24,6 +24,9 @@
       "react": ["./node_modules/@types/react/index.d.ts"],
       "react/*": ["./node_modules/@types/react/*"],
       "@norden/battle-runtime": ["./norden-battle/battle-runtime/src/index.ts"],
+      "@norden/battle-runtime/engine": ["./norden-battle/battle-runtime/src/engine/index.ts"],
+      "@norden/battle-runtime/cpu": ["./norden-battle/battle-runtime/src/cpu/index.ts"],
+      "@norden/battle-runtime/rules": ["./norden-battle/battle-runtime/src/rules.ts"],
       "@norden/map-runtime/render/structures": ["./norden-battle/map-runtime/src/render/structures/index.ts"],
       "@norden/map-runtime/*": ["./norden-battle/map-runtime/src/*.ts"]
     },

@@ -31,6 +31,11 @@ describe('battleTroops', () => {
     expect(statuses[0].uncapturable).toBeUndefined()
     expect(statuses[2].uncapturable).toBeUndefined()
   })
+
+  it('gives a knight\'s unit the knight\'s battle style, for the CPU; the garrison nobody leads has none', () => {
+    expect(statuses[0].personality).toBe('cautious')
+    expect(statuses[2].personality).toBeUndefined()
+  })
 })
 
 describe('units not captured', () => {

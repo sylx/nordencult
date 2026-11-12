@@ -1,4 +1,4 @@
-import { troopStatus, type Portrait, type Troop, type TroopFactory, type UnitStatus } from '@norden/battle-runtime'
+import { battleStyleOf, troopStatus, type Portrait, type Troop, type TroopFactory, type UnitStatus } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import { CHARACTER_MAP, type Character } from '../../data/character'
 import { characterSheet } from '../../data/characterSheets'
@@ -33,6 +33,7 @@ export interface BattleTroops {
  * indirectly have half of their commander's abilities (unitAbilities) and the commander's face; the garrison nobody leads has no face.
  * A knight's unit carries the knight's name, so the battle screen calls it "<name>隊".
  * A mercenary's unit has the mercenaries' morale whatever its side's, and is not captured.
+ * Units carry their leader's battle style (aggressive / cautious / valiant / pragmatic personality tags), which the CPU thinks with.
  */
 export function battleTroops(battle: Battle): BattleTroops {
   const knights = new Map<UnitStatus, CharacterId | null>()
@@ -50,6 +51,8 @@ export function battleTroops(battle: Battle): BattleTroops {
           morale: mercenary ? BALANCE.MERCENARY_MORALE : army.morale,
           uncapturable: mercenary,
           ...(leader && abilities ? { ...abilities, portrait: portraitOf(leader) } : GARRISON_LEADER),
+          // The CPU's taste in moves: the battle style of the knight leading the unit (the commander's for units led indirectly)
+          ...(leader && { personality: battleStyleOf(leader.personality) }),
           // Only a knight's own unit is called by the knight's name; the others keep "<faction> <unit type>"
           ...(unit.knightId && leader ? { name: leader.name } : {}),
           commander: unit.knightId !== null && unit.knightId === army.commander,

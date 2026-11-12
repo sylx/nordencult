@@ -26,6 +26,10 @@ export default defineConfig({
       { find: /^norden-dialogue$/, replacement: local('./norden-dialogue/src/index.ts') },
       // The workspace packages' exports (norden-battle/battle-runtime/package.json, norden-battle/map-runtime/package.json)
       { find: /^@norden\/battle-runtime$/, replacement: local('./norden-battle/battle-runtime/src/index.ts') },
+      // three.js-free entries of battle-runtime: the rules engine, the CPU and the rule values (deciding battles without drawing them)
+      { find: /^@norden\/battle-runtime\/engine$/, replacement: local('./norden-battle/battle-runtime/src/engine/index.ts') },
+      { find: /^@norden\/battle-runtime\/cpu$/, replacement: local('./norden-battle/battle-runtime/src/cpu/index.ts') },
+      { find: /^@norden\/battle-runtime\/rules$/, replacement: local('./norden-battle/battle-runtime/src/rules.ts') },
       { find: /^@norden\/map-runtime\/render\/structures$/, replacement: local('./norden-battle/map-runtime/src/render/structures/index.ts') },
       { find: /^@norden\/map-runtime\/(.+)$/, replacement: `${local('./norden-battle/map-runtime/src')}/$1.ts` },
     ],

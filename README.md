@@ -29,6 +29,7 @@ main への push で GitHub Pages に公開します（`.github/workflows/deploy
 - `import { PLACE_POINTS, ROAD_LINKS } from 'norden-strategy/data'` → `norden-strategy/src/data.ts`（データだけ。three.js を読み込まないので `src/game/` はこちらを使う）
 - `import { generateWorld, WorldSampler } from 'norden-strategy/world'` → `norden-strategy/src/world.ts`（マクロ地形の生成と読み取り。three.js を読み込まない。街道マップの生成に使う）
 - `import { BattleScreen } from '@norden/battle-runtime'` → `norden-battle/battle-runtime/src/index.ts`（戦闘画面。battle-editor と同じもの。中で `norden-ui` と map-runtime を使う）
+- `import { cpuPlayer } from '@norden/battle-runtime/cpu'`・`'@norden/battle-runtime/engine'`・`'@norden/battle-runtime/rules'` → `norden-battle/battle-runtime/src/cpu/index.ts`・`src/engine/index.ts`・`src/rules.ts`（CPU の思考・戦闘のルールの処理・ルールの値。three.js を読み込まない。描画なしで戦闘を決着させるのに使う）
 - `import { MapView } from '@norden/map-runtime/render/mapView'` → `norden-battle/map-runtime/src/render/mapView.ts`（パッケージの `exports` と同じ対応。依存の `simplex-noise` はルートに入れてある）
 - `import { DialogueView, runScene } from 'norden-dialogue'` → `norden-dialogue/src/index.ts`（会話シーンの再生。ゲームの状態は知らず、騎士・背景・音はルートが渡す）
 - `import { BgmPlayer, SONGS } from 'norden-synth'` → `norden-synth/src/index.ts`（BGM の再生と曲の一覧。ルートでは `src/audio/bgm.ts` が初めて鳴らす時に動的 import する）
@@ -57,7 +58,7 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | --- | --- |
 | `title` | タイトル画面（仮） |
 | `strategy` | 戦略マップ＋norden-ui の画面スタック（都市コマンド → 侵攻先の選択 → 侵攻画面、都市コマンド → 移動先の選択 → 移動画面、都市コマンド → 輸送先の選択 → 輸送画面。Escで1段戻る。プレイヤーの勢力が侵攻されると防衛軍団の編成画面 `defense`）。都市をクリックでその都市の都市コマンド画面へ。進行フェーズでは、まず全勢力の移動と輸送が進み（移動パート）、続いて侵攻の軍団が1つずつ進んで（侵攻パート）、到着すると `battle` へ |
-| `battle` | 戦闘（`{ battleId }`）。戦闘画面（battle-runtime の `BattleScreen`）、攻守の勢力と騎士、デバッグ用の勝敗ボタンと使ったマップの表示。決着のウィンドウの「戦闘の結果へ」で `battleResult` へ |
+| `battle` | 戦闘（`{ battleId }`）。戦闘画面（battle-runtime の `BattleScreen`）、攻守の勢力と騎士、デバッグ用の勝敗ボタンと使ったマップの表示。プレイヤーの勢力でない陣営は CPU が戦う。左上の「設定」で設定ウィンドウ。決着のウィンドウの「戦闘の結果へ」で `battleResult` へ。CPU の勢力どうしの戦闘は、設定で観戦しないなら戦闘画面を出さずに決着させて `battleResult` へ |
 | `battleResult` | 戦闘結果（`{ battleId }`）。勝敗と決着の理由（入城・殲滅/退却）・拠点の所属の変化・騎士の移動。「戦略マップへ」で進行フェーズの続きへ |
 
 起動時は `strategy` を表示します。`?scene=title` で開始シーンを指定できます（パラメーターの無いシーンだけ）。`?faction=leonis` のようにプレイヤーの勢力を指定できます（既定はカルタ書院 `carta`）。`?faction=leonis&faction=carta` のように複数指定すると、それぞれの勢力の手番をプレイヤーが操作します（勢力どうしの侵攻の確かめ用）。画面（都市コマンド・勢力の金・行動予約）は手番の勢力のもので、ほかのときは最初に指定した勢力のものです（`viewFaction`）。
@@ -77,7 +78,8 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 | `src/scenes/strategy/StrategyScene.tsx` | 地図と画面スタック（`cityCommand` / `pickTarget` / `invasion` / `pickMoveTarget` / `move` / `pickTransportTarget` / `transport` / `domestic`）。地図の強調は表示中の画面（`nav.top`）から決める。進行フェーズの移動と輸送の演出（`movementLegs` を地図の `march()` で動かし、着いたら `runMovements`） |
 | `src/scenes/strategy/views.ts` | ゲームの状態 → norden-ui のview型（`CityView`・`KnightView`・`TurnView`・`BuildingView`・`TechTreeView`）。施設・技術の画像は `src/assets/buildings.webp`・`techs.webp` 上の位置（`buildingSprite.json`・`techSprite.json`）で渡す |
 | `src/scenes/strategy/OrderList.tsx` | 行動予約（侵攻予約・移動予約・輸送予約・移動中と輸送中の騎士）と進行フェーズの一覧。norden-ui の `ActionOrders` に渡す（都市コマンド画面に重ねるHUD） |
-| `src/scenes/battle/BattleScene.tsx` | 戦闘マップを読み込み、battle-runtime の `BattleScreen` に渡す（アンマウントで破棄）。ユニットはまだ置かない（置くときはマップの `units` と `statuses` で渡す）。退却先の拠点（`retreatCities`）を軍ごとに渡し、退却した・捕虜になった部隊（`RetreatReport`）を `BattleRetreat`（退却したときの兵数を含む）に、決着のときに戦場に残っていた部隊（`BattleOutcome.remaining`）を `BattleSurvivor` にして、決着（`onEnd`）またはデバッグの勝敗のボタンで `resolveBattle` に渡し、結果の画面へ進む |
+| `src/scenes/battle/BattleScene.tsx` | 戦闘マップを読み込み、battle-runtime の `BattleScreen` に渡す（アンマウントで破棄）。ユニットはまだ置かない（置くときはマップの `units` と `statuses` で渡す）。退却先の拠点（`retreatCities`）を軍ごとに渡し、退却した・捕虜になった部隊（`RetreatReport`）を `BattleRetreat`（退却したときの兵数を含む）に、決着のときに戦場に残っていた部隊（`BattleOutcome.remaining`）を `BattleSurvivor` にして、決着（`onEnd`）またはデバッグの勝敗のボタンで `resolveBattle` に渡し、結果の画面へ進む。プレイヤーの勢力でない陣営に CPU の打ち手（`cpuPlayer`）を、設定の演出の速度を `speed` に渡す |
+| `src/scenes/battle/autoBattle.ts` | 描画なしの戦闘（CPU の勢力どうしで観戦しないとき）。戦闘マップと部隊から engine の戦闘の状態を作って両軍を CPU の配備で置き（`setupAutoBattle`。初期配置地点が無ければ null で、戦闘画面で戦う）、番ごとにページに処理を返しながら決着まで戦わせ（`runAutoBattle`。上限 30 ターンで、決着しなければ防衛側の勝ち）、戦闘画面と同じ退却・殲滅・残った部隊を返す |
 | `src/scenes/battle/battleMap.ts` | 戦闘マップの選択。攻撃元と目標の街道マップ `road-<小さい ID>-<大きい ID>.json` から目標の範囲（`battleAreas[目標]`）を切り出す。無ければ `fluen.json` 全体（コンソールに警告） |
 
 ## BGM
@@ -94,6 +96,8 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 再生は `src/audio/bgm.ts`（`playBgm(songId)`。プレイヤーは `getBgm()` で 1 つだけ作る）。ブラウザの自動再生制限があるので、最初のクリックかキー入力までは音が出ません。タブが裏に回るか、ウィンドウのフォーカスが外れている間は一時停止し、戻ると続きから鳴ります。音量とリバーブはシンセの既定値（`DEFAULT_MIX`）です。曲を書く・聴くのは norden-synth 単体のテストページ（`cd norden-synth && npm run dev`）で行います。
 
 BGM と効果音の音量（0〜1）は `src/audio/volume.ts` が持ち、ブラウザに保存します（`localStorage` の `nordencult:volume`）。戦略画面の右上の設定（ターン情報の歯車）と、タイトルの「設定」で変えられます（`src/components/SoundSettings.tsx`。norden-ui の `VolumeSlider`・`SettingsDialog`）。スライダーの値は 2 乗して音量の倍率にします（`volumeGain`。中央で約 -12dB）。効果音は `getVolumes().se` の音量で鳴らします。
+
+戦闘の設定（`src/settings/battleSettings.ts`。`localStorage` の `nordencult:battle`）: 戦闘難易度（CPU の軍の考え方。易しい・普通・難しい。CPU 側の数値は変えない）・戦闘の速度（演出の速さ ×0.5〜×3。プレイヤーの行動にも効き、戦闘の途中でも変わる）・CPU同士の戦闘（観戦する／結果だけ）。設定ウィンドウ（戦略画面の右上・タイトル・戦闘画面の左上の「設定」）で変えられます（`src/components/GameSettings.tsx` が音量 `SoundSettings` と戦闘の設定 `BattleSettings` をまとめる。戦闘画面では CPU同士の戦闘を出さない）。戦闘難易度はプレイヤーと戦う CPU の軍に効き、CPU の勢力どうしの戦闘は世界の進み方が設定で変わらないように「普通」（`CPU_BATTLE_DIFFICULTY`）で戦います。部隊を率いる騎士の性格（`personality` の猛進・慎重・勇敢・実利。間接の部隊は軍団長の）を部隊に渡し、CPU の手の好みが変わります（`battleTroops.ts`）。
 
 BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止めます（曲の位置も止まり、戻すと続きから鳴ります）。起動したときから 0 なら norden-synth と音色を読み込まず、音量を上げた時に読み込んで、その時のシーンの曲を鳴らします。
 
@@ -329,3 +333,4 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 | [m005.md](docs/milestones/m005.md) | 傭兵（契約・独立採算）と放浪の騎士 |
 | [m006.md](docs/milestones/m006.md) | 会話システム（norden-dialogue。台本と流れ・プレイヤー・エディタ・傭兵の雇用シーン） |
 | [m007.md](docs/milestones/m007.md) | 戦闘の拡充（norden-battle。攻撃の汎用化・新兵種・魔法・状態異常・拠点兵器・効果音・CPU・バランス調整。段階ごとに指示を仰ぐ） |
+| [m008.md](docs/milestones/m008.md) | CPU の思考（norden-battle。処理の抜き出し・1 手読み・作戦・性格と難易度・対戦シミュレータ）と、ルートへのつなぎ込み |
