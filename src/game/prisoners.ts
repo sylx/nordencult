@@ -1,7 +1,8 @@
 import { CHARACTER_MAP } from '../data/character'
+import { withoutAssignee } from './economy/domestic'
 import { escapeOf } from './movement'
 import { citiesOf, prisonerMovementOf } from './queries'
-import type { CharacterId, CharacterState, GameState, Movement } from './types'
+import type { CharacterId, CharacterState, CityId, GameState, Movement } from './types'
 
 /**
  * Prisoners (捕虜): knights captured in a battle are held in a city of the faction that took them
@@ -49,4 +50,18 @@ export function runEscapes(state: GameState, random: () => number = Math.random)
     if (escape.movement) movements.push(escape.movement)
   }
   return { ...state, characters, movements, serial }
+}
+
+/**
+ * Debugging: the knight held prisoner in `cityId`, as if captured there: they leave their assignment in the city they
+ * served in and keep their faction (none for one serving nobody). The caller checks they may be (not a mercenary,
+ * not away on a movement, the city another faction's)
+ */
+export function debugImprison(state: GameState, characterId: CharacterId, cityId: CityId): GameState {
+  const before = state.characters[characterId]
+  const served = before?.cityId ? state.cities[before.cityId] : undefined
+  const cities = served && !before.prisoner
+    ? { ...state.cities, [before.cityId!]: { ...served, assignments: withoutAssignee(served.assignments, characterId) } }
+    : state.cities
+  return { ...state, cities, characters: { ...state.characters, [characterId]: { cityId, factionId: before?.factionId ?? null, prisoner: true } } }
 }

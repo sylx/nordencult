@@ -6,8 +6,8 @@ import { RELIC_LIST, relicName } from '../data/relics'
 import { TECH_LIST, TECH_MAP } from '../data/techs'
 import { SCENES, isDialogueId, type DialogueId } from '../dialogue'
 import {
-  awayReason, charactersIn, clearFlag, citiesOf, dateOf, debugAddRelic, debugAddResearchPoints, debugCompleteTech, debugFillResearch, debugSetCity, debugSetGold,
-  debugSetMercenarySoldiers, debugSetStanding, endFactionTurn, setFlag, factionPower, governorOf, isMercenary, isPlayerFaction, isRecovering, mercenaryAt, ownerOf, prisonersIn, relicsOf, researchOf, researchOutput, resolveBattle, turnOrder, viewFaction,
+  awayReason, charactersIn, clearFlag, citiesOf, dateOf, debugAddRelic, debugImprison, debugAddResearchPoints, debugCompleteTech, debugFillResearch, debugSetCity, debugSetGold,
+  debugSetMercenarySoldiers, debugSetStanding, endFactionTurn, setFlag, factionPower, governorOf, isMercenary, isPlayerFaction, isRecovering, mercenaryAt, movementOf, ownerOf, prisonerMovementOf, prisonersIn, relicsOf, researchOf, researchOutput, resolveBattle, turnOrder, viewFaction,
   type BattleWinner, type CityConstruction, type CityId, type DebugCityField, type FactionId, type GameState, type GameStore,
 } from '../game'
 import { playDialogue } from '../scenes/playDialogue'
@@ -339,7 +339,7 @@ export const DEBUG_COMMANDS: readonly Command[] = [
     ],
   },
   {
-    name: 'knight', summary: '騎士を見る',
+    name: 'knight', summary: '騎士を見る・捕虜にする',
     subcommands: [
       {
         name: 'show', summary: '騎士の詳細', args: [knightArg],
@@ -356,6 +356,21 @@ export const DEBUG_COMMANDS: readonly Command[] = [
             ['状態', prisoner ? '捕虜' : awayReason(state, id) ?? '待機'],
             ['能力', `政治${knight.politics} 知力${knight.intelligence} 統率${knight.leadership} 武力${knight.strength} 魅力${knight.charm}`],
           ])
+        },
+      },
+      {
+        name: 'imprison', summary: '騎士を都市の捕虜にする（元の勢力のまま。傭兵と移動中の騎士はできない）', args: [knightArg, cityArg],
+        run: ([id, cityId], { store }) => {
+          const state = store.getState()
+          const name = CHARACTER_MAP[id].name
+          if (isMercenary(id)) throw new DebugError(`${name} は傭兵です（傭兵は捕虜になりません）`)
+          if (movementOf(state, id) || prisonerMovementOf(state, id)) throw new DebugError(`${name} は移動中です`)
+          const owner = ownerOf(state, cityId)
+          if (!owner) throw new DebugError(`${cityLabel(cityId)} はどの勢力の都市でもありません`)
+          const factionId = state.characters[id]?.factionId ?? null
+          if (factionId === owner) throw new DebugError(`${cityLabel(cityId)} は ${name} の勢力の都市です`)
+          store.update((s) => debugImprison(s, id, cityId))
+          return `${name} を ${cityLabel(cityId)}（${factionName(owner)}）の捕虜にした`
         },
       },
     ],

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createGameStore, createInitialState, isMercenary, researchOf, wanderer, type GameStore } from '../game'
+import { createGameStore, createInitialState, isMercenary, prisonersIn, researchOf, wanderer, type GameStore } from '../game'
 import { setDialogueStarter } from '../scenes/playDialogue'
 import { DEBUG_COMMANDS, type DebugContext } from './commands'
 import { LineEditor } from './lineEditor'
@@ -218,6 +218,19 @@ describe('commands', () => {
     const shown = run('knight show 015').join('\n')
     expect(shown).toContain('放浪')
     expect(shown).toContain('怨恨勢力')
+  })
+
+  it('takes a knight prisoner in a city of another faction, but not a mercenary nor into their own', () => {
+    const { store, run } = setup()
+    const served = store.getState().characters['015'].cityId!
+    expect(() => run(`knight imprison 015 ${served}`)).toThrow(DebugError)
+    expect(() => run('knight imprison 042 P004')).toThrow(DebugError)
+    expect(run('knight imprison 015 P004')[0]).toContain('捕虜にした')
+    expect(store.getState().characters['015']).toEqual({ cityId: 'P004', factionId: 'carta', prisoner: true })
+    expect(prisonersIn(store.getState(), 'P004')).toEqual(['015'])
+    const { governor, officers } = store.getState().cities[served].assignments
+    expect([governor, ...Object.values(officers).flat()]).not.toContain('015')
+    expect(run('knight show 015').join('\n')).toContain('捕虜')
   })
 
   it('shows what there is', () => {
