@@ -9,7 +9,7 @@ const dateOf = () => document.querySelector<HTMLElement>('.norden-date-bar-date'
 
 describe('DateBar', () => {
   it('shows phase, faction turn, date and settings in reading order', () => {
-    render(<DateBar {...labels}><button>セーブ</button></DateBar>)
+    render(<DateBar {...labels} onSettings={() => {}} />)
     const bar = screen.getByRole('group', { name: 'ターン情報' })
     const phase = within(bar).getByText(labels.phaseLabel)
     const faction = within(bar).getByText(labels.factionName)
@@ -20,7 +20,6 @@ describe('DateBar', () => {
     expect(date.compareDocumentPosition(settings) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(within(bar).getByText('のターン')).toBeInTheDocument()
     expect(date).toHaveTextContent(labels.dateLabel)
-    expect(screen.queryByRole('region', { name: '設定' })).not.toBeInTheDocument()
   })
 
   it.each(['灰歴312年1月', '灰歴３１２年１月', '灰歴312年 春', '日付未定'])(
@@ -43,38 +42,19 @@ describe('DateBar', () => {
     expect(dateOf().querySelector('.norden-date-bar-date-season')).toBeNull()
   })
 
-  it('supports the resolving phase and keeps the settings position without contents', () => {
+  it('supports the resolving phase and keeps the settings position without onSettings', () => {
     render(<DateBar {...labels} factionName={null} />)
     expect(screen.getByText('全勢力の行動を解決中')).toBeInTheDocument()
     expect(screen.queryByText('のターン')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: '設定' })).toBeDisabled()
   })
 
-  it('focuses settings contents and closes on Escape and outside input', async () => {
-    render(<><DateBar {...labels}><button>セーブ</button></DateBar><button>外側</button></>)
-    const user = userEvent.setup()
+  it('opens the settings with the gear', async () => {
+    const onSettings = vi.fn()
+    render(<DateBar {...labels} onSettings={onSettings} />)
     const settings = screen.getByRole('button', { name: '設定' })
-    await user.click(settings)
-    const panel = screen.getByRole('region', { name: '設定' })
-    expect(settings).toHaveAttribute('aria-controls', panel.id)
-    expect(screen.getByRole('button', { name: 'セーブ' })).toHaveFocus()
-    const prevented = vi.fn()
-    window.addEventListener('keydown', event => prevented(event.defaultPrevented), { once: true })
-    await user.keyboard('{Escape}')
-    expect(prevented).toHaveBeenCalledWith(true)
-    expect(settings).toHaveFocus()
-    expect(settings).toHaveAttribute('aria-expanded', 'false')
-    await user.click(settings)
-    await user.click(screen.getByRole('button', { name: '外側' }))
-    expect(settings).toHaveAttribute('aria-expanded', 'false')
-  })
-
-  it('closes an open menu when its contents are removed', async () => {
-    const { rerender } = render(<DateBar {...labels}><button>セーブ</button></DateBar>)
-    await userEvent.click(screen.getByRole('button', { name: '設定' }))
-    rerender(<DateBar {...labels} />)
-    expect(screen.getByRole('button', { name: '設定' })).toBeDisabled()
-    rerender(<DateBar {...labels}><button>セーブ</button></DateBar>)
-    expect(screen.getByRole('button', { name: '設定' })).toHaveAttribute('aria-expanded', 'false')
+    expect(settings).toHaveAttribute('aria-haspopup', 'dialog')
+    await userEvent.click(settings)
+    expect(onSettings).toHaveBeenCalledTimes(1)
   })
 })

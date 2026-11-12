@@ -4,7 +4,7 @@
 
 | 層 | 内容 | 場所 |
 | --- | --- | --- |
-| 基本部品 | ウィンドウ（`InfoWindow` / `InfoWindowWithTabs` / 最小化できる `MinimizableWindow`）、確認・お知らせ・設定のダイアログ（`ConfirmDialog` / OK だけの `AlertDialog` / 閉じるボタン付きの `SettingsDialog`）、ツールバー（`CommandToolbar`）、ターン情報（`DateBar`）、勢力の情報（`FactionBar`）、行動予約（`ActionOrders`）、UIパーツ（`Button`・`Tooltip`・`ChoiceGroup`・`QuantityInput`・`VolumeSlider`・`KnightCard`・`KnightChip`・`MercenaryCard` など） | `src/components/` |
+| 基本部品 | ウィンドウ（`InfoWindow` / `InfoWindowWithTabs` / 最小化できる `MinimizableWindow`）、確認・お知らせのダイアログ（`ConfirmDialog` / OK だけの `AlertDialog`）、設定ウィンドウ（`SettingsWindow` / `SettingsSection` / `SettingsItem`）、ツールバー（`CommandToolbar`）、ターン情報（`DateBar`）、勢力の情報（`FactionBar`）、行動予約（`ActionOrders`）、UIパーツ（`Button`・`Tooltip`・`ChoiceGroup`・`QuantityInput`・`VolumeSlider`・`KnightCard`・`KnightChip`・`MercenaryCard` など） | `src/components/` |
 | 画面 | 基本部品を組み合わせた1画面分のUI。都市コマンド画面・地図で選ぶステップ・侵攻画面 | `src/screens/` |
 | 画面スタック | 画面の階層。都市コマンド → 侵攻先の選択 → 侵攻画面と積み、Escで1段戻る | `src/navigation/` |
 
@@ -26,7 +26,7 @@ http://localhost:5173 でカタログを開きます。左の一覧から項目�
 | --- | --- |
 | 画面フロー | 戦略画面（`#strategy-flow`、既定）: 都市コマンド → 軍事 → 侵攻 → 地図で侵攻先を選ぶ → 侵攻画面 → 予約。Escで1段ずつ戻る |
 | 画面 | 都市コマンド（`#city-command`）、地図で選ぶ（`#map-pick`）、内政（`#domestic`）、技術（`#tech`）、遺物（`#relic`）、傭兵（`#mercenary`）、侵攻（`#invasion`）、移動（`#move`）、輸送（`#transport`） |
-| 基本部品 | ウィンドウ（`#info-window`）、ウィンドウ（閉じるボタン付き）（`#window-frame`）、ツールバー（`#command-toolbar`）、ターン情報（`#date-bar`）、行動予約（`#action-orders`）、UIパーツ（`#parts`） |
+| 基本部品 | ウィンドウ（`#info-window`）、ウィンドウ（閉じるボタン付き）（`#window-frame`）、設定ウィンドウ（`#settings-window`）、ツールバー（`#command-toolbar`）、ターン情報（`#date-bar`）、行動予約（`#action-orders`）、UIパーツ（`#parts`） |
 | 演出 | カットインエディタ（`#cutin-editor`）: テンプレートを作り、JSONで書き出す。`src/cutin/templates/` のJSONを開いて直せる。イベント通知（`#event`）: `EventScreen` を、カットイン `faction_destruction` のあとに出す流れと、研究完了の通知（技術を選ぶ）で確かめる |
 
 画面の項目は仮の地図（`demo/mock/MockMap.tsx`）の上に重ねます。都市・騎士・兵科は `demo/mock/data.ts` の仮データです。
@@ -63,18 +63,31 @@ import { WindowFrame } from 'norden-ui'
 </WindowFrame>
 ```
 
-### 設定のダイアログと音量
+### 設定ウィンドウ
 
-`SettingsDialog` は設定の内容（`children`）と「閉じる」を出すモーダルです。閉じるボタン・Esc・外側のクリックで `onClose` を呼び、Esc は下の画面に届きません。
-`VolumeSlider` は 0〜1 の音量を 5% 刻みのスライダーと百分率で出します。文字の色は置いた面の色を継ぐので、暗い面（`SettingsDialog`・`DateBar` の設定）に置きます。
+`SettingsWindow` は配置先（`position: relative`）の中央に、マスクを敷いて出す設定のモーダルです（`WindowFrame` の暗い面・題名の札・右上の ×）。×・Esc・マスクのクリックで `onClose` を呼びます。マスクの上で押して離したときだけ閉じるので、スライダーをウィンドウの外までドラッグしても閉じません。Esc を含め、キーは下の画面（戦闘画面のショートカットなど）に届きません。Tab はウィンドウの中を巡り、閉じるとフォーカスを開く前の要素へ戻します。設定が多いと中身だけがスクロールし、`footer`（「初期値に戻す」など）は下に残ります。
+
+中身は `SettingsSection`（見出し `title`）に `SettingsItem` を並べて組みます。`SettingsItem` は左に名前（`label`）と説明（`description`）、右に操作（`children`）を置き、ウィンドウが狭い（内容の幅 400px 以下）と名前を操作の上に置きます。項目は `role="group"` で名前と説明が付きますが、操作にも自分の名前を付けてください（`ChoiceGroup` の `label`、`VolumeSlider` の `label` + `hideLabel`）。`ChoiceGroup` は設定ウィンドウの中では外枠なしの小さめのボタンで出ます。
+
+`VolumeSlider` は 0〜1 の音量を 5% 刻みのスライダーと百分率で出します。文字の色は置いた面の色を継ぐので、暗い面に置きます。`hideLabel` で名前を読み上げだけにします（`SettingsItem` が名前を出すとき）。
+
+カタログの基本部品 → **設定ウィンドウ**（`/#settings-window`）で、タイトル・戦略・戦闘の各場面の設定と幅を確かめられます。
 
 ```tsx
-import { SettingsDialog, VolumeSlider } from 'norden-ui'
+import { ChoiceGroup, SettingsItem, SettingsSection, SettingsWindow, VolumeSlider } from 'norden-ui'
 
-<SettingsDialog onClose={close}>
-  <VolumeSlider label="BGM" value={bgm} onChange={setBgm} />
-  <VolumeSlider label="効果音" value={se} onChange={setSe} />
-</SettingsDialog>
+<SettingsWindow onClose={close}>
+  <SettingsSection title="サウンド">
+    <SettingsItem label="BGM">
+      <VolumeSlider label="BGM" hideLabel value={bgm} onChange={setBgm} />
+    </SettingsItem>
+  </SettingsSection>
+  <SettingsSection title="戦闘">
+    <SettingsItem label="戦闘の速度" description="戦闘の途中でも変えられます">
+      <ChoiceGroup label="戦闘の速度" options={speeds} value={speed} onChange={setSpeed} />
+    </SettingsItem>
+  </SettingsSection>
+</SettingsWindow>
 ```
 
 ### 効果音
@@ -167,7 +180,7 @@ function BattleUi() {
 
 | 画面 | 構成 | 主なprops |
 | --- | --- | --- |
-| `CityCommandScreen` | 勢力の情報と都市の切り替え ◀ ▶（左上の `FactionBar`）、都市情報ウィンドウ（都市情報・騎士・街道タブ。騎士タブは所属する騎士のあと、区切りに続けて傭兵（`knights` のうち `mercenary` のある騎士）、さらに区切りに続けて捕虜（`CityView.prisoners`。仕えていた勢力つき）。都市情報は領主・人口と Tier、兵数・練度・物資（大きな数字で横に並べる）、商業と生産（実効値と基礎値）、施設スロット）、ターン情報（右上）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `faction: FactionSummaryView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `activeCommand`（上に開いている画面のコマンド。押された状態で出す）, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `endTurnReason`（ターン終了のツールチップ）, `onOpenResearch`（`FactionBar` の研究から技術画面を開く）, `onSelectNeighbour`, `turnMenu`, `children`（ホストの追加HUD） |
+| `CityCommandScreen` | 勢力の情報と都市の切り替え ◀ ▶（左上の `FactionBar`）、都市情報ウィンドウ（都市情報・騎士・街道タブ。騎士タブは所属する騎士のあと、区切りに続けて傭兵（`knights` のうち `mercenary` のある騎士）、さらに区切りに続けて捕虜（`CityView.prisoners`。仕えていた勢力つき）。都市情報は領主・人口と Tier、兵数・練度・物資（大きな数字で横に並べる）、商業と生産（実効値と基礎値）、施設スロット）、ターン情報（右上）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `faction: FactionSummaryView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `activeCommand`（上に開いている画面のコマンド。押された状態で出す）, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `endTurnReason`（ターン終了のツールチップ）, `onOpenResearch`（`FactionBar` の研究から技術画面を開く）, `onSelectNeighbour`, `onOpenSettings`（ターン情報の歯車。設定ウィンドウはホストが出す）, `children`（ホストの追加HUD） |
 | `MapPickScreen` | 案内の帯と「やめる」 | `message`, `onCancel`, `cancelLabel` |
 | `DomesticScreen` | 都市の内政。画面いっぱいのウィンドウに、領主（顔と「交代」）と都市の現状（人口の下に1ターンの伸びと次の Tier までのターン数の見込み）、施設スロット、内政担当官（商業・生産・訓練・募兵・研究に2人まで）を並べ、右側に建設できる施設・修復と生産できる遺物や任命する騎士の一覧を開く。遺物の修復・生産は施設スロットを使わず、施設の横に区切り線を挟んだ「遺物の修復」の枠から始め、進捗もそこに出す（施設の一覧に遺物は混ぜない）。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `city: CityView`, `buildOptions`, `relicOptions`, `onRelicWork(option)`, `gold`, `populationGrowth`, `stats`, `knights`, `officers`, `officerEffects`, `onBuild` などの施設の操作, `onChangeLord`, `lordFixedReason`（「交代」を無効にする理由）, `onAssignOfficers`, `onClose` |
 | `RelicScreen` | 遺物（研究＞遺物）。画面いっぱいのウィンドウの上に、開いている都市の建設の枠（空き・進行中のもの）と国庫の金。左にアイテムボックス（画像・名前・状態・レアリティ。壊れた・修復中（都市名）・生産中（都市名）・法王府に依頼中・修復済みで描き分ける）と生産できる遺物、右に選んだ遺物の詳細（画像・レアリティ・使い道・説明）と操作。壊れた遺物には解体（確認あり）・修復（ボタンは「フルーエンで修復」のように開いている都市を出す。生産も同じ）・法王府に依頼があり、必要な物資・金・ターン数はボタンの横に出し、できないものは押せず理由を出す。「法王府に献上」は壊れた遺物と修復済みの遺物に出すが押せない | `cityName`, `construction`, `gold`, `relics: RelicView[]`, `productions: RelicProductionView[]`, `onDismantle(id)`, `onRepair(id)`, `onPapalRepair(id)`, `onProduce(relicId)`, `onClose` |
@@ -203,7 +216,7 @@ function BattleUi() {
 | --- | --- | --- |
 | `NavigationWindow` | `title?`, `onClose`, `onBack?`, `onForward?`, `backDisabled?`, `forwardDisabled?`, `children`, `style` | `WindowFrame` の左上装飾に戻る・進むを埋め込んだ汎用ウィンドウ。各方向を独立して無効化可能。カタログ `#navigation-window` でプレビュー（[使い方・生成画像](docs/navigation-window.md)） |
 | `CommandToolbar` | `commands: { id, label, icon?, onClick?, disabled?, title?, active?, tone?, children? }[]`, `movable` | 子を持つコマンドは押すと上にサブコマンドの列を開く（再クリック・Esc・外側クリックで閉じる）。`tone: 'accent'` で強調。`movable` で左右の端をドラッグ・矢印キーで移動 |
-| `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `children?` | フェーズ・勢力のターン・年月・設定の順に表示。`children` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
+| `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `onSettings?` | フェーズ・勢力のターン・年月・設定の順に表示。設定（歯車）は `onSettings` を呼ぶだけで、設定ウィンドウ（`SettingsWindow`）は呼び出し側が出す。`onSettings` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
 | `ActionOrders` | `orders: ActionOrderView[]`, `title?`（既定「行動予約」）, `onCancel?(id)`, `onSelect?(id)`, `activeId?`, `onDeactivate?()` | 侵攻（`kind: 'invasion'`）・移動（`'move'`）・輸送（`'transport'`）の予約を1行ずつ並べるHUDのパネル。経路（`from` → `to`、移動中の移動・輸送は出発した拠点から）と騎士（侵攻は「軍団長 〜 以下N名」、移動と輸送は「担当 〜・〜」）。`cancellable` の行に取消、`status`（「あと3ヶ月」など）を右に出す。`faction` で行頭に紋章、`current` で解決中の行を強調（進行フェーズの一覧）。`activeId` の行を選択中として強調して、その行の `members`（騎士の顔と名前。`KnightChip` で並べる）と `details`（`{ label, value }[]`。兵・物資・到着までの月数など）を行の下に開き、パネルの外を押すと `onDeactivate` を呼ぶ。行が多いと一覧がスクロールする。`MinimizableWindow` で題名の札だけに畳める（`minimized?`, `onMinimizedChange?`） |
 | `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `metal: 'gold' \| 'silver' \| 'none'`, `size`, `icon`, `style` | 象牙の立体的なボタンに金／銀の四隅装飾、または装飾なし。生成画像を9分割で伸縮し、`style` で幅・高さを指定可能。`icon` は文字の前に出す飾りの画像 |
 | `Tooltip` | `content`, `children`（対象の要素1つ）, `open`, `delay`, `id`, `className` | ブラウザの `title` の代わりに使うツールチップ。対象の要素に直接イベントを付けるので要素は増えず、無効のボタンにも出せる。ホバーかキーボードのフォーカスで対象の下（入らなければ上）に開き、`body` に描くのでウィンドウの `overflow` で切れない。`open` で開いたままにできる。`Button` の `title` もこれで出る |

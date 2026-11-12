@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, DateBar } from '../../src'
+import { DateBar } from '../../src'
 import { Log, useLog, Workbench } from '../Workbench'
 
 export default function DateBarEntry() {
@@ -13,12 +13,8 @@ export default function DateBarEntry() {
   return <Workbench
     stageClassName={`backdrop-${backdrop}`}
     stage={<div className="demo-date-top-right">
-      <DateBar phaseLabel={phaseLabel} factionName={resolving ? null : factionName} dateLabel={dateLabel}>
-        {withMenu ? <div className="demo-menu">
-          <Button variant="quiet" onClick={() => add('セーブ')}>セーブ</Button>
-          <Button variant="quiet" onClick={() => add('音量設定')}>音量設定</Button>
-        </div> : undefined}
-      </DateBar>
+      <DateBar phaseLabel={phaseLabel} factionName={resolving ? null : factionName} dateLabel={dateLabel}
+        onSettings={withMenu ? () => add('設定を開く') : undefined} />
     </div>}
     controls={<>
       <h2>ターン情報</h2>
@@ -29,7 +25,7 @@ export default function DateBarEntry() {
       <label htmlFor="date-calendar">年月</label>
       <input id="date-calendar" type="text" value={dateLabel} onChange={event => setDateLabel(event.target.value)} />
       <label className="checkbox"><input type="checkbox" checked={resolving} onChange={event => setResolving(event.target.checked)} />全勢力の行動を解決中</label>
-      <label className="checkbox"><input type="checkbox" checked={withMenu} onChange={event => setWithMenu(event.target.checked)} />設定メニューを付ける</label>
+      <label className="checkbox"><input type="checkbox" checked={withMenu} onChange={event => setWithMenu(event.target.checked)} />歯車を押せる（onSettings）</label>
       <label htmlFor="date-backdrop">透過確認の背景</label>
       <select id="date-backdrop" value={backdrop} onChange={event => setBackdrop(event.target.value)}>
         <option value="dark">暗い背景</option><option value="light">白い背景</option><option value="checker">市松模様</option>

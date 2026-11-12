@@ -1,6 +1,6 @@
 # DateBar の装飾と調整
 
-2026-10-09、組み込み imagegen ツールでDateBarのフレームを再生成しました。球・天文儀の円盤をなくし、控えめな葉飾りから濃紺の帯・下の金線までつながる一枚の画像にしました。設定メニュー用の帯素材は前回の生成画像を使用しています。
+2026-10-09、組み込み imagegen ツールでDateBarのフレームを再生成しました。球・天文儀の円盤をなくし、控えめな葉飾りから濃紺の帯・下の金線までつながる一枚の画像にしました。
 
 | 保存先（norden-ui からの相対パス） | サイズ | 処理 |
 | --- | --- | --- |
@@ -30,12 +30,12 @@
 各項目の色・太さは `.norden-date-bar-phase`、`.norden-date-bar-faction`、`.norden-date-bar-turn-suffix`、`.norden-date-bar-date-number`、`.norden-date-bar-date-season`、`.norden-date-bar-date-label` で変更します。
 年月は `DateBarCalendar` で数字とそれ以外の文字に分けて描画します。数字はGeorgia、単位は日本語の明朝体を使い、ベースラインを揃えます。空白の後に1文字で書いた季節（`灰歴312年1月 冬`）は数字と同じ大きさにします（`.norden-date-bar-date-season`）。半角・全角の数字に対応し、渡された日付文字列は保持します。
 設定ボタンの幅・アイコンサイズは `.norden-date-bar-settings` とその `svg` のルールで変更します。
-設定ボタンは常に背景なしで、ホバー・開いている状態ではアイコンの色だけを変えます。
+設定ボタンは常に背景なしで、ホバーではアイコンの色だけを変えます。
 セパレーターは `DateBar.tsx` の `DateBarSeparator` で、下の金線から上へ跳ね上がる曲線を描画します。`.norden-date-bar-separator` を下端に揃え、`translate: 0 1px` で線をフレームにつなげています。色・縁取りは `.norden-date-bar-separator-rail` と `.norden-date-bar-separator-edge` で変更します。装飾は `aria-hidden` にして、読み上げの順番に含めません。
 700px以下の画面・埋め込み先では末尾の `@media` / `@container` が小さい文字・装飾サイズに切り替えます。狭い幅も調整するときはこちらも変更してください。
 
 `src/components/hud/DateBar.tsx` の `.norden-date-bar-content` 内で表示順を変更します。入力は `phaseLabel`、`factionName`、`dateLabel` に分離しました。
-`factionName: null` は「全勢力の行動を解決中」、省略は「ターン進行中」です。設定内容は `children` で渡し、無い場合も設定ボタンの位置を保持して無効にします。
+`factionName: null` は「全勢力の行動を解決中」、省略は「ターン進行中」です。設定ボタン（歯車）は `onSettings` を呼ぶだけで、設定ウィンドウ（`SettingsWindow`）は呼び出し側が画面中央に出します。`onSettings` が無い場合も設定ボタンの位置を保持して無効にします。
 
 配置は `src/screens/screens.css` の `.norden-city-command .norden-screen-top-right` の `top: 0; right: 0` です。画面レイヤーのホストに密着します。
 1000px以下のホストでは都市切り替えと都市ウィンドウを下へずらし、DateBarとの重なりを避けます。
@@ -43,9 +43,7 @@
 ホスト幅でコンパクト表示に切り替える場合、ラッパーに `container: norden-date-host / inline-size` と `width: 100%` を指定します。実例は `demo/entries/DateBarEntry.tsx` と `demo/demo.css` にあります。
 
 ```tsx
-<DateBar phaseLabel="戦略フェーズ" factionName="カルタ書院" dateLabel="王歴312年4月">
-  <button onClick={save}>セーブ</button>
-</DateBar>
+<DateBar phaseLabel="戦略フェーズ" factionName="カルタ書院" dateLabel="王歴312年4月" onSettings={() => setSettingsOpen(true)} />
 ```
 
 ## 一体型フレームの最終プロンプト

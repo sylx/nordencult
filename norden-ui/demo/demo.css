@@ -60,7 +60,6 @@ body { margin: 0; }
 .demo-stage.is-screen { height: 760px; min-height: 0; overflow: hidden; }
 .demo-center-bottom { position: absolute; left: 50%; bottom: 120px; translate: -50% 0; max-width: calc(100% - 32px); }
 .demo-date-top-right { position: absolute; top: 0; right: 0; width: 100%; display: flex; justify-content: flex-end; container: norden-date-host / inline-size; }
-.demo-menu { display: grid; gap: 8px; }
 .demo-top-left { position: absolute; top: 24px; left: 24px; right: 24px; }
 .demo-action-orders { position: absolute; top: 40px; right: 24px; z-index: 1; max-width: calc(100% - 48px); }
 .demo-parts { display: grid; gap: 8px; width: 460px; color: #2a1a0a; }

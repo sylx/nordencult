@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import InfoWindowEntry from './entries/InfoWindowEntry'
 import WindowFrameEntry from './entries/WindowFrameEntry'
 import NavigationWindowEntry from './entries/NavigationWindowEntry'
+import SettingsWindowEntry from './entries/SettingsWindowEntry'
 import CommandToolbarEntry from './entries/CommandToolbarEntry'
 import DateBarEntry from './entries/DateBarEntry'
 import FactionBarEntry from './entries/FactionBarEntry'
@@ -84,10 +85,12 @@ export const CATALOG: CatalogGroup[] = [
         description: '右上の彫刻に閉じる操作が組み込まれた装飾枠。寸法、装飾のサイズ、閉じる位置、内容の余白と透過を調整' },
       { id: 'navigation-window', label: 'ウィンドウ（戻る・進むボタン付き）', name: 'NavigationWindow', Component: NavigationWindowEntry,
         description: '左上の金の装飾に戻る・進む、右上に閉じるを組み込んだ汎用ウィンドウ。前後への移動・各ボタンの無効状態・サイズと透過を確認' },
+      { id: 'settings-window', label: '設定ウィンドウ', name: 'SettingsWindow / SettingsSection / SettingsItem', Component: SettingsWindowEntry,
+        description: '画面中央にマスク付きで出す設定のモーダル。見出しごとの項目（名前・説明・操作）を並べ、×・Esc・マスクのクリックで閉じる。タイトル・戦略・戦闘の各場面の設定を確認' },
       { id: 'command-toolbar', label: 'ツールバー', name: 'CommandToolbar', Component: CommandToolbarEntry,
         description: 'コマンドの並び。子を持つコマンドは押すと上にサブコマンドが開く' },
       { id: 'date-bar', label: 'ターン情報', name: 'DateBar', Component: DateBarEntry,
-        description: '年月・ターンの表示と、歯車の設定メニュー' },
+        description: '年月・ターンの表示と、設定ウィンドウを開く歯車' },
       { id: 'faction-bar', label: '勢力の情報', name: 'FactionBar', Component: FactionBarEntry,
         description: 'エンブレムが浮かぶ球と金属彫刻の専用バー。球をドラッグして移動。金と増減・総生産・総兵力・都市の切り替え' },
       { id: 'action-orders', label: '行動予約', name: 'ActionOrders', Component: ActionOrdersEntry,

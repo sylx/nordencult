@@ -148,31 +148,10 @@
   color: #e6cc8a;
   cursor: pointer;
 }
-.norden-date-bar-settings:hover:not(:disabled),
-.norden-date-bar-settings[aria-expanded='true'] { color: #fff0bc; }
+.norden-date-bar-settings:hover:not(:disabled) { color: #fff0bc; }
 .norden-date-bar-settings:disabled { color: #998d71; cursor: default; }
-.norden-date-bar-settings:focus-visible,
-.norden-date-bar-menu:focus-visible { outline: 2px solid #f4d987; outline-offset: -4px; }
+.norden-date-bar-settings:focus-visible { outline: 2px solid #f4d987; outline-offset: -4px; }
 .norden-date-bar-settings svg { width: 22px; height: 22px; }
-
-.norden-date-bar-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 200;
-  box-sizing: border-box;
-  width: 280px;
-  max-width: min(100%, 100vw);
-  max-height: min(400px, 65dvh);
-  overflow: auto;
-  /* Everything inside is drawn within the frame: buttons (positioned, with their own layers) otherwise showed over the border */
-  contain: paint;
-  padding: 18px;
-  border: 1px solid #b59151;
-  border-top: 3px solid #b59151;
-  background: #101923 url('../../assets/ui/hud/date-center.webp') center / cover;
-  box-shadow: 0 6px 20px #0009;
-}
 
 @media (max-width: 700px) {
   .norden-date-bar {

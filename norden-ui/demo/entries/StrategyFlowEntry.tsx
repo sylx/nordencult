@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, CityCommandScreen, DomesticScreen, InvasionScreen, MapPickScreen, ScreenHost, useScreenStack } from '../../src'
+import { Button, CityCommandScreen, DomesticScreen, InvasionScreen, MapPickScreen, ScreenHost, SettingsItem, SettingsSection, SettingsWindow, VolumeSlider, useScreenStack } from '../../src'
 import type { CityCommandId, InvasionDraft, KnightView } from '../../src'
 import { CITY_MAP, FACTIONS, FACTION_SUMMARY, INDIRECT_UNIT_TYPES, MORALE, PLAYER, TURN, UNIT_TYPES, buildOptionsFor, cityView, invasionTargets, knightOf, knightsIn, playerCities } from '../mock/data'
 import MockMap from '../mock/MockMap'
@@ -30,6 +30,8 @@ export default function StrategyFlowEntry() {
   const nav = useScreenStack<StrategyScreens>({ screen: 'cityCommand', params: { cityId: 'P012' } })
   const [orders, setOrders] = useState<Order[]>([])
   const [turn, setTurn] = useState(TURN.turn)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [bgm, setBgm] = useState(0.8)
   const top = nav.top
 
   const ordered = new Map(orders.flatMap(order => order.draft.units.flatMap(item => (item.knightId ? [[item.knightId, order.to] as const] : []))))
@@ -65,6 +67,14 @@ export default function StrategyFlowEntry() {
   const routes: MapRoad[] = orders.map(order => ({ from: order.from, to: order.to, color: FACTIONS[PLAYER]!.color }))
   if (top.screen === 'invasion') routes.push({ from: top.params.from, to: top.params.to, color: '#ff6a3d' })
   const selected = 'cityId' in top.params ? top.params.cityId : top.params.from
+
+  const settings = settingsOpen && (
+    <SettingsWindow onClose={() => setSettingsOpen(false)}>
+      <SettingsSection title="サウンド">
+        <SettingsItem label="BGM"><VolumeSlider label="BGM" hideLabel value={bgm} onChange={setBgm} /></SettingsItem>
+      </SettingsSection>
+    </SettingsWindow>
+  )
 
   const orderPanel = (
     <div className="demo-orders-region">
@@ -108,7 +118,8 @@ export default function StrategyFlowEntry() {
                 add(`第${turn}ターン終了（予約 ${orders.length}件）`)
                 setOrders([])
                 setTurn(value => value + 1)
-              }}>
+              }}
+              onOpenSettings={() => setSettingsOpen(true)}>
               {orderPanel}
             </CityCommandScreen>
           )
@@ -142,10 +153,11 @@ export default function StrategyFlowEntry() {
             }} />
         ),
       }} />
+      {settings}
     </>}
     controls={<>
       <h2>戦略画面のフロー</h2>
-      <p>「内政」で内政画面を開きます（下のツールバーは隠れず、もう一度「内政」を押すと閉じます）。「軍事」→「侵攻」で地図の侵攻先が強調されます。選ぶと侵攻画面に進み、予約すると都市コマンドに戻ります。</p>
+      <p>「内政」で内政画面を開きます（下のツールバーは隠れず、もう一度「内政」を押すと閉じます）。「軍事」→「侵攻」で地図の侵攻先が強調されます。選ぶと侵攻画面に進み、予約すると都市コマンドに戻ります。右上の歯車で設定ウィンドウを開きます。</p>
       <dl className="demo-readout">
         <div><dt>画面スタック</dt><dd>{nav.stack.map(entry => entry.screen).join(' › ')}</dd></div>
         <div><dt>ターン</dt><dd>{turn}</dd></div>

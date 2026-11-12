@@ -25,11 +25,6 @@
   line-height: 1.6;
   text-align: center;
 }
-.norden-settings-content {
-  display: grid;
-  gap: 14px;
-  color: #f3ead7;
-}
 .norden-confirm-actions {
   display: flex;
   justify-content: center;
