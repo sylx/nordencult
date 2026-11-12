@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { SettingsDialog } from 'norden-ui'
-import { GameSettings } from '../../components/GameSettings'
+import { GameSettingsWindow } from '../../components/GameSettingsWindow'
 import { useScene } from '../sceneContext'
 import logoUrl from '../../assets/logo.webp'
 import { TitleFog } from './TitleFog'
@@ -33,11 +32,7 @@ export default function TitleScene() {
         </nav>
       </div>
 
-      {settingsOpen && (
-        <SettingsDialog onClose={() => setSettingsOpen(false)}>
-          <GameSettings />
-        </SettingsDialog>
-      )}
+      {settingsOpen && <GameSettingsWindow onClose={() => setSettingsOpen(false)} />}
     </main>
   )
 }

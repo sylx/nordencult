@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Banner, BuildingImage, Button, CITY_COMMAND_GROUPS, CUT_IMAGES, CUTIN_TEMPLATES, CityCommandScreen, ConfirmDialog, CutInLayer, DomesticScreen, EventScreen, FactionMark,
+  Banner, BuildingImage, CITY_COMMAND_GROUPS, CUT_IMAGES, CUTIN_TEMPLATES, CityCommandScreen, ConfirmDialog, CutInLayer, DomesticScreen, EventScreen,
   InvasionScreen, KnightChip, MapPickScreen, MercenaryScreen, MoveScreen, RelicScreen, ScreenHost, TechScreen, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
   type MoveDraft, type TransportDraft,
 } from 'norden-ui'
 import { MapView, type CityHighlight, type FocusInset, type RoadHighlight, type StrategyMap } from 'norden-strategy'
 import { playSe } from '../../audio/se'
-import { GameSettings } from '../../components/GameSettings'
+import { GameSettingsWindow } from '../../components/GameSettingsWindow'
 import { CHARACTER_MAP } from '../../data/character'
 import { FACTION_MAP, factionColor, factionName } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
@@ -147,6 +147,7 @@ export default function StrategyScene() {
   const [activeOrder, setActiveOrder] = useState<string | null>(null)
   // Where the player put the windows (and the 行動予約 list folded down to its title): they stay across the screens and plays
   const { layout, updateLayout, resetLayout } = useStrategyLayout()
+  const [settingsOpen, setSettingsOpen] = useState(false)
   // The right edge (px) of the city window on the left of the map: it can be dragged or resized
   const [cityWindowRight, setCityWindowRight] = useState(0)
 
@@ -532,13 +533,7 @@ export default function StrategyScene() {
               onOpenResearch={playerTurn ? () => nav.push('tech', { cityId }) : undefined}
               onEndTurn={endTurn} endTurnDisabled={!playerTurn || Boolean(endFactionTurnProblem(game))}
               endTurnReason={playerTurn ? endFactionTurnProblem(game) ?? undefined : undefined}
-              turnMenu={
-                <div className="strategy-scene__settings">
-                  <p className="strategy-scene__player">プレイヤー <FactionMark faction={factionView(faction)} /></p>
-                  <GameSettings />
-                  <Button variant="quiet" size="small" onClick={resetLayout}>UIの配置を初期化</Button>
-                </div>
-              }>
+              onOpenSettings={() => setSettingsOpen(true)}>
               <OrderList game={game} onCancel={(id) => update((s) => cancelOrder(s, id))}
                 onCancelMove={(id) => update((s) => cancelMoveOrder(s, id))}
                 onCancelTransport={(id) => update((s) => cancelTransportOrder(s, id))} onSelectCity={switchCity}
@@ -676,6 +671,9 @@ export default function StrategyScene() {
             <p className="norden-event-chips">{told.knights.map((id) => <KnightChip key={id} knight={knightView(game, id)} />)}</p>
           )}
         </EventScreen>
+      )}
+      {settingsOpen && (
+        <GameSettingsWindow player={factionView(faction)} onResetLayout={resetLayout} onClose={() => setSettingsOpen(false)} />
       )}
       <CutInLayer cutIn={cutIn} />
     </div>

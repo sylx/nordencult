@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, SettingsDialog } from 'norden-ui'
+import { Button, SettingsIcon } from 'norden-ui'
 import {
   BattleScreen, lineBarks, mathRng, SIDE_TEAM, type BarkSource, type BattleCutInTexts, type BattleFactions, type BattleOutcome,
   type Player, type RemainingUnit, type RetreatDestinations, type RetreatReport, type UnitStatus, type WipeoutReport,
 } from '@norden/battle-runtime'
 import { cpuPlayer } from '@norden/battle-runtime/cpu'
 import type { TeamId } from '@norden/map-runtime/core/units'
-import { GameSettings } from '../../components/GameSettings'
+import { GameSettingsWindow } from '../../components/GameSettingsWindow'
 import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { factionName } from '../../data/faction'
@@ -216,7 +216,8 @@ function Battlefield({ battle }: { battle: Battle }) {
             className="battle-scene__screen"
           >
             <div className="battle-scene__menu">
-              <Button size="small" onClick={() => setSettingsOpen(true)}>設定</Button>
+              <Button size="small" className="battle-scene__settings" icon={<SettingsIcon />} aria-label="設定" title="設定"
+                aria-haspopup="dialog" onClick={() => setSettingsOpen(true)} />
             </div>
           </BattleScreen>
         )
@@ -228,14 +229,8 @@ function Battlefield({ battle }: { battle: Battle }) {
             </p>
           )}
       </div>
-      {settingsOpen && (
-        // Keys stay in the window (the battle screen's shortcuts listen on the page)
-        <div onKeyDown={(event) => event.stopPropagation()}>
-          <SettingsDialog onClose={() => setSettingsOpen(false)}>
-            <GameSettings inBattle />
-          </SettingsDialog>
-        </div>
-      )}
+      {/* Keys stay in the window (SettingsWindow), away from the battle screen's shortcuts on the page */}
+      {settingsOpen && <GameSettingsWindow inBattle onClose={() => setSettingsOpen(false)} />}
       <aside className="battle-debug" aria-label="デバッグ">
         <h2>デバッグ: 決着を待たずに勝敗を決める</h2>
         <button type="button" className="battle-button" onClick={() => decide('attacker')}>攻撃側の勝利</button>

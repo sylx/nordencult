@@ -52,3 +52,6 @@
   top: 12px;
   z-index: 3;
 }
+/* Just the gear, on a square ivory button */
+.battle-scene__settings.norden-button { width: 40px; height: 40px; min-width: 0; padding: 0; }
+.battle-scene__settings .norden-button-icon { width: 22px; height: 22px; }

@@ -1,6 +1,6 @@
 /* Below the DateBar on the right of the screen layer (norden-ui's regions are fixed, so this one is our own) */
 /* No overflow clipping: the title plaque sticks out above the frame */
-/* Under those regions (z-index 150), so that the DateBar's settings menu opens over it */
+/* Under those regions (z-index 150), as the other HUD of the screen is 
 .order-list-region { position: absolute; top: 96px; right: 24px; z-index: 149; pointer-events: auto; }
 
 @container norden-date-host (max-width: 1000px) {

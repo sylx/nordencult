@@ -95,9 +95,11 @@ React・React DOM・three はルートの `node_modules` に一本化します�
 
 再生は `src/audio/bgm.ts`（`playBgm(songId)`。プレイヤーは `getBgm()` で 1 つだけ作る）。ブラウザの自動再生制限があるので、最初のクリックかキー入力までは音が出ません。タブが裏に回るか、ウィンドウのフォーカスが外れている間は一時停止し、戻ると続きから鳴ります。音量とリバーブはシンセの既定値（`DEFAULT_MIX`）です。曲を書く・聴くのは norden-synth 単体のテストページ（`cd norden-synth && npm run dev`）で行います。
 
-BGM と効果音の音量（0〜1）は `src/audio/volume.ts` が持ち、ブラウザに保存します（`localStorage` の `nordencult:volume`）。戦略画面の右上の設定（ターン情報の歯車）と、タイトルの「設定」で変えられます（`src/components/SoundSettings.tsx`。norden-ui の `VolumeSlider`・`SettingsDialog`）。スライダーの値は 2 乗して音量の倍率にします（`volumeGain`。中央で約 -12dB）。効果音は `getVolumes().se` の音量で鳴らします。
+BGM と効果音の音量（0〜1）は `src/audio/volume.ts` が持ち、ブラウザに保存します（`localStorage` の `nordencult:volume`）。設定ウィンドウ（下記）で変えられます。スライダーの値は 2 乗して音量の倍率にします（`volumeGain`。中央で約 -12dB）。効果音は `getVolumes().se` の音量で鳴らします。
 
-戦闘の設定（`src/settings/battleSettings.ts`。`localStorage` の `nordencult:battle`）: 戦闘難易度（CPU の軍の考え方。易しい・普通・難しい。CPU 側の数値は変えない）・戦闘の速度（演出の速さ ×1・×2・×3。プレイヤーの行動にも効き、戦闘の途中でも変わる）・CPU同士の戦闘（観戦する／結果だけ）。設定ウィンドウ（戦略画面の右上・タイトル・戦闘画面の左上の「設定」）で変えられます（`src/components/GameSettings.tsx` が音量 `SoundSettings` と戦闘の設定 `BattleSettings` をまとめる。戦闘画面では CPU同士の戦闘を出さない）。戦闘難易度はプレイヤーと戦う CPU の軍に効き、CPU の勢力どうしの戦闘は世界の進み方が設定で変わらないように「普通」（`CPU_BATTLE_DIFFICULTY`）で戦います。部隊を率いる騎士の性格（`personality` の猛進・慎重・勇敢・実利。間接の部隊は軍団長の）を部隊に渡し、CPU の手の好みが変わります（`battleTroops.ts`）。
+戦闘の設定（`src/settings/battleSettings.ts`。`localStorage` の `nordencult:battle`）: 戦闘難易度（CPU の軍の考え方。易しい・普通・難しい。CPU 側の数値は変えない）・戦闘の速度（演出の速さ ×1・×2・×3。プレイヤーの行動にも効き、戦闘の途中でも変わる）・CPU同士の戦闘（観戦する／結果だけ）。設定ウィンドウで変えられます。戦闘難易度はプレイヤーと戦う CPU の軍に効き、CPU の勢力どうしの戦闘は世界の進み方が設定で変わらないように「普通」（`CPU_BATTLE_DIFFICULTY`）で戦います。部隊を率いる騎士の性格（`personality` の猛進・慎重・勇敢・実利。間接の部隊は軍団長の）を部隊に渡し、CPU の手の好みが変わります（`battleTroops.ts`）。
+
+設定ウィンドウ（`src/components/GameSettingsWindow.tsx`。norden-ui の `SettingsWindow`）は、タイトルの「設定」・戦略画面の右上（ターン情報の歯車）・戦闘画面の左上の「設定」で、シーンの中央にマスクを敷いて開きます。項目は見出しごとに、サウンド（BGM・効果音）・戦闘（難易度・戦闘の速度・CPU同士の戦闘）。戦略画面ではさらにゲーム（プレイヤーの勢力）と画面（UIの配置の初期化）が付きます。戦闘画面の CPU同士の戦闘は次の戦闘から効きます。
 
 BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止めます（曲の位置も止まり、戻すと続きから鳴ります）。起動したときから 0 なら norden-synth と音色を読み込まず、音量を上げた時に読み込んで、その時のシーンの曲を鳴らします。
 

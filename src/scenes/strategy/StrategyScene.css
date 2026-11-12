@@ -15,5 +15,3 @@
   visibility: hidden;
 }
 
-.strategy-scene__settings { display: grid; gap: 14px; }
-.strategy-scene__player { display: flex; align-items: center; gap: 8px; margin: 0; white-space: nowrap; }
