@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, ChoiceGroup, FactionMark, SettingsItem, SettingsSection, SettingsWindow, VolumeSlider } from '../../src'
+import { Button, ChoiceGroup, FactionMark, SettingsIcon, SettingsItem, SettingsSection, SettingsWindow, VolumeSlider } from '../../src'
 import type { ChoiceOption } from '../../src'
 import { FACTIONS, PLAYER } from '../mock/data'
 import MockMap from '../mock/MockMap'
@@ -24,7 +24,7 @@ export default function SettingsWindowEntry() {
   return <Workbench variant="screen"
     stage={<>
       <MockMap selected="P012" />
-      <div className="demo-top-left"><Button size="small" onClick={() => setOpen(true)}>設定を開く</Button></div>
+      <div className="demo-top-left"><Button size="small" icon={<SettingsIcon />} onClick={() => setOpen(true)}>設定を開く</Button></div>
       {open && <SettingsWindow onClose={() => { setOpen(false); add('閉じる') }} style={{ width: `min(${width}px, 100%)` }}
         footer={footer ? <Button size="small" variant="quiet" onClick={() => { setValues(DEFAULTS); add('初期値に戻す') }}>初期値に戻す</Button> : undefined}>
         {scene === 'strategy' && (

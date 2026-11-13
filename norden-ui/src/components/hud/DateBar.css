@@ -148,10 +148,10 @@
   color: var(--norden-text-accent);
   cursor: pointer;
 }
-.norden-date-bar-settings:hover:not(:disabled) { color: var(--norden-text-highlight); }
-.norden-date-bar-settings:disabled { color: var(--norden-text-faint); cursor: default; }
+.norden-date-bar-settings:hover:not(:disabled) { color: var(--norden-text-highlight); filter: brightness(1.15); }
+.norden-date-bar-settings:disabled { color: var(--norden-text-faint); opacity: 0.45; cursor: default; }
 .norden-date-bar-settings:focus-visible { outline: 2px solid #f4d987; outline-offset: -4px; }
-.norden-date-bar-settings svg { width: 22px; height: 22px; }
+.norden-date-bar-settings :is(img, svg) { width: 22px; height: 22px; object-fit: contain; }
 
 @media (max-width: 700px) {
   .norden-date-bar {
@@ -166,7 +166,7 @@
     --date-separator-height: 24px;
   }
   .norden-date-bar-settings { width: 32px; padding: 4px; }
-  .norden-date-bar-settings svg { width: 20px; height: 20px; }
+  .norden-date-bar-settings :is(img, svg) { width: 20px; height: 20px; }
 }
 
 /* Embedded game screens can be narrower than the browser viewport. */
@@ -183,5 +183,5 @@
     --date-separator-height: 24px;
   }
   .norden-date-bar-settings { width: 32px; padding: 4px; }
-  .norden-date-bar-settings svg { width: 20px; height: 20px; }
+  .norden-date-bar-settings :is(img, svg) { width: 20px; height: 20px; }
 }

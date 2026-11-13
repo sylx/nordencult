@@ -54,6 +54,7 @@ describe('DateBar', () => {
     render(<DateBar {...labels} onSettings={onSettings} />)
     const settings = screen.getByRole('button', { name: '設定' })
     expect(settings).toHaveAttribute('aria-haspopup', 'dialog')
+    expect(settings.querySelector('img')).toBeInTheDocument()
     await userEvent.click(settings)
     expect(onSettings).toHaveBeenCalledTimes(1)
   })
