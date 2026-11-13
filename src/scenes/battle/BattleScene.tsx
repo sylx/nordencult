@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, SettingsIcon } from 'norden-ui'
+import { SettingsIcon, Tooltip } from 'norden-ui'
 import {
   BattleScreen, lineBarks, mathRng, SIDE_TEAM, type BarkSource, type BattleCutInTexts, type BattleFactions, type BattleOutcome,
   type Player, type RemainingUnit, type RetreatDestinations, type RetreatReport, type UnitStatus, type WipeoutReport,
@@ -218,8 +218,12 @@ function Battlefield({ battle }: { battle: Battle }) {
             className="battle-scene__screen"
           >
             <div className="battle-scene__menu">
-              <Button size="small" className="battle-scene__settings" icon={<SettingsIcon />} aria-label="設定" title="設定"
-                aria-haspopup="dialog" onClick={() => setSettingsOpen(true)} />
+              <Tooltip content="設定">
+                <button type="button" className="battle-scene__settings" aria-label="設定" aria-haspopup="dialog"
+                  onClick={() => setSettingsOpen(true)}>
+                  <SettingsIcon />
+                </button>
+              </Tooltip>
             </div>
           </BattleScreen>
         )

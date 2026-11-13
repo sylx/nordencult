@@ -52,6 +52,25 @@
   top: 12px;
   z-index: 3;
 }
-/* Just the gear, on a square ivory button */
-.battle-scene__settings.norden-button { width: 40px; height: 40px; min-width: 0; padding: 0; }
-.battle-scene__settings .norden-button-icon { width: 22px; height: 22px; }
+/* Just the gear floating over the battlefield */
+.battle-scene__settings {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: filter 120ms ease, translate 120ms ease;
+}
+.battle-scene__settings:hover { filter: brightness(1.15); }
+.battle-scene__settings:active { translate: 0 1px; }
+.battle-scene__settings:focus-visible { outline: 2px solid #f4d987; outline-offset: 2px; }
+.battle-scene__settings img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 0.65));
+}
