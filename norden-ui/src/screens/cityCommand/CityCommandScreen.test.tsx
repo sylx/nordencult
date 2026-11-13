@@ -128,7 +128,7 @@ describe('CityCommandScreen', () => {
     { isPlayerCity: false, disabled: false, clickable: false },
     { isPlayerCity: undefined, disabled: false, clickable: false },
     { isPlayerCity: true, disabled: true, clickable: false },
-  ])('opens domestic affairs from buildings only in a manageable player city ($isPlayerCity, disabled: $disabled)', async ({ isPlayerCity, disabled, clickable }) => {
+  ])('shows the building details of any city, opening domestic affairs only in a manageable player city ($isPlayerCity, disabled: $disabled)', async ({ isPlayerCity, disabled, clickable }) => {
     const { onCommand } = setup({
       isPlayerCity,
       commandState: { domestic: { disabled } },
@@ -141,17 +141,24 @@ describe('CityCommandScreen', () => {
       },
     })
     const slots = screen.getByRole('list', { name: '施設 1 / 3' })
+    await userEvent.click(within(slots).getByRole('button', { name: '市場' }))
+    expect(screen.getByRole('region', { name: '市場の詳細' })).toBeInTheDocument()
+    await userEvent.click(within(slots).getByRole('button', { name: /工房/ }))
+    expect(screen.queryByRole('region', { name: '市場の詳細' })).not.toBeInTheDocument()
+    const workshop = screen.getByRole('region', { name: '工房の詳細' })
+    expect(within(workshop).getByRole('progressbar', { name: '建設の進捗' })).toBeInTheDocument()
     if (clickable) {
-      await userEvent.click(within(slots).getByRole('button', { name: '市場' }))
-      await userEvent.click(within(slots).getByRole('button', { name: /工房/ }))
+      await userEvent.click(within(workshop).getByRole('button', { name: '内政を開く' }))
       await userEvent.click(within(slots).getByRole('button', { name: '空き' }))
-      expect(onCommand.mock.calls).toEqual([['domestic'], ['domestic'], ['domestic']])
+      expect(onCommand.mock.calls).toEqual([['domestic'], ['domestic']])
     } else {
-      expect(within(slots).queryByRole('button')).not.toBeInTheDocument()
-      await userEvent.click(within(slots).getByText('市場'))
+      expect(within(workshop).queryByRole('button', { name: '内政を開く' })).not.toBeInTheDocument()
+      expect(within(slots).queryByRole('button', { name: '空き' })).not.toBeInTheDocument()
       await userEvent.click(within(slots).getByText('空き'))
       expect(onCommand).not.toHaveBeenCalled()
     }
+    await userEvent.click(within(workshop).getByRole('button', { name: '閉じる' }))
+    expect(workshop).not.toBeInTheDocument()
   })
 
   it.each([

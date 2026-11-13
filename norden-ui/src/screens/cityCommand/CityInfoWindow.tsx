@@ -1,9 +1,9 @@
-import type { CSSProperties, ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import InfoWindowWithTabs from '../../components/window/InfoWindowWithTabs'
 import type { InfoWindowWithTabsProps, TabInfo } from '../../components/window/InfoWindowWithTabs'
 import KnightCard from '../../components/parts/KnightCard'
 import StatBar from '../../components/parts/StatBar'
-import BuildingSlots, { RelicWorkSlot, isRelicWork } from '../../components/parts/BuildingSlots'
+import BuildingSlots, { BuildingImage, ConstructionProgress, RelicWorkSlot, isRelicWork, workLabel } from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
 import FactionMark from '../../components/parts/FactionMark'
 import { knightAbilityStats } from '../domestic/DomesticOfficers'
@@ -19,7 +19,7 @@ import iconSupplies from '../../assets/ui/icons/icon-supplies.webp'
 import iconCity from '../../assets/ui/icons/icon_home.webp'
 import iconKnights from '../../assets/ui/icons/icon_people.webp'
 import iconStat from '../../assets/ui/icons/icon_stat.webp'
-import type { CityHistoryView, CityStatView, CityView, EquipmentActions, KnightView } from '../types'
+import type { BuildingView, CityHistoryView, CityStatView, CityView, ConstructionView, EquipmentActions, KnightView } from '../types'
 import './CityInfoWindow.css'
 
 export interface CityInfoWindowProps extends Omit<InfoWindowWithTabsProps, 'tabs' | 'title'> {
@@ -62,10 +62,54 @@ export default function CityInfoWindow({
 }
 
 export interface CityInfoTabOptions {
-  /** Opens domestic affairs when a building or empty slot is clicked; omitted for other factions' cities. */
+  /** Opens domestic affairs from an empty slot or a building's details; omitted for other factions' cities. */
   onOpenDomestic?: () => void
   /** 詳細 on a knight; the button is disabled when omitted */
   onShowKnight?: (id: string) => void
+}
+
+/** A building of the city shown in detail: standing, or the one under construction (work) */
+interface BuildingDetailView {
+  building: BuildingView
+  work?: ConstructionView
+}
+
+/** The city's building (or the one it builds) with the id; undefined: none such */
+function buildingDetailOf(city: CityView, id: string): BuildingDetailView | undefined {
+  const construction = city.buildings?.construction
+  if (construction && !isRelicWork(construction) && construction.building.id === id) return { building: construction.building, work: construction }
+  const building = city.buildings?.built.find(item => item.id === id)
+  return building && { building }
+}
+
+/** A building's details under the city's slots: its picture, what it gives and its description, and the construction's progress */
+function BuildingDetail({ detail: { building, work }, onOpenDomestic, onClose }: {
+  detail: BuildingDetailView
+  onOpenDomestic?: () => void
+  onClose: () => void
+}) {
+  return (
+    <section className="norden-city-building-detail" aria-label={`${building.name}の詳細`}>
+      <BuildingImage building={building} className="norden-city-building-detail-image" />
+      <div className="norden-city-building-detail-body">
+        <header className="norden-city-building-detail-header">
+          <h4>{building.name}</h4>
+          {work && <span className="norden-city-building-detail-badge">{work.paused ? `${workLabel(work)}中（一時停止）` : `${workLabel(work)}中`}</span>}
+        </header>
+        {building.effects && building.effects.length > 0 && (
+          <ul className="norden-city-building-detail-effects" aria-label="効果">
+            {building.effects.map(effect => <li key={effect}>{effect}</li>)}
+          </ul>
+        )}
+        {building.description && <p className="norden-city-building-detail-desc">{building.description}</p>}
+        {work && <ConstructionProgress invested={work.invested} required={work.required} turnsLeft={work.paused ? undefined : work.turnsLeft} />}
+        <div className="norden-city-building-detail-actions">
+          {onOpenDomestic && <Button size="small" onClick={onOpenDomestic}>内政を開く</Button>}
+          <Button size="small" onClick={onClose}>閉じる</Button>
+        </div>
+      </div>
+    </section>
+  )
 }
 
 /** Shared city panels for the game window and component catalog. */
@@ -89,6 +133,10 @@ function statKind(stat: CityStatView) {
 }
 
 function CityInfo({ city, onOpenDomestic }: { city: CityView; onOpenDomestic?: () => void }) {
+  // The building whose details are shown under the slots (any city's, the player's or not)
+  const [selectedBuilding, setSelectedBuilding] = useState<string>()
+  const construction = city.buildings?.construction ?? null
+  const selected = selectedBuilding === undefined ? undefined : buildingDetailOf(city, selectedBuilding)
   return (
     <div className="norden-city-info">
       <div className={`norden-city-info-overview ${city.lord?.image || city.lord?.imageSrc ? 'has-lord' : ''}`}>
@@ -133,13 +181,15 @@ function CityInfo({ city, onOpenDomestic }: { city: CityView; onOpenDomestic?: (
       {city.buildings && (
         <section className="norden-city-info-buildings" aria-label="施設">
           <h3>施設 <span>{city.buildings.built.length} / {city.buildings.slots}</span></h3>
-          <BuildingSlots buildings={city.buildings} onSelect={onOpenDomestic} onSelectEmpty={onOpenDomestic} />
+          <BuildingSlots buildings={city.buildings} selectedId={selected?.building.id}
+            onSelect={id => setSelectedBuilding(current => (current === id ? undefined : id))} onSelectEmpty={onOpenDomestic} />
+          {selected && <BuildingDetail detail={selected} onOpenDomestic={onOpenDomestic} onClose={() => setSelectedBuilding(undefined)} />}
         </section>
       )}
-      {city.buildings?.construction && isRelicWork(city.buildings.construction) && (
+      {construction && isRelicWork(construction) && (
         <section className="norden-city-info-buildings" aria-label="遺物の修復">
           <h3>遺物の修復</h3>
-          <RelicWorkSlot work={city.buildings.construction} />
+          <RelicWorkSlot work={construction} />
         </section>
       )}
       {city.tags && city.tags.length > 0 && (

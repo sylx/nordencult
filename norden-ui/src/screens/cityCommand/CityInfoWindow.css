@@ -99,3 +99,25 @@
   .norden-city-info-resources dd { font-size: 22px; }
   .norden-city-info-stat dd { flex-wrap: wrap; }
 }
+
+/* A building's details, under the slots when one is pressed */
+.norden-city-building-detail {
+  display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 12px; align-items: start;
+  margin-top: 4px; padding: 10px 12px;
+  background: #fff9e6a6; border: 1px solid #b38d52; border-radius: 4px; box-shadow: inset 0 0 0 1px #fff9e699, 0 2px 4px #52300e1a;
+  animation: norden-city-building-detail-enter 160ms ease-out both;
+}
+@keyframes norden-city-building-detail-enter { from { opacity: 0; translate: 0 -4px; } to { opacity: 1; translate: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .norden-city-building-detail { animation: none; } }
+.norden-city-building-detail-image.norden-building-image { width: 56px; height: 84px; border-radius: 3px; box-shadow: 0 1px 3px #38251040; }
+.norden-city-building-detail-body { display: grid; gap: 6px; min-width: 0; }
+.norden-city-building-detail-header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.norden-city-building-detail-header h4 { margin: 0; color: var(--norden-ink); font-size: 17px; font-weight: 700; }
+.norden-city-building-detail-badge { color: var(--norden-ink-accent); font-size: 12px; font-weight: 700; }
+.norden-city-building-detail-effects { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.norden-city-building-detail-effects li {
+  padding: 1px 8px; color: var(--norden-ink-good, var(--norden-ink)); font-size: 13px; font-weight: 600;
+  background: #fff4d5; border: 1px solid #cbb282; border-radius: 3px;
+}
+.norden-city-building-detail-desc { margin: 0; color: var(--norden-ink-soft); font-size: 13px; line-height: 1.7; }
+.norden-city-building-detail-actions { display: flex; justify-content: flex-end; gap: 6px; }
