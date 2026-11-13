@@ -45,12 +45,14 @@ function battleCutInTexts(battle: Battle): BattleCutInTexts {
 /**
  * What units say (voiceLines.json), in the voice of the knight leading them: a knight's unit
  * speaks as the knight, a unit led indirectly as its side's commander; units nobody leads use
- * the common lines
+ * the common lines. Summoned units (and units speaking for a summoned commander) say nothing
  */
 function battleBarks(summons: GameState['summons'], battle: Battle, knightOf: (status: UnitStatus) => string | null): BarkSource {
   return lineBarks((situation, { unit, status }) => {
     const army = unit.team === SIDE_TEAM.attacker ? battle.attacker : battle.defender
-    return pickVoiceLine(situation, characterOf({ summons }, knightOf(status) ?? army.commander ?? ''))
+    const speaker = knightOf(status) ?? army.commander ?? ''
+    if (isSummon(speaker)) return null
+    return pickVoiceLine(situation, characterOf({ summons }, speaker))
   })
 }
 
