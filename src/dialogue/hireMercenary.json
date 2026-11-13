@@ -11,6 +11,7 @@
       { "show": "$merc", "at": "right", "fx": "slide" },
       { "say": "$merc", "text": "{company}の{merc.name}だ。腕なら保証する。",
         "tones": {
+          "noble_male": ["私が{company}を率いる{merc.name}だ。", "貴公の用件を伺おう。"],
           "veteran_soldier": ["ワシが{company}の{merc.name}じゃ。", "老いぼれと侮るでないぞ。くぐった戦場の数なら、お主の歳より多いわい。"],
           "wild_berserker": ["{company}の{merc.name}様だ。", "で、俺様に何の用だ？"],
           "sisterly_veteran": ["アタシが{company}を仕切ってる{merc.name}さ。", "あんた、傭兵を雇うのは初めてかい？"],
@@ -26,6 +27,7 @@
       { "panel": "mercenary", "at": "left" },
       { "say": "$merc", "text": ["契約金は{price}金貨。", "あとは月に{monthly}金貨だ。払いが続く限り、{city.name}のために剣を振るおう。"],
         "tones": {
+          "noble_male": ["契約金は{price}金貨、月々{monthly}金貨だ。", "契約を交わしたならば、貴公のために力を尽くすと誓おう。"],
           "veteran_soldier": "契約金は{price}金貨、月々{monthly}金貨じゃ。この腕でこの値なら安いもんじゃろう？",
           "wild_berserker": ["金はあるんだろうな？", "前金で{price}金貨、あとは月に{monthly}金貨だ。びた一文まけねぇぜ。"],
           "sisterly_veteran": ["契約金は{price}金貨、あとは月に{monthly}金貨。", "うちの子たちを食わせなきゃならないからね、まけられないよ。"],
@@ -40,6 +42,7 @@
     "refuse": [
       { "say": "$merc", "text": "……悪いが、あんたらと組む気はない。帰ってくれ。",
         "tones": {
+          "noble_male": "……すまないが、貴公と契約を交わすことはできない。お引き取り願おう。",
           "veteran_soldier": "……じゃが、お主らに貸す腕は持ち合わせておらん。帰るがよい。",
           "wild_berserker": "……ああ、てめぇらか。売る腕はねぇよ。とっとと失せな！",
           "sisterly_veteran": "……悪いけど、あんたらにうちの子たちは預けられないね。帰りな。",
@@ -58,6 +61,7 @@
       { "se": "coins" },
       { "say": "$merc", "text": "契約成立だ。{company}の働き、見ていてくれ。",
         "tones": {
+          "noble_male": "契約は成立だ。{company}の名にかけて、貴公への務めを果たそう。",
           "veteran_soldier": "うむ、契約成立じゃ。{company}の名に恥じぬ働きをしてみせるわい。",
           "wild_berserker": "へっ、話が早ぇじゃねぇか。暴れる場所は用意しとけよ！",
           "sisterly_veteran": "よし、決まりだね。{company}の連中、今日からあんたのために働くよ。",
@@ -74,6 +78,7 @@
       { "panel": null },
       { "say": "$merc", "text": "そうか。気が変わったら声をかけてくれ。",
         "tones": {
+          "noble_male": "承知した。貴公の考えが変わったなら、また声をかけてくれ。",
           "veteran_soldier": "ふむ、まあよい。気が変わったらいつでも来るがよいわ。",
           "wild_berserker": "ちっ、冷やかしかよ。次は財布を太らせてから来な。",
           "sisterly_veteran": "そうかい。ま、無理して雇うもんじゃないさ。また来な。",

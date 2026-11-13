@@ -100,7 +100,7 @@ describe('the progress phase', () => {
     expect(state.march?.moved).toBe(false)
     state = runMovements(state)
     expect(state.march?.moved).toBe(true)
-    expect(charactersIn(state, VERSTA)).toEqual(['046', '058', '079', '087'])
+    expect(charactersIn(state, VERSTA)).toEqual(['046', '058', '079', '087', '122'])
     expect(charactersIn(state, AMBARIA)).toEqual(['013'])
     expect(governorOf(state, AMBARIA)).toBe('013')
     expect(state.cities[AMBARIA].troops).toBe(before.cities[AMBARIA].troops - 300)

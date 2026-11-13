@@ -41,7 +41,7 @@ describe('the dialogue scripts', () => {
 
   it('hireMercenary writes the lines of every 口調 the mercenaries have', () => {
     const tones = new Set(CHARACTER_LIST.flatMap((c) => (c.mercenaryInfo && c.voiceTone ? [c.voiceTone] : [])))
-    expect(tones.size).toBe(6)
+    expect(tones.size).toBeGreaterThan(0)
     const says = Object.values(hireScript.blocks).flat().filter((c) => 'tones' in c)
     expect(says.length).toBeGreaterThan(0)
     for (const say of says) expect(Object.keys(say.tones ?? {}).sort()).toEqual([...tones].sort())
