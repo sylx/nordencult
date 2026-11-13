@@ -73,6 +73,18 @@ describe('RelicScreen', () => {
     expect(screen.getByText('金が足りません')).toBeInTheDocument()
   })
 
+  it('says what a 施設の遺物 builds, and where it is being used', async () => {
+    const free: RelicView = { ...REPAIRED, buildingName: 'ガンシップ' }
+    const used: RelicView = { id: 'gun-2', status: 'building', name: 'ガンシップ', rarity: 'A', useLabel: '施設', buildingName: 'ガンシップ', cityName: 'シルヴァ' }
+    shown({ relics: [free, used] })
+    expect(screen.getByText('内政画面でガンシップを建てるのに使えます。建て終わると遺物は無くなります')).toBeInTheDocument()
+    expect(screen.queryByText('使い道はまだありません')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'ガンシップ（建設中（シルヴァ））' }))
+    expect(screen.getByText(/シルヴァでガンシップの建設に使っています/)).toBeInTheDocument()
+    // It is no longer the box's to give away
+    expect(screen.queryByRole('button', { name: 'ガンシップを法王府に献上' })).not.toBeInTheDocument()
+  })
+
   it('offers 献上 for broken and repaired relics, not pressable yet, and not for those being repaired', async () => {
     shown()
     expect(screen.getByRole('button', { name: '壊れたライフルを法王府に献上' })).toBeDisabled()

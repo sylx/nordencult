@@ -87,6 +87,8 @@ export interface ConstructionView {
   turnsLeft?: number | null
   /** Paused: produced supplies go to the city's stockpile instead of this construction */
   paused?: boolean
+  /** A building using a relic of the box, e.g. 遺物：ガンシップを使用中 (cancelling it gives the relic back) */
+  relicNote?: string
 }
 
 /** A building the city could start: its costs, and why it cannot now */
@@ -103,6 +105,8 @@ export interface BuildOptionView extends BuildingView {
    * or the building it upgrades is not standing): left out of the lists so it is not revealed
    */
   locked?: boolean
+  /** A building needing a relic, which it uses up, e.g. 遺物：ガンシップを 1 つ使用 */
+  relicNote?: string
 }
 
 /**
@@ -383,8 +387,11 @@ export interface RelicOptionView extends BuildOptionView {
 
 export type RelicRarityView = 'S' | 'A' | 'B' | 'C' | 'D'
 
-/** A relic of the box: broken, being repaired in a city, being repaired by 法王府, repaired, or repaired and worn by a knight; or being produced in a city */
-export type RelicStatusView = 'broken' | 'repairing' | 'producing' | 'papalRepair' | 'repaired' | 'equipped'
+/**
+ * A relic of the box: broken, being repaired in a city, being repaired by 法王府, repaired, repaired and worn by a knight,
+ * or repaired and used building a facility in a city (locked until it is completed, when it is gone); or being produced in a city
+ */
+export type RelicStatusView = 'broken' | 'repairing' | 'producing' | 'papalRepair' | 'repaired' | 'equipped' | 'building'
 
 export interface RelicView {
   /** Passed back to the screen's callbacks (a relic being repaired or produced has no actions) */
@@ -397,8 +404,10 @@ export interface RelicView {
   /** What it is for repaired, e.g. 施設 */
   useLabel: string
   description?: string
-  /** repairing, producing: the city doing it */
+  /** repairing, producing, building: the city doing it */
   cityName?: string
+  /** A 施設の遺物 repaired: the facility it lets a city build (on the domestic screen), e.g. ガンシップ */
+  buildingName?: string
   /** equipped: the knight wearing it */
   wearerName?: string
   /** What it gives repaired, e.g. ライフル兵を率いる, 魔法: フレイムランス, 知力 70 以上の魔術師が装備できる */

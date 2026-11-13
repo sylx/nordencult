@@ -190,6 +190,9 @@ export default function DomesticScreen({
         {option.description && (
           <p className="norden-domestic-build-desc">{option.description}</p>
         )}
+        {option.relicNote && (
+          <span className="norden-domestic-build-relic">{option.relicNote}</span>
+        )}
         {option.unavailableReason && (
           <span className="norden-domestic-build-reason">{option.unavailableReason}</span>
         )}
@@ -230,6 +233,7 @@ export default function DomesticScreen({
       <div className="norden-domestic-slot-body">
         <span className="norden-domestic-slot-name">{current.building.name}</span>
         {upgradedFrom && <span className="norden-domestic-slot-from">{upgradedFrom.name}から</span>}
+        {current.relicNote && <span className="norden-domestic-slot-relic">{current.relicNote}</span>}
         <ConstructionProgress
           invested={current.invested}
           required={current.required}
@@ -252,7 +256,7 @@ export default function DomesticScreen({
         <Button
           size="small"
           aria-label={`${current.building.name}の${workLabel(current)}を取り消す`}
-          title={`取り消すと費やした物資の半分（${cancelRefund.toLocaleString()}）が備蓄物資に戻ります${current.kind === 'relicRepair' ? '。遺物は壊れたままボックスに戻ります' : ''}`}
+          title={`取り消すと費やした物資の半分（${cancelRefund.toLocaleString()}）が備蓄物資に戻ります${current.kind === 'relicRepair' ? '。遺物は壊れたままボックスに戻ります' : current.relicNote ? '。使っている遺物はボックスに戻ります' : ''}`}
           onClick={() => onCancelConstruction?.()}
         >
           取消

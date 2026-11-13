@@ -18,6 +18,7 @@
 .norden-relic-details-description { margin: 0; padding-bottom: 14px; color: var(--norden-text); font-size: 14px; line-height: 1.8; }
 .norden-relic-details-status { padding: 1px 8px; color: var(--norden-ink-strong); background: #cbb282; border-radius: 2px; font-size: 12px; }
 .norden-relic-details-status.is-equipped { background: #a9b9e0; }
+.norden-relic-details-status.is-building { background: #d9a86a; }
 .norden-relic-details-effects { display: grid; gap: 2px; margin: 0; padding: 0 0 14px 1.2em; color: var(--norden-text-highlight); font-size: 13px; line-height: 1.7; }
 .norden-relic-details-status.is-repairing,
 .norden-relic-details-status.is-producing,

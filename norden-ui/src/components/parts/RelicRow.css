@@ -24,6 +24,7 @@
 .norden-relic-row.is-papalRepair { background: #263424; border-color: #8fc06a; }
 .norden-relic-row.is-production { background: #2f271d; border-style: dashed; }
 .norden-relic-row.is-equipped { background: #2c3040; border-color: #8ea4d6; }
+.norden-relic-row.is-building { background: #3a2a1a; border-color: #d9a86a; }
 .norden-relic-row.is-disabled { cursor: not-allowed; opacity: .55; }
 .norden-relic-row.is-disabled:hover { border-color: #6e5838; }
 .norden-relic-row.is-disabled .norden-relic-row-status { color: var(--norden-text-caution); }

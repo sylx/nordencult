@@ -44,7 +44,7 @@ export interface RelicScreenProps {
 }
 
 const STATUS_LABELS: Readonly<Record<RelicStatusView, string>> = {
-  broken: '壊れた', repairing: '修復中', producing: '生産中', papalRepair: '法王府に依頼中', repaired: '修復済み', equipped: '装備中',
+  broken: '壊れた', repairing: '修復中', producing: '生産中', papalRepair: '法王府に依頼中', repaired: '修復済み', equipped: '装備中', building: '建設中',
 }
 
 /** Which of the list is chosen: a relic of the box, or one to produce */
@@ -191,7 +191,16 @@ export default function RelicScreen({
               <SectionFrame />
               {relic && (
                 <Details item={relic} status={<span className={`norden-relic-details-status is-${relic.status}`}>{statusLabel(relic)}</span>}>
-                  {relic.status === 'repaired' && !relic.equip && <p className="norden-relic-details-note">使い道はまだありません</p>}
+                  {relic.status === 'repaired' && !relic.equip && (
+                    <p className="norden-relic-details-note">
+                      {relic.buildingName ? `内政画面で${relic.buildingName}を建てるのに使えます。建て終わると遺物は無くなります` : '使い道はまだありません'}
+                    </p>
+                  )}
+                  {relic.status === 'building' && (
+                    <p className="norden-relic-details-note">
+                      {relic.cityName}で{relic.buildingName ?? '施設'}の建設に使っています。建て終わると無くなります。内政画面で中止すると箱に戻ります
+                    </p>
+                  )}
                   {relic.status === 'repairing' && <p className="norden-relic-details-note">{relic.cityName}で修復しています。内政画面で中断・中止できます</p>}
                   {relic.status === 'producing' && <p className="norden-relic-details-note">{relic.cityName}で生産しています。内政画面で中断・中止できます</p>}
                   {relic.status === 'papalRepair' && <p className="norden-relic-details-note">次のターンの初めに修復済みになります。取り消せません</p>}

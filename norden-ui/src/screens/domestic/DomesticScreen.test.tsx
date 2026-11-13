@@ -99,6 +99,38 @@ describe('DomesticScreen', () => {
     expect(onCancelConstruction).toHaveBeenCalledOnce()
   })
 
+  it('notes the relic a building uses up, there to choose and under way', async () => {
+    const { unmount } = render(
+      <DomesticScreen
+        city={{ id: 'P012', name: 'フルーエン', buildings: { slots: 4, built: [] } }}
+        buildOptions={[
+          { id: 'gunship', name: 'ガンシップ', supplies: 2600, gold: 800, relicNote: '遺物：ガンシップを 1 つ使用' },
+          { id: 'ballista', name: 'バリスタ', supplies: 900, gold: 300, relicNote: '遺物：バリスタを 1 つ使用', unavailableReason: '遺物「バリスタ」はほかの都市の建設に使っています' },
+        ]}
+        gold={5000}
+        onClose={vi.fn()}
+      />,
+    )
+    await userEvent.click(screen.getByRole('button', { name: '施設を追加' }))
+    const panel = screen.getByRole('complementary', { name: '追加できる施設' })
+    expect(within(panel).getByText('遺物：ガンシップを 1 つ使用')).toBeInTheDocument()
+    expect(within(panel).getByRole('button', { name: 'ガンシップを建設' })).toBeEnabled()
+    expect(within(panel).getByText('遺物「バリスタ」はほかの都市の建設に使っています')).toBeInTheDocument()
+    expect(within(panel).getByRole('button', { name: 'バリスタを建設' })).toBeDisabled()
+    unmount()
+
+    render(
+      <DomesticScreen
+        city={{
+          id: 'P012', name: 'フルーエン',
+          buildings: { slots: 4, built: [], construction: { building: { id: 'gunship', name: 'ガンシップ' }, invested: 0, required: 2600, turnsLeft: 13, relicNote: '遺物：ガンシップを使用中' } },
+        }}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('遺物：ガンシップを使用中')).toBeInTheDocument()
+  })
+
   it('hides locked buildings and lists upgrades from the standing building', async () => {
     const onBuild = vi.fn()
     render(
