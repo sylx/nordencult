@@ -134,7 +134,7 @@ describe('RelicScreen', () => {
 
   describe('equipment', () => {
     const RIFLE: RelicView = {
-      id: 'carta-2', status: 'repaired', name: 'ライフル', rarity: 'C', useLabel: '装備', effects: ['ライフル兵を率いる'], equip: {},
+      id: 'carta-2', status: 'repaired', name: 'ライフル', rarity: 'C', useLabel: '装備', effects: ['ライフル兵を編成可能'], equip: {},
     }
     const WORN: RelicView = { ...RIFLE, id: 'carta-3', status: 'equipped', wearerName: 'ルカ', unequip: {} }
     const GUN = { id: 'gun-1', name: '大砲', rarity: 'B' as const }
@@ -150,7 +150,7 @@ describe('RelicScreen', () => {
     it('says what an equipment relic gives and who wears it, with no word of having no use', async () => {
       equipping()
       expect(screen.getByRole('button', { name: 'ライフル（装備中（ルカ））' })).toBeInTheDocument()
-      expect(within(screen.getByRole('list', { name: '効果' })).getByText('ライフル兵を率いる')).toBeInTheDocument()
+      expect(within(screen.getByRole('list', { name: '効果' })).getByText('ライフル兵を編成可能')).toBeInTheDocument()
       expect(screen.queryByText('使い道はまだありません')).not.toBeInTheDocument()
     })
 

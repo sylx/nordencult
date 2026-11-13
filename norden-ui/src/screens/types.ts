@@ -253,7 +253,7 @@ export interface EquippedRelicView {
   name: string
   image?: SpriteImage
   rarity: RelicRarityView
-  /** What wearing it gives, e.g. ライフル兵を率いる, 魔法: フレイムランス */
+  /** What wearing it gives, e.g. ライフル兵を編成可能, 魔法: フレイムランス */
   effects?: readonly string[]
 }
 
@@ -430,7 +430,7 @@ export interface RelicView {
   buildingName?: string
   /** equipped: the knight wearing it */
   wearerName?: string
-  /** What it gives repaired, e.g. ライフル兵を率いる, 魔法: フレイムランス, 知力 70 以上の魔術師が装備できる */
+  /** What it gives repaired, e.g. ライフル兵を編成可能, 魔法: フレイムランス, 知力 70 以上の魔術師が装備できる */
   effects?: readonly string[]
   /** An equipment relic repaired: putting it on a knight (装備させる; the knights from RelicScreen's equipCandidates) */
   equip?: { unavailableReason?: string }

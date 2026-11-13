@@ -101,7 +101,7 @@ describe('knight profile', () => {
   })
 
   describe('equipment', () => {
-    const rifle = { id: 'carta-2', name: 'ライフル', rarity: 'C' as const, effects: ['ライフル兵を率いる'] }
+    const rifle = { id: 'carta-2', name: 'ライフル', rarity: 'C' as const, effects: ['ライフル兵を編成可能'] }
     const elwin: KnightView = { id: '016', name: 'エルヴィン', equipment: { slots: [rifle, null] } }
     const actions = (): EquipmentActions => ({
       options: vi.fn(() => [
@@ -121,7 +121,7 @@ describe('knight profile', () => {
     it('shows the slots, choosing a relic for one and taking one off', async () => {
       const equipment = actions()
       const profile = await openElwin(elwin, equipment)
-      expect(within(profile).getByRole('button', { name: '装備の枠1：ライフル' })).toHaveTextContent('ライフル兵を率いる')
+      expect(within(profile).getByRole('button', { name: '装備の枠1：ライフル' })).toHaveTextContent('ライフル兵を編成可能')
       await userEvent.click(within(profile).getByRole('button', { name: '装備の枠2：空き' }))
       expect(equipment.options).toHaveBeenCalledWith('016', 1)
       const dialog = screen.getByRole('dialog', { name: 'エルヴィンの装備の枠2' })

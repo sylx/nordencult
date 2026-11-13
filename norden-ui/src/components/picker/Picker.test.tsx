@@ -101,13 +101,13 @@ describe('PickerDialog', () => {
 })
 
 describe('EquipmentSlots', () => {
-  const rifle = { id: 'carta-2', name: 'ライフル', rarity: 'C' as const, effects: ['ライフル兵を率いる'] }
+  const rifle = { id: 'carta-2', name: 'ライフル', rarity: 'C' as const, effects: ['ライフル兵を編成可能'] }
 
   it('shows each slot, choosing for it and taking a relic off', async () => {
     const onPick = vi.fn()
     const onRemove = vi.fn()
     render(<EquipmentSlots slots={[rifle, null]} onPick={onPick} onRemove={onRemove} />)
-    expect(screen.getByRole('button', { name: '装備の枠1：ライフル' })).toHaveTextContent('ライフル兵を率いる')
+    expect(screen.getByRole('button', { name: '装備の枠1：ライフル' })).toHaveTextContent('ライフル兵を編成可能')
     await userEvent.click(screen.getByRole('button', { name: '装備の枠2：空き' }))
     expect(onPick).toHaveBeenCalledWith(1)
     await userEvent.click(screen.getByRole('button', { name: 'ライフルを外す' }))
