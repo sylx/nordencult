@@ -1,6 +1,6 @@
 import { RELIC_LIST, RELIC_MAP, type Relic, type RelicWorkCost } from '../../data/relics'
 import { TECH_MAP } from '../../data/techs'
-import { PAPAL_REPAIR_RATE } from '../economy/balance'
+import { PAPAL_REPAIR_RATE, PAPAL_REPAIR_RATE_KNOWN, PAPAL_REPAIR_RATE_UNKNOWN } from '../economy/balance'
 import { commandProblem, constructionBusyProblem, withCity } from '../economy/domestic'
 import { GameRuleError } from '../errors'
 import { citiesOf } from '../queries'
@@ -131,9 +131,42 @@ export const producibleRelics = (state: GameState, factionId: FactionId): Relic[
 
 // ── 法王府 ──
 
-/** Gold 法王府 takes to repair the relic */
-export const papalRepairCost = (relic: Relic): number =>
-  Math.ceil(((relic.repair?.gold ?? 0) + (relic.repair?.supplies ?? 0)) * PAPAL_REPAIR_RATE)
+/** The technology and every one it requires, however far back (each once) */
+function techLineage(techId: string): string[] {
+  const seen = new Set<string>()
+  const visit = (id: string) => {
+    if (seen.has(id) || !TECH_MAP[id]) return
+    seen.add(id)
+    for (const required of TECH_MAP[id].requires) visit(required)
+  }
+  visit(techId)
+  return [...seen]
+}
+
+/**
+ * How much of what repairing the relic takes the faction knows: the share (0 to 1) of the research points of its
+ * repair's technology and those it requires that the faction has researched; undefined: its repair needs no technology
+ */
+export function papalRepairKnowledge(state: GameState, factionId: FactionId, relic: Relic): number | undefined {
+  const tech = relic.repair?.tech
+  if (!tech || !TECH_MAP[tech]) return undefined
+  const researched = new Set(researchOf(state, factionId).researched)
+  const lineage = techLineage(tech)
+  const total = lineage.reduce((sum, id) => sum + TECH_MAP[id].cost, 0)
+  const known = lineage.reduce((sum, id) => sum + (researched.has(id) ? TECH_MAP[id].cost : 0), 0)
+  return total > 0 ? known / total : 1
+}
+
+/** The rate of the relic's repair 法王府 asks of the faction (balance.ts' PAPAL_REPAIR_RATE…) */
+export function papalRepairRate(state: GameState, factionId: FactionId, relic: Relic): number {
+  const knowledge = papalRepairKnowledge(state, factionId, relic)
+  if (knowledge === undefined) return PAPAL_REPAIR_RATE
+  return PAPAL_REPAIR_RATE_UNKNOWN + (PAPAL_REPAIR_RATE_KNOWN - PAPAL_REPAIR_RATE_UNKNOWN) * knowledge
+}
+
+/** Gold 法王府 takes from the faction to repair the relic: dearer the less of its technology the faction has researched */
+export const papalRepairCost = (state: GameState, factionId: FactionId, relic: Relic): number =>
+  Math.ceil(((relic.repair?.gold ?? 0) + (relic.repair?.supplies ?? 0)) * papalRepairRate(state, factionId, relic))
 
 export function papalRepairProblem(state: GameState, factionId: FactionId, itemId: string): string | null {
   const item = itemOf(state, factionId, itemId)
@@ -144,7 +177,7 @@ export function papalRepairProblem(state: GameState, factionId: FactionId, itemI
   if (factionId === PAPAL_FACTION) return '法王府は自らに依頼できません'
   if (citiesOf(state, PAPAL_FACTION).length === 0) return '法王府は滅んでいます'
   if (relicsOf(state, factionId).some((other) => other.papalRepair)) return '法王府への依頼は同時に1件までです'
-  return (state.gold[factionId] ?? 0) < papalRepairCost(relic) ? '金が足りません' : null
+  return (state.gold[factionId] ?? 0) < papalRepairCost(state, factionId, relic) ? '金が足りません' : null
 }
 
 /**
@@ -153,7 +186,7 @@ export function papalRepairProblem(state: GameState, factionId: FactionId, itemI
  */
 export function requestPapalRepair(state: GameState, factionId: FactionId, itemId: string): GameState {
   check(papalRepairProblem(state, factionId, itemId))
-  const cost = papalRepairCost(RELIC_MAP[itemOf(state, factionId, itemId)!.relicId])
+  const cost = papalRepairCost(state, factionId, RELIC_MAP[itemOf(state, factionId, itemId)!.relicId])
   const items = relicsOf(state, factionId).map((item) => (item.id === itemId ? { ...item, papalRepair: true } : item))
   return withGold(withGold(withRelics(state, factionId, items), factionId, -cost), PAPAL_FACTION, cost)
 }
@@ -186,6 +219,8 @@ export interface RelicItemInfo {
   repairProblem: string | null
   /** The gold 法王府 takes */
   papalGold?: number
+  /** papalGold against the rate for a relic needing no technology: below 1 cheaper, above dearer (the technology researched); undefined: no such relic */
+  papalRateRatio?: number
   papalProblem: string | null
 }
 
@@ -201,7 +236,8 @@ export function relicItemInfo(state: GameState, factionId: FactionId, cityId: Ci
     dismantleProblem: dismantleProblem(state, factionId, itemId),
     repair: relic.repair,
     repairProblem: repairProblem(state, cityId, itemId),
-    papalGold: relic.repair && papalRepairCost(relic),
+    papalGold: relic.repair && papalRepairCost(state, factionId, relic),
+    papalRateRatio: relic.repair?.tech ? papalRepairRate(state, factionId, relic) / PAPAL_REPAIR_RATE : undefined,
     papalProblem: papalRepairProblem(state, factionId, itemId),
   }
 }

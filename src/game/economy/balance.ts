@@ -100,8 +100,15 @@ export const SUMMON_RECOVERY_RATE = 0.1
 /** Morale of a summoned unit in battle, whatever the city's (as a mercenary's) */
 export const SUMMON_MORALE = 70
 
-/** 法王府 repairs a relic for ceil((its repair's gold + supplies) × PAPAL_REPAIR_RATE) gold */
+/**
+ * 法王府 repairs a relic for ceil((its repair's gold + supplies) × rate) gold. The rate is PAPAL_REPAIR_RATE for a relic
+ * whose repair needs no technology; for one that needs a technology, it goes from PAPAL_REPAIR_RATE_UNKNOWN (none of
+ * the technology and those it requires researched) down to PAPAL_REPAIR_RATE_KNOWN (all researched), by the share of
+ * their research points researched (the less the faction knows, the more it depends on 法王府)
+ */
 export const PAPAL_REPAIR_RATE = 2.5
+export const PAPAL_REPAIR_RATE_UNKNOWN = 3.5
+export const PAPAL_REPAIR_RATE_KNOWN = 1.5
 
 /** A mercenary's monthly fee is their 契約金 / this */
 export const MERCENARY_MONTHLY_DIVISOR = 6

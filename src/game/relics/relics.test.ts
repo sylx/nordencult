@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   addOrder, addResearchPoints, BALANCE, buildingLocked, buildingProblem, cancelConstruction, cityOutput, constructionBusyProblem, constructionProblem, constructionTurns, createInitialState, debugAddRelic,
-  dismantleProblem, dismantleRelic, endFactionTurn, GameRuleError, mustChooseResearch, papalRepairCost, papalRepairProblem, pauseConstruction, producibleRelics,
+  dismantleProblem, dismantleRelic, endFactionTurn, GameRuleError, mustChooseResearch, papalRepairCost, papalRepairKnowledge, papalRepairProblem, pauseConstruction, producibleRelics,
   productionProblem, relicItemInfo, relicWorks, repairProblem, requestPapalRepair, resolveBattle, runEconomy, setResearch, startConstruction, startNextBattle,
   startRelicProduction, startRelicRepair, withRelics,
   type CityConstruction, type CityState, type FactionResearch, type GameState, type RelicItem,
@@ -374,12 +374,26 @@ describe('法王府', () => {
   const cost = () => Math.ceil((151 + 500) * BALANCE.PAPAL_REPAIR_RATE)
 
   it('takes (gold + supplies) × the rate, rounded up, into its treasury at once', () => {
-    expect(papalRepairCost(RELIC_MAP.ballista)).toBe(cost())
+    expect(papalRepairCost(playing('carta'), 'carta', RELIC_MAP.ballista)).toBe(cost())
     const state = playing('carta')
     const next = requestPapalRepair(state, 'carta', BALLISTA)
     expect(next.gold.carta).toBe(state.gold.carta - cost())
     expect(next.gold.sede).toBe(state.gold.sede + cost())
     expect(item(next, BALLISTA)).toEqual({ id: BALLISTA, relicId: 'ballista', repaired: false, papalRepair: true })
+  })
+
+  it('asks more the less of the repair\'s technology (and those it requires) the faction has researched', () => {
+    const state = playing('carta')
+    const rifle = (...techs: string[]) => papalRepairCost(researched(state, ...techs), 'carta', RELIC_MAP.rifle)
+    // ライフル needs 根 before it: 100 + 200 research points
+    expect(papalRepairKnowledge(researched(state), 'carta', RELIC_MAP.rifle)).toBe(0)
+    expect(papalRepairKnowledge(researched(state, 'root'), 'carta', RELIC_MAP.rifle)).toBeCloseTo(100 / 300)
+    expect(rifle()).toBe(Math.ceil(550 * BALANCE.PAPAL_REPAIR_RATE_UNKNOWN))
+    expect(rifle('root', 'rifle')).toBe(Math.ceil(550 * BALANCE.PAPAL_REPAIR_RATE_KNOWN))
+    expect(rifle('root')).toBe(Math.ceil(550 * (BALANCE.PAPAL_REPAIR_RATE_UNKNOWN + (BALANCE.PAPAL_REPAIR_RATE_KNOWN - BALANCE.PAPAL_REPAIR_RATE_UNKNOWN) / 3)))
+    // What follows from it does not count; a relic needing no technology keeps the plain rate
+    expect(rifle('root', 'rifle', 'rifle_production')).toBe(rifle('root', 'rifle'))
+    expect(papalRepairKnowledge(state, 'carta', RELIC_MAP.ballista)).toBeUndefined()
   })
 
   it('repairs it by the next turn, with no technology, city or 生産, telling the player', () => {
@@ -475,7 +489,7 @@ describe('what the screens ask', () => {
     const state = playing('carta')
     expect(relicItemInfo(state, 'carta', FLUEN, RIFLE)).toMatchObject({
       dismantlePoints: 150, dismantleProblem: null, repair: { supplies: 400, gold: 150 }, repairProblem: '技術「ライフル」の研究が必要です',
-      papalGold: Math.ceil(550 * BALANCE.PAPAL_REPAIR_RATE), papalProblem: null,
+      papalGold: papalRepairCost(state, 'carta', RELIC_MAP.rifle), papalProblem: null,
     })
     expect(relicItemInfo(state, 'carta', AMBARIA, BALLISTA)).toMatchObject({ repairProblem: '自勢力の都市ではありません' })
     expect(relicItemInfo(state, 'carta', FLUEN, 'nope')).toBeUndefined()

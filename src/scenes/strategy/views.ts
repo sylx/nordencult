@@ -539,6 +539,15 @@ const relicStatus = (item: RelicItem) =>
 /** The building a 施設の遺物 lets a city build (Building.requiredRelic) */
 const facilityOf = (relicId: string) => BUILDING_LIST.find((b) => b.requiredRelic === relicId)
 
+/** How the technology researched moves 法王府's price, e.g. 技術「ライフル」の習得で −20%; undefined: it needs no technology or is as it is */
+function papalRateNote(relic: Relic, ratio: number | undefined): string | undefined {
+  if (ratio === undefined) return undefined
+  const percent = Math.round((ratio - 1) * 100)
+  if (percent === 0) return undefined
+  const tech = TECH_MAP[relic.repair!.tech!]?.name ?? relic.repair!.tech!
+  return percent < 0 ? `技術「${tech}」の習得で −${-percent}%` : `技術「${tech}」が未習得で +${percent}%`
+}
+
 /** The faction's box, what it can do with each relic (repairing in `cityId`), then the relics being repaired or produced in its cities */
 export function relicsView(game: GameState, factionId: string, cityId: string): RelicView[] {
   const box = relicsOf(game, factionId).flatMap((item): RelicView[] => {
@@ -555,7 +564,9 @@ export function relicsView(game: GameState, factionId: string, cityId: string): 
       repair: repair && {
         supplies: repair.supplies, gold: repair.gold, turns: constructionTurns(game, cityId, repair.supplies), unavailableReason: info.repairProblem ?? undefined,
       },
-      papalRepair: papalGold === undefined ? undefined : { gold: papalGold, unavailableReason: info.papalProblem ?? undefined },
+      papalRepair: papalGold === undefined ? undefined : {
+        gold: papalGold, note: papalRateNote(relic, info.papalRateRatio), unavailableReason: info.papalProblem ?? undefined,
+      },
       effects: relicEffects(relic),
       ...(item.repaired && facilityOf(item.relicId) && { buildingName: facilityOf(item.relicId)!.name }),
       ...(item.buildingIn && { cityName: cityName(item.buildingIn) }),
