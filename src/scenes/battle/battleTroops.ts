@@ -1,4 +1,4 @@
-import { battleStyleOf, troopStatus, type Portrait, type Troop, type TroopFactory, type UnitStatus } from '@norden/battle-runtime'
+import { battleStyleOf, troopStatus, type Portrait, type SpellId, type Troop, type TroopFactory, type UnitStatus } from '@norden/battle-runtime'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import { CHARACTER_MAP, type Character } from '../../data/character'
 import { characterSheet } from '../../data/characterSheets'
@@ -34,8 +34,9 @@ export interface BattleTroops {
  * A knight's unit carries the knight's name, so the battle screen calls it "<name>隊".
  * A mercenary's unit has the mercenaries' morale whatever its side's, and is not captured.
  * Units carry their leader's battle style (aggressive / cautious / valiant / pragmatic personality tags), which the CPU thinks with.
+ * A knight's own unit casts the spells of what they wear (`spells`: battleSpells; the battle screen casts them for 魔術師 only).
  */
-export function battleTroops(battle: Battle): BattleTroops {
+export function battleTroops(battle: Battle, spells: Readonly<Record<CharacterId, readonly SpellId[]>> = {}): BattleTroops {
   const knights = new Map<UnitStatus, CharacterId | null>()
   const troops: TroopFactory = () => {
     knights.clear()
@@ -50,6 +51,7 @@ export function battleTroops(battle: Battle): BattleTroops {
           soldiers: unit.soldiers,
           morale: mercenary ? BALANCE.MERCENARY_MORALE : army.morale,
           uncapturable: mercenary,
+          ...(unit.knightId !== null && spells[unit.knightId] && { spells: spells[unit.knightId] }),
           ...(leader && abilities ? { ...abilities, portrait: portraitOf(leader) } : GARRISON_LEADER),
           // The CPU's taste in moves: the battle style of the knight leading the unit (the commander's for units led indirectly)
           ...(leader && { personality: battleStyleOf(leader.personality) }),

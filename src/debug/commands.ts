@@ -4,11 +4,12 @@ import { CITY_LIST, CITY_MAP } from '../data/city'
 import { FACTION_LIST, factionName } from '../data/faction'
 import { RELIC_LIST, relicName } from '../data/relics'
 import { TECH_LIST, TECH_MAP } from '../data/techs'
+import { UNIT_TYPE_MAP } from '../data/unitTypes'
 import { SCENES, isDialogueId, type DialogueId } from '../dialogue'
 import {
-  awayReason, charactersIn, clearFlag, citiesOf, dateOf, debugAddRelic, debugImprison, debugAddResearchPoints, debugCompleteTech, debugFillResearch, debugSetCity, debugSetGold,
-  debugSetMercenarySoldiers, debugSetStanding, endFactionTurn, setFlag, factionPower, governorOf, isMercenary, isPlayerFaction, isRecovering, mercenaryAt, movementOf, ownerOf, prisonerMovementOf, prisonersIn, relicsOf, researchOf, researchOutput, resolveBattle, turnOrder, viewFaction,
-  type BattleWinner, type CityConstruction, type CityId, type DebugCityField, type FactionId, type GameState, type GameStore,
+  awayReason, charactersIn, clearFlag, citiesOf, dateOf, debugAddRelic, debugEquipRelic, debugImprison, debugUnequipRelic, equipmentOf, BALANCE, debugAddResearchPoints, debugCompleteTech, debugFillResearch, debugSetCity, debugSetGold,
+  debugSetMercenarySoldiers, debugSetStanding, endFactionTurn, setFlag, factionPower, governorOf, isMercenary, isPlayerFaction, isRecovering, mercenaryAt, movementOf, ownerOf, prisonerMovementOf, prisonersIn, relicsOf, researchOf, researchOutput, resolveBattle, turnOrder, unitTypesOf, viewFaction,
+  type BattleWinner, type CityConstruction, type CityId, type DebugCityField, type FactionId, type GameState, type GameStore, type RelicItem,
 } from '../game'
 import { playDialogue } from '../scenes/playDialogue'
 import type { SceneNavigator } from '../scenes/types'
@@ -35,6 +36,13 @@ const knightArg: Arg = {
   name: 'knight', candidates: () => CHARACTER_LIST.flatMap((c) => (isSpecialCharacterId(c.id) ? [] : [{ value: c.id, label: c.name }])),
 }
 const relicArg: Arg = { name: 'relic', candidates: () => RELIC_LIST.map((r) => ({ value: r.id, label: r.brokenName ?? r.name })) }
+/** A relic of a faction's box (RelicItem.id), any faction's */
+const relicItemArg: Arg = {
+  name: 'item',
+  candidates: ({ store }) => Object.entries(store.getState().relics).flatMap(([factionId, items]) =>
+    items.map((item) => ({ value: item.id, label: `${relicName(item.relicId, item.repaired)}（${factionName(factionId)}）` }))),
+}
+const slotArg: Arg = { name: 'slot', optional: true, int: true, candidates: () => Array.from({ length: BALANCE.EQUIPMENT_SLOTS }, (_, slot) => ({ value: `${slot}` })) }
 const mercenaryArg: Arg = {
   name: 'mercenary', candidates: () => CHARACTER_LIST.flatMap((c) => (c.mercenaryInfo ? [{ value: c.id, label: `${c.mercenaryInfo.name} ${c.name}` }] : [])),
 }
@@ -84,8 +92,14 @@ const factionOf = (args: readonly string[], index: number, state: GameState): Fa
 const cityLabel = (id: CityId | null) => (id ? `${CITY_MAP[id]?.name ?? id} (${id})` : 'なし')
 const techLabel = (id: string | null) => (id ? TECH_MAP[id]?.name ?? id : 'なし')
 const knightNames = (ids: readonly string[]) => ids.map((id) => CHARACTER_MAP[id]?.name ?? id).join('・') || 'なし'
+/** What a relic of the box is doing: 法王府に依頼中, worn by a knight */
+const relicStatus = (item: RelicItem) =>
+  item.papalRepair ? '依頼中' : item.equippedBy ? `装備: ${CHARACTER_MAP[item.equippedBy.characterId]?.name ?? item.equippedBy.characterId}` : ''
 const relicsLabel = (state: GameState, factionId: FactionId) =>
-  relicsOf(state, factionId).map((item) => `${relicName(item.relicId, item.repaired)}${item.papalRepair ? '（依頼中）' : ''}`).join('・') || 'なし'
+  relicsOf(state, factionId).map((item) => `${relicName(item.relicId, item.repaired)}${relicStatus(item) && `（${relicStatus(item)}）`}`).join('・') || 'なし'
+/** A knight's slots: the relic in each, or 空き */
+const equipmentLabel = (state: GameState, id: string) =>
+  equipmentOf(state, id).map((item) => (item ? `${relicName(item.relicId, true)} (${item.id})` : '空き')).join(' / ')
 const knightsOf = (state: GameState, factionId: FactionId) =>
   Object.values(state.characters).filter((c) => c.factionId === factionId && !c.prisoner).length
 
@@ -277,10 +291,16 @@ export const DEBUG_COMMANDS: readonly Command[] = [
     name: 'relic', summary: '遺物を見る・足す',
     subcommands: [
       {
-        name: 'list', summary: '勢力ごとのアイテムボックス',
-        run: (_, { store }) => {
+        name: 'list', summary: '勢力ごとのアイテムボックス（勢力を付けると遺物ごとの ID と状態）', args: [{ ...factionArg, optional: true }],
+        run: ([faction], { store }) => {
           const state = store.getState()
-          return table(turnOrder(state).map((id) => [factionName(id), relicsLabel(state, id)]))
+          if (!faction) return table(turnOrder(state).map((id) => [factionName(id), relicsLabel(state, id)]))
+          const items = relicsOf(state, faction)
+          if (items.length === 0) return `${factionName(faction)} の遺物はありません`
+          return table([
+            ['id', '遺物', '修復', '状態'],
+            ...items.map((item) => [item.id, relicName(item.relicId, item.repaired), item.repaired ? '済' : '', relicStatus(item)]),
+          ])
         },
       },
       {
@@ -291,6 +311,20 @@ export const DEBUG_COMMANDS: readonly Command[] = [
           const repaired = condition === 'repaired'
           store.update((s) => debugAddRelic(s, id, relicId, repaired))
           return `${factionName(id)}: ${relicName(relicId, repaired)} を足した`
+        },
+      },
+      {
+        name: 'equip', summary: '騎士に遺物を装備させる（手番・予約の条件なし。枠の既定は空いた枠）', args: [knightArg, relicItemArg, slotArg],
+        run: ([id, itemId, slot], { store }) => {
+          store.update((s) => debugEquipRelic(s, id, itemId, slot === undefined ? undefined : Number(slot)))
+          return `${CHARACTER_MAP[id].name} の装備: ${equipmentLabel(store.getState(), id)}`
+        },
+      },
+      {
+        name: 'unequip', summary: '騎士の遺物を外す（手番・予約の条件なし。枠の既定は 0）', args: [knightArg, slotArg],
+        run: ([id, slot], { store }) => {
+          store.update((s) => debugUnequipRelic(s, id, Number(slot ?? 0)))
+          return `${CHARACTER_MAP[id].name} の装備: ${equipmentLabel(store.getState(), id)}`
         },
       },
     ],
@@ -345,6 +379,22 @@ export const DEBUG_COMMANDS: readonly Command[] = [
     name: 'knight', summary: '騎士を見る・捕虜にする',
     subcommands: [
       {
+        name: 'list', summary: '勢力に仕える騎士の都市・率いる兵種・装備', args: [viewedFactionArg],
+        run: (args, { store }) => {
+          const state = store.getState()
+          const factionId = factionOf(args, 0, state)
+          const ids = Object.keys(state.characters).sort().filter((id) => state.characters[id].factionId === factionId && !state.characters[id].prisoner)
+          if (ids.length === 0) return `${factionName(factionId)} に仕える騎士はいません`
+          return table([
+            ['id', '騎士', '種別', '都市', '兵種', '装備'],
+            ...ids.map((id) => [
+              id, CHARACTER_MAP[id]?.name ?? id, CHARACTER_TYPE_LABELS[CHARACTER_MAP[id]?.type ?? 'knight'], cityLabel(state.characters[id].cityId),
+              unitTypesOf(state, id).map((type) => UNIT_TYPE_MAP[type]?.name ?? type).join('・'), isMercenary(id) ? '' : equipmentLabel(state, id),
+            ]),
+          ])
+        },
+      },
+      {
         name: 'show', summary: '騎士の詳細', args: [knightArg],
         run: ([id], { store }) => {
           const state = store.getState()
@@ -358,6 +408,8 @@ export const DEBUG_COMMANDS: readonly Command[] = [
             ['怨恨勢力', grudge ? factionName(grudge) : 'なし'],
             ['状態', prisoner ? '捕虜' : awayReason(state, id) ?? '待機'],
             ['能力', `政治${knight.politics} 知力${knight.intelligence} 統率${knight.leadership} 武力${knight.strength} 魅力${knight.charm}`],
+            ['兵種', unitTypesOf(state, id).map((type) => UNIT_TYPE_MAP[type]?.name ?? type).join('・')],
+            ['装備', isMercenary(id) ? '（傭兵は装備できない）' : equipmentLabel(state, id)],
           ])
         },
       },

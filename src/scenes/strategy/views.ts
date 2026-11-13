@@ -237,7 +237,7 @@ export function knightView(game: GameState, id: string): KnightView {
       charm: character.charm,
     },
     defaultUnitType: defaultUnitType(id),
-    unitTypes: unitTypesOf(id),
+    unitTypes: unitTypesOf(game, id),
     commandRank: commandRank(game, id),
     unavailableReason: engagementOf(game, id) ?? (carried ? '移送中' : carriedOrder ? '移送予約中' : undefined),
   }

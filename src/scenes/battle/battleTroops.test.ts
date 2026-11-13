@@ -32,6 +32,16 @@ describe('battleTroops', () => {
     expect(statuses[2].uncapturable).toBeUndefined()
   })
 
+  it('casts nothing without the spells of what the knights wear', () => {
+    expect(statuses.map((s) => s.spells)).toEqual([[], [], []])
+  })
+
+  it('gives a knight\'s unit the spells of what they wear (battleSpells), not a unit led indirectly', () => {
+    const indirect: Battle = { ...battle, attacker: { ...battle.attacker, units: [...battle.attacker.units, { knightId: null, unitType: 'mage', soldiers: 100 }] } }
+    const cast = battleTroops(indirect, { '015': ['flameLance'] }).troops({} as never).map((t) => t.status!.spells)
+    expect(cast).toEqual([['flameLance'], [], [], []])
+  })
+
   it('gives a knight\'s unit the knight\'s battle style, for the CPU; the garrison nobody leads has none', () => {
     expect(statuses[0].personality).toBe('cautious')
     expect(statuses[2].personality).toBeUndefined()

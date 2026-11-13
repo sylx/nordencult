@@ -6,6 +6,7 @@ import {
   availableKnights, availablePrisoners, citiesOf, engagementOf, isPrisoner, nearestCity, ownerOf, prisonerMovementOf, prisonerOrderOf, soldiersLeft,
   stationedIn, suppliesLeft,
 } from './queries'
+import { releaseEquipment } from './relics/equipment'
 import { wanderer } from './roaming'
 import type { CharacterId, CharacterState, CityId, CityState, FactionId, GameState, MoveLeg, MoveOrder, Movement, MovementKind, TransportOrder } from './types'
 import { neighbours } from './world'
@@ -372,8 +373,9 @@ export function runMovements(state: GameState, random: () => number = Math.rando
       ? undefined : next.knights.find((id) => CHARACTER_MAP[id]?.isPatriarch && characters[id].factionId === next.factionId)
     if (head) cities[next.to] = { ...cities[next.to], assignments: withGovernor(cities[next.to].assignments, head) }
   }
-  return {
+  // Knights wandering off take off what they wear
+  return releaseEquipment({
     ...departed, characters, cities, movements, serial,
     ...(departed.march && { march: { ...departed.march, moved: true } }),
-  }
+  })
 }

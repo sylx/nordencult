@@ -220,15 +220,18 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 
 ### 遺物
 
-勢力ごとのアイテムボックス（`GameState.relics`。1点ずつの `RelicItem`。壊れた状態・修復済み・法王府に依頼中）を持ちます。遺物のマスターデータは `src/data/relicData.json`（`src/data/relics.ts`）で、レアリティ・使い道・解体の研究ポイント・修復と生産の費用を持ちます。修復していない遺物のレアリティは、画面では1段階落として出します（C なら D）。壊れた状態を持たない遺物（魔導書）は、解体も修復もできず、生産するか修復済みで初期配布します。画像は壊れた状態と修復済みで別のセルを持つ `src/assets/relics.webp`（大きさは `src/data/relicSprite.json`。技術と同じ 256×384 のセル）で、どれも norden-data の「ゲームに書き出す」で作ります（いまの画像は仮）。入手は初期配布（`factionData.json` の `relics`。遺物の id と修復済みかどうかを1点ずつ持つ）だけで、使い道（施設化・装備・召喚）はまだありません（M009 で作っています）。
+勢力ごとのアイテムボックス（`GameState.relics`。1点ずつの `RelicItem`。壊れた状態・修復済み・法王府に依頼中）を持ちます。遺物のマスターデータは `src/data/relicData.json`（`src/data/relics.ts`）で、レアリティ・使い道・解体の研究ポイント・修復と生産の費用を持ちます。修復していない遺物のレアリティは、画面では1段階落として出します（C なら D）。壊れた状態を持たない遺物（魔導書）は、解体も修復もできず、生産するか修復済みで初期配布します。画像は壊れた状態と修復済みで別のセルを持つ `src/assets/relics.webp`（大きさは `src/data/relicSprite.json`。技術と同じ 256×384 のセル）で、どれも norden-data の「ゲームに書き出す」で作ります（いまの画像は仮）。入手は初期配布（`factionData.json` の `relics`。遺物の id と修復済みかどうかを1点ずつ持つ）だけです。使い道は装備の決まりだけがあり（下の「装備」。画面はまだ）、施設化・召喚はまだありません（M009 で作っています）。
 
-遺物のマスターデータは使い道ごとの効果も持ちます（M009。まだゲームの決まりには使っていません）。装備の遺物は `equipment`（付けられる騎士 `wearer`: 魔術師か魔術師以外、知力の制限 `minIntelligence`、率いられるようになる兵種 `unitTypes`、戦闘で使える魔法 `spells`。魔法の ID は battle-runtime の `SPELL_IDS` を `@norden/battle-runtime/rules` から読みます）、召喚の遺物は `summon`（型紙の特殊キャラクター `characterId`、魔物の兵種 `unitType`、HP `hp`）を持ちます。施設の遺物は遺物の側に何も持たず、施設の `requiredRelic` が遺物の id を指します。食い違い（`relicEffectProblems`）は `src/data/relics.test.ts` が検査します。
+遺物のマスターデータは使い道ごとの効果も持ちます（M009。いまゲームの決まりが使うのは装備の効果だけ）。装備の遺物は `equipment`（付けられる騎士 `wearer`: 魔術師か魔術師以外、知力の制限 `minIntelligence`、率いられるようになる兵種 `unitTypes`、戦闘で使える魔法 `spells`。魔法の ID は battle-runtime の `SPELL_IDS` を `@norden/battle-runtime/rules` から読みます）、召喚の遺物は `summon`（型紙の特殊キャラクター `characterId`、魔物の兵種 `unitType`、HP `hp`）を持ちます。施設の遺物は遺物の側に何も持たず、施設の `requiredRelic` が遺物の id を指します。食い違い（`relicEffectProblems`）は `src/data/relics.test.ts` が検査します。
 
 - 解体（`dismantleRelic`）: 壊れた遺物を失い、研究ポイントを研究中の技術に入れます（`addResearchPoints`。系統の割増なし。届けばその場で完了）。研究先が無ければ `carry` に入り、遺物画面の上に技術画面が閉じられない状態で開きます。研究できる技術が残っていなければ解体できません
 - 修復（`startRelicRepair`）: 遺物の `repair.tech` を研究し終えていれば（省略ならいらない）、都市の建設の枠で修復します。金は開始時に国庫から払い、遺物はボックスから抜け、都市の生産が物資として入ります。施設のスロットは使いません。一時停止・中止は建設と同じで、中止すると投入した物資の半分が戻り、遺物は壊れたままボックスに戻ります
 - 生産（`startRelicProduction`）: 遺物の `production.tech` を研究し終えていれば、遺物なしで同じ枠で生産します。都市の条件はありません。完成品は修復済みでボックスに入ります
 - 法王府の修復（`requestPapalRepair`）: `(repair.gold + repair.supplies) × PAPAL_REPAIR_RATE`（切り上げ）の金を法王府（`sede`）の国庫へ払い、次の内政処理で修復済みになります。技術も都市の生産もいりません。依頼は勢力につき同時に1件までです。法王府自身と、法王府が滅んだあとは頼めません（頼んだあとで滅んでも届きます）
 - 都市が奪われると、その都市の修復・生産は消滅し、投入した物資も金も修復中の遺物も戻りません（`BattleReport.lostRelicWork`。結果の画面に出ます）。施設の建設は都市に付いたまま続きます。勢力が滅びると、アイテムボックスは依頼中のものも含めて滅ぼした勢力へ移ります
+- 装備（`src/game/relics/equipment.ts`）: 勢力に仕える騎士は枠を `EQUIPMENT_SLOTS`（2）つ持ち、箱の修復済みの装備の遺物を付けられます（`equipRelic`・`unequipRelic`。可否と理由は `equipProblem`・`unequipProblem`）。遺物は箱に残ったまま、付けている騎士と枠を `RelicItem.equippedBy` に持ちます。付けられるのは自勢力の戦略フェーズの手番だけで、傭兵・召喚ユニット・捕虜は付けられず、その手番に侵攻を予約した騎士は付け外しできません。魔導書は魔術師だけ、ライフル・大砲は魔術師以外で、`minIntelligence` に知力が届かないと付けられません。同じ遺物（`relicId`）を2つの枠には付けられません。埋まった枠に付けると前の遺物は箱に戻り、ほかの騎士が付けている遺物はその騎士から外して付けます（付け替え）
+  - 付けた遺物の `unitTypes` は、種別の兵種に足して率いられる兵種になります（`unitTypesOf(state, id)`。出撃・防衛の編成と `orderProblem` の検査が使う）。`spells` は戦闘で使える魔法になり、`battleSpells` が騎士ごとにまとめて `battleTroops` が騎士の部隊の `TroopInit.spells` に渡します（battle-runtime が使うのは魔術師の部隊だけ。間接指揮の部隊には渡さない）
+  - 騎士が勢力を離れると（捕縛・放浪・傭兵の契約の終わり・勢力の滅亡）、付けていた遺物は外れて元の勢力の箱に残ります（`releaseEquipment`。`resolveBattle`・`endContract`・`runMovements`・`debugImprison` が呼ぶ）。滅んだ勢力の箱は、誰も付けていない状態で滅ぼした勢力へ移ります
 - 内政処理（`runRelics`）が修復・生産の完成と法王府の修復を仕上げ、プレイヤーの勢力には通知（`GameState.events` の `RelicCompleted`）を出します。CPU の勢力は遺物を操作しません
 - 遺物画面は都市コマンドの「研究」＞「遺物」で開き、修復と生産は開いている都市で行います。内政画面の施設の横にある「遺物の修復」の枠からも始められます（施設の一覧には混ざりません）。「法王府に献上」は押せないボタンだけで、処理はまだありません。遺物を足す・各勢力のアイテムボックスを見るのは[デバッグコンソール](#デバッグコンソール)の `relic` です
 
@@ -306,9 +309,10 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 | `gold add <amount> [faction]` / `set <amount> [faction]` | 金を変える |
 | `research list` | 勢力ごとの研究 |
 | `research add <points> [faction]` / `fill [faction]` / `complete <tech> [faction]` | 研究ポイントを足す・研究中の技術を完了にする・技術を前提ごと研究済みにする |
-| `relic list` / `add <relic> [faction] [broken\|repaired]` | アイテムボックスを見る・遺物を足す |
+| `relic list [faction]` / `add <relic> [faction] [broken\|repaired]` | アイテムボックスを見る（勢力を付けると遺物ごとの ID・状態・装備している騎士）・遺物を足す |
+| `relic equip <knight> <item> [slot]` / `unequip <knight> [slot]` | 騎士に箱の遺物（`<item>` は `RelicItem.id`。例: `carta-2`）を付ける・外す。手番と侵攻の予約の条件を飛ばす（CPU の勢力の騎士にも付けられる）。枠の既定は付けるときは空いた枠、外すときは 0 |
 | `city list [faction]` / `show <city>` / `set <city> <field> <value>` | 都市を見る・数値を決める |
-| `knight show <knight>` | 騎士の詳細（放浪・傭兵の居所と怨恨勢力も） |
+| `knight list [faction]` / `show <knight>` / `imprison <knight> <city>` | 勢力に仕える騎士の一覧（率いる兵種・装備）、騎士の詳細（放浪・傭兵の居所と怨恨勢力、率いる兵種・装備も）、騎士を都市の捕虜にする |
 | `mercenary list` / `soldiers <mercenary> <soldiers>` / `standing [value] [faction]` | 全傭兵の状態・居所または雇い主・兵数を見る、兵数を決める、傭兵業界の友好度を見る・決める |
 | `wanderer list` | 放浪の騎士の居所と怨恨勢力 |
 | `turn end` | 手番の勢力の戦略フェーズを終える |

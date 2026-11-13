@@ -126,6 +126,11 @@ export interface RelicItem {
   repaired: boolean
   /** 法王府に依頼中: repaired by the next economy run. It stays in the box, neither dismantled nor repaired meanwhile */
   papalRepair?: boolean
+  /**
+   * The knight wearing it and the slot (0..EQUIPMENT_SLOTS-1): a knight serving the box's faction (releaseEquipment takes it off one who
+   * left it). Omitted: nobody wears it
+   */
+  equippedBy?: { characterId: CharacterId; slot: number }
 }
 
 /** Repairing a relic of the faction's, or producing one, in a city: lost with the city, unlike a building (BattleReport.lostRelicWork) */

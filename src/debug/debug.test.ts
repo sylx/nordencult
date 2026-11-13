@@ -169,6 +169,18 @@ describe('commands', () => {
     expect(store.getState().relics.carta.slice(count).map((item) => item.repaired)).toEqual([false, true])
   })
 
+  it('puts a relic of the box on a knight and takes it off, whatever the turn, and shows what they wear', () => {
+    const { store, run } = setup()
+    // カルタ書院 starts with a repaired ライフル (carta-2) and a broken one (carta-0)
+    expect(run('relic equip 016 carta-2').join('\n')).toContain('ライフル (carta-2) / 空き')
+    expect(store.getState().relics.carta.find((item) => item.id === 'carta-2')?.equippedBy).toEqual({ characterId: '016', slot: 0 })
+    expect(run('knight show 016').join('\n')).toContain('ライフル兵')
+    expect(run('knight list carta').join('\n')).toContain('ライフル (carta-2)')
+    expect(run('relic list carta').join('\n')).toContain('装備: エルヴィン・セレス')
+    expect(() => run('relic equip 016 carta-0')).toThrow('修復されていない遺物です')
+    expect(run('relic unequip 016').join('\n')).toContain('空き / 空き')
+  })
+
   it('adds research points, fills and completes a technology with what it requires', () => {
     const { store, run } = setup()
     const tech = 'encirclement'

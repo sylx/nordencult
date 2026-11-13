@@ -12,7 +12,7 @@ import { CITY_MAP } from '../../data/city'
 import { factionName } from '../../data/faction'
 import { pickVoiceLine } from '../../data/voiceLines'
 import {
-  isMercenary, isPlayerFaction, resolveBattle, retreatCities, useGame, type Battle, type BattleRetreat, type BattleSide, type BattleSurvivor,
+  battleSpells, isMercenary, isPlayerFaction, resolveBattle, retreatCities, useGame, type Battle, type BattleRetreat, type BattleSide, type BattleSurvivor,
   type BattleWinner, type BattleWipeout, type GameState,
 } from '../../game'
 import { CPU_BATTLE_DIFFICULTY, getBattleSettings, useBattleSettings } from '../../settings/battleSettings'
@@ -139,7 +139,9 @@ function Battlefield({ battle }: { battle: Battle }) {
   const [error, setError] = useState('')
   const { from } = battle.attacker
   const to = battle.cityId
-  const troops = useMemo(() => battleTroops(battle), [battle])
+  // What the knights wear cannot change in the progress phase: the spells stay as the battle starts
+  const spells = useMemo(() => battleSpells(game, battle), [game, battle])
+  const troops = useMemo(() => battleTroops(battle, spells), [battle, spells])
   const factions = useMemo(() => battleFactions(battle), [battle])
   const barks = useMemo(() => battleBarks(battle, troops.knightOf), [battle, troops])
   const retreatTo = useMemo(() => battleRetreats(game, battle), [game, battle])

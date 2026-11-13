@@ -213,7 +213,7 @@ function unitsProblem(state: GameState, knights: readonly CharacterId[], units: 
       if (!INDIRECT_UNIT_TYPES.some((id) => id === u.unitType)) return `間接指揮部隊は${UNIT_TYPE_MAP[u.unitType].name}にできません`
       continue
     }
-    if (!unitTypesOf(u.knightId).some((id) => id === u.unitType)) return `${u.knightId} は${UNIT_TYPE_MAP[u.unitType].name}を率いられません`
+    if (!unitTypesOf(state, u.knightId).some((id) => id === u.unitType)) return `${u.knightId} は${UNIT_TYPE_MAP[u.unitType].name}を率いられません`
     if (isMercenary(u.knightId) && (u.unitType !== defaultUnitType(u.knightId) || u.soldiers !== state.mercenaries[u.knightId]?.soldiers)) {
       return '傭兵の部隊は変えられません'
     }

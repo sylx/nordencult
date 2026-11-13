@@ -86,6 +86,9 @@ export const RECRUIT_GOLD = 0.2
 /** Morale of new soldiers (before the buildings') */
 export const RECRUIT_MORALE = 20
 
+/** Equipment slots of each knight (not a mercenary's): each wears a relic of the faction's box (RelicItem.equippedBy) */
+export const EQUIPMENT_SLOTS = 2
+
 /** 法王府 repairs a relic for ceil((its repair's gold + supplies) × PAPAL_REPAIR_RATE) gold */
 export const PAPAL_REPAIR_RATE = 2.5
 

@@ -20,6 +20,7 @@ import type {
   InvasionOrder, MercenaryState, Movement, RelicWork, SoldierReturn,
 } from './types'
 import { relicsOf, withRelics } from './relics/box'
+import { releaseEquipment } from './relics/equipment'
 import { neighbours } from './world'
 
 export { GameRuleError }
@@ -292,6 +293,7 @@ function startTurn(state: GameState): GameState {
  * with their knights: the winner's into the city fought over (the attacker's joining the soldiers the defender did
  * not send out), the attacker's back where they set out from, the defender's to where its knights retreat (lost
  * when they have nowhere to go). Soldiers joining a city mix their morale with its soldiers'.
+ * Knights who leave their faction (captured, wandering, released) take off what they wear (releaseEquipment).
  * Mercenaries are not captured and their soldiers stay their own whatever happens, won or lost. They are no lords. One
  * wiped out leaves the contract, wherever their side could retreat to, at a cost to the faction's standing; one with
  * nowhere to retreat to out of the city lost leaves it too, with their soldiers. They stay where the battle was.
@@ -514,9 +516,11 @@ export function resolveBattle(
   for (const m of moves) if (m.kind === 'released') resolved = endContract(resolved, m.characterId, cityId)
   for (const w of wipedOut) resolved = withStanding(resolved, battle[w.side].factionId!, STANDING_WIPED_OUT)
   const lost = defender.factionId
-  return winner === 'attacker' && lost && !Object.values(cityOwners).includes(lost)
+  const destroyed = winner === 'attacker' && lost && !Object.values(cityOwners).includes(lost)
     ? destroyFaction(resolved, lost, cityId, attacker.factionId, Object.keys(state.characters).filter((id) => state.characters[id].factionId === lost))
     : resolved
+  // The relics those captured, wandering or released wore stay in the box of the faction they served
+  return releaseEquipment(destroyed)
 }
 
 /**
@@ -525,7 +529,7 @@ export function resolveBattle(
  * transport too (their movements end), and the event is told (FactionDestroyed). The contracts of its mercenaries end
  * there, without a grudge. Its knights held prisoner stay prisoners, of no faction
  * (they no longer escape); the prisoners it was taking along on its moves and transports are set free where they are (escapeOf).
- * Its relics go into the box of `by` as they are, those 法王府 is repairing too
+ * Its relics go into the box of `by` as they are, those 法王府 is repairing too (nobody wearing them: resolveBattle releases them)
  */
 function destroyFaction(state: GameState, factionId: FactionId, cityId: CityId, by: FactionId, served: readonly CharacterId[]): GameState {
   const knights = served.filter((id) => !isMercenary(id)).sort()

@@ -1,6 +1,7 @@
 import { CHARACTER_MAP } from '../data/character'
 import { DEFAULT_UNIT_TYPES, UNIT_TYPES_BY_CHARACTER_TYPE, type UnitTypeId } from '../data/unitTypes'
-import type { CharacterId } from './types'
+import { equipmentEffects } from './relics/box'
+import type { CharacterId, GameState } from './types'
 
 /** A mercenary (傭兵): a character with Character.mercenaryInfo, hired or not */
 export const isMercenary = (characterId: CharacterId): boolean => Boolean(CHARACTER_MAP[characterId]?.mercenaryInfo)
@@ -43,6 +44,9 @@ export function unitAbilities(knightId: CharacterId | null, commander: Character
   }
 }
 
-/** The unit types a character can lead, by their type */
-export const unitTypesOf = (characterId: CharacterId): readonly UnitTypeId[] =>
-  UNIT_TYPES_BY_CHARACTER_TYPE[CHARACTER_MAP[characterId]?.type ?? 'knight']
+/** The unit types a character can lead: their type's, then those their equipment gives (ライフル → ライフル兵, 大砲 → 砲兵) not among them */
+export function unitTypesOf(state: GameState, characterId: CharacterId): readonly UnitTypeId[] {
+  const own = UNIT_TYPES_BY_CHARACTER_TYPE[CHARACTER_MAP[characterId]?.type ?? 'knight']
+  const added = equipmentEffects(state, characterId).unitTypes.filter((id) => !own.includes(id as UnitTypeId)) as UnitTypeId[]
+  return added.length > 0 ? [...own, ...added] : own
+}

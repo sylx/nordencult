@@ -365,7 +365,7 @@ describe('forming armies', () => {
     const ordered = addOrder(state, { ...draft, units })
     expect(soldiersLeft(ordered, FLUEN)).toBe(state.cities[FLUEN].troops - 200)
     expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], soldiers: 100 }] })).toBe('傭兵の部隊は変えられません')
-    const another = unitTypesOf(BARREL).find((type) => type !== units[1].unitType)!
+    const another = unitTypesOf(state, BARREL).find((type) => type !== units[1].unitType)!
     expect(orderProblem(state, { ...draft, units: [units[0], { ...units[1], unitType: another }] })).toBe('傭兵の部隊は変えられません')
   })
 

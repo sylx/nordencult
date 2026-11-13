@@ -8,6 +8,7 @@ import { commandProblem } from '../economy/domestic'
 import { GameRuleError } from '../errors'
 import { escapeOf } from '../movement'
 import { moveOrderOf, movementOf, orderOf, transportOrderOf } from '../queries'
+import { releaseEquipment } from '../relics/equipment'
 import { wanderer } from '../roaming'
 import type { CharacterId, CharacterState, CityId, FactionId, GameState, MercenaryRenewal, MercenaryState, Movement } from '../types'
 import { neighbours } from '../world'
@@ -153,7 +154,7 @@ export function hireMercenary(state: GameState, cityId: CityId, id: CharacterId)
  * A contract ends: the mercenary is in `at` serving nobody (the market has them back, or they recover when short of
  * soldiers). They leave the move or the transport they were on; one left with no knights ends, its soldiers and
  * supplies lost and its prisoners set free (escapeOf). All the ways a contract ends come here: what they do to the
- * standing is theirs to do. A renewal they were asking for is off
+ * standing is theirs to do. A renewal they were asking for is off. They wear nothing of the faction's (releaseEquipment)
  */
 export function endContract(state: GameState, id: CharacterId, at: CityId): GameState {
   const characters: Record<string, CharacterState> = { ...state.characters, [id]: wanderer(at) }
@@ -176,7 +177,7 @@ export function endContract(state: GameState, id: CharacterId, at: CityId): Game
     }
   }
   const events = state.events.filter((e) => !(e.kind === 'mercenaryRenewal' && e.characterId === id))
-  return withMercenary({ ...state, characters, movements, events, serial }, id, { contract: null })
+  return releaseEquipment(withMercenary({ ...state, characters, movements, events, serial }, id, { contract: null }))
 }
 
 /** The faction ends a mercenary's contract (dismissed, not renewed, not paid): one short of soldiers does its standing harm */
