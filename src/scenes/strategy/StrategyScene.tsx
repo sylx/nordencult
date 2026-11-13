@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Banner, BuildingImage, CITY_COMMAND_GROUPS, CUT_IMAGES, CUTIN_TEMPLATES, CityCommandScreen, ConfirmDialog, CutInLayer, DomesticScreen, EventScreen,
-  InvasionScreen, KnightChip, MapPickScreen, MercenaryScreen, MoveScreen, RelicScreen, ScreenHost, TechScreen, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
+  InvasionScreen, KnightChip, MapPickScreen, MercenaryScreen, MoveScreen, RelicScreen, ScreenHost, SummonDialog, TechScreen, TransportScreen, useCutIn, useScreenStack, type CityCommandId, type CommandState, type InvasionDraft,
   type MoveDraft, type TransportDraft,
 } from 'norden-ui'
 import { MapView, type CityHighlight, type FocusInset, type RoadHighlight, type StrategyMap } from 'norden-strategy'
@@ -11,7 +11,7 @@ import { FACTION_MAP, factionColor, factionName } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   BALANCE, MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
-  characterOf, charactersIn, citiesOf, decideInvasion, decideRenewal, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn,
+  autoSummonName, characterOf, charactersIn, renameProblem, renameSummon, summonRelic, citiesOf, decideInvasion, decideRenewal, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn,
   dismantleRelic, dismissMercenary, endFactionTurnProblem, equipRelic, relicsOf, unequipRelic, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn, lordChangeProblem, mercenaryCityProblem, mustChooseResearch, requestPapalRepair, researchOf, setResearch,
   moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction, prisonersIn,
   renewalProblem, runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, startRelicProduction, startRelicRepair, stationedIn, suppliesLeft, transportFromProblem,
@@ -146,6 +146,8 @@ export default function StrategyScene() {
   const cutIn = useCutIn()
   // The order picked on the 行動予約 list: only its route is shown on the map
   const [activeOrder, setActiveOrder] = useState<string | null>(null)
+  // The unit just summoned on the relic screen, being named (SummonDialog)
+  const [naming, setNaming] = useState<string | null>(null)
   // Where the player put the windows (and the 行動予約 list folded down to its title): they stay across the screens and plays
   const { layout, updateLayout, resetLayout } = useStrategyLayout()
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -596,7 +598,8 @@ export default function StrategyScene() {
         domestic: ({ cityId }) => (
           <DomesticScreen
             // Mercenaries are neither lords nor officers: the screen does not offer them
-            city={{ ...cityView(game, cityId), knights: cityView(game, cityId).knights?.filter((knight) => !knight.mercenary) }}
+            // Mercenaries and summoned units take no domestic affairs
+            city={{ ...cityView(game, cityId), knights: cityView(game, cityId).knights?.filter((knight) => !knight.mercenary && !knight.summon) }}
             buildOptions={buildOptions(game, cityId)}
             relicOptions={relicOptions(game, cityId)}
             gold={game.gold[faction]}
@@ -638,7 +641,26 @@ export default function StrategyScene() {
               const worn = relicsOf(s, viewFaction(s)).find((item) => item.id === id)?.equippedBy
               return worn ? unequipRelic(s, worn.characterId, worn.slot) : s
             })}
-            onClose={nav.pop} />
+            onSummon={(id) => {
+              let summoned: string | null = null
+              update((s) => {
+                const result = summonRelic(s, cityId, id)
+                summoned = result.id
+                return result.state
+              })
+              setNaming(summoned)
+            }}
+            onClose={nav.pop}>
+            {naming && game.summons[naming] && (
+              <SummonDialog knight={knightView(game, naming)} name={game.summons[naming].name} maxLength={BALANCE.SUMMON_NAME_MAX}
+                onAutoName={() => autoSummonName(game, game.characters[naming]?.factionId ?? null, game.summons[naming].templateId)}
+                validate={(name) => renameProblem(game, naming, name)}
+                onConfirm={(name) => {
+                  update((s) => renameSummon(s, naming, name))
+                  setNaming(null)
+                }} />
+            )}
+          </RelicScreen>
         ),
         defense: ({ cityId, battleId }) => {
           const defended = battle?.id === battleId ? battle : null

@@ -4,7 +4,7 @@ import { ATTACK_DEFS } from '@norden/battle-runtime/rules'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import type {
   BuildOptionView, BuildingView, CityStatView, EquipCandidateView, EquippedRelicView, EquipOptionView, CityView, ConstructionView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, EventDetail, FactionResearchSummaryView,
-  FactionSummaryView, FactionView, InvasionAssignment, KnightView, MercenaryContractView, MercenaryMark, MercenaryOfferView, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicView, SpriteImage, TechView, TurnView, UnitTypeView,
+  FactionSummaryView, FactionView, InvasionAssignment, KnightView, MercenaryContractView, MercenaryMark, MercenaryOfferView, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicView, SpriteImage, SummonView, TechView, TurnView, UnitTypeView,
 } from 'norden-ui'
 import type { MapCity, MapSeason, PlaceType } from 'norden-strategy'
 import buildingSheet from '../../assets/buildings.webp'
@@ -23,7 +23,7 @@ import { CITY_MAP } from '../../data/city'
 import { mercenaryProfile, UNIT_IMAGES } from './mercenaryProfile'
 import { UNIT_TYPE_MAP, UNIT_TYPES } from '../../data/unitTypes'
 import {
-  assignmentLabel, assignmentOf, characterOf, isSummon, ownMorale, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
+  assignmentLabel, assignmentOf, characterOf, isSummon, ownMorale, summonProblem, summonStrength, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
   availableTechs, dismissProblem, engagementOf, equipmentChangeProblem, equipmentOf, equippableKnights, equipProblem, unequipProblem, FUNDED_ROLES, governorOf, hiredMercenaries, hireOfferProblem, isMercenary, mercenaryMarket, officerTraining, producibleRelics, productionProblem, relicItemInfo, relicsOf, relicWorks, repairableRelics, repairProblem,
   researchOf, researchOutput, researchProblem, researchTurns, techStatus,
   MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportKnightProblem, transportOrderOf, treasuryForecast,
@@ -177,19 +177,31 @@ export function factionView(factionId: string | null | undefined): FactionView |
   return faction && { name: faction.name, emblem: factionEmblem(faction.id) }
 }
 
-/**
- * What marks a mercenary on the screens: their company and their own soldiers. A summoned unit is marked so too for
- * now (its HP as its own soldiers, which the invasion screen does not change), until the screens show summoned units (M009-34)
- */
+/** What marks a mercenary on the screens: their company and their own soldiers */
 function mercenaryMark(game: GameState, id: string): MercenaryMark | undefined {
-  const summon = game.summons[id]
-  if (summon) return { company: '召喚', soldiers: summon.hp, maxSoldiers: summon.maxHp, morale: BALANCE.SUMMON_MORALE }
   const info = CHARACTER_MAP[id]?.mercenaryInfo
   const contract = game.mercenaries[id]?.contract
   return info && {
     company: info.name, soldiers: game.mercenaries[id]?.soldiers ?? 0, maxSoldiers: info.maxSoldiers, morale: BALANCE.MERCENARY_MORALE,
     monthly: contract?.monthly, months: contract ? game.turn - contract.since : undefined,
   }
+}
+
+/** A summoned unit as the screens show it: its HP, attack and defense, its morale and the relic it was summoned with */
+export function summonView(game: GameState, id: string): SummonView | undefined {
+  const strength = summonStrength(game, id)
+  const relic = RELIC_MAP[game.summons[id]?.relicId ?? '']
+  return strength && { ...strength, morale: BALANCE.SUMMON_MORALE, relicName: relic?.name, relicDescription: relic?.description }
+}
+
+/** A summoned unit's HP, attack and defense as a card's stats (attack and defense have no 0..100 scale: not colored by it) */
+function summonStats(game: GameState, id: string): KnightView['stats'] {
+  const strength = summonStrength(game, id)
+  return strength && [
+    { label: 'HP', value: strength.hp, max: strength.maxHp },
+    { label: '攻撃力', value: strength.attack, max: Infinity },
+    { label: '防御力', value: strength.defense, max: Infinity },
+  ]
 }
 
 export function knightView(game: GameState, id: string): KnightView {
@@ -218,6 +230,7 @@ export function knightView(game: GameState, id: string): KnightView {
       : game.characters[id]?.roaming ? cityName(game.characters[id].roaming) : undefined,
     biography: character.biography,
     mercenary: mercenaryMark(game, id),
+    summon: summonView(game, id),
     subtitle: [
       CHARACTER_TYPE_LABELS[character.type],
       ...(prisoner ? ['捕虜'] : []),
@@ -230,18 +243,21 @@ export function knightView(game: GameState, id: string): KnightView {
       ...(transportOrder ? [`${cityName(transportOrder.to)}へ輸送予約中`] : []),
       ...(movement ? [`${cityName(movement.to)}へ${movement.kind === 'return' ? '帰還中' : away}`] : []),
     ].join(' / '),
-    stats: [
-      { label: '統率', value: character.leadership },
-      { label: '武力', value: character.strength },
-      { label: '知力', value: character.intelligence },
-    ],
-    abilities: {
-      leadership: character.leadership,
-      strength: character.strength,
-      intelligence: character.intelligence,
-      politics: character.politics,
-      charm: character.charm,
-    },
+    // A summoned unit shows its HP, attack and defense in place of its abilities
+    ...(isSummon(id) ? { stats: summonStats(game, id) } : {
+      stats: [
+        { label: '統率', value: character.leadership },
+        { label: '武力', value: character.strength },
+        { label: '知力', value: character.intelligence },
+      ],
+      abilities: {
+        leadership: character.leadership,
+        strength: character.strength,
+        intelligence: character.intelligence,
+        politics: character.politics,
+        charm: character.charm,
+      },
+    }),
     defaultUnitType: defaultUnitType(game, id),
     unitTypes: unitTypesOf(game, id),
     commandRank: commandRank(game, id),
@@ -448,8 +464,12 @@ export function relicOptions(game: GameState, cityId: string): RelicOptionView[]
   return [...repairs, ...productions]
 }
 
-/** What an equipment relic gives and who can wear it, e.g. ライフル兵を率いる, 魔法: フレイムランス, 知力 70 以上の魔術師が装備できる */
+/**
+ * What an equipment relic gives and who can wear it, e.g. ライフル兵を率いる, 魔法: フレイムランス, 知力 70 以上の魔術師が装備できる;
+ * what a summon relic summons, e.g. ドラゴンの部隊を召喚する（HP 600）
+ */
 export function relicEffects(relic: Relic): string[] {
+  if (relic.summon) return [`${UNIT_TYPE_MAP[relic.summon.unitType]?.name ?? relic.summon.unitType}の部隊を召喚する（HP ${relic.summon.hp.toLocaleString()}）`]
   const equipment = relic.equipment
   if (!equipment) return []
   const wearer = `${equipment.minIntelligence ? `知力 ${equipment.minIntelligence} 以上の` : ''}${RELIC_WEARER_LABELS[equipment.wearer]}が装備できる`
@@ -492,7 +512,8 @@ export function equipCandidatesView(game: GameState, factionId: string, itemId: 
   const holder = relicsOf(game, factionId).find((item) => item.id === itemId)?.equippedBy?.characterId
   return Object.keys(game.characters).sort().flatMap((id): EquipCandidateView[] => {
     const character = game.characters[id]
-    if (character.factionId !== factionId || character.prisoner || character.roaming) return []
+    // A summoned unit has no slots: not listed at all
+    if (character.factionId !== factionId || character.prisoner || character.roaming || isSummon(id)) return []
     const slots = equipmentOf(game, id).map((item, slot) => ({
       relic: item && equippedRelicView(item), unavailableReason: equipProblem(game, id, slot, itemId) ?? undefined,
     }))
@@ -538,6 +559,7 @@ export function relicsView(game: GameState, factionId: string, cityId: string): 
       effects: relicEffects(relic),
       ...(item.repaired && facilityOf(item.relicId) && { buildingName: facilityOf(item.relicId)!.name }),
       ...(item.buildingIn && { cityName: cityName(item.buildingIn) }),
+      ...(item.repaired && relic.summon && { summon: { unavailableReason: summonProblem(game, cityId, item.id) ?? undefined } }),
       ...(item.repaired && relic.equipment && { equip: { unavailableReason: equipActionProblem(game, factionId, item.id) } }),
       ...(item.equippedBy && {
         wearerName: knightName(game, item.equippedBy.characterId),

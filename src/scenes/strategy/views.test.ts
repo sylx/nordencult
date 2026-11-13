@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { addOrder, debugAddRelic, defaultUnitType, endFactionTurn, equipRelic, hireMercenary, orderProblem, relicsOf, requestPapalRepair, startConstruction, startRelicProduction, startRelicRepair, withRelics, type GameState } from '../../game'
+import { addOrder, debugAddRelic, defaultUnitType, endFactionTurn, equipRelic, hireMercenary, orderProblem, relicsOf, requestPapalRepair, startConstruction, summonRelic, startRelicProduction, startRelicRepair, withRelics, type GameState } from '../../game'
 import { NO_SUMMONS, playing } from '../../game/testing'
 import { RELIC_MAP, relicRarity } from '../../data/relics'
 import { UNIT_TYPE_MAP } from '../../data/unitTypes'
@@ -94,6 +94,45 @@ describe('equipment', () => {
     expect(of('016')).toMatchObject({ unavailableReason: undefined, slots: [{ relic: null }, { relic: null }] })
     expect(of('027')).toMatchObject({ unavailableReason: '装備しています', slots: [{ relic: null }, { relic: { id: REPAIRED_RIFLE } }] })
     expect(candidates.map((c) => c.knight.id)).not.toContain('013')
+  })
+})
+
+describe('summoned units', () => {
+  /** カルタ書院 with a ドラゴン's relic repaired, and its id */
+  const withEgg = () => {
+    const state = debugAddRelic(playing('carta'), 'carta', 'dragon', true)
+    return { state, itemId: relicsOf(state, 'carta').at(-1)!.id }
+  }
+  const summoned = () => {
+    const { state, itemId } = withEgg()
+    return summonRelic(state, FLUEN, itemId, () => 0.5)
+  }
+
+  it('offers to summon with a summon relic, saying what it summons and why it cannot', () => {
+    const { state, itemId } = withEgg()
+    const egg = relicsView(state, 'carta', FLUEN).find((relic) => relic.id === itemId)
+    expect(egg).toMatchObject({ status: 'repaired', effects: ['ドラゴンの部隊を召喚する（HP 600）'], summon: { unavailableReason: undefined } })
+    expect(relicsView(state, 'carta', AMBARIA).find((relic) => relic.id === itemId)?.summon?.unavailableReason).toBe('自勢力の都市ではありません')
+    expect(relicsView(state, 'carta', FLUEN).find((relic) => relic.id === RIFLE)?.summon).toBeUndefined()
+  })
+
+  it('shows one with its HP, attack and defense in place of its abilities, of type 召喚, with no slots', () => {
+    const { state, id } = summoned()
+    const view = knightView(state, id)
+    expect(view).toMatchObject({
+      name: state.summons[id].name, subtitle: '召喚', defaultUnitType: 'dragon', unitTypes: ['dragon'],
+      summon: { hp: 600, maxHp: 600, attack: 172, defense: 185, morale: 70, relicName: 'ドラゴン', relicDescription: RELIC_MAP.dragon.description },
+      stats: [{ label: 'HP', value: 600, max: 600 }, { label: '攻撃力', value: 172, max: Infinity }, { label: '防御力', value: 185, max: Infinity }],
+    })
+    expect(view.abilities).toBeUndefined()
+    expect(view.mercenary).toBeUndefined()
+    expect(view.equipment).toBeUndefined()
+    expect(cityView(state, FLUEN).knights?.map((knight) => knight.id)).toContain(id)
+  })
+
+  it('is no one to put a relic on', () => {
+    const { state, id } = summoned()
+    expect(equipCandidatesView(state, 'carta', 'carta-2').map((c) => c.knight.id)).not.toContain(id)
   })
 })
 

@@ -274,7 +274,7 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 
 ### 召喚ユニット
 
-召喚の遺物（ドラゴン・ゴーレム・ベヒーモス。`Relic.summon`）を使うと、その魔物が勢力の部隊（召喚ユニット。種別「召喚」）として都市に加わります（M009。設計は [docs/milestones/m009.md](docs/milestones/m009.md)。画面は段階 5 で作っています）。
+召喚の遺物（ドラゴン・ゴーレム・ベヒーモス。`Relic.summon`）を使うと、その魔物が勢力の部隊（召喚ユニット。種別「召喚」）として都市に加わります（M009。設計は [docs/milestones/m009.md](docs/milestones/m009.md)）。
 
 - 召喚（`src/game/summons/`）: `summonRelic` が自勢力の手番に、自勢力の都市で、箱の修復済みの召喚の遺物（法王府に依頼中でないもの）を使い切って、その都市に召喚ユニットを置きます（可否と理由は `summonProblem`）。ID は `summon-<serial>`（`isSummon`）で、`GameState.characters` に騎士と同じく入り、能力などは `GameState.summons`（`SummonState`）に持ちます。統率・武力・知力は召喚したときに `SUMMON_ABILITY_RANGE`（60〜90）の乱数で決まり、政治・魅力は `SUMMON_FIXED_ABILITY`（10）。HP（自前の兵数）は遺物の `summon.hp`（ドラゴン 600・ゴーレム 800・ベヒーモス 1000）です。名前は `src/data/summonNames.json` から勢力の召喚ユニットと重ならないものを自動で付け（`autoSummonName`）、`renameSummon` で付け直せます（1〜12文字）
 - 召喚ユニットはデータのキャラクターではないので、通る所は `characterOf(state, id)` で引きます（型紙の特殊キャラクター 991〜993 の画像に、名前・能力・種別 `summon` を重ねる）
@@ -282,6 +282,7 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 - 戦闘の後は、残った兵数が HP になります（退却も）。壊滅すると失われ（遺物にも戻らない。`BattleReport.lostSummons`、結果の画面の「召喚ユニットの消滅」）、退却先も勢力の都市も無いときも失われます。勢力が滅ぶと消え、捕虜にも放浪にもなりません（勢力を離れた召喚ユニットは `releaseSummons` が消す）
 - 内政処理で、都市にいる（移動中でない）召喚ユニットは HP が最大の `SUMMON_RECOVERY_RATE`（10%）戻ります（`recoverSummons`）
 - 攻撃力・防御力（`summonStrength`）は、battle-runtime の基本攻撃力・基本防御力（`basicAttack`・`basicDefense`。標準の部隊が相手で、標準の部隊の防御力が 100）を、いまの HP・統率・武力・`SUMMON_MORALE` で出したものです。魔物は攻撃に使う兵数が固定で、防御力は 1 撃あたりなので、どちらも HP では下がりません
+- 画面: 遺物画面で修復済みの召喚の遺物を選ぶと「{都市}で召喚」があり、押すと召喚して名付けの窓（norden-ui の `SummonDialog`。立ち絵・HP・攻撃力・防御力・名前・「自動」・「決定」）が出ます。名付けの窓を閉じても能力は変わらず、やめる手段はありません。都市の騎士の一覧では騎士・傭兵と分けて「召喚」の区切りに並び、札と騎士の詳細ウィンドウには統率・武力・知力の代わりに HP・攻撃力・防御力が出ます（詳細は略歴の代わりに召喚した遺物の説明）。出撃・防衛の画面では兵種と兵数（HP）が固定で、軍団長に選べません。表示は `views.ts` の `summonView`・`knightView` の `summon`、`relicsView` の `summon`
 - 召喚ユニットを出す・見る・HP を変えるのは[デバッグコンソール](#デバッグコンソール)の `relic summon`・`summon` です
 
 ### 放浪の騎士
