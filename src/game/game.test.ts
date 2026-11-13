@@ -212,12 +212,13 @@ describe('units', () => {
 
   it('leads the indirect units with half of the abilities of the commander', () => {
     const { leadership, strength, intelligence } = CHARACTER_MAP['015']
-    expect(unitAbilities('015', '016')).toEqual({ leadership, strength, intelligence })
-    expect(unitAbilities(null, '015')).toEqual({
+    const state = playing('carta')
+    expect(unitAbilities(state, '015', '016')).toEqual({ leadership, strength, intelligence })
+    expect(unitAbilities(state, null, '015')).toEqual({
       leadership: Math.floor(leadership / 2), strength: Math.floor(strength / 2), intelligence: Math.floor(intelligence / 2),
     })
     // the garrison nobody leads
-    expect(unitAbilities(null, null)).toBeUndefined()
+    expect(unitAbilities(state, null, null)).toBeUndefined()
   })
 
   it('allows 6 units at most', () => {
@@ -557,7 +558,7 @@ describe('invasion part', () => {
     expect(defenseKnights(marching, battle)).toEqual(['015', '016', '027', '029'])
     expect(marching.march!.queue).toEqual([])
     // Held: the army called off stays in フルーエン, and the turn ends
-    const defended = formDefense(marching, battle.id, { commander: '029', units: [{ knightId: '029', unitType: defaultUnitType('029'), soldiers: 100 }] })
+    const defended = formDefense(marching, battle.id, { commander: '029', units: [{ knightId: '029', unitType: defaultUnitType(marching, '029'), soldiers: 100 }] })
     const held = resolveBattle(defended, battle.id, 'defender')
     expect(held.characters['015']).toMatchObject({ cityId: FLUEN })
     expect(startNextBattle(held)).toMatchObject({ turn: 2, phase: 'strategy' })
@@ -720,7 +721,7 @@ describe('soldiers and defense', () => {
     expect(() => resolveBattle(invaded, pending.id, 'attacker')).toThrow(GameRuleError)
     expect(defenseKnights(invaded, pending)).toEqual(AMBARIA_KNIGHTS)
 
-    const unit = (knightId: string, soldiers = 100): ArmyUnit => ({ knightId, unitType: defaultUnitType(knightId), soldiers })
+    const unit = (knightId: string, soldiers = 100): ArmyUnit => ({ knightId, unitType: defaultUnitType(invaded, knightId), soldiers })
     // コンラート (046) is the lord of アンバリア: another knight may lead them
     expect(defenseProblem(invaded, pending, { commander: '013', units: [unit('013'), unit('046')] })).toBeNull()
     expect(defenseProblem(invaded, pending, { commander: '015', units: [unit('015')] })).toBe('015 はこの拠点で防衛できる騎士ではありません')

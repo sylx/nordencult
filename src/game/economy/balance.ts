@@ -89,6 +89,17 @@ export const RECRUIT_MORALE = 20
 /** Equipment slots of each knight (not a mercenary's): each wears a relic of the faction's box (RelicItem.equippedBy) */
 export const EQUIPMENT_SLOTS = 2
 
+/** A summoned unit's 統率・武力・知力, each rolled from this range (both ends included) when it is summoned */
+export const SUMMON_ABILITY_RANGE: readonly [number, number] = [60, 90]
+/** A summoned unit's 政治・魅力: it never takes domestic affairs */
+export const SUMMON_FIXED_ABILITY = 10
+/** Most characters of a summoned unit's name */
+export const SUMMON_NAME_MAX = 12
+/** HP a summoned unit staying in a city gets back each economy run, as a share of its most */
+export const SUMMON_RECOVERY_RATE = 0.1
+/** Morale of a summoned unit in battle, whatever the city's (as a mercenary's) */
+export const SUMMON_MORALE = 70
+
 /** 法王府 repairs a relic for ceil((its repair's gold + supplies) × PAPAL_REPAIR_RATE) gold */
 export const PAPAL_REPAIR_RATE = 2.5
 

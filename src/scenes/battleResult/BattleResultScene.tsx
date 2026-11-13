@@ -2,8 +2,9 @@ import { useEffect } from 'react'
 import { playBgm } from '../../audio/bgm'
 import { FactionLabel } from '../../components/FactionLabel'
 import { KnightList } from '../../components/KnightList'
+import { CHARACTER_MAP, type Character } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
-import { isPlayerFaction, useGame, type BattleEndReason, type CharacterMove, type MoveKind } from '../../game'
+import { isPlayerFaction, summonCharacter, useGame, type BattleEndReason, type BattleReport, type CharacterMove, type MoveKind } from '../../game'
 import { useScene } from '../sceneContext'
 import { relicWorkLabel } from '../strategy/views'
 import type { SceneProps } from '../types'
@@ -28,6 +29,10 @@ const REASON_LABELS: Readonly<Record<BattleEndReason, string>> = {
 
 const cityName = (id: string | null) => (id ? CITY_MAP[id]?.name ?? id : '')
 
+/** The characters of a battle: the data's, and its summoned units as it started (some are gone after it) */
+const reportCharacter = (report: BattleReport) => (id: string) =>
+  (report.summons[id] ? summonCharacter(id, report.summons[id]) : CHARACTER_MAP[id])
+
 /** Outcome of a battle: who won, whether the city changed hands, where the knights went, who became lords */
 export default function BattleResultScene({ params }: SceneProps<'battleResult'>) {
   const { state: game } = useGame()
@@ -42,7 +47,8 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
     )
   }
 
-  const { battle, winner, reason, cityCaptured, moves, retreats, wipeouts, governors, soldiers, prisoners, freed, lostRelicWork } = report
+  const { battle, winner, reason, cityCaptured, moves, retreats, wipeouts, governors, soldiers, prisoners, freed, lostRelicWork, lostSummons } = report
+  const characterOf = reportCharacter(report)
   // Knights captured retreating, wiped out or in a city taken without a battle, how, and where they are held
   // (those the losing side captured are set free: they are not prisoners)
   const how = new Map([
@@ -111,9 +117,16 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
         {kinds.map((kind) => (
           <section key={kind} className="battle-result__section">
             <h2>{MOVE_LABELS[kind]}</h2>
-            <MoveList moves={moves.filter((m) => m.kind === kind)} />
+            <MoveList moves={moves.filter((m) => m.kind === kind)} characterOf={characterOf} />
           </section>
         ))}
+
+        {lostSummons.length > 0 && (
+          <section className="battle-result__section">
+            <h2>召喚ユニットの消滅</h2>
+            <KnightList ids={lostSummons} compact characterOf={characterOf} aside={() => '失われた'} />
+          </section>
+        )}
 
         {governors.length > 0 && (
           <section className="battle-result__section">
@@ -146,7 +159,7 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
   )
 }
 
-function MoveList({ moves }: { moves: readonly CharacterMove[] }) {
+function MoveList({ moves, characterOf }: { moves: readonly CharacterMove[]; characterOf: (id: string) => Character | undefined }) {
   const byId = new Map(moves.map((m) => [m.characterId, m]))
   const describe = (id: string) => {
     const m = byId.get(id)!
@@ -159,5 +172,5 @@ function MoveList({ moves }: { moves: readonly CharacterMove[] }) {
       case 'released': return '傭兵の契約が切れた'
     }
   }
-  return <KnightList ids={moves.map((m) => m.characterId)} compact aside={describe} />
+  return <KnightList ids={moves.map((m) => m.characterId)} compact aside={describe} characterOf={characterOf} />
 }

@@ -276,7 +276,7 @@ describe('knights away', () => {
   it('no longer serve in their city when it is lost, and go on to the nearest city of their faction', () => {
     let state = invadedWhileAway()
     const { id } = state.march!.current!
-    state = formDefense(state, id, { commander: '046', units: [{ knightId: '046', unitType: defaultUnitType('046'), soldiers: 100 }] })
+    state = formDefense(state, id, { commander: '046', units: [{ knightId: '046', unitType: defaultUnitType(state, '046'), soldiers: 100 }] })
     state = resolveBattle(state, id, 'attacker')
     expect(state.characters['013']).toEqual({ cityId: null, factionId: 'leonis' })
     expect(charactersIn(state, AMBARIA)).not.toContain('013')

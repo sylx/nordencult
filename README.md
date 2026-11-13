@@ -272,6 +272,18 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 - 傭兵画面は契約金・月額・能力値を一覧にも詳細にも出さず、基本の契約金から決まるランク（S〜D、`mercenaryRank`。境目は `balance.ts` の `MERCENARY_RANKS`。ランクごとに色を変える）を出します。「交渉」で傭兵の雇用の会話シーン（`src/dialogue/hireMercenary`）が始まり、傭兵が名乗って契約金と月額を示し（そのあいだ左に能力値つきのプロフィール。台本の `panel`、ゲームの資料は `src/dialogue/panels.ts`）、「契約する」で契約します（「やめておく」なら何も変わらない）。金が足りないときは傭兵画面では押せて、シーンの「契約する」が押せず理由が出ます。友好度が足りず契約に応じない傭兵（`prideProblem`）も「交渉」は押せて、シーンで名乗ったあと、値段を言う前に門前払いされます（一覧の理由はプライドと金以外の `hireOfferProblem`）。セリフは傭兵の口調で変わり、ランツクネヒトのカスパル（110）には専用のセリフがあります（台本の `characters`）
 - 雇うのはプレイヤーの勢力だけです（CPU の手番はまだターンを渡すだけ）
 
+### 召喚ユニット
+
+召喚の遺物（ドラゴン・ゴーレム・ベヒーモス。`Relic.summon`）を使うと、その魔物が勢力の部隊（召喚ユニット。種別「召喚」）として都市に加わります（M009。設計は [docs/milestones/m009.md](docs/milestones/m009.md)。画面は段階 5 で作っています）。
+
+- 召喚（`src/game/summons/`）: `summonRelic` が自勢力の手番に、自勢力の都市で、箱の修復済みの召喚の遺物（法王府に依頼中でないもの）を使い切って、その都市に召喚ユニットを置きます（可否と理由は `summonProblem`）。ID は `summon-<serial>`（`isSummon`）で、`GameState.characters` に騎士と同じく入り、能力などは `GameState.summons`（`SummonState`）に持ちます。統率・武力・知力は召喚したときに `SUMMON_ABILITY_RANGE`（60〜90）の乱数で決まり、政治・魅力は `SUMMON_FIXED_ABILITY`（10）。HP（自前の兵数）は遺物の `summon.hp`（ドラゴン 600・ゴーレム 800・ベヒーモス 1000）です。名前は `src/data/summonNames.json` から勢力の召喚ユニットと重ならないものを自動で付け（`autoSummonName`）、`renameSummon` で付け直せます（1〜12文字）
+- 召喚ユニットはデータのキャラクターではないので、通る所は `characterOf(state, id)` で引きます（型紙の特殊キャラクター 991〜993 の画像に、名前・能力・種別 `summon` を重ねる）
+- 傭兵と同じく自前の兵を持つ部隊です（`hasOwnSoldiers`・`ownSoldiers`・`ownMorale`）。編成では兵種（魔物）と兵数（いまの HP）が固定で、都市の兵を使いません。士気は固定の `SUMMON_MORALE`（70）。戦闘では捕縛されません。軍団長・領主・内政の担当官・輸送の担当にはなれず、単騎移動もできません。装備の枠は無く、俸禄も払いません
+- 戦闘の後は、残った兵数が HP になります（退却も）。壊滅すると失われ（遺物にも戻らない。`BattleReport.lostSummons`、結果の画面の「召喚ユニットの消滅」）、退却先も勢力の都市も無いときも失われます。勢力が滅ぶと消え、捕虜にも放浪にもなりません（勢力を離れた召喚ユニットは `releaseSummons` が消す）
+- 内政処理で、都市にいる（移動中でない）召喚ユニットは HP が最大の `SUMMON_RECOVERY_RATE`（10%）戻ります（`recoverSummons`）
+- 攻撃力・防御力（`summonStrength`）は、battle-runtime の基本攻撃力・基本防御力（`basicAttack`・`basicDefense`。標準の部隊が相手で、標準の部隊の防御力が 100）を、いまの HP・統率・武力・`SUMMON_MORALE` で出したものです。魔物は攻撃に使う兵数が固定で、防御力は 1 撃あたりなので、どちらも HP では下がりません
+- 召喚ユニットを出す・見る・HP を変えるのは[デバッグコンソール](#デバッグコンソール)の `relic summon`・`summon` です
+
 ### 放浪の騎士
 
 どの勢力にも仕えていない騎士は、`cityId`・`factionId` が null で、居所を `CharacterState.roaming` に持ちます（雇われていない傭兵も同じ）。放浪の処理は `src/game/roaming.ts`。
@@ -313,9 +325,11 @@ BGM の音量を 0 にすると、シンセの処理を AudioContext ごと止�
 | `research list` | 勢力ごとの研究 |
 | `research add <points> [faction]` / `fill [faction]` / `complete <tech> [faction]` | 研究ポイントを足す・研究中の技術を完了にする・技術を前提ごと研究済みにする |
 | `relic list [faction]` / `add <relic> [faction] [broken\|repaired]` | アイテムボックスを見る（勢力を付けると遺物ごとの ID・状態・装備している騎士・建設に使っている都市）・遺物を足す |
+| `relic summon <city> <relic>` | 遺物なしで召喚ユニットを都市に出す（都市の勢力のもの。手番の条件なし） |
+| `summon list [faction]` / `show <summon>` / `hp <summon> <hp>` / `name <summon> <name>` | 召喚ユニットの一覧（HP・能力）・詳細（攻撃力・防御力も）、HP を決める、名前を変える |
 | `relic equip <knight> <item> [slot]` / `unequip <knight> [slot]` | 騎士に箱の遺物（`<item>` は `RelicItem.id`。例: `carta-2`）を付ける・外す。手番と侵攻の予約の条件を飛ばす（CPU の勢力の騎士にも付けられる）。枠の既定は付けるときは空いた枠、外すときは 0 |
 | `city list [faction]` / `show <city>` / `set <city> <field> <value>` / `fill <city>` | 都市を見る・数値を決める・建設（修復・生産も）に必要な物資を全部入れる（中断も解く。次のターンの初めに完成） |
-| `knight list [faction]` / `show <knight>` / `imprison <knight> <city>` | 勢力に仕える騎士の一覧（率いる兵種・装備）、騎士の詳細（放浪・傭兵の居所と怨恨勢力、率いる兵種・装備も）、騎士を都市の捕虜にする |
+| `knight list [faction]` / `show <knight>` / `imprison <knight> <city>` | 勢力に仕える騎士の一覧（率いる兵種・装備。召喚ユニットは HP）、騎士の詳細（放浪・傭兵の居所と怨恨勢力、率いる兵種・装備も）、騎士を都市の捕虜にする |
 | `mercenary list` / `soldiers <mercenary> <soldiers>` / `standing [value] [faction]` | 全傭兵の状態・居所または雇い主・兵数を見る、兵数を決める、傭兵業界の友好度を見る・決める |
 | `wanderer list` | 放浪の騎士の居所と怨恨勢力 |
 | `turn end` | 手番の勢力の戦略フェーズを終える |

@@ -1,5 +1,5 @@
 import { BUILDING_MAP } from '../../data/buildings'
-import { isMercenary, MAX_MORALE, mixMorale } from '../army'
+import { hasOwnSoldiers, MAX_MORALE, mixMorale } from '../army'
 import { mercenaryFees } from '../mercenaries/mercenaries'
 import { runMercenaries } from '../mercenaries/runMercenaries'
 import type {
@@ -7,6 +7,7 @@ import type {
   GameState, OfficerRole,
 } from '../types'
 import { runRelics } from '../relics/runRelics'
+import { recoverSummons } from '../summons/summons'
 import { runResearch } from '../research/runResearch'
 import { CITY_IDS, FACTION_IDS } from '../world'
 import { AFFAIRS_BUDGET_MAX, AFFAIRS_BUDGET_MIN, SALARY } from './balance'
@@ -27,8 +28,8 @@ function snapshot(city: CityState, cityId: CityId, tech: BuildingBonus): CitySna
 export function treasuryForecast(state: GameState, factionId: FactionId): FactionEconomy {
   const income = CITY_IDS.filter((id) => state.cityOwners[id] === factionId)
     .reduce((sum, id) => sum + outputOf(state.cities[id], id, cityTechBonus(state, id)).income, 0)
-  // Its knights held prisoner are paid nothing, and its mercenaries their fees instead
-  const knights = Object.entries(state.characters).filter(([id, c]) => c.factionId === factionId && !c.prisoner && !isMercenary(id)).length
+  // Its knights held prisoner are paid nothing, its mercenaries their fees instead, and its summoned units nothing
+  const knights = Object.entries(state.characters).filter(([id, c]) => c.factionId === factionId && !c.prisoner && !hasOwnSoldiers(id)).length
   const before = state.gold[factionId] ?? 0
   const salary = Math.min(before + income, knights * SALARY)
   const fees = mercenaryFees(state, factionId, before + income - salary).paid
@@ -137,7 +138,8 @@ function growCity(
  *    researches (runResearch); a technology completed counts for its cities from the next run,
  * 7. the relics completed in its cities and those 法王府 was asked to repair come into its box, and those its buildings
  *    completed used leave it (runRelics),
- * 8. the mercenaries not paid leave, the mercenaries recover and may ask to renew their contract (runMercenaries).
+ * 8. the mercenaries not paid leave, the mercenaries recover and may ask to renew their contract (runMercenaries),
+ * 9. the summoned units staying in a city get back some of their HP (recoverSummons).
  * Otherwise the bonuses and the base values are those before the run (a building completed or a base raised now counts from the next).
  * `turn` is the turn starting; `random` rolls the gold the officers spend.
  * The report (lastEconomy) keeps each city's numbers before and after, and what its officers did;
@@ -177,5 +179,5 @@ export function runEconomy(state: GameState, turn: number, random: () => number 
 
   const report: EconomyReport = { turn, factions, research: research.report, cities: reports }
   const told: GameState = { ...after, lastEconomy: report, cityHistory, events: [...state.events, ...research.events], serial: research.serial }
-  return runMercenaries(runRelics(told, turn, reports), turn, unpaid, random)
+  return recoverSummons(runMercenaries(runRelics(told, turn, reports), turn, unpaid, random))
 }

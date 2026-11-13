@@ -1,4 +1,4 @@
-import { MAX_SOLDIERS, MAX_UNITS, defaultUnitType, isMercenary } from './army'
+import { MAX_SOLDIERS, MAX_UNITS, defaultUnitType, ownSoldiers } from './army'
 import { canCommand, commandRank, leadingKnight } from './queries'
 import type { ArmyUnit, BattleArmy, CharacterId, CityId, FactionId, GameState } from './types'
 
@@ -8,10 +8,10 @@ const GARRISON_UNITS = 2
 /**
  * The army a city defends with against an invasion. Provisional until the defending
  * faction forms it itself (choosing the knights, unit types and soldiers like an invasion):
- * - the city's knights of the highest rank first and the mercenaries after them, MAX_UNITS at most, each leading
- *   their default unit type (the army's knights); the first of them leads the army,
+ * - the city's knights of the highest rank first and the mercenaries and summoned units after them, MAX_UNITS at most,
+ *   each leading their default unit type (the army's knights); the first of them leads the army,
  * - the city's soldiers shared out evenly among the knights, MAX_SOLDIERS at most in each unit, each mercenary
- *   leading their own,
+ *   and summoned unit leading their own (ownSoldiers),
  * - a city without knights defends with GARRISON_UNITS infantry units nobody leads,
  * - the morale of the city's soldiers.
  */
@@ -27,8 +27,8 @@ export function defenderArmy(
   const regulars = leading.filter(canCommand).length
   const units: ArmyUnit[] = leading.length > 0
     ? leading.map((id) => ({
-      knightId: id, unitType: defaultUnitType(id),
-      soldiers: isMercenary(id) ? state.mercenaries[id]?.soldiers ?? 0 : Math.min(MAX_SOLDIERS, share(regulars)),
+      knightId: id, unitType: defaultUnitType(state, id),
+      soldiers: ownSoldiers(state, id) ?? Math.min(MAX_SOLDIERS, share(regulars)),
     }))
     : Array.from({ length: GARRISON_UNITS }, () => ({ knightId: null, unitType: 'infantry', soldiers: share(GARRISON_UNITS) }))
   return {

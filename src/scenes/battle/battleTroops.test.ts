@@ -3,7 +3,7 @@ import type { UnitStatus } from '@norden/battle-runtime'
 import { retreatFailChance } from '../../../norden-battle/battle-runtime/src/retreat'
 import { troopStatus } from '../../../norden-battle/battle-runtime/src/unitStatus'
 import { wipeoutCaptureChance } from '../../../norden-battle/battle-runtime/src/wipeout'
-import { BALANCE, type Battle } from '../../game'
+import { BALANCE, type Battle, type SummonState } from '../../game'
 import { battleTroops } from './battleTroops'
 
 // The runtime needs a window: only what battleTroops uses of it
@@ -40,6 +40,21 @@ describe('battleTroops', () => {
     const indirect: Battle = { ...battle, attacker: { ...battle.attacker, units: [...battle.attacker.units, { knightId: null, unitType: 'mage', soldiers: 100 }] } }
     const cast = battleTroops(indirect, { '015': ['flameLance'] }).troops({} as never).map((t) => t.status!.spells)
     expect(cast).toEqual([['flameLance'], [], [], []])
+  })
+
+  it('fights a summoned unit with its own abilities, name and morale, not captured', () => {
+    const summon: SummonState = {
+      templateId: '991', relicId: 'dragon', name: 'イグナーヴ', unitType: 'dragon', leadership: 61, strength: 72, intelligence: 83, hp: 450, maxHp: 600,
+    }
+    const withSummon: Battle = {
+      ...battle,
+      attacker: { ...battle.attacker, knights: ['015', 'summon-9'], units: [battle.attacker.units[0], { knightId: 'summon-9', unitType: 'dragon', soldiers: 450 }] },
+    }
+    const [, status] = battleTroops(withSummon, {}, { 'summon-9': summon }).troops({} as never).map((t) => t.status!)
+    expect(status).toMatchObject({
+      name: 'イグナーヴ', soldiers: 450, leadership: 61, strength: 72, intelligence: 83, morale: BALANCE.SUMMON_MORALE, uncapturable: true, commander: false,
+    })
+    expect(status.portrait).toBeDefined()
   })
 
   it('gives a knight\'s unit the knight\'s battle style, for the CPU; the garrison nobody leads has none', () => {

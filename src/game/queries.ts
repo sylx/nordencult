@@ -1,6 +1,7 @@
 import { CHARACTER_MAP } from '../data/character'
 import { INDIRECT_UNIT_TYPES, UNIT_TYPE_MAP } from '../data/unitTypes'
-import { MAX_SOLDIERS, MAX_UNITS, defaultUnitType, isMercenary, unitTypesOf } from './army'
+import { MAX_SOLDIERS, MAX_UNITS, defaultUnitType, hasOwnSoldiers, isMercenary, ownSoldiers, unitTypesOf } from './army'
+import { isSummon } from './summons/character'
 import type {
   ArmyUnit, Battle, BattleSide, CharacterId, CityId, DefenseDraft, FactionId, GameState, InvasionOrder, MoveOrder, Movement, TransportOrder,
 } from './types'
@@ -160,9 +161,9 @@ export function nearestCity(state: GameState, factionId: FactionId, from: CityId
   return null
 }
 
-/** The soldiers of units taken from a city: a mercenary's unit takes none, their soldiers being their own */
+/** The soldiers of units taken from a city: a mercenary's or a summoned unit's takes none, their soldiers being their own */
 export const citySoldiers = (units: readonly ArmyUnit[]): number =>
-  units.reduce((sum, u) => (u.knightId !== null && isMercenary(u.knightId) ? sum : sum + u.soldiers), 0)
+  units.reduce((sum, u) => (u.knightId !== null && hasOwnSoldiers(u.knightId) ? sum : sum + u.soldiers), 0)
 
 /** Soldiers of a city not yet sent on an invasion, a move or a transport this turn */
 export function soldiersLeft(state: GameState, cityId: CityId): number {
@@ -189,8 +190,12 @@ export function commandRank(_state: GameState, id: CharacterId): number {
   return CHARACTER_MAP[id]?.isPatriarch ? 1 : 0
 }
 
-/** Who can lead an army (軍団長): anyone but a mercenary */
-export const canCommand = (id: CharacterId): boolean => !isMercenary(id)
+/** Who can lead an army (軍団長): anyone but a mercenary and a summoned unit */
+export const canCommand = (id: CharacterId): boolean => !isMercenary(id) && !isSummon(id)
+
+/** Why a character cannot lead an army (canCommand), or null */
+export const commanderProblem = (id: CharacterId): string | null =>
+  (isMercenary(id) ? '傭兵は軍団長になれません' : isSummon(id) ? '召喚ユニットは軍団長になれません' : null)
 
 /** Of those who can lead an army (canCommand), the knight of the highest commandRank, the first of them on a tie */
 export function leadingKnight(state: GameState, knights: readonly CharacterId[]): CharacterId | undefined {
@@ -214,8 +219,8 @@ function unitsProblem(state: GameState, knights: readonly CharacterId[], units: 
       continue
     }
     if (!unitTypesOf(state, u.knightId).some((id) => id === u.unitType)) return `${u.knightId} は${UNIT_TYPE_MAP[u.unitType].name}を率いられません`
-    if (isMercenary(u.knightId) && (u.unitType !== defaultUnitType(u.knightId) || u.soldiers !== state.mercenaries[u.knightId]?.soldiers)) {
-      return '傭兵の部隊は変えられません'
+    if (hasOwnSoldiers(u.knightId) && (u.unitType !== defaultUnitType(state, u.knightId) || u.soldiers !== ownSoldiers(state, u.knightId))) {
+      return isSummon(u.knightId) ? '召喚ユニットの部隊は変えられません' : '傭兵の部隊は変えられません'
     }
   }
   if (citySoldiers(units) > pool) return '出撃できる兵が足りません'
@@ -241,7 +246,8 @@ export function orderProblem(state: GameState, draft: Omit<InvasionOrder, 'id'>)
     if (engaged) return `${id} は${engaged}です`
   }
   if (!knights.includes(commander)) return '軍団長が出撃する騎士にいません'
-  if (!canCommand(commander)) return '傭兵は軍団長になれません'
+  const notCommander = commanderProblem(commander)
+  if (notCommander) return notCommander
   const leader = leadingKnight(state, knights)!
   if (commandRank(state, commander) < commandRank(state, leader)) {
     return `${leader} が出撃するときは軍団長になります`
@@ -265,7 +271,8 @@ export function defenseProblem(state: GameState, battle: Battle, draft: DefenseD
   const outsider = knights.find((id) => !allowed.includes(id))
   if (outsider) return `${outsider} はこの拠点で防衛できる騎士ではありません`
   if (!knights.includes(commander)) return '軍団長が防衛する騎士にいません'
-  if (!canCommand(commander)) return '傭兵は軍団長になれません'
+  const notCommander = commanderProblem(commander)
+  if (notCommander) return notCommander
   const leader = leadingKnight(state, knights)!
   if (commandRank(state, commander) < commandRank(state, leader)) return `${leader} が防衛するときは軍団長になります`
   return unitsProblem(state, knights, units, state.cities[battle.cityId]?.troops ?? 0)

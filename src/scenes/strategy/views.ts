@@ -23,7 +23,7 @@ import { CITY_MAP } from '../../data/city'
 import { mercenaryProfile, UNIT_IMAGES } from './mercenaryProfile'
 import { UNIT_TYPE_MAP, UNIT_TYPES } from '../../data/unitTypes'
 import {
-  assignmentLabel, assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
+  assignmentLabel, assignmentOf, characterOf, isSummon, ownMorale, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
   availableTechs, dismissProblem, engagementOf, equipmentChangeProblem, equipmentOf, equippableKnights, equipProblem, unequipProblem, FUNDED_ROLES, governorOf, hiredMercenaries, hireOfferProblem, isMercenary, mercenaryMarket, officerTraining, producibleRelics, productionProblem, relicItemInfo, relicsOf, relicWorks, repairableRelics, repairProblem,
   researchOf, researchOutput, researchProblem, researchTurns, techStatus,
   MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportKnightProblem, transportOrderOf, treasuryForecast,
@@ -177,8 +177,13 @@ export function factionView(factionId: string | null | undefined): FactionView |
   return faction && { name: faction.name, emblem: factionEmblem(faction.id) }
 }
 
-/** What marks a mercenary on the screens: their company and their own soldiers */
+/**
+ * What marks a mercenary on the screens: their company and their own soldiers. A summoned unit is marked so too for
+ * now (its HP as its own soldiers, which the invasion screen does not change), until the screens show summoned units (M009-34)
+ */
 function mercenaryMark(game: GameState, id: string): MercenaryMark | undefined {
+  const summon = game.summons[id]
+  if (summon) return { company: '召喚', soldiers: summon.hp, maxSoldiers: summon.maxHp, morale: BALANCE.SUMMON_MORALE }
   const info = CHARACTER_MAP[id]?.mercenaryInfo
   const contract = game.mercenaries[id]?.contract
   return info && {
@@ -188,7 +193,7 @@ function mercenaryMark(game: GameState, id: string): MercenaryMark | undefined {
 }
 
 export function knightView(game: GameState, id: string): KnightView {
-  const character = CHARACTER_MAP[id]
+  const character = characterOf(game, id)
   if (!character) return { id, name: id }
   const order = orderOf(game, id)
   const moveOrder = moveOrderOf(game, id)
@@ -237,7 +242,7 @@ export function knightView(game: GameState, id: string): KnightView {
       politics: character.politics,
       charm: character.charm,
     },
-    defaultUnitType: defaultUnitType(id),
+    defaultUnitType: defaultUnitType(game, id),
     unitTypes: unitTypesOf(game, id),
     commandRank: commandRank(game, id),
     unavailableReason: engagementOf(game, id) ?? (carried ? '移送中' : carriedOrder ? '移送予約中' : undefined),
@@ -251,7 +256,7 @@ export function knightView(game: GameState, id: string): KnightView {
  */
 function knightEquipment(game: GameState, id: string): KnightView['equipment'] {
   const character = game.characters[id]
-  if (!character?.factionId || character.prisoner || character.roaming || isMercenary(id)) return undefined
+  if (!character?.factionId || character.prisoner || character.roaming || isMercenary(id) || isSummon(id)) return undefined
   const problem = character.factionId === viewFaction(game) ? equipmentChangeProblem(game, id) : '他勢力の騎士です'
   return { slots: equipmentOf(game, id).map((item) => item && equippedRelicView(item)), unavailableReason: problem ?? undefined }
 }
@@ -476,7 +481,7 @@ export function equipOptionsView(game: GameState, knightId: string, slot: number
     const holder = item.equippedBy
     return {
       ...equippedRelicView(item),
-      label: holder ? `${holder.characterId === knightId ? 'この騎士' : knightName(holder.characterId)}が装備中` : relicEffects(RELIC_MAP[item.relicId]).join('・'),
+      label: holder ? `${holder.characterId === knightId ? 'この騎士' : knightName(game, holder.characterId)}が装備中` : relicEffects(RELIC_MAP[item.relicId]).join('・'),
       disabledReason: equipProblem(game, knightId, slot, item.id) ?? undefined,
     }
   })
@@ -535,7 +540,7 @@ export function relicsView(game: GameState, factionId: string, cityId: string): 
       ...(item.buildingIn && { cityName: cityName(item.buildingIn) }),
       ...(item.repaired && relic.equipment && { equip: { unavailableReason: equipActionProblem(game, factionId, item.id) } }),
       ...(item.equippedBy && {
-        wearerName: knightName(item.equippedBy.characterId),
+        wearerName: knightName(game, item.equippedBy.characterId),
         unequip: { unavailableReason: unequipProblem(game, item.equippedBy.characterId, item.equippedBy.slot) ?? undefined },
       }),
     }]
@@ -740,23 +745,23 @@ export const UNIT_TYPE_VIEWS: readonly UnitTypeView[] = UNIT_TYPES.map((type) =>
  * the city's morale (a mercenary's unit: theirs), and its knight's 統率・武力 (知力 for mages), or half of the commander's for an indirect unit
  */
 export function unitPower(game: GameState, from: string, unit: InvasionAssignment, commander: string) {
-  const leader = unitAbilities(unit.knightId, commander)
+  const leader = unitAbilities(game, unit.knightId, commander)
   const type = unit.unitType as UnitType
   const power = {
     type,
     soldiers: unit.soldiers,
-    morale: unit.knightId !== null && isMercenary(unit.knightId) ? BALANCE.MERCENARY_MORALE : game.cities[from]?.troopMorale ?? 0,
+    morale: (unit.knightId !== null ? ownMorale(unit.knightId) : undefined) ?? game.cities[from]?.troopMorale ?? 0,
     leadership: leader?.leadership ?? 0,
     strength: leader ? mightFor(type, leader) : 0,
   }
   return { attack: basicAttack(power), defense: basicDefense(power) }
 }
 
-/** A knight's name (the id when unknown) */
-export const knightName = (id: string) => CHARACTER_MAP[id]?.name ?? id
+/** A knight's name, a summoned unit's too (the id when unknown) */
+export const knightName = (game: GameState, id: string) => characterOf(game, id)?.name ?? id
 
 /** Knights of a move, e.g. マルクス・カルタほか2人 */
-export function knightsLabel(ids: readonly string[]) {
-  const first = ids[0] === undefined ? '' : knightName(ids[0])
+export function knightsLabel(game: GameState, ids: readonly string[]) {
+  const first = ids[0] === undefined ? '' : knightName(game, ids[0])
   return ids.length > 1 ? `${first}ほか${ids.length - 1}人` : first
 }

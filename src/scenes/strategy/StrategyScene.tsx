@@ -7,12 +7,11 @@ import {
 import { MapView, type CityHighlight, type FocusInset, type RoadHighlight, type StrategyMap } from 'norden-strategy'
 import { playSe } from '../../audio/se'
 import { GameSettingsWindow } from '../../components/GameSettingsWindow'
-import { CHARACTER_MAP } from '../../data/character'
 import { FACTION_MAP, factionColor, factionName } from '../../data/faction'
 import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   BALANCE, MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
-  charactersIn, citiesOf, decideInvasion, decideRenewal, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn,
+  characterOf, charactersIn, citiesOf, decideInvasion, decideRenewal, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn,
   dismantleRelic, dismissMercenary, endFactionTurnProblem, equipRelic, relicsOf, unequipRelic, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn, lordChangeProblem, mercenaryCityProblem, mustChooseResearch, requestPapalRepair, researchOf, setResearch,
   moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction, prisonersIn,
   renewalProblem, runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, startRelicProduction, startRelicRepair, stationedIn, suppliesLeft, transportFromProblem,
@@ -141,7 +140,8 @@ export default function StrategyScene() {
   const decision = game.orders.find((o) => o.id === game.march?.decision) ?? null
   // The progress phase makes every faction's moves first (shown on the map), then fights the battles
   const moved = game.march?.moved ?? true
-  const legs = useMemo(() => (game.phase === 'march' && !moved ? movementLegs(game) : []), [game, moved])
+  // With the names on the map (those of summoned units are in the state)
+  const legs = useMemo(() => (game.phase === 'march' && !moved ? movementLegs(game) : []).map((leg) => ({ ...leg, label: knightsLabel(game, leg.knights) })), [game, moved])
   const playerCities = citiesOf(game, faction)
   const cutIn = useCutIn()
   // The order picked on the 行動予約 list: only its route is shown on the map
@@ -359,7 +359,7 @@ export default function StrategyScene() {
       const id = `move:${leg.id}`
       const started = map.march({
         id, route: leg.route, kind: leg.kind === 'transport' ? 'transport' : leg.solo ? 'envoy' : 'army', speed: MARCH_SPEED,
-        color: factionColor(leg.factionId), label: knightsLabel(leg.knights),
+        color: factionColor(leg.factionId), label: leg.label,
       })
       if (started) marching.add(id)
       else console.warn(`${leg.route.join(' → ')} の街道が地図にありません`)
@@ -524,7 +524,7 @@ export default function StrategyScene() {
               playerFaction={factionView(faction)}
               layout={layout} onLayoutChange={(part, position) => updateLayout({ [part]: position })}
               onWindowBoundsChange={({ x, width }) => setCityWindowRight(x + width)}
-              knightOf={(id) => CHARACTER_MAP[id] ? knightView(game, id) : undefined}
+              knightOf={(id) => characterOf(game, id) ? knightView(game, id) : undefined}
               equipment={equipment}
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
               onPrevCity={playerCities.length > 0 ? () => stepCity(cityId, -1) : undefined}

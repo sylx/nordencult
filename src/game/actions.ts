@@ -1,5 +1,5 @@
 import { CHARACTER_MAP } from '../data/character'
-import { MAX_SOLDIERS, defaultUnitType, isMercenary, mixMorale } from './army'
+import { MAX_SOLDIERS, defaultUnitType, hasOwnSoldiers, isMercenary, mixMorale, ownSoldiers } from './army'
 import { defenderArmy } from './defense'
 import { successorLord, withGovernor, withoutAssignee } from './economy/domestic'
 import { STANDING_WIPED_OUT } from './economy/balance'
@@ -21,6 +21,8 @@ import type {
 } from './types'
 import { relicsOf, withoutRelicItem, withRelics } from './relics/box'
 import { releaseEquipment } from './relics/equipment'
+import { isSummon } from './summons/character'
+import { releaseSummons, removeSummons, withSummonHp } from './summons/summons'
 import { neighbours } from './world'
 
 export { GameRuleError }
@@ -211,7 +213,7 @@ function withTroops(state: GameState, cityId: CityId, soldiers: number, morale =
  * The army of an order as it sets out: its knights still in the city it sets out from and their units, the
  * soldiers as many as the city has left (in the order of the units). An order without units (none chosen) sends
  * each knight with their default unit type, as many soldiers as a unit holds. Knights left without soldiers stay.
- * A mercenary's unit has their own soldiers as they are now and takes none of the city's.
+ * A mercenary's or a summoned unit's has their own soldiers as they are now (hasOwnSoldiers) and takes none of the city's.
  * null when no knight who can lead the army goes, or the city was lost
  */
 function armyOf(state: GameState, order: InvasionOrder): { knights: CharacterId[]; units: ArmyUnit[] } | null {
@@ -222,11 +224,11 @@ function armyOf(state: GameState, order: InvasionOrder): { knights: CharacterId[
     return c?.cityId === from && c.factionId === factionId
   })
   let pool = state.cities[from]?.troops ?? 0
-  const units = (order.units ?? present.map((id) => ({ knightId: id, unitType: defaultUnitType(id), soldiers: MAX_SOLDIERS })))
+  const units = (order.units ?? present.map((id) => ({ knightId: id, unitType: defaultUnitType(state, id), soldiers: MAX_SOLDIERS })))
     .filter((u) => u.knightId === null || present.includes(u.knightId))
     .flatMap((u) => {
-      if (u.knightId !== null && isMercenary(u.knightId)) {
-        return [{ ...u, unitType: defaultUnitType(u.knightId), soldiers: state.mercenaries[u.knightId].soldiers }]
+      if (u.knightId !== null && hasOwnSoldiers(u.knightId)) {
+        return [{ ...u, unitType: defaultUnitType(state, u.knightId), soldiers: ownSoldiers(state, u.knightId)! }]
       }
       const soldiers = Math.min(u.soldiers, pool)
       pool -= soldiers
@@ -328,15 +330,16 @@ export function resolveBattle(
   for (const r of [...retreats, ...wipeouts]) {
     if (r.to !== null && !retreatCities(state, battle, r.side).includes(r.to)) throw new GameRuleError(`${r.to} へは退却できません`)
   }
-  const captives = battle.undefended ? defender.knights.filter((id) => !isMercenary(id)) : []
+  // Mercenaries and summoned units are never captured
+  const captives = battle.undefended ? defender.knights.filter((id) => !hasOwnSoldiers(id)) : []
   // Where the defender's knights retreat out of the city lost, and their soldiers go when it holds
   const refuge = defender.factionId
     ? neighbours(cityId).find((id) => state.cityOwners[id] === defender.factionId)
     : undefined
   /** Knights captured, and their side */
   const captured = new Map<CharacterId, BattleSide>([
-    ...retreats.flatMap((r) => (r.captured && r.knightId ? [[r.knightId, r.side] as const] : [])),
-    ...wipeouts.flatMap((w) => (w.captured && w.knightId ? [[w.knightId, w.side] as const] : [])),
+    ...retreats.flatMap((r) => (r.captured && r.knightId && !isSummon(r.knightId) ? [[r.knightId, r.side] as const] : [])),
+    ...wipeouts.flatMap((w) => (w.captured && w.knightId && !isSummon(w.knightId) ? [[w.knightId, w.side] as const] : [])),
     ...captives.map((id) => [id, 'defender'] as const),
   ])
   // Only the side that won keeps those it captured, held in the city fought over
@@ -354,6 +357,15 @@ export function resolveBattle(
   let cities: Record<string, CityState> = { ...state.cities }
   /** The soldiers of the mercenaries who fought, as the battle left them */
   const mercenaryLeft = new Map<CharacterId, number>()
+  /** The HP of the summoned units who fought, as the battle left them, and those lost (wiped out, or with nowhere to go) */
+  const summonLeft = new Map<CharacterId, number>()
+  const lostSummons: CharacterId[] = []
+  /** Soldiers of their own as the battle left them: a mercenary's or a summoned unit's (false: anyone else's, the city's) */
+  const keepOwn = (knightId: CharacterId | null, count: number): boolean => {
+    if (knightId === null || !hasOwnSoldiers(knightId)) return false
+    ;(isSummon(knightId) ? summonLeft : mercenaryLeft).set(knightId, count)
+    return true
+  }
   const moves: CharacterMove[] = []
   const move = (characterId: string, kind: CharacterMove['kind'], to: string | null) => {
     const before = characters[characterId]
@@ -362,11 +374,15 @@ export function resolveBattle(
     if (left) cities[before.cityId!] = { ...left, assignments: withoutAssignee(left.assignments, characterId) }
     characters[characterId] = to === null ? wanderer(cityId) : { ...before, cityId: to }
   }
-  /** Out of the battle with nowhere to retreat to: a mercenary's contract ends, a knight goes back to their faction or, with no city of it left, wanders */
+  /**
+   * Out of the battle with nowhere to retreat to: a mercenary's contract ends, a knight goes back to their faction or,
+   * with no city of it left, wanders; a summoned unit goes back too or, with nowhere to go, is lost
+   */
   const strand = (characterId: CharacterId) => {
     if (isMercenary(characterId)) return move(characterId, 'released', null)
     const owners = winner === 'attacker' ? { ...state.cityOwners, [cityId]: attacker.factionId } : state.cityOwners
     const home = rejoinCity({ ...state, characters, cityOwners: owners }, characters[characterId].factionId!, cityId)
+    if (!home && isSummon(characterId)) return lostSummons.push(characterId)
     move(characterId, home ? 'rejoin' : 'wander', home)
   }
   const soldiers: SoldierReturn[] = []
@@ -392,8 +408,7 @@ export function resolveBattle(
   for (const r of retreats) {
     if (r.captured) continue
     const leaving = r.soldiers ?? startedWith(r.side, r.knightId)
-    if (r.knightId !== null && isMercenary(r.knightId)) mercenaryLeft.set(r.knightId, leaving)
-    else addSoldiers(r.to, leaving, battle[r.side].morale)
+    if (!keepOwn(r.knightId, leaving)) addSoldiers(r.to, leaving, battle[r.side].morale)
     if (r.knightId === null) continue
     if (r.side === 'attacker') move(r.knightId, 'return', r.to)
     // Only defenders still in the city (another battle may have moved them)
@@ -401,9 +416,13 @@ export function resolveBattle(
       move(r.knightId, 'retreat', r.to)
     }
   }
-  // Knights of units wiped out who got away (they have no soldiers left); the mercenaries among them leave
+  // Knights of units wiped out who got away (they have no soldiers left); the mercenaries among them leave, and the summoned units are lost
   const wipedOut = wipeouts.filter((w) => w.knightId !== null && isMercenary(w.knightId))
   for (const w of wipeouts) {
+    if (w.knightId !== null && isSummon(w.knightId)) {
+      lostSummons.push(w.knightId)
+      continue
+    }
     if (w.captured || w.knightId === null) continue
     if (wipedOut.includes(w)) {
       mercenaryLeft.set(w.knightId, 0)
@@ -433,7 +452,7 @@ export function resolveBattle(
       return c.cityId === cityId && c.factionId === defender.factionId && !c.prisoner && !movementOf(state, id)
     })
     for (const id of garrison) {
-      if (left.has(id)) continue
+      if (left.has(id) || lostSummons.includes(id)) continue
       if (refuge) move(id, 'retreat', refuge)
       else strand(id)
     }
@@ -462,10 +481,7 @@ export function resolveBattle(
     .filter((u) => u.knightId === null || !gone.has(u.knightId))
     .map((u): BattleSurvivor => ({ side, knightId: u.knightId, soldiers: u.soldiers })))
   for (const unit of remaining) {
-    if (unit.knightId !== null && isMercenary(unit.knightId)) {
-      mercenaryLeft.set(unit.knightId, unit.soldiers)
-      continue
-    }
+    if (keepOwn(unit.knightId, unit.soldiers)) continue
     const won = unit.side === winner
     const target = won ? cityId : unit.side === 'attacker' ? attacker.from : refuge
     addSoldiers(target, unit.soldiers, battle[unit.side].morale)
@@ -490,7 +506,8 @@ export function resolveBattle(
     const owner = cityOwners[target]
     if (!city || !owner || city.assignments.governor) return
     const here = Object.keys(characters)
-      .filter((id) => characters[id].cityId === target && characters[id].factionId === owner && !characters[id].prisoner && !movementOf(state, id) && !isMercenary(id))
+      .filter((id) => characters[id].cityId === target && characters[id].factionId === owner && !characters[id].prisoner && !movementOf(state, id) && !hasOwnSoldiers(id)
+        && !lostSummons.includes(id))
     if (here.length === 0) return
     const commander = battle[side].commander
     const governor = commander && here.includes(commander) ? commander : here[Math.floor(random() * here.length)]
@@ -510,6 +527,8 @@ export function resolveBattle(
   const report: BattleReport = {
     battle, winner, reason, cityCaptured: winner === 'attacker', moves, retreats: [...retreats], wipeouts: [...wipeouts], governors,
     captives, prisoners, freed, soldiers, lostRelicWork,
+    summons: Object.fromEntries([...attacker.knights, ...defender.knights, ...lostSummons].flatMap((id) => (state.summons[id] ? [[id, state.summons[id]]] : []))),
+    lostSummons,
   }
   const mercenaries: Record<CharacterId, MercenaryState> = { ...state.mercenaries }
   for (const [id, soldiers] of mercenaryLeft) mercenaries[id] = { ...mercenaries[id], soldiers }
@@ -519,14 +538,18 @@ export function resolveBattle(
   if (lostRelicWork?.kind === 'building' && lostRelicWork.relicItemId && formerOwner) {
     resolved = withoutRelicItem(resolved, formerOwner, lostRelicWork.relicItemId)
   }
+  for (const [id, hp] of summonLeft) resolved = withSummonHp(resolved, id, hp)
+  // A summoned unit left with no HP (a retreat with none) is lost too
+  for (const [id, hp] of summonLeft) if (hp <= 0 && !lostSummons.includes(id)) lostSummons.push(id)
+  resolved = removeSummons(resolved, lostSummons)
   for (const m of moves) if (m.kind === 'released') resolved = endContract(resolved, m.characterId, cityId)
   for (const w of wipedOut) resolved = withStanding(resolved, battle[w.side].factionId!, STANDING_WIPED_OUT)
   const lost = defender.factionId
   const destroyed = winner === 'attacker' && lost && !Object.values(cityOwners).includes(lost)
     ? destroyFaction(resolved, lost, cityId, attacker.factionId, Object.keys(state.characters).filter((id) => state.characters[id].factionId === lost))
     : resolved
-  // The relics those captured, wandering or released wore stay in the box of the faction they served
-  return releaseEquipment(destroyed)
+  // The relics those captured, wandering or released wore stay in the box of the faction they served; summoned units serving nobody are gone
+  return releaseSummons(releaseEquipment(destroyed))
 }
 
 /**
@@ -535,10 +558,11 @@ export function resolveBattle(
  * transport too (their movements end), and the event is told (FactionDestroyed). The contracts of its mercenaries end
  * there, without a grudge. Its knights held prisoner stay prisoners, of no faction
  * (they no longer escape); the prisoners it was taking along on its moves and transports are set free where they are (escapeOf).
- * Its relics go into the box of `by` as they are, those 法王府 is repairing too (nobody wearing them: resolveBattle releases them)
+ * Its relics go into the box of `by` as they are, those 法王府 is repairing too (nobody wearing them: resolveBattle releases them).
+ * Its summoned units are gone
  */
 function destroyFaction(state: GameState, factionId: FactionId, cityId: CityId, by: FactionId, served: readonly CharacterId[]): GameState {
-  const knights = served.filter((id) => !isMercenary(id)).sort()
+  const knights = served.filter((id) => !hasOwnSoldiers(id)).sort()
   const characters: Record<string, CharacterState> = { ...state.characters }
   for (const id of knights) {
     const c = characters[id]
@@ -559,7 +583,7 @@ function destroyFaction(state: GameState, factionId: FactionId, cityId: CityId, 
     }
   }
   const relics = withRelics(withRelics(state, by, [...relicsOf(state, by), ...relicsOf(state, factionId)]), factionId, []).relics
-  const destroyed: GameState = { ...state, characters, movements, relics, events: [...state.events, event], serial }
+  const destroyed: GameState = removeSummons({ ...state, characters, movements, relics, events: [...state.events, event], serial }, served.filter(isSummon))
   return served.filter((id) => destroyed.mercenaries[id]?.contract).reduce((next, id) => endContract(next, id, cityId), destroyed)
 }
 

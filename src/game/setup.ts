@@ -79,6 +79,7 @@ export function createInitialState(playerFactions: readonly FactionId[] = [DEFAU
     research: Object.fromEntries(FACTION_LIST.map((f) => [f.id, NO_RESEARCH])),
     relics: Object.fromEntries(FACTION_LIST.map((f) => [f.id, startingRelics(f)])),
     mercenaries,
+    summons: {},
     mercenaryStanding: Object.fromEntries(FACTION_LIST.map((f) => [f.id, 0])),
     lastEconomy: null,
     cityHistory: Object.fromEntries(Object.entries(cities).map(([id, city]) => [id, [cityRecord(city, id, 1)]])),

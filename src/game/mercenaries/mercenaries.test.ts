@@ -8,7 +8,7 @@ import {
   soldiersLeft, startNextBattle, successorLord, transportOrderProblem, treasuryForecast, unitTypesOf,
   type ArmyUnit, type BattleSurvivor, type GameState, type Movement,
 } from '..'
-import { playing as play } from '../testing'
+import { NO_SUMMONS, playing as play } from '../testing'
 
 const FLUEN = 'P012'
 const AMBARIA = 'P004'
@@ -46,8 +46,8 @@ function endStrategyPhase(state: GameState): GameState {
   return state
 }
 
-const unitOf = (state: GameState, id: string): ArmyUnit => ({ knightId: id, unitType: defaultUnitType(id), soldiers: state.mercenaries[id].soldiers })
-const knightUnit = (id: string, soldiers: number): ArmyUnit => ({ knightId: id, unitType: defaultUnitType(id), soldiers })
+const unitOf = (state: GameState, id: string): ArmyUnit => ({ knightId: id, unitType: defaultUnitType(state, id), soldiers: state.mercenaries[id].soldiers })
+const knightUnit = (id: string, soldiers: number): ArmyUnit => ({ knightId: id, unitType: defaultUnitType(NO_SUMMONS, id), soldiers })
 
 /** 015 and the mercenary marching on アンバリア from フルーエン: the battle is under way */
 function invading(state = hired(), id = BARREL): GameState {
@@ -344,9 +344,9 @@ describe('a company with a unit type of its own', () => {
 
   it('fights as that, not as the default of its leader\'s type', () => {
     info.unitType = undefined
-    expect(defaultUnitType(BARREL)).toBe('cavalry')
+    expect(defaultUnitType(NO_SUMMONS, BARREL)).toBe('cavalry')
     info.unitType = 'infantry'
-    expect(defaultUnitType(BARREL)).toBe('infantry')
+    expect(defaultUnitType(NO_SUMMONS, BARREL)).toBe('infantry')
     const state = hired()
     const draft = { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015', BARREL] }
     const unit = (unitType: string) => ({ knightId: BARREL, unitType, soldiers: MAX })
@@ -461,7 +461,7 @@ describe('forming armies', () => {
     expect(army.commander).toBe('013')
     expect(army.units).toEqual([
       expect.objectContaining({ knightId: '013', soldiers: Math.min(MAX_SOLDIERS, Math.floor(state.cities[AMBARIA].troops / 10) * 10) }),
-      { knightId: IRON, unitType: defaultUnitType(IRON), soldiers: 300 },
+      { knightId: IRON, unitType: defaultUnitType(state, IRON), soldiers: 300 },
     ])
   })
 })

@@ -7,12 +7,11 @@ import {
 import { cpuPlayer } from '@norden/battle-runtime/cpu'
 import type { TeamId } from '@norden/map-runtime/core/units'
 import { GameSettingsWindow } from '../../components/GameSettingsWindow'
-import { CHARACTER_MAP } from '../../data/character'
 import { CITY_MAP } from '../../data/city'
 import { factionName } from '../../data/faction'
 import { pickVoiceLine } from '../../data/voiceLines'
 import {
-  battleSpells, isMercenary, isPlayerFaction, resolveBattle, retreatCities, useGame, type Battle, type BattleRetreat, type BattleSide, type BattleSurvivor,
+  battleSpells, characterOf, isMercenary, isPlayerFaction, isSummon, resolveBattle, retreatCities, useGame, type Battle, type BattleRetreat, type BattleSide, type BattleSurvivor,
   type BattleWinner, type BattleWipeout, type GameState,
 } from '../../game'
 import { CPU_BATTLE_DIFFICULTY, getBattleSettings, useBattleSettings } from '../../settings/battleSettings'
@@ -48,10 +47,10 @@ function battleCutInTexts(battle: Battle): BattleCutInTexts {
  * speaks as the knight, a unit led indirectly as its side's commander; units nobody leads use
  * the common lines
  */
-function battleBarks(battle: Battle, knightOf: (status: UnitStatus) => string | null): BarkSource {
+function battleBarks(summons: GameState['summons'], battle: Battle, knightOf: (status: UnitStatus) => string | null): BarkSource {
   return lineBarks((situation, { unit, status }) => {
     const army = unit.team === SIDE_TEAM.attacker ? battle.attacker : battle.defender
-    return pickVoiceLine(situation, CHARACTER_MAP[knightOf(status) ?? army.commander ?? ''])
+    return pickVoiceLine(situation, characterOf({ summons }, knightOf(status) ?? army.commander ?? ''))
   })
 }
 
@@ -141,9 +140,10 @@ function Battlefield({ battle }: { battle: Battle }) {
   const to = battle.cityId
   // What the knights wear cannot change in the progress phase: the spells stay as the battle starts
   const spells = useMemo(() => battleSpells(game, battle), [game, battle])
-  const troops = useMemo(() => battleTroops(battle, spells), [battle, spells])
+  // Nor the summoned units: as the battle starts
+  const troops = useMemo(() => battleTroops(battle, spells, game.summons), [battle, spells, game.summons])
   const factions = useMemo(() => battleFactions(battle), [battle])
-  const barks = useMemo(() => battleBarks(battle, troops.knightOf), [battle, troops])
+  const barks = useMemo(() => battleBarks(game.summons, battle, troops.knightOf), [game.summons, battle, troops])
   const retreatTo = useMemo(() => battleRetreats(game, battle), [game, battle])
   const { cpu, cpuBattle } = useCpuPlayers(game, battle)
   /** Decided without drawing it (a battle between CPU factions, not watched). Kept as the battle starts; changing the setting takes effect from the next one */
@@ -259,7 +259,7 @@ function Battlefield({ battle }: { battle: Battle }) {
             殲滅: {wipeouts.map((w, i) => (
               <span key={i}>
                 <br />{w.side === 'attacker' ? '攻撃' : '防衛'} {w.knightId ?? '(騎士なし)'}
-                {w.knightId && isMercenary(w.knightId) ? '（契約解除）'
+                {w.knightId && isSummon(w.knightId) ? '（消滅）' : w.knightId && isMercenary(w.knightId) ? '（契約解除）'
                   : w.captured ? '（捕縛・捕虜）' : w.to ? `（${CITY_MAP[w.to]?.name ?? w.to}へ落ち延びた）` : '（退却先が無く、君主のもとへ）'}
               </span>
             ))}

@@ -1,6 +1,7 @@
 import { CHARACTER_MAP } from '../../data/character'
 import { RELIC_MAP, type SpellId } from '../../data/relics'
 import { isMercenary } from '../army'
+import { isSummon } from '../summons/character'
 import { EQUIPMENT_SLOTS } from '../economy/balance'
 import { GameRuleError } from '../errors'
 import { orderOf } from '../queries'
@@ -51,7 +52,7 @@ export function equipmentChangeProblem(state: GameState, characterId: CharacterI
   if (!factionId) return '勢力に仕える騎士ではありません'
   if (state.phase !== 'strategy' || state.activeFaction !== factionId) return '手番ではありません'
   if (isMercenary(characterId)) return '傭兵は装備できません'
-  if (CHARACTER_MAP[characterId]?.type === 'summon') return '召喚ユニットは装備できません'
+  if (isSummon(characterId)) return '召喚ユニットは装備できません'
   // The unit type (and the spells) of the invasion were chosen with what they wear
   if (orderOf(state, characterId)) return '侵攻予約中は装備を変えられません'
   return null

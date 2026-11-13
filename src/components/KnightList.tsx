@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../data/character'
+import { CHARACTER_MAP, CHARACTER_TYPE_LABELS, type Character } from '../data/character'
 import { CharacterImage } from './CharacterImage'
 import './KnightList.css'
 
@@ -14,15 +14,19 @@ interface Props {
   /** Shown when there is nobody */
   empty?: string
   compact?: boolean
+  /** Looks the characters up (a summoned unit is not in the data: characterOf). Omitted: the data's */
+  characterOf?: (id: string) => Character | undefined
 }
 
+const dataCharacter = (id: string): Character | undefined => CHARACTER_MAP[id]
+
 /** Characters with their face, name and type (all of them are "knights" in the UI) */
-export function KnightList({ ids, notes, aside, selection, empty = '騎士はいません。', compact = false }: Props) {
+export function KnightList({ ids, notes, aside, selection, empty = '騎士はいません。', compact = false, characterOf = dataCharacter }: Props) {
   if (ids.length === 0) return <p className="knight-list__empty">{empty}</p>
   return (
     <ul className={`knight-list ${compact ? 'knight-list--compact' : ''}`}>
       {ids.map((id) => {
-        const character = CHARACTER_MAP[id]
+        const character = characterOf(id)
         if (!character) return <li key={id}>{id}</li>
         const body = (
           <>

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { addOrder, debugAddRelic, defaultUnitType, endFactionTurn, equipRelic, hireMercenary, orderProblem, relicsOf, requestPapalRepair, startConstruction, startRelicProduction, startRelicRepair, withRelics, type GameState } from '../../game'
-import { playing } from '../../game/testing'
+import { NO_SUMMONS, playing } from '../../game/testing'
 import { RELIC_MAP, relicRarity } from '../../data/relics'
 import { UNIT_TYPE_MAP } from '../../data/unitTypes'
 import { buildOptions, cityView, equipCandidatesView, equipOptionsView, eventView, knightView, mercenaryContracts, mercenaryOffers, relicOptions, relicProductionsView, relicsView, relicWorkLabel } from './views'
@@ -154,7 +154,7 @@ describe('the mercenaries', () => {
   it('offers those within reach, with their rank and why one cannot be talked to', () => {
     const offers = mercenaryOffers(rich(), FLUEN)
     expect(offers.find((o) => o.knight.id === BARREL)).toMatchObject({
-      company: 'ドゥンダリン盾隊', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, soldiers: 600, maxSoldiers: 600, rank: 'C', cityName: 'フルーエン',
+      company: 'ドゥンダリン盾隊', unitType: UNIT_TYPE_MAP[defaultUnitType(NO_SUMMONS, BARREL)].name, soldiers: 600, maxSoldiers: 600, rank: 'C', cityName: 'フルーエン',
     })
     expect(offers.find((o) => o.knight.id === BARREL)).not.toHaveProperty('fee')
     // Short of gold, the contract can still be talked over: the hiring scene tells it
@@ -172,7 +172,7 @@ describe('the mercenaries', () => {
     expect(knightView(rich(), BARREL).mercenary?.monthly).toBeUndefined()
     expect(knightView(state, '015').mercenary).toBeUndefined()
     expect(mercenaryContracts(state, 'carta')).toMatchObject([{
-      company: 'ドゥンダリン盾隊', unitType: UNIT_TYPE_MAP[defaultUnitType(BARREL)].name, unitImage: expect.any(String), cityName: 'フルーエン', rank: 'C', monthly: 334, months: 0,
+      company: 'ドゥンダリン盾隊', unitType: UNIT_TYPE_MAP[defaultUnitType(NO_SUMMONS, BARREL)].name, unitImage: expect.any(String), cityName: 'フルーエン', rank: 'C', monthly: 334, months: 0,
     }])
     expect(orderProblem(state, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: BARREL, knights: [BARREL] })).toBe('傭兵は軍団長になれません')
   })

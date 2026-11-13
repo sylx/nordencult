@@ -7,7 +7,7 @@ import { TECH_LIST, TECH_MAP } from '../data/techs'
 import { UNIT_TYPE_MAP } from '../data/unitTypes'
 import { SCENES, isDialogueId, type DialogueId } from '../dialogue'
 import {
-  awayReason, charactersIn, clearFlag, citiesOf, dateOf, debugAddRelic, debugEquipRelic, debugImprison, debugUnequipRelic, equipmentOf, BALANCE, debugAddResearchPoints, debugCompleteTech, debugFillConstruction, debugFillResearch, debugSetCity, debugSetGold,
+  awayReason, characterOf, charactersIn, debugSummon, isSummon, renameProblem, renameSummon, summonStrength, withSummonHp, clearFlag, citiesOf, dateOf, debugAddRelic, debugEquipRelic, debugImprison, debugUnequipRelic, equipmentOf, BALANCE, debugAddResearchPoints, debugCompleteTech, debugFillConstruction, debugFillResearch, debugSetCity, debugSetGold,
   debugSetMercenarySoldiers, debugSetStanding, endFactionTurn, setFlag, factionPower, governorOf, isMercenary, isPlayerFaction, isRecovering, mercenaryAt, movementOf, ownerOf, prisonerMovementOf, prisonersIn, relicsOf, researchOf, researchOutput, resolveBattle, turnOrder, unitTypesOf, viewFaction,
   type BattleWinner, type CityConstruction, type CityId, type DebugCityField, type FactionId, type GameState, type GameStore, type RelicItem,
 } from '../game'
@@ -45,6 +45,13 @@ const relicItemArg: Arg = {
 const slotArg: Arg = { name: 'slot', optional: true, int: true, candidates: () => Array.from({ length: BALANCE.EQUIPMENT_SLOTS }, (_, slot) => ({ value: `${slot}` })) }
 const mercenaryArg: Arg = {
   name: 'mercenary', candidates: () => CHARACTER_LIST.flatMap((c) => (c.mercenaryInfo ? [{ value: c.id, label: `${c.mercenaryInfo.name} ${c.name}` }] : [])),
+}
+/** A relic summoning a monster (Relic.summon) */
+const summonRelicArg: Arg = { name: 'relic', candidates: () => RELIC_LIST.flatMap((r) => (r.summon ? [{ value: r.id, label: r.name }] : [])) }
+/** A summoned unit of the game, any faction's */
+const summonArg: Arg = {
+  name: 'summon',
+  candidates: ({ store }) => Object.entries(store.getState().summons).map(([id, summon]) => ({ value: id, label: summon.name })),
 }
 const techArg: Arg = { name: 'tech', candidates: () => TECH_LIST.map((t) => ({ value: t.id, label: t.name })) }
 
@@ -116,6 +123,23 @@ function mercenaryRow(state: GameState, id: string): string[] {
   const status = contract ? `契約中（月額 ${contract.monthly}）` : isRecovering(state, id) ? '回復中' : '市場'
   const place = contract ? `${factionName(state.characters[id].factionId)} ${cityLabel(mercenaryAt(state, id))}` : roamingLabel(state, id)
   return [id, info.name, CHARACTER_MAP[id].name, status, place, `${soldiers}/${info.maxSoldiers}`]
+}
+
+/** A summoned unit in detail */
+function summonLines(state: GameState, id: string): string[] {
+  const summon = state.summons[id]
+  if (!summon) throw new DebugError(`${id} は召喚ユニットではありません`)
+  const { cityId, factionId } = state.characters[id]
+  return table([
+    ['召喚ユニット', `${summon.name} (${id})`],
+    ['魔物', `${UNIT_TYPE_MAP[summon.unitType]?.name ?? summon.unitType}（型紙 ${summon.templateId}・遺物 ${relicName(summon.relicId, true)}）`],
+    ['勢力', factionName(factionId)],
+    ['都市', cityLabel(cityId)],
+    ['状態', awayReason(state, id) ?? '待機'],
+    ['HP', `${summon.hp}/${summon.maxHp}`],
+    ['攻撃力・防御力', `${summonStrength(state, id)!.attack} / ${summonStrength(state, id)!.defense}（基本攻撃力・基本防御力。士気 ${BALANCE.SUMMON_MORALE}）`],
+    ['能力', `統率${summon.leadership} 武力${summon.strength} 知力${summon.intelligence}`],
+  ])
 }
 
 function researchLabel(state: GameState, factionId: FactionId): string {
@@ -319,6 +343,18 @@ export const DEBUG_COMMANDS: readonly Command[] = [
         },
       },
       {
+        name: 'summon', summary: '遺物なしで召喚ユニットを都市に出す（都市の勢力のもの。手番の条件なし。名前は自動）', args: [cityArg, summonRelicArg],
+        run: ([cityId, relicId], { store }) => {
+          let id = ''
+          store.update((s) => {
+            const summoned = debugSummon(s, cityId, relicId)
+            id = summoned.id
+            return summoned.state
+          })
+          return summonLines(store.getState(), id)
+        },
+      },
+      {
         name: 'equip', summary: '騎士に遺物を装備させる（手番・予約の条件なし。枠の既定は空いた枠）', args: [knightArg, relicItemArg, slotArg],
         run: ([id, itemId, slot], { store }) => {
           store.update((s) => debugEquipRelic(s, id, itemId, slot === undefined ? undefined : Number(slot)))
@@ -401,8 +437,9 @@ export const DEBUG_COMMANDS: readonly Command[] = [
           return table([
             ['id', '騎士', '種別', '都市', '兵種', '装備'],
             ...ids.map((id) => [
-              id, CHARACTER_MAP[id]?.name ?? id, CHARACTER_TYPE_LABELS[CHARACTER_MAP[id]?.type ?? 'knight'], cityLabel(state.characters[id].cityId),
-              unitTypesOf(state, id).map((type) => UNIT_TYPE_MAP[type]?.name ?? type).join('・'), isMercenary(id) ? '' : equipmentLabel(state, id),
+              id, characterOf(state, id)?.name ?? id, CHARACTER_TYPE_LABELS[characterOf(state, id)?.type ?? 'knight'], cityLabel(state.characters[id].cityId),
+              unitTypesOf(state, id).map((type) => UNIT_TYPE_MAP[type]?.name ?? type).join('・'),
+              isSummon(id) ? `HP ${state.summons[id].hp}/${state.summons[id].maxHp}` : isMercenary(id) ? '' : equipmentLabel(state, id),
             ]),
           ])
         },
@@ -439,6 +476,51 @@ export const DEBUG_COMMANDS: readonly Command[] = [
           if (factionId === owner) throw new DebugError(`${cityLabel(cityId)} は ${name} の勢力の都市です`)
           store.update((s) => debugImprison(s, id, cityId))
           return `${name} を ${cityLabel(cityId)}（${factionName(owner)}）の捕虜にした`
+        },
+      },
+    ],
+  },
+  {
+    name: 'summon', summary: '召喚ユニットを見る・変える（出すのは relic summon）',
+    subcommands: [
+      {
+        name: 'list', summary: '召喚ユニットの一覧（勢力を付けるとその勢力のもの）', args: [{ ...factionArg, optional: true }],
+        run: ([faction], { store }) => {
+          const state = store.getState()
+          const ids = Object.keys(state.summons).sort().filter((id) => !faction || state.characters[id]?.factionId === faction)
+          if (ids.length === 0) return '召喚ユニットはいません'
+          return table([
+            ['id', '名前', '魔物', '勢力', '都市', 'HP', '統率', '武力', '知力'],
+            ...ids.map((id) => {
+              const summon = state.summons[id]
+              return [
+                id, summon.name, UNIT_TYPE_MAP[summon.unitType]?.name ?? summon.unitType, factionName(state.characters[id]?.factionId ?? null),
+                cityLabel(state.characters[id]?.cityId ?? null), `${summon.hp}/${summon.maxHp}`, `${summon.leadership}`, `${summon.strength}`, `${summon.intelligence}`,
+              ]
+            }),
+          ])
+        },
+      },
+      {
+        name: 'show', summary: '召喚ユニットの詳細', args: [summonArg],
+        run: ([id], { store }) => summonLines(store.getState(), id),
+      },
+      {
+        name: 'hp', summary: '召喚ユニットの HP を決める（0〜最大）', args: [summonArg, { name: 'hp', int: true }],
+        run: ([id, hp], { store }) => {
+          if (!store.getState().summons[id]) throw new DebugError(`${id} は召喚ユニットではありません`)
+          store.update((s) => withSummonHp(s, id, Number(hp)))
+          const summon = store.getState().summons[id]
+          return `${summon.name} の HP: ${summon.hp}/${summon.maxHp}`
+        },
+      },
+      {
+        name: 'name', summary: '召喚ユニットの名前を変える', args: [summonArg, { name: 'name', open: true }],
+        run: ([id, name], { store }) => {
+          const problem = renameProblem(store.getState(), id, name)
+          if (problem) throw new DebugError(problem)
+          store.update((s) => renameSummon(s, id, name))
+          return `${id} の名前: ${store.getState().summons[id].name}`
         },
       },
     ],

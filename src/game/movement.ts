@@ -7,6 +7,8 @@ import {
   stationedIn, suppliesLeft,
 } from './queries'
 import { releaseEquipment } from './relics/equipment'
+import { isSummon } from './summons/character'
+import { releaseSummons } from './summons/summons'
 import { wanderer } from './roaming'
 import type { CharacterId, CharacterState, CityId, CityState, FactionId, GameState, MoveLeg, MoveOrder, Movement, MovementKind, TransportOrder } from './types'
 import { neighbours } from './world'
@@ -110,6 +112,7 @@ export function moveOrderProblem(state: GameState, draft: Omit<MoveOrder, 'id'>)
   }
   if (![troops, supplies].every((n) => Number.isInteger(n) && n >= 0)) return '数が正しくありません'
   if (solo && knights.some(isMercenary)) return '傭兵は単騎移動できません'
+  if (solo && knights.some(isSummon)) return '召喚ユニットは単騎移動できません'
   if (solo && (troops > 0 || supplies > 0)) return '単騎移動では兵と物資を運べません'
   if (solo && prisoners.length > 0) return '単騎移動では捕虜を連れて行けません'
   if (troops > soldiersLeft(state, from)) return '兵が足りません'
@@ -142,6 +145,7 @@ export function cancelMoveOrder(state: GameState, orderId: string): GameState {
  * role (e.g. 商業担当官: an officer stays at their work); null when they can. A lord may go, staying the lord
  */
 export function transportKnightProblem(state: GameState, characterId: CharacterId): string | null {
+  if (isSummon(characterId)) return '召喚ユニットは輸送を担当できません'
   const role = assignmentOf(state, characterId)
   return engagementOf(state, characterId) ?? (role && role !== 'governor' ? assignmentLabel(role) : null)
 }
@@ -373,9 +377,9 @@ export function runMovements(state: GameState, random: () => number = Math.rando
       ? undefined : next.knights.find((id) => CHARACTER_MAP[id]?.isPatriarch && characters[id].factionId === next.factionId)
     if (head) cities[next.to] = { ...cities[next.to], assignments: withGovernor(cities[next.to].assignments, head) }
   }
-  // Knights wandering off take off what they wear
-  return releaseEquipment({
+  // Knights wandering off take off what they wear; summoned units with nowhere to go are gone
+  return releaseSummons(releaseEquipment({
     ...departed, characters, cities, movements, serial,
     ...(departed.march && { march: { ...departed.march, moved: true } }),
-  })
+  }))
 }

@@ -203,6 +203,23 @@ describe('commands', () => {
     expect(() => run('city set P012 nothing 1')).toThrow(DebugError)
   })
 
+  it('summons a unit without a relic, lists it and changes its HP and name', () => {
+    const { store, run } = setup()
+    expect(run('summon list')).toEqual(['召喚ユニットはいません'])
+    expect(run('relic summon P012 golem').join('\n')).toMatch(/HP\s+800\/800/)
+    const [id] = Object.keys(store.getState().summons)
+    expect(store.getState().characters[id]).toEqual({ cityId: 'P012', factionId: 'carta' })
+    expect(run('summon list carta').join('\n')).toContain('ゴーレム')
+    expect(run('knight list carta').join('\n')).toContain('HP 800/800')
+    expect(run(`summon hp ${id} 123`)).toEqual([`${store.getState().summons[id].name} の HP: 123/800`])
+    run(`summon hp ${id} 9999`)
+    expect(store.getState().summons[id].hp).toBe(800)
+    run(`summon name ${id} ガルム`)
+    expect(store.getState().summons[id].name).toBe('ガルム')
+    expect(() => run('relic summon P012 rifle')).toThrow()
+    expect(() => run('summon hp 015 1')).toThrow(DebugError)
+  })
+
   it('fills what a city builds, and shows the relic a building uses', () => {
     const { store, run } = setup()
     store.update(() => playing('carta'))

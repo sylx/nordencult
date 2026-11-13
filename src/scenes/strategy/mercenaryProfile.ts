@@ -16,7 +16,8 @@ export const UNIT_IMAGES: Readonly<Record<string, string>> =
 
 /** A mercenary's unit type, which is fixed: its name and picture */
 function mercenaryUnit(id: string) {
-  const type = defaultUnitType(id)
+  // A mercenary is one of the data's characters, never a summoned unit
+  const type = defaultUnitType({ summons: {} }, id)
   return { unitType: UNIT_TYPE_MAP[type]?.name ?? type, unitImage: UNIT_IMAGES[type] }
 }
 

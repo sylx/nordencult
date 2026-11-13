@@ -8,3 +8,6 @@ export function playing(...factions: FactionId[]): GameState {
   while (state.activeFaction !== factions[0]) state = endFactionTurn(state)
   return state
 }
+
+/** A state with no summoned unit, for what looks a character up in the summons only */
+export const NO_SUMMONS: Pick<GameState, 'summons'> = { summons: {} }

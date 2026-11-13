@@ -33,6 +33,11 @@ export interface GameState {
   relics: Readonly<Record<FactionId, readonly RelicItem[]>>
   /** Every mercenary's soldiers and contract, those not hired too */
   mercenaries: Readonly<Record<CharacterId, MercenaryState>>
+  /**
+   * The summoned units (召喚ユニット, ids 'summon-<serial>': isSummon), each also in `characters` under the same id,
+   * serving a faction in a city as a knight does. Gone when wiped out or when they serve nobody (releaseSummons)
+   */
+  summons: Readonly<Record<CharacterId, SummonState>>
   /** Each faction's standing with the mercenaries (傭兵業界の友好度, -100..100); no screen shows it */
   mercenaryStanding: Readonly<Record<FactionId, number>>
   /** What the latest economy run (at the start of the turn) did, for showing the cities grow; null on turn 1 */
@@ -83,6 +88,28 @@ export interface CharacterState {
    * phase (runEscapes) and be taken to another city of its faction on a move or a transport (MoveOrder.prisoners)
    */
   prisoner?: boolean
+}
+
+/**
+ * A summoned unit: a monster summoned with a relic (Relic.summon), named by the player. It has no data of its own:
+ * its pictures are its template's (a special character, 991..999) and its abilities are rolled when it is summoned
+ */
+export interface SummonState {
+  /** The special character it takes its pictures after ('991' ドラゴン …) */
+  templateId: CharacterId
+  /** The relic it was summoned with (an id of RELIC_LIST); the relic is gone */
+  relicId: string
+  /** SUMMON_NAME_MAX characters at most, never empty */
+  name: string
+  /** A monster's (Relic.summon.unitType): the only unit type it leads */
+  unitType: UnitTypeId
+  /** Rolled from SUMMON_ABILITY_RANGE when summoned; 政治・魅力 are SUMMON_FIXED_ABILITY */
+  leadership: number
+  strength: number
+  intelligence: number
+  /** Its own soldiers (HP), apart from any city's, and their most (Relic.summon.hp) */
+  hp: number
+  maxHp: number
 }
 
 /** A mercenary's own soldiers, apart from any city's, and their contract */
@@ -598,6 +625,10 @@ export interface BattleReport {
    * repaired are gone) or a building using a relic (BuildingWork.relicItemId; the relic is gone from the box too). null: none
    */
   lostRelicWork: RelicWork | BuildingWork | null
+  /** The summoned units of the battle as it started (and those of the city lost), to name them after it: some are gone */
+  summons: Readonly<Record<CharacterId, SummonState>>
+  /** Summoned units lost: wiped out, or with nowhere to go out of the city lost. Gone for good */
+  lostSummons: readonly CharacterId[]
 }
 
 /** A faction lost its last city (in a battle) and is no more: every knight of it took to wandering (放浪) */
