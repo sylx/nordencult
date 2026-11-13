@@ -465,7 +465,7 @@ export function relicOptions(game: GameState, cityId: string): RelicOptionView[]
 }
 
 /**
- * What an equipment relic gives and who can wear it, e.g. ライフル兵を率いる, 魔法: フレイムランス, 知力 70 以上の魔術師が装備できる;
+ * What an equipment relic gives and who can wear it, e.g. ライフル兵を編成可能, 魔法: フレイムランス, 知力 70 以上の魔術師が装備できる;
  * what a summon relic summons, e.g. ドラゴンの部隊を召喚する（HP 600）
  */
 export function relicEffects(relic: Relic): string[] {
@@ -474,7 +474,7 @@ export function relicEffects(relic: Relic): string[] {
   if (!equipment) return []
   const wearer = `${equipment.minIntelligence ? `知力 ${equipment.minIntelligence} 以上の` : ''}${RELIC_WEARER_LABELS[equipment.wearer]}が装備できる`
   return [
-    ...(equipment.unitTypes ?? []).map((id) => `${UNIT_TYPE_MAP[id]?.name ?? id}を率いる`),
+    ...(equipment.unitTypes ?? []).map((id) => `${UNIT_TYPE_MAP[id]?.name ?? id}を編成可能`),
     ...(equipment.spells?.length ? [`魔法: ${equipment.spells.map((id) => ATTACK_DEFS[id]?.name ?? id).join('・')}`] : []),
     wearer,
   ]

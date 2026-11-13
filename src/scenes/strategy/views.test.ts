@@ -61,7 +61,7 @@ describe('equipment', () => {
   it('shows a knight\'s slots, which change only in their faction\'s turn', () => {
     expect(knightView(playing('carta'), '016').equipment).toEqual({ slots: [null, null], unavailableReason: undefined })
     const state = worn()
-    expect(knightView(state, '027').equipment?.slots[1]).toMatchObject({ id: REPAIRED_RIFLE, name: 'ライフル', effects: ['ライフル兵を率いる'] })
+    expect(knightView(state, '027').equipment?.slots[1]).toMatchObject({ id: REPAIRED_RIFLE, name: 'ライフル', effects: ['ライフル兵を編成可能'] })
     expect(knightView(endFactionTurn(state), '027').equipment?.unavailableReason).toBe('手番ではありません')
     expect(knightView(state, '013').equipment?.unavailableReason).toBe('他勢力の騎士です')
     expect(knightView(addOrder(state, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '027', knights: ['027'] }), '027').equipment?.unavailableReason)
@@ -71,7 +71,7 @@ describe('equipment', () => {
   it('shows the relic worn, by whom, what it gives, and putting it on or taking it off', () => {
     const rifle = relicsView(worn(), 'carta', FLUEN).find((relic) => relic.id === REPAIRED_RIFLE)
     expect(rifle).toMatchObject({
-      status: 'equipped', wearerName: 'ルカ・シルヴァ', effects: ['ライフル兵を率いる', '魔術師以外が装備できる'],
+      status: 'equipped', wearerName: 'ルカ・シルヴァ', effects: ['ライフル兵を編成可能', '魔術師以外が装備できる'],
       equip: { unavailableReason: undefined }, unequip: { unavailableReason: undefined },
     })
     const broken = relicsView(worn(), 'carta', FLUEN).find((relic) => relic.id === RIFLE)
