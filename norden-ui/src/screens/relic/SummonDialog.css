@@ -1,0 +1,42 @@
+/* SummonDialog over the whole page: the figure on the left, the name and 決定 on the right */
+.norden-summon-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(10 7 4 / 0.7);
+}
+.norden-summon-dialog-wrap { max-width: 100%; max-height: 100%; }
+.norden-summon-dialog { box-sizing: border-box; width: min(640px, calc(100vw - 48px)); max-height: calc(100vh - 48px); padding: 28px 22px 20px; overflow: auto; }
+.norden-summon-layout { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.norden-summon-figure { overflow: hidden; aspect-ratio: 2 / 3; background: #15110d66; border: 1px solid #a3824b40; }
+.norden-summon-figure img,
+.norden-summon-figure > * { display: block; width: 100%; height: auto; }
+.norden-summon-body { display: grid; align-content: start; gap: 10px; margin: 0; color: var(--norden-text); }
+.norden-summon-subtitle { margin: 0; color: var(--norden-text-muted); font-size: 13px; }
+.norden-summon-label { color: var(--norden-text-muted); font-size: 13px; }
+.norden-summon-name { display: flex; gap: 8px; }
+.norden-summon-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 34px;
+  padding: 0 10px;
+  color: var(--norden-text-strong);
+  background: #211b14;
+  border: 1px solid #6e5838;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 16px;
+}
+.norden-summon-input:focus-visible { outline: 2px solid #f4d987; outline-offset: -2px; }
+.norden-summon-count { margin: 0; color: var(--norden-text-faint); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+.norden-summon-reason { margin: 0; color: var(--norden-text-caution); font-size: 13px; }
+.norden-summon-actions { display: flex; justify-content: center; margin-top: 6px; }
+
+@media (max-width: 560px) {
+  .norden-summon-layout { grid-template-columns: 1fr; }
+  .norden-summon-figure { max-width: 180px; justify-self: center; }
+}

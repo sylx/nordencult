@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import QuantityInput from '../../components/parts/QuantityInput'
 import SectionFrame from '../../components/parts/SectionFrame'
 import type { KnightCardData } from '../../components/parts/KnightCard'
-import type { DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, KnightAbilitiesView, KnightView } from '../types'
+import type { DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, KnightAbilitiesView, KnightView, SummonView } from '../types'
 import Tooltip from '../../components/parts/Tooltip'
 
 /** Most knights holding one officer role */
@@ -45,9 +45,18 @@ export function knightAbility(knight: KnightView, ability: Ability): number | un
   return typeof value === 'number' ? value : undefined
 }
 
-/** All of a knight's abilities as the card's stats; an unknown one shows as — */
-export const knightAbilityStats = (knight: KnightView) =>
-  ABILITIES.map(ability => ({ label: ABILITY_LABELS[ability], value: knightAbility(knight, ability) ?? '—' }))
+/** A summoned unit's HP, attack and defense as the card's stats (shown in place of its abilities) */
+export const summonStats = (summon: SummonView) => [
+  { label: 'HP', value: summon.hp, max: summon.maxHp },
+  // No scale of 0..100: not colored by how high they are
+  { label: '攻撃力', value: summon.attack, max: Infinity },
+  { label: '防御力', value: summon.defense, max: Infinity },
+]
+
+/** All of a knight's abilities as the card's stats; an unknown one shows as —. A summoned unit's HP, attack and defense instead */
+export const knightAbilityStats = (knight: KnightView) => (knight.summon
+  ? summonStats(knight.summon)
+  : ABILITIES.map(ability => ({ label: ABILITY_LABELS[ability], value: knightAbility(knight, ability) ?? '—' })))
 
 /** A knight's aptitude for a role: their abilities weighed as the role weighs them (undefined when one is unknown) */
 export function roleAptitude(knight: KnightView, spec: OfficerRoleSpec): number | undefined {

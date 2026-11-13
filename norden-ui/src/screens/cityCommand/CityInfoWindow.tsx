@@ -105,8 +105,9 @@ function CityInfo({ city, onOpenDomestic }: { city: CityView; onOpenDomestic?: (
             {city.population !== undefined && <div><dt>人口</dt><dd>{city.population.toLocaleString()}</dd></div>}
             {city.scaleLabel && <div><dt>規模</dt><dd>{city.scaleLabel}</dd></div>}
             {city.special && <div><dt>特殊</dt><dd>{city.special}</dd></div>}
-            <div><dt>騎士</dt><dd>{city.knights?.filter(knight => !knight.mercenary).length ?? 0}人</dd></div>
+            <div><dt>騎士</dt><dd>{city.knights?.filter(knight => !knight.mercenary && !knight.summon).length ?? 0}人</dd></div>
             {city.knights?.some(knight => knight.mercenary) && <div><dt>傭兵</dt><dd>{city.knights.filter(knight => knight.mercenary).length}人</dd></div>}
+            {city.knights?.some(knight => knight.summon) && <div><dt>召喚</dt><dd>{city.knights.filter(knight => knight.summon).length}体</dd></div>}
             {city.prisoners && city.prisoners.length > 0 && <div><dt>捕虜</dt><dd>{city.prisoners.length}人</dd></div>}
           </dl>
         </div>
@@ -150,9 +151,13 @@ function CityInfo({ city, onOpenDomestic }: { city: CityView; onOpenDomestic?: (
   )
 }
 
-/** The city's knights with all their abilities, its lord first; after a splitter each the mercenaries serving there and the prisoners held there, with the faction they served */
+/**
+ * The city's knights with all their abilities, its lord first; after a splitter each the summoned units (their HP, attack
+ * and defense), the mercenaries serving there and the prisoners held there, with the faction they served
+ */
 function CityKnights({ city, onShowKnight }: { city: CityView; onShowKnight?: (id: string) => void }) {
-  const knights = (city.knights ?? []).filter(knight => !knight.mercenary)
+  const knights = (city.knights ?? []).filter(knight => !knight.mercenary && !knight.summon)
+  const summons = (city.knights ?? []).filter(knight => knight.summon)
   const mercenaries = (city.knights ?? []).filter(knight => knight.mercenary)
   const prisoners = city.prisoners ?? []
   // The lord is matched to their knight by id, or by name when the city gives none
@@ -182,12 +187,13 @@ function CityKnights({ city, onShowKnight }: { city: CityView; onShowKnight?: (i
   </>
   return (
     <div className="norden-city-knights">
-      {knights.length === 0 && mercenaries.length === 0
+      {knights.length === 0 && mercenaries.length === 0 && summons.length === 0
         ? <p className="norden-city-empty">この都市に所属する騎士はいません。</p>
         : ordered.map(knight => {
           const lordCard = isLord(knight)
           return card(knight, lordCard && <span className="norden-city-knight-badge">領主</span>, lordCard)
         })}
+      {group('召喚', summons)}
       {group('傭兵', mercenaries)}
       {group('捕虜', prisoners, prisoner => <span className="norden-city-prisoner-faction">
         {prisoner.faction ? <FactionMark faction={prisoner.faction} /> : '勢力なし'}

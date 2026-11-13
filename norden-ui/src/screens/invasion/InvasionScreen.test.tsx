@@ -54,6 +54,27 @@ describe('InvasionScreen', () => {
     ])
   })
 
+  it('takes a summoned unit with its HP and monster, out of the pool, never as the commander', async () => {
+    const summon = { id: 's1', name: 'イグナーヴ', defaultUnitType: 'dragon', unitTypes: ['dragon'], summon: { hp: 450, maxHp: 600, attack: 172, defense: 185, morale: 70, relicName: 'ドラゴン', relicDescription: '竜の卵から孵った。' } }
+    const { onConfirm } = setup({
+      knights: [{ id: 'k1', name: 'エルネスト', defaultUnitType: 'cavalry' }, summon],
+      unitTypes: [...unitTypes, { id: 'dragon', name: 'ドラゴン' }],
+    })
+    expect(button('イグナーヴを軍団長にする')).toBeDisabled()
+    expect(button('イグナーヴを軍団長にする')).toHaveAttribute('aria-description', '召喚ユニットは軍団長になれません')
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('イグナーヴを加える'))
+    expect(unit('イグナーヴの部隊').getByLabelText('イグナーヴの部隊の内容')).toHaveTextContent('ドラゴン・450（HP）召喚ユニットの兵科と兵数は変えられません')
+    expect(screen.queryByRole('button', { name: 'イグナーヴを軍団長にする' })).not.toBeInTheDocument()
+    expect(screen.getByRole('meter', { name: 'イグナーヴの士気' })).toHaveAttribute('aria-valuenow', '70')
+    await userEvent.click(button('兵を均等に分ける'))
+    await userEvent.click(confirm())
+    expect(onConfirm.mock.calls[0]![0].units).toEqual([
+      { knightId: 'k1', unitType: 'cavalry', soldiers: 400 },
+      { knightId: 's1', unitType: 'dragon', soldiers: 450 },
+    ])
+  })
+
   it('leaves no army of mercenaries alone when the commander goes', async () => {
     withMercenary()
     await userEvent.click(button('エルネストを軍団長にする'))

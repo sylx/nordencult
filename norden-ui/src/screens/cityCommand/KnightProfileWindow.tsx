@@ -5,7 +5,7 @@ import EquipmentSlots from '../../components/parts/EquipmentSlots'
 import { KnightStats } from '../../components/parts/KnightCard'
 import PickerDialog from '../../components/picker/PickerDialog'
 import RelicPicker from '../../components/picker/RelicPicker'
-import { ABILITIES, ABILITY_LABELS, knightAbility } from '../domestic/DomesticOfficers'
+import { ABILITIES, ABILITY_LABELS, knightAbility, summonStats } from '../domestic/DomesticOfficers'
 import type { EquipmentActions, KnightView } from '../types'
 import Tooltip from '../../components/parts/Tooltip'
 import './KnightProfileWindow.css'
@@ -23,6 +23,8 @@ export interface KnightProfileWindowProps extends Omit<NavigationWindowProps, 't
 
 /**
  * A knight's profile: full figure, 所属・所在, abilities with their chart, equipment slots (装備) and 略歴, in a window with back/forward.
+ * A summoned unit (knight.summon) shows its HP, attack and defense in place of the abilities and their chart, and the
+ * relic it was summoned with in place of the 略歴.
  * A slot pressed opens the relics that can go in it (a PickerDialog), 外す takes one off
  */
 export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, equipment, onClose, className = '', ...windowProps }: KnightProfileWindowProps) {
@@ -65,7 +67,7 @@ export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, 
               {knight.subtitle && <span className="norden-knight-profile-sub">{knight.subtitle}</span>}
             </div>
           </header>
-          {(knight.faction !== undefined || knight.location || knight.mercenary) && (
+          {(knight.faction !== undefined || knight.location || knight.mercenary || knight.summon) && (
             <dl className="norden-knight-profile-facts">
               {knight.faction !== undefined && <div>
                 <dt>所属</dt>
@@ -77,12 +79,17 @@ export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, 
               {knight.location && <div><dt>所在</dt><dd>{knight.location}</dd></div>}
               {knight.mercenary && <div><dt>傭兵</dt><dd>{knight.mercenary.company}</dd></div>}
               {knight.mercenary && <div><dt>直轄兵</dt><dd>{knight.mercenary.soldiers.toLocaleString()} / {knight.mercenary.maxSoldiers.toLocaleString()}</dd></div>}
+              {knight.summon && <div><dt>HP</dt><dd>{knight.summon.hp.toLocaleString()} / {knight.summon.maxHp.toLocaleString()}</dd></div>}
               {knight.mercenary?.monthly !== undefined && <div><dt>契約</dt>
               <dd>{knight.mercenary.monthly.toLocaleString()}/月{knight.mercenary.months !== undefined && ` ${knight.mercenary.months + 1}ヶ月目`}</dd></div>}
             </dl>
           )}
-          <KnightStats stats={abilities.map(({ label, value }) => ({ label, value: value ?? '—' }))} />
-          <AbilityChart abilities={abilities} />
+          {knight.summon
+            ? <KnightStats stats={summonStats(knight.summon)} className="is-summon" />
+            : <>
+              <KnightStats stats={abilities.map(({ label, value }) => ({ label, value: value ?? '—' }))} />
+              <AbilityChart abilities={abilities} />
+            </>}
           {figure && <div className="norden-knight-profile-figure" role="img" aria-label={`${knight.name}の立ち絵`}>{figure}</div>}
         </div>
         {knight.equipment && (
@@ -93,7 +100,18 @@ export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, 
               onRemove={equipment && (slot => equipment.onUnequip(knight.id, slot))} />
           </section>
         )}
-        <section className="norden-knight-profile-section">
+        {knight.summon && (
+          <section className="norden-knight-profile-section">
+            <h3>召喚の遺物</h3>
+            {knight.summon.relicName || knight.summon.relicDescription
+              ? <p className="norden-knight-profile-biography">
+                {knight.summon.relicName && <b className="norden-knight-profile-relic">{knight.summon.relicName}</b>}
+                {knight.summon.relicDescription}
+              </p>
+              : <p className="norden-knight-profile-empty">記録はありません。</p>}
+          </section>
+        )}
+        {!knight.summon && <section className="norden-knight-profile-section">
           <h3>略歴</h3>
           {knight.biography
             ? <p className="norden-knight-profile-biography">{biographyParts(knight.biography).map((part, index) => {
@@ -106,7 +124,7 @@ export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, 
                 : part.name
             })}</p>
             : <p className="norden-knight-profile-empty">記録はありません。</p>}
-        </section>
+        </section>}
       </div>
       {picking && equipment && (
         <PickerDialog title={`${knight.name}の装備の枠${picking.slot + 1}`} className="is-narrow"

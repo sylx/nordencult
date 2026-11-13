@@ -73,6 +73,20 @@ describe('RelicScreen', () => {
     expect(screen.getByText('金が足りません')).toBeInTheDocument()
   })
 
+  it('summons with a summon relic in the city, saying why it cannot', async () => {
+    const onSummon = vi.fn()
+    const egg: RelicView = { id: 'dragon-2', status: 'repaired', name: 'ドラゴン', rarity: 'A', useLabel: '召喚', effects: ['ドラゴンを召喚する（HP 600）'], summon: {} }
+    const golem: RelicView = { id: 'golem-1', status: 'repaired', name: 'ゴーレム', rarity: 'A', useLabel: '召喚', summon: { unavailableReason: '手番ではありません' } }
+    shown({ relics: [egg, golem], onSummon })
+    expect(screen.getByText('ドラゴンを召喚する（HP 600）')).toBeInTheDocument()
+    expect(screen.queryByText('使い道はまだありません')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'ドラゴンをフルーエンで召喚' }))
+    expect(onSummon).toHaveBeenCalledWith('dragon-2')
+    await userEvent.click(screen.getByRole('button', { name: 'ゴーレム（修復済み）' }))
+    expect(screen.getByRole('button', { name: 'ゴーレムをフルーエンで召喚' })).toBeDisabled()
+    expect(screen.getByText('手番ではありません')).toBeInTheDocument()
+  })
+
   it('says what a 施設の遺物 builds, and where it is being used', async () => {
     const free: RelicView = { ...REPAIRED, buildingName: 'ガンシップ' }
     const used: RelicView = { id: 'gun-2', status: 'building', name: 'ガンシップ', rarity: 'A', useLabel: '施設', buildingName: 'ガンシップ', cityName: 'シルヴァ' }

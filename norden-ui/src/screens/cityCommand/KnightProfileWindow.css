@@ -49,6 +49,7 @@
 .norden-knight-profile-section h3 { margin: 0; padding-bottom: 4px; border-bottom: 1px solid #8a705040; color: var(--norden-ink-soft); font-size: 14px; font-weight: 700; }
 .norden-knight-profile-biography { margin: 0; font-size: 15px; line-height: 1.85; }
 .norden-knight-profile-empty { margin: 0; color: var(--norden-ink-muted); }
+.norden-knight-profile-relic { display: block; margin-bottom: 4px; color: var(--norden-ink-rare); }
 .norden-knight-profile-link {
   display: inline; padding: 0; border: 0; background: none;
   color: var(--norden-ink-accent); font: inherit; font-weight: 700; text-decoration: underline; text-decoration-color: #7a3f1266; text-underline-offset: 3px;

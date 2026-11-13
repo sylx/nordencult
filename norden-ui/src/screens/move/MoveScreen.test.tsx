@@ -35,6 +35,16 @@ describe('MoveScreen', () => {
     expect(solo.closest('label')).toHaveAttribute('aria-description', '傭兵は単騎移動できません')
   })
 
+  it('does not let a summoned unit ride alone either', async () => {
+    setup({ knights: [{ id: 'k1', name: 'エルネスト' }, { id: 's1', name: 'イグナーヴ', summon: { hp: 450, maxHp: 600, attack: 172, defense: 185, morale: 70, relicName: 'ドラゴン', relicDescription: '竜の卵から孵った。' } }] })
+    const solo = screen.getByRole('checkbox', { name: /単騎移動/ })
+    await userEvent.click(solo)
+    await userEvent.click(screen.getByRole('checkbox', { name: 'イグナーヴ' }))
+    expect(solo).not.toBeChecked()
+    expect(solo).toBeDisabled()
+    expect(solo.closest('label')).toHaveAttribute('aria-description', '召喚ユニットは単騎移動できません')
+  })
+
   it('takes back riding alone when a mercenary is picked', async () => {
     withMercenary()
     const solo = screen.getByRole('checkbox', { name: /単騎移動/ })

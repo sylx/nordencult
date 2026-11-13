@@ -78,6 +78,16 @@ function evenShares(count: number, pool: number, cap: number, step: number): num
   return Array.from({ length: count }, (_, index) => (base + (index < steps % count ? 1 : 0)) * step)
 }
 
+/**
+ * A unit of soldiers of its own: a mercenary's company, or a summoned unit (its HP). Its unit type and soldiers are fixed,
+ * not taken from the pool, and it cannot lead the army. undefined: anyone else
+ */
+function ownUnit(knight: KnightView | undefined): { soldiers: number; morale?: number; label: string } | undefined {
+  if (knight?.mercenary) return { soldiers: knight.mercenary.soldiers, morale: knight.mercenary.morale, label: '傭兵' }
+  if (knight?.summon) return { soldiers: knight.summon.hp, morale: knight.summon.morale, label: '召喚ユニット' }
+  return undefined
+}
+
 /** The problem of the army that the screen itself knows about */
 function draftProblem(units: readonly InvasionAssignment[]) {
   if (units.length === 0) return '軍団長を選んでください'
@@ -90,8 +100,8 @@ function draftProblem(units: readonly InvasionAssignment[]) {
  * Pick the commander first, then the other knights, and each unit's type and soldiers.
  * The commander can be changed to another knight of the army, except when a knight who must lead (commandRank) is in it.
  * While there is room, the commander can also lead units without a knight (indirectUnitTypes).
- * A mercenary (KnightView.mercenary) joins with their own soldiers and unit type, which the screen does not change and
- * does not count against the soldier pool, and cannot be the commander.
+ * A mercenary (KnightView.mercenary) or a summoned unit (KnightView.summon, its HP) joins with their own soldiers and
+ * unit type, which the screen does not change and does not count against the soldier pool, and cannot be the commander.
  */
 export default function InvasionScreen({
   from, to, defenders, knights, unitTypes, indirectUnitTypes, maxUnits = 6, soldierPool, maxSoldiers = soldierPool, morale, unitPower, soldierStep = 10, validate,
@@ -102,9 +112,9 @@ export default function InvasionScreen({
   const serial = useRef(0)
   const knightMap = new Map(knights.map(knight => [knight.id, knight]))
   const rankOf = (id: string | null) => (id === null ? 0 : knightMap.get(id)?.commandRank ?? 0)
-  const mercenaryOf = (id: string | null) => (id === null ? undefined : knightMap.get(id)?.mercenary)
-  /** The soldiers the army takes from the pool: a mercenary's are their own */
-  const fromPool = (list: readonly InvasionAssignment[]) => total(list.filter(item => !mercenaryOf(item.knightId)))
+  const ownOf = (id: string | null) => (id === null ? undefined : ownUnit(knightMap.get(id)))
+  /** The soldiers the army takes from the pool: a mercenary's and a summoned unit's are their own */
+  const fromPool = (list: readonly InvasionAssignment[]) => total(list.filter(item => !ownOf(item.knightId)))
   const unitTypesOf = (knight: KnightView) =>
     knight.unitTypes ? unitTypes.filter(type => knight.unitTypes!.includes(type.id)) : unitTypes
   const indirectChoices = indirectUnitTypes ? unitTypes.filter(type => indirectUnitTypes.includes(type.id)) : []
@@ -119,7 +129,7 @@ export default function InvasionScreen({
 
   /** Puts the commander first (a knight of a higher rank takes over) */
   const arrange = (next: readonly Slot[]): readonly Slot[] => {
-    const canLead = (item: Slot) => item.knightId !== null && !mercenaryOf(item.knightId)
+    const canLead = (item: Slot) => item.knightId !== null && !ownOf(item.knightId)
     const led = next.filter(canLead)
     if (led.length === 0) return []
     const top = led.reduce((best, item) => (rankOf(item.knightId) > rankOf(best.knightId) ? item : best))
@@ -132,7 +142,7 @@ export default function InvasionScreen({
     const choices = unitTypesOf(knight)
     const unitType = knight.defaultUnitType && choices.some(type => type.id === knight.defaultUnitType)
       ? knight.defaultUnitType : choices[0]?.id ?? ''
-    const soldiers = knight.mercenary?.soldiers ?? Math.min(maxSoldiers, Math.max(0, soldierPool - fromPool(current)))
+    const soldiers = ownUnit(knight)?.soldiers ?? Math.min(maxSoldiers, Math.max(0, soldierPool - fromPool(current)))
     return [...current, { key: knight.id, knightId: knight.id, unitType, soldiers }]
   })
   const addIndirect = () => update(current => {
@@ -144,7 +154,7 @@ export default function InvasionScreen({
   const change = (key: string, patch: Partial<InvasionAssignment>) =>
     update(current => current.map(item => (item.key === key ? { ...item, ...patch } : item)))
   const shareEvenly = () => update(current => {
-    const sharing = current.filter(item => !mercenaryOf(item.knightId))
+    const sharing = current.filter(item => !ownOf(item.knightId))
     const shares = evenShares(sharing.length, soldierPool, maxSoldiers, soldierStep)
     return current.map(item => (sharing.includes(item) ? { ...item, soldiers: shares[sharing.indexOf(item)]! } : item))
   })
@@ -168,8 +178,9 @@ export default function InvasionScreen({
       </>
     }
     if (knight.unavailableReason) return null
-    if (!commander && knight.mercenary) {
-      return <Button size="small" aria-label={`${knight.name}を軍団長にする`} disabled title="傭兵は軍団長になれません">軍団長にする</Button>
+    const own = ownUnit(knight)
+    if (!commander && own) {
+      return <Button size="small" aria-label={`${knight.name}を軍団長にする`} disabled title={`${own.label}は軍団長になれません`}>軍団長にする</Button>
     }
     if (!commander) {
       return <Button size="small" aria-label={`${knight.name}を軍団長にする`} onClick={() => add(knight)}>軍団長にする</Button>
@@ -249,20 +260,21 @@ export default function InvasionScreen({
                     const knight = knightMap.get(item.knightId)
                     if (!knight) return null
                     const isCommander = knight === commander
+                    const own = ownUnit(knight)
                     return (
                       <section key={item.key} className={`norden-invasion-unit ${isCommander ? 'is-commander' : ''}`} aria-label={`${knight.name}の部隊`}>
                         <KnightCard knight={{ ...knight, subtitle: undefined, stats: undefined }} compact className="norden-invasion-unit-card"
                           aside={isCommander
                             ? <span className="norden-invasion-role is-commander">軍団長</span>
                             : <span className="norden-invasion-pick">
-                              {!knight.mercenary && <Button size="small" aria-label={`${knight.name}を軍団長にする`} disabled={Boolean(leadReason)} title={leadReason}
+                              {!own && <Button size="small" aria-label={`${knight.name}を軍団長にする`} disabled={Boolean(leadReason)} title={leadReason}
                                 onClick={() => lead(item.key)}>軍団長にする</Button>}
                               <Button size="small" aria-label={`${knight.name}の部隊を外す`} onClick={() => remove(item.key)}>外す</Button>
                             </span>} />
-                        {knight.mercenary
+                        {own
                           ? <p className="norden-invasion-mercenary" aria-label={`${knight.name}の部隊の内容`}>
-                            {unitTypes.find(type => type.id === item.unitType)?.name ?? item.unitType}・{item.soldiers.toLocaleString()}人
-                            <small>傭兵の兵科と兵数は変えられません</small>
+                            {unitTypes.find(type => type.id === item.unitType)?.name ?? item.unitType}・{item.soldiers.toLocaleString()}{knight.summon ? '（HP）' : '人'}
+                            <small>{own.label}の兵科と兵数は変えられません</small>
                           </p>
                           : <>
                             <ChoiceGroup label={`${knight.name}の兵科`} value={item.unitType}
@@ -294,7 +306,7 @@ export default function InvasionScreen({
                   if (!item) return <li key={`empty-${index}`} className="norden-invasion-slot is-empty">空き</li>
                   const name = names.get(item.key)!
                   const type = unitTypes.find(unitType => unitType.id === item.unitType)
-                  const unitMorale = mercenaryOf(item.knightId)?.morale ?? morale
+                  const unitMorale = ownOf(item.knightId)?.morale ?? morale
                   // An indirect unit shows the face of the commander who leads it
                   const leader = item.knightId === null ? commander : knightMap.get(item.knightId)
                   const power = unitPower && commander

@@ -224,6 +224,26 @@ export interface KnightView extends KnightCardData {
   unavailableReason?: string
   /** Their equipment slots (装備); omitted: they have none (a mercenary), not shown */
   equipment?: KnightEquipmentView
+  /**
+   * A summoned unit (召喚ユニット): its HP and strength are shown in place of its abilities, and the relic it was summoned with
+   * in place of a 略歴. Like a mercenary's, its unit type and soldiers (its HP) are its own and it cannot lead an army
+   */
+  summon?: SummonView
+}
+
+/** What the screens show of a summoned unit */
+export interface SummonView {
+  /** Its own soldiers now, and their most */
+  hp: number
+  maxHp: number
+  /** The host's attack and defense of it (e.g. norden-battle's basic attack and defense) */
+  attack: number
+  defense: number
+  /** Morale it fights at, whatever its city's. Omitted: its city's */
+  morale?: number
+  /** The relic it was summoned with, and what the relic says */
+  relicName?: string
+  relicDescription?: string
 }
 
 /** A relic a knight wears, in a slot */
@@ -416,6 +436,8 @@ export interface RelicView {
   equip?: { unavailableReason?: string }
   /** equipped: taking it off the knight */
   unequip?: { unavailableReason?: string }
+  /** A summon relic repaired: summoning its monster in the city the screen is opened on (using the relic up) */
+  summon?: { unavailableReason?: string }
   /** Dismantling it: the research points it gives */
   dismantle?: { points: number; unavailableReason?: string }
   /** Repairing it in the city the screen is opened on */

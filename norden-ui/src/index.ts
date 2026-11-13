@@ -93,7 +93,7 @@ export type { ScreenHostProps, ScreenRenderers } from './navigation/ScreenHost'
 
 // Screens
 export type {
-  AssignmentRoleView, BuildOptionView, EquipCandidateView, EquipmentActions, EquipOptionView, EquippedRelicView, KnightEquipmentView, BuildingView, CityAssignmentsView, CityBuildingsView, CityHistoryView, CityLogLineView, CityStatView, CityView, ConstructionKindView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, FactionResearchSummaryView, FactionSummaryView, FactionView, KnightAbilitiesView, KnightView, MercenaryContractView, MercenaryOfferView, MercenaryProfileView, MercenaryRank, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicRarityView, RelicStatusView, RelicView, SpriteImage, StatBoostView, TechStatusView, TechView, TurnView, UnitTypeView,
+  AssignmentRoleView, BuildOptionView, EquipCandidateView, EquipmentActions, EquipOptionView, EquippedRelicView, KnightEquipmentView, BuildingView, CityAssignmentsView, CityBuildingsView, CityHistoryView, CityLogLineView, CityStatView, CityView, ConstructionKindView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, FactionResearchSummaryView, FactionSummaryView, FactionView, KnightAbilitiesView, KnightView, MercenaryContractView, MercenaryOfferView, MercenaryProfileView, MercenaryRank, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicRarityView, RelicStatusView, RelicView, SpriteImage, SummonView, StatBoostView, TechStatusView, TechView, TurnView, UnitTypeView,
 } from './screens/types'
 export { default as CityCommandScreen, turnText } from './screens/cityCommand/CityCommandScreen'
 export type { CityCommandLayout, CityCommandScreenProps, CommandState } from './screens/cityCommand/CityCommandScreen'
@@ -117,6 +117,8 @@ export { default as TechScreen } from './screens/tech/TechScreen'
 export type { TechScreenProps } from './screens/tech/TechScreen'
 export { default as RelicScreen } from './screens/relic/RelicScreen'
 export type { RelicScreenProps } from './screens/relic/RelicScreen'
+export { default as SummonDialog } from './screens/relic/SummonDialog'
+export type { SummonDialogProps } from './screens/relic/SummonDialog'
 export { default as MercenaryScreen } from './screens/mercenary/MercenaryScreen'
 export { default as MercenaryProfile } from './screens/mercenary/MercenaryProfile'
 export type { MercenaryProfileProps } from './screens/mercenary/MercenaryProfile'

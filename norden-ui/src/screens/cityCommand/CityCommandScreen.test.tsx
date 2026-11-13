@@ -228,6 +228,24 @@ describe('CityCommandScreen', () => {
       .toEqual(['エルネストの詳細', 'ブロックの詳細', 'ミレイの詳細'])
   })
 
+  it('lists the summoned units apart from the knights, with their HP, attack and defense', async () => {
+    setup({
+      city: {
+        ...city,
+        knights: [
+          { id: 's1', name: 'イグナーヴ', subtitle: '召喚', summon: { hp: 450, maxHp: 600, attack: 172, defense: 185, morale: 70, relicName: 'ドラゴン', relicDescription: '竜の卵から孵った。' } },
+          { id: 'k1', name: 'エルネスト' },
+        ],
+      },
+    })
+    expect(screen.getByText('騎士', { selector: 'dt' }).nextElementSibling).toHaveTextContent('1人')
+    expect(screen.getByText('召喚', { selector: 'dt' }).nextElementSibling).toHaveTextContent('1体')
+    await userEvent.click(screen.getByRole('tab', { name: '騎士' }))
+    expect(screen.getAllByRole('separator').map(rule => rule.textContent)).toEqual(['召喚'])
+    const summons = within(screen.getByRole('list', { name: '召喚' })).getAllByRole('listitem')
+    expect([...summons[0]!.querySelectorAll('.norden-knight-stat')].map(stat => stat.textContent)).toEqual(['HP450', '攻撃力172', '防御力185'])
+  })
+
   it('has no splitter for the mercenaries when none serve there', async () => {
     setup({ city: { ...city, knights: [{ id: 'k1', name: 'エルネスト' }] } })
     await userEvent.click(screen.getByRole('tab', { name: '騎士' }))

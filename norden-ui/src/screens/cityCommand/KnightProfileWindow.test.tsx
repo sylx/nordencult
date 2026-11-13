@@ -44,6 +44,20 @@ describe('knight profile', () => {
     expect(within(screen.getByRole('region', { name: 'タマラ' })).queryByText('契約')).not.toBeInTheDocument()
   })
 
+  it('shows a summoned unit\'s HP, attack and defense and its relic, without the chart or a biography', async () => {
+    const dragon: KnightView = { id: 's1', name: 'イグナーヴ', subtitle: '召喚', faction: { name: 'カルタ書院' }, summon: { hp: 450, maxHp: 600, attack: 172, defense: 185, morale: 70, relicName: 'ドラゴン', relicDescription: '竜の卵から孵った。' } }
+    render(<CityInfoWindow city={{ ...city, knights: [dragon] }} />)
+    await userEvent.click(screen.getByRole('tab', { name: '騎士' }))
+    await userEvent.click(screen.getByRole('button', { name: 'イグナーヴの詳細' }))
+    const profile = screen.getByRole('region', { name: 'イグナーヴ' })
+    expect(within(profile).getByText('HP', { selector: 'dt' }).nextElementSibling).toHaveTextContent('450 / 600')
+    expect([...profile.querySelectorAll('.norden-knight-stat')].map(stat => stat.textContent)).toEqual(['HP450', '攻撃力172', '防御力185'])
+    expect(within(profile).queryByRole('img', { name: /能力チャート/ })).not.toBeInTheDocument()
+    expect(within(profile).getByRole('heading', { name: '召喚の遺物' })).toBeInTheDocument()
+    expect(profile).toHaveTextContent('竜の卵から孵った。')
+    expect(within(profile).queryByRole('heading', { name: '略歴' })).not.toBeInTheDocument()
+  })
+
   it('opens from 詳細 with 所属・所在, abilities, chart and biography', async () => {
     await openKnights()
     await userEvent.click(screen.getByRole('button', { name: 'セラフィナ・ルクスの詳細' }))

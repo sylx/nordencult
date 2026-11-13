@@ -39,6 +39,8 @@ export interface RelicScreenProps {
   onEquip?: (id: string, knightId: string, slot: number) => void
   /** Takes the relic off the knight wearing it */
   onUnequip?: (id: string) => void
+  /** Uses up a summon relic (RelicView.summon) to summon its monster in the city; the host then names it (SummonDialog) */
+  onSummon?: (id: string) => void
   onClose: () => void
   children?: ReactNode
 }
@@ -113,7 +115,7 @@ function Details({ item, status, children }: { item: Pick<RelicView, 'id' | 'nam
  * (装備させる: the knights in a KnightPicker, then the slot to swap when theirs are full) or taken off the one wearing it (外す)
  */
 export default function RelicScreen({
-  cityName, construction = null, gold, relics, productions = [], onDismantle, onRepair, onPapalRepair, onProduce, equipCandidates, onEquip, onUnequip, onClose, children,
+  cityName, construction = null, gold, relics, productions = [], onDismantle, onRepair, onPapalRepair, onProduce, equipCandidates, onEquip, onUnequip, onSummon, onClose, children,
 }: RelicScreenProps) {
   const [selection, setSelection] = useState<Selection | null>(null)
   const [dismantling, setDismantling] = useState<RelicView | null>(null)
@@ -191,7 +193,7 @@ export default function RelicScreen({
               <SectionFrame />
               {relic && (
                 <Details item={relic} status={<span className={`norden-relic-details-status is-${relic.status}`}>{statusLabel(relic)}</span>}>
-                  {relic.status === 'repaired' && !relic.equip && (
+                  {relic.status === 'repaired' && !relic.equip && !relic.summon && (
                     <p className="norden-relic-details-note">
                       {relic.buildingName ? `内政画面で${relic.buildingName}を建てるのに使えます。建て終わると遺物は無くなります` : '使い道はまだありません'}
                     </p>
@@ -220,6 +222,10 @@ export default function RelicScreen({
                         {relic.status === 'broken' && relic.dismantle && (
                           <Action label="解体する" name={`${relic.name}を解体`} needs={`研究ポイント +${relic.dismantle.points.toLocaleString()}`}
                             reason={relic.dismantle.unavailableReason} onClick={() => setDismantling(relic)} />
+                        )}
+                        {relic.summon && (
+                          <Action primary label={`${cityName}で召喚`} name={`${relic.name}を${cityName}で召喚`} needs="遺物は無くなります"
+                            reason={relic.summon.unavailableReason} sound="develop" onClick={() => onSummon?.(relic.id)} />
                         )}
                         {relic.equip && (
                           <Action primary label={relic.status === 'equipped' ? '別の騎士に装備させる' : '装備させる'} name={`${relic.name}を装備させる`}
