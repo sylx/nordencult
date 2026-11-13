@@ -1,9 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import NavigationWindow from '../../components/window/NavigationWindow'
 import type { NavigationWindowProps } from '../../components/window/NavigationWindow'
+import EquipmentSlots from '../../components/parts/EquipmentSlots'
 import { KnightStats } from '../../components/parts/KnightCard'
+import PickerDialog from '../../components/picker/PickerDialog'
+import RelicPicker from '../../components/picker/RelicPicker'
 import { ABILITIES, ABILITY_LABELS, knightAbility } from '../domestic/DomesticOfficers'
-import type { KnightView } from '../types'
+import type { EquipmentActions, KnightView } from '../types'
 import Tooltip from '../../components/parts/Tooltip'
 import './KnightProfileWindow.css'
 
@@ -13,12 +16,23 @@ export interface KnightProfileWindowProps extends Omit<NavigationWindowProps, 't
   knightOf?: (id: string) => KnightView | undefined
   /** A name in the 略歴 was clicked */
   onSelectKnight?: (id: string) => void
+  /** Changing the knight's equipment (knight.equipment): a slot pressed opens the relics for it. Omitted: the slots are only shown */
+  equipment?: EquipmentActions
   onClose: () => void
 }
 
-/** A knight's profile: full figure, 所属・所在, abilities with their chart and 略歴, in a window with back/forward */
-export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, onClose, className = '', ...windowProps }: KnightProfileWindowProps) {
+/**
+ * A knight's profile: full figure, 所属・所在, abilities with their chart, equipment slots (装備) and 略歴, in a window with back/forward.
+ * A slot pressed opens the relics that can go in it (a PickerDialog), 外す takes one off
+ */
+export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, equipment, onClose, className = '', ...windowProps }: KnightProfileWindowProps) {
   const body = useRef<HTMLDivElement>(null)
+  /** The knight and slot whose relics are being chosen from, and the relic chosen */
+  const [choice, setChoice] = useState<{ knightId: string; slot: number; itemId: string | null } | null>(null)
+  // Another knight shown: what was being chosen for the one before is gone
+  const picking = choice?.knightId === knight.id ? choice : null
+  const pickingRef = useRef(false)
+  useEffect(() => { pickingRef.current = picking !== null })
   // Another knight starts at the top of their profile
   useEffect(() => {
     const content = body.current?.closest('.norden-window-frame-content')
@@ -27,7 +41,8 @@ export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, 
   // Escape closes this window before the screen under it (ScreenHost skips handled keys)
   useEffect(() => {
     const keyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || event.defaultPrevented) return
+      // The dialog choosing a relic takes it
+      if (event.key !== 'Escape' || event.defaultPrevented || pickingRef.current) return
       event.preventDefault()
       onClose()
     }
@@ -70,6 +85,14 @@ export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, 
           <AbilityChart abilities={abilities} />
           {figure && <div className="norden-knight-profile-figure" role="img" aria-label={`${knight.name}の立ち絵`}>{figure}</div>}
         </div>
+        {knight.equipment && (
+          <section className="norden-knight-profile-section norden-knight-profile-equipment">
+            <h3>装備</h3>
+            <EquipmentSlots slots={knight.equipment.slots} disabledReason={knight.equipment.unavailableReason}
+              onPick={equipment && (slot => setChoice({ knightId: knight.id, slot, itemId: null }))}
+              onRemove={equipment && (slot => equipment.onUnequip(knight.id, slot))} />
+          </section>
+        )}
         <section className="norden-knight-profile-section">
           <h3>略歴</h3>
           {knight.biography
@@ -85,6 +108,19 @@ export default function KnightProfileWindow({ knight, knightOf, onSelectKnight, 
             : <p className="norden-knight-profile-empty">記録はありません。</p>}
         </section>
       </div>
+      {picking && equipment && (
+        <PickerDialog title={`${knight.name}の装備の枠${picking.slot + 1}`} className="is-narrow"
+          message={knight.equipment?.slots[picking.slot] ? `いまの${knight.equipment.slots[picking.slot]!.name}は箱に戻ります。` : undefined}
+          confirmDisabled={picking.itemId === null}
+          onConfirm={() => {
+            equipment.onEquip(knight.id, picking.slot, picking.itemId!)
+            setChoice(null)
+          }}
+          onCancel={() => setChoice(null)}>
+          <RelicPicker items={equipment.options(knight.id, picking.slot)} selectedId={picking.itemId} label="装備できる遺物"
+            emptyText="装備できる遺物はありません。" onSelect={itemId => setChoice({ ...picking, itemId })} />
+        </PickerDialog>
+      )}
     </NavigationWindow>
   )
 }

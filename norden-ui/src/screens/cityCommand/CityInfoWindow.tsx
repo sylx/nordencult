@@ -19,7 +19,7 @@ import iconSupplies from '../../assets/ui/icons/icon-supplies.webp'
 import iconCity from '../../assets/ui/icons/icon_home.webp'
 import iconKnights from '../../assets/ui/icons/icon_people.webp'
 import iconStat from '../../assets/ui/icons/icon_stat.webp'
-import type { CityHistoryView, CityStatView, CityView, KnightView } from '../types'
+import type { CityHistoryView, CityStatView, CityView, EquipmentActions, KnightView } from '../types'
 import './CityInfoWindow.css'
 
 export interface CityInfoWindowProps extends Omit<InfoWindowWithTabsProps, 'tabs' | 'title'> {
@@ -28,6 +28,8 @@ export interface CityInfoWindowProps extends Omit<InfoWindowWithTabsProps, 'tabs
   onOpenDomestic?: () => void
   /** Finds any knight by id for the profile window (e.g. one a 略歴 names); only the city's knights are found when omitted */
   knightOf?: (id: string) => KnightView | undefined
+  /** Changing the equipment of the knight shown in the profile window. Omitted: their slots are only shown */
+  equipment?: EquipmentActions
   /** Where the profile window opens beside. Omitted: the city window's `x` and `y` */
   profileAnchor?: { x: number; y: number }
   /** Offset of the profile window from where it opens, in px */
@@ -40,7 +42,7 @@ export interface CityInfoWindowProps extends Omit<InfoWindowWithTabsProps, 'tabs
  * 詳細 on a knight opens their profile beside it, with back/forward through the knights opened since.
  */
 export default function CityInfoWindow({
-  city, onOpenDomestic, knightOf, profileAnchor, profilePosition, onProfilePositionChange, maxWidth = 544, maxHeight = 760, ...windowProps
+  city, onOpenDomestic, knightOf, equipment, profileAnchor, profilePosition, onProfilePositionChange, maxWidth = 544, maxHeight = 760, ...windowProps
 }: CityInfoWindowProps) {
   const profile = useBrowseHistory<string>()
   const anchor = profileAnchor ?? { x: windowProps.x ?? 0, y: windowProps.y ?? 0 }
@@ -49,7 +51,7 @@ export default function CityInfoWindow({
   return <>
     <InfoWindowWithTabs {...windowProps} maxWidth={maxWidth} maxHeight={maxHeight} title={`${city.faction?.name ?? ''} ${city.name}`.trim()}
       tabs={createCityInfoTabs(city, { onShowKnight: profile.show, onOpenDomestic })} />
-    {knight && <KnightProfileWindow knight={knight} knightOf={findKnight} onSelectKnight={profile.show}
+    {knight && <KnightProfileWindow knight={knight} knightOf={findKnight} onSelectKnight={profile.show} equipment={equipment}
       onBack={profile.back} onForward={profile.forward} backDisabled={!profile.canBack} forwardDisabled={!profile.canForward}
       onClose={profile.close} position={profilePosition} onPositionChange={onProfilePositionChange}
       style={{

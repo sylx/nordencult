@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import type { ConstructionView, RelicProductionView, RelicView } from '../types'
+import type { ConstructionView, EquipCandidateView, KnightView, RelicProductionView, RelicView } from '../types'
 import RelicScreen from './RelicScreen'
 
 const BROKEN: RelicView = {
@@ -104,6 +104,65 @@ describe('RelicScreen', () => {
     unmount()
     shown()
     expect(screen.getByText('空き')).toBeInTheDocument()
+  })
+
+  describe('equipment', () => {
+    const RIFLE: RelicView = {
+      id: 'carta-2', status: 'repaired', name: 'ライフル', rarity: 'C', useLabel: '装備', effects: ['ライフル兵を率いる'], equip: {},
+    }
+    const WORN: RelicView = { ...RIFLE, id: 'carta-3', status: 'equipped', wearerName: 'ルカ', unequip: {} }
+    const GUN = { id: 'gun-1', name: '大砲', rarity: 'B' as const }
+    const knight = (id: string, name: string): KnightView => ({ id, name, abilities: { leadership: 70, strength: 60, intelligence: 50 } })
+    const CANDIDATES: EquipCandidateView[] = [
+      { knight: knight('016', 'エルヴィン'), slots: [{ relic: null }, { relic: null }] },
+      { knight: knight('027', 'ルカ'), slots: [{ relic: GUN }, { relic: { ...GUN, id: 'carta-3', name: 'ライフル' }, unavailableReason: '装備しています' }] },
+      { knight: knight('042', 'バレル'), slots: [{ relic: null }, { relic: null }], unavailableReason: '傭兵は装備できません' },
+    ]
+    const equipping = (props: Partial<Parameters<typeof RelicScreen>[0]> = {}) =>
+      shown({ relics: [RIFLE, WORN, REPAIRED], equipCandidates: () => CANDIDATES, ...props })
+
+    it('says what an equipment relic gives and who wears it, with no word of having no use', async () => {
+      equipping()
+      expect(screen.getByRole('button', { name: 'ライフル（装備中（ルカ））' })).toBeInTheDocument()
+      expect(within(screen.getByRole('list', { name: '効果' })).getByText('ライフル兵を率いる')).toBeInTheDocument()
+      expect(screen.queryByText('使い道はまだありません')).not.toBeInTheDocument()
+    })
+
+    it('puts it on a knight chosen, into their empty slot; those who cannot wear it cannot be chosen', async () => {
+      const onEquip = vi.fn()
+      equipping({ onEquip })
+      await userEvent.click(screen.getByRole('button', { name: 'ライフルを装備させる' }))
+      const dialog = screen.getByRole('dialog', { name: 'ライフルを装備させる' })
+      expect(within(dialog).getByRole('button', { name: '決定' })).toBeDisabled()
+      expect(within(dialog).getByRole('button', { name: 'バレル' })).toBeDisabled()
+      expect(within(dialog).getByRole('button', { name: 'ルカ' })).toHaveTextContent('装備: 大砲 / ライフル')
+      await userEvent.click(within(dialog).getByRole('button', { name: 'エルヴィン' }))
+      await userEvent.click(within(dialog).getByRole('button', { name: '決定' }))
+      expect(onEquip).toHaveBeenCalledWith('carta-2', '016', 0)
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+
+    it('with their slots full, asks which relic to swap (not one it cannot go in place of)', async () => {
+      const onEquip = vi.fn()
+      equipping({ onEquip })
+      await userEvent.click(screen.getByRole('button', { name: 'ライフルを装備させる' }))
+      await userEvent.click(screen.getByRole('button', { name: 'ルカ' }))
+      await userEvent.click(screen.getByRole('button', { name: '決定' }))
+      const dialog = screen.getByRole('dialog', { name: 'ルカの装備を入れ替える' })
+      expect(within(dialog).getByRole('button', { name: 'ライフル（装備しています）' })).toBeDisabled()
+      await userEvent.click(within(dialog).getByRole('button', { name: '大砲（枠1）' }))
+      await userEvent.click(within(dialog).getByRole('button', { name: '入れ替える' }))
+      expect(onEquip).toHaveBeenCalledWith('carta-2', '027', 0)
+    })
+
+    it('takes it off the knight wearing it, and says why it cannot be put on', async () => {
+      const onUnequip = vi.fn()
+      equipping({ onUnequip, relics: [{ ...WORN, equip: { unavailableReason: '手番ではありません' } }] })
+      expect(screen.getByRole('button', { name: 'ライフルを装備させる' })).toBeDisabled()
+      expect(screen.getByText('ルカから外して箱に戻す')).toBeInTheDocument()
+      await userEvent.click(screen.getByRole('button', { name: 'ライフルを外す' }))
+      expect(onUnequip).toHaveBeenCalledWith('carta-3')
+    })
   })
 
   it('closes with 戻る', async () => {

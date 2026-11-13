@@ -9,7 +9,7 @@ import iconEndTurn from '../../assets/ui/icons/icon-sun.webp'
 import CityInfoWindow from './CityInfoWindow'
 import { CITY_COMMAND_GROUPS } from './cityCommands'
 import type { CityCommandId } from './cityCommands'
-import type { CityView, FactionSummaryView, FactionView, KnightView, TurnView } from '../types'
+import type { CityView, EquipmentActions, FactionSummaryView, FactionView, KnightView, TurnView } from '../types'
 import '../screens.css'
 
 export interface CommandState {
@@ -46,6 +46,8 @@ export interface CityCommandScreenProps {
   onOpenSettings?: () => void
   /** Finds any knight by id for the knight profile (e.g. one a 略歴 names); only the city's knights are found when omitted */
   knightOf?: (id: string) => KnightView | undefined
+  /** Changing the equipment of a knight in their profile (CityInfoWindow). Omitted: their slots are only shown */
+  equipment?: EquipmentActions
   /** Where the city window starts; the screen fits it from there, wherever it is dragged */
   windowPosition?: { x: number; y: number }
   /** Where the movable parts are */
@@ -79,7 +81,7 @@ export function turnText(turn: TurnView) {
 /** City command screen: the faction bar with ◀ ▶ between cities and the city window (left), turn bar (top right) and the action toolbar (bottom) */
 export default function CityCommandScreen({
   city, isPlayerCity = false, turn, faction, onOpenResearch, playerFaction, onPrevCity, onNextCity, cityPosition, commandState = {}, activeCommand, onCommand, onEndTurn,
-  endTurnDisabled = false, endTurnReason, onOpenSettings, knightOf, windowPosition = { x: 56, y: 96 }, layout = {}, onLayoutChange, onWindowBoundsChange, skin, children,
+  endTurnDisabled = false, endTurnReason, onOpenSettings, knightOf, equipment, windowPosition = { x: 56, y: 96 }, layout = {}, onLayoutChange, onWindowBoundsChange, skin, children,
 }: CityCommandScreenProps) {
   const cityWindow = layout.window ?? windowPosition
   const command = (id: CityCommandId, label: string): ToolbarCommand => {
@@ -109,7 +111,7 @@ export default function CityCommandScreen({
         <DateBar phaseLabel={turn.phaseLabel} factionName={turn.activeFaction ? turn.activeFaction.name : turn.activeFaction}
           dateLabel={turn.dateLabel} onSettings={onOpenSettings} />
       </div>
-      <CityInfoWindow city={city} knightOf={knightOf} x={cityWindow.x} y={cityWindow.y} skin={skin} onBoundsChange={onWindowBoundsChange}
+      <CityInfoWindow city={city} knightOf={knightOf} equipment={equipment} x={cityWindow.x} y={cityWindow.y} skin={skin} onBoundsChange={onWindowBoundsChange}
         onOpenDomestic={isPlayerCity && !commandState.domestic?.disabled ? () => onCommand('domestic') : undefined}
         onPositionChange={position => onLayoutChange?.('window', position)} profileAnchor={windowPosition}
         profilePosition={layout.knightProfile} onProfilePositionChange={position => onLayoutChange?.('knightProfile', position)}

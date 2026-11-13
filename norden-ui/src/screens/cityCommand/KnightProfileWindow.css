@@ -57,6 +57,9 @@
 .norden-knight-profile-link:hover { color: var(--norden-ink-accent-hover); text-decoration-color: currentColor; }
 .norden-knight-profile-link:focus-visible { outline: 2px solid #b0782f; outline-offset: 1px; border-radius: 2px; }
 
+/* On the parchment: the reason the slots cannot be changed in its ink */
+.norden-knight-profile-equipment .norden-equipment-reason { color: var(--norden-ink-bad); }
+
 @media (max-width: 560px) {
   .norden-knight-profile.has-figure .norden-knight-profile-overview { min-height: 0; padding-right: 0; }
   .norden-knight-profile-figure { position: relative; top: auto; right: auto; order: -1; justify-self: center; width: 220px; max-width: 100%; height: 300px; }

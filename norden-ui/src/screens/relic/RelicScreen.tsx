@@ -2,10 +2,14 @@ import { useState, type ReactNode } from 'react'
 import { BuildingImage, ConstructionProgress, workLabel } from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
 import ImageFrame from '../../components/parts/ImageFrame'
+import RelicRow, { RelicRarity } from '../../components/parts/RelicRow'
 import SectionFrame from '../../components/parts/SectionFrame'
+import KnightPicker from '../../components/picker/KnightPicker'
+import PickerDialog from '../../components/picker/PickerDialog'
+import RelicPicker from '../../components/picker/RelicPicker'
 import ConfirmDialog from '../../components/window/ConfirmDialog'
 import WindowFrame from '../../components/window/WindowFrame'
-import type { ConstructionView, RelicProductionView, RelicRarityView, RelicStatusView, RelicView } from '../types'
+import type { ConstructionView, EquipCandidateView, RelicProductionView, RelicStatusView, RelicView } from '../types'
 import '../screens.css'
 import '../details.css'
 import './RelicScreen.css'
@@ -29,41 +33,33 @@ export interface RelicScreenProps {
   onPapalRepair?: (id: string) => void
   /** Produces a relic in the city */
   onProduce?: (relicId: string) => void
+  /** The knights an equipment relic of the box (RelicView.equip) can be put on, those who cannot wear it with why */
+  equipCandidates?: (id: string) => readonly EquipCandidateView[]
+  /** Puts the relic on the knight's slot (the one there goes back into the box; one another knight wears comes off them) */
+  onEquip?: (id: string, knightId: string, slot: number) => void
+  /** Takes the relic off the knight wearing it */
+  onUnequip?: (id: string) => void
   onClose: () => void
   children?: ReactNode
 }
 
 const STATUS_LABELS: Readonly<Record<RelicStatusView, string>> = {
-  broken: '壊れた', repairing: '修復中', producing: '生産中', papalRepair: '法王府に依頼中', repaired: '修復済み',
+  broken: '壊れた', repairing: '修復中', producing: '生産中', papalRepair: '法王府に依頼中', repaired: '修復済み', equipped: '装備中',
 }
 
 /** Which of the list is chosen: a relic of the box, or one to produce */
 type Selection = { list: 'box' | 'production'; id: string }
 
-const statusLabel = (relic: RelicView) => (relic.cityName ? `${STATUS_LABELS[relic.status]}（${relic.cityName}）` : STATUS_LABELS[relic.status])
-
-function Rarity({ rarity }: { rarity: RelicRarityView }) {
-  return <span className={`norden-relic-rarity is-${rarity}`} aria-label={`レアリティ ${rarity}`}>{rarity}</span>
+const statusLabel = (relic: RelicView) => {
+  const where = relic.status === 'equipped' ? relic.wearerName : relic.cityName
+  return where ? `${STATUS_LABELS[relic.status]}（${where}）` : STATUS_LABELS[relic.status]
 }
 
-function RelicRow({ relic, label, status, selected, onSelect }: {
-  relic: Pick<RelicView, 'id' | 'name' | 'image' | 'rarity'>
-  label: string
-  status: string
-  selected: boolean
-  onSelect: () => void
-}) {
-  return (
-    <button type="button" className={`norden-relic-row ${status} ${selected ? 'is-selected' : ''}`} aria-label={`${relic.name}（${label}）`} aria-pressed={selected} onClick={onSelect}>
-      <BuildingImage building={relic} className="norden-relic-row-image" />
-      <span className="norden-relic-row-body">
-        <span className="norden-relic-row-name">{relic.name}</span>
-        <span className="norden-relic-row-status">{label}</span>
-      </span>
-      <Rarity rarity={relic.rarity} />
-    </button>
-  )
-}
+/** A knight's slots in a line, e.g. 装備: ライフル / 空き */
+const slotsNote = (candidate: EquipCandidateView) => `装備: ${candidate.slots.map(slot => slot.relic?.name ?? '空き').join(' / ')}`
+
+/** Putting a relic on a knight: choosing the knight, then (their slots all full) the slot to swap */
+type Equipping = { id: string; knightId: string | null; swapping: boolean; slot: number | null }
 
 const cost = (supplies: number, gold: number) => `物資 ${supplies.toLocaleString()}・金 ${gold.toLocaleString()}`
 
@@ -83,7 +79,7 @@ function Action({ label, name, needs, reason, onClick, sound, primary = false }:
   )
 }
 
-function Details({ item, status, children }: { item: Pick<RelicView, 'id' | 'name' | 'image' | 'rarity' | 'useLabel' | 'description'>; status?: ReactNode; children: ReactNode }) {
+function Details({ item, status, children }: { item: Pick<RelicView, 'id' | 'name' | 'image' | 'rarity' | 'useLabel' | 'description' | 'effects'>; status?: ReactNode; children: ReactNode }) {
   return (
     <div className="norden-relic-details norden-details">
       <header className="norden-details-hero">
@@ -93,11 +89,16 @@ function Details({ item, status, children }: { item: Pick<RelicView, 'id' | 'nam
         <div className="norden-details-heading">
           <p className="norden-details-label">遺物</p>
           <h3 className="norden-relic-details-name">{item.name}</h3>
-          <div className="norden-details-badges"><Rarity rarity={item.rarity} />{status}</div>
+          <div className="norden-details-badges"><RelicRarity rarity={item.rarity} />{status}</div>
           <p className="norden-relic-details-use">使い道: {item.useLabel}</p>
         </div>
       </header>
       {item.description && <p className="norden-relic-details-description">{item.description}</p>}
+      {item.effects && item.effects.length > 0 && (
+        <ul className="norden-relic-details-effects" aria-label="効果">
+          {item.effects.map(effect => <li key={effect}>{effect}</li>)}
+        </ul>
+      )}
       {children}
     </div>
   )
@@ -108,13 +109,26 @@ function Details({ item, status, children }: { item: Pick<RelicView, 'id' | 'nam
  * on and the treasury; on the left the faction's box (each relic's picture and name, by how it stands) and the
  * relics it can produce; on the right the details of the one chosen, with what can be done with it. A broken relic
  * can be dismantled (after a confirmation: it cannot be undone), repaired in the city, or sent to 法王府, each saying
- * why it cannot be when it cannot; 法王府に献上 is shown but does not work yet
+ * why it cannot be when it cannot; 法王府に献上 is shown but does not work yet. An equipment relic repaired is put on a knight
+ * (装備させる: the knights in a KnightPicker, then the slot to swap when theirs are full) or taken off the one wearing it (外す)
  */
 export default function RelicScreen({
-  cityName, construction = null, gold, relics, productions = [], onDismantle, onRepair, onPapalRepair, onProduce, onClose, children,
+  cityName, construction = null, gold, relics, productions = [], onDismantle, onRepair, onPapalRepair, onProduce, equipCandidates, onEquip, onUnequip, onClose, children,
 }: RelicScreenProps) {
   const [selection, setSelection] = useState<Selection | null>(null)
   const [dismantling, setDismantling] = useState<RelicView | null>(null)
+  const [equipping, setEquipping] = useState<Equipping | null>(null)
+  const equippingRelic = equipping && relics.find(item => item.id === equipping.id)
+  const candidates = equippingRelic ? equipCandidates?.(equippingRelic.id) ?? [] : []
+  const candidate = equipping?.knightId ? candidates.find(c => c.knight.id === equipping.knightId) : undefined
+  /** The knight chosen: into their first slot it can go in that is empty, or else choose the slot to swap */
+  const equipKnight = () => {
+    if (!equipping || !candidate) return
+    const free = candidate.slots.findIndex(slot => !slot.relic && !slot.unavailableReason)
+    if (free < 0) return setEquipping({ ...equipping, swapping: true, slot: null })
+    setEquipping(null)
+    onEquip?.(equipping.id, candidate.knight.id, free)
+  }
   const chosenRelic = selection?.list === 'box' ? relics.find(relic => relic.id === selection.id) : undefined
   const chosenProduction = selection?.list === 'production' ? productions.find(relic => relic.id === selection.id) : undefined
   // With nothing chosen (or the chosen one gone), the first of the lists
@@ -177,11 +191,11 @@ export default function RelicScreen({
               <SectionFrame />
               {relic && (
                 <Details item={relic} status={<span className={`norden-relic-details-status is-${relic.status}`}>{statusLabel(relic)}</span>}>
-                  {relic.status === 'repaired' && <p className="norden-relic-details-note">使い道はまだありません</p>}
+                  {relic.status === 'repaired' && !relic.equip && <p className="norden-relic-details-note">使い道はまだありません</p>}
                   {relic.status === 'repairing' && <p className="norden-relic-details-note">{relic.cityName}で修復しています。内政画面で中断・中止できます</p>}
                   {relic.status === 'producing' && <p className="norden-relic-details-note">{relic.cityName}で生産しています。内政画面で中断・中止できます</p>}
                   {relic.status === 'papalRepair' && <p className="norden-relic-details-note">次のターンの初めに修復済みになります。取り消せません</p>}
-                  {(relic.status === 'broken' || relic.status === 'repaired') && (
+                  {(relic.status === 'broken' || relic.status === 'repaired' || relic.status === 'equipped') && (
                     <div className="norden-details-section">
                       <h4 className="norden-details-section-title">遺物の操作</h4>
                       <div className="norden-relic-actions">
@@ -197,6 +211,14 @@ export default function RelicScreen({
                         {relic.status === 'broken' && relic.dismantle && (
                           <Action label="解体する" name={`${relic.name}を解体`} needs={`研究ポイント +${relic.dismantle.points.toLocaleString()}`}
                             reason={relic.dismantle.unavailableReason} onClick={() => setDismantling(relic)} />
+                        )}
+                        {relic.equip && (
+                          <Action primary label={relic.status === 'equipped' ? '別の騎士に装備させる' : '装備させる'} name={`${relic.name}を装備させる`}
+                            reason={relic.equip.unavailableReason} onClick={() => setEquipping({ id: relic.id, knightId: null, swapping: false, slot: null })} />
+                        )}
+                        {relic.status === 'equipped' && relic.unequip && (
+                          <Action label="外す" name={`${relic.name}を外す`} needs={relic.wearerName && `${relic.wearerName}から外して箱に戻す`}
+                            reason={relic.unequip.unavailableReason} onClick={() => onUnequip?.(relic.id)} />
                         )}
                         <Action label="法王府に献上" name={`${relic.name}を法王府に献上`} reason="法王府への献上はまだできません" />
                       </div>
@@ -237,6 +259,30 @@ export default function RelicScreen({
           }}
           onCancel={() => setDismantling(null)}
         />
+      )}
+      {equipping && equippingRelic && !equipping.swapping && (
+        <PickerDialog title={`${equippingRelic.name}を装備させる`} message="装備させる騎士を選んでください。"
+          confirmDisabled={!candidate || Boolean(candidate.unavailableReason)} onConfirm={equipKnight} onCancel={() => setEquipping(null)}>
+          <KnightPicker label="装備させる騎士" emptyText="装備させられる騎士はいません。"
+            items={candidates.map(c => ({ knight: c.knight, note: slotsNote(c), disabledReason: c.unavailableReason }))}
+            selected={equipping.knightId ? [equipping.knightId] : []}
+            onChange={ids => setEquipping({ ...equipping, knightId: ids[0] ?? null })} />
+        </PickerDialog>
+      )}
+      {equipping && equippingRelic && equipping.swapping && candidate && (
+        <PickerDialog title={`${candidate.knight.name}の装備を入れ替える`} className="is-narrow"
+          message={`装備の枠が埋まっています。${equippingRelic.name}と入れ替える遺物を選んでください（箱に戻ります）。`}
+          confirmLabel="入れ替える" confirmDisabled={equipping.slot === null}
+          onConfirm={() => {
+            setEquipping(null)
+            onEquip?.(equipping.id, candidate.knight.id, equipping.slot!)
+          }}
+          onCancel={() => setEquipping({ ...equipping, swapping: false })}>
+          <RelicPicker label="入れ替える遺物" selectedId={equipping.slot === null ? null : `${equipping.slot}`}
+            items={candidate.slots.flatMap((slot, index) => (slot.relic
+              ? [{ ...slot.relic, id: `${index}`, label: `枠${index + 1}`, disabledReason: slot.unavailableReason }] : []))}
+            onSelect={id => setEquipping({ ...equipping, slot: Number(id) })} />
+        </PickerDialog>
       )}
       {children}
     </div>

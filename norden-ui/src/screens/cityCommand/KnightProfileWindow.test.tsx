@@ -1,9 +1,9 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import CityInfoWindow from './CityInfoWindow'
 import { biographyParts } from './KnightProfileWindow'
-import type { CityView, KnightView } from '../types'
+import type { CityView, EquipmentActions, KnightView } from '../types'
 
 const seraphina: KnightView = {
   id: '001', name: 'セラフィナ・ルクス', subtitle: '魔術師', faction: { name: 'エスハラ法王府' },
@@ -84,5 +84,59 @@ describe('knight profile', () => {
     await userEvent.click(screen.getByRole('button', { name: 'セラフィナ・ルクスの詳細' }))
     await userEvent.keyboard('{Escape}')
     expect(screen.queryByRole('region', { name: 'セラフィナ・ルクス' })).not.toBeInTheDocument()
+  })
+
+  describe('equipment', () => {
+    const rifle = { id: 'carta-2', name: 'ライフル', rarity: 'C' as const, effects: ['ライフル兵を率いる'] }
+    const elwin: KnightView = { id: '016', name: 'エルヴィン', equipment: { slots: [rifle, null] } }
+    const actions = (): EquipmentActions => ({
+      options: vi.fn(() => [
+        { id: 'gun-1', name: '大砲', rarity: 'B' as const, label: 'ルカが装備中' },
+        { id: 'tome-1', name: '火の魔導書', rarity: 'B' as const, disabledReason: '魔術師だけが装備できます' },
+      ]),
+      onEquip: vi.fn(),
+      onUnequip: vi.fn(),
+    })
+    const openElwin = async (knight: KnightView, equipment?: EquipmentActions) => {
+      render(<CityInfoWindow city={{ ...city, knights: [knight] }} equipment={equipment} />)
+      await userEvent.click(screen.getByRole('tab', { name: '騎士' }))
+      await userEvent.click(screen.getByRole('button', { name: 'エルヴィンの詳細' }))
+      return screen.getByRole('region', { name: 'エルヴィン' })
+    }
+
+    it('shows the slots, choosing a relic for one and taking one off', async () => {
+      const equipment = actions()
+      const profile = await openElwin(elwin, equipment)
+      expect(within(profile).getByRole('button', { name: '装備の枠1：ライフル' })).toHaveTextContent('ライフル兵を率いる')
+      await userEvent.click(within(profile).getByRole('button', { name: '装備の枠2：空き' }))
+      expect(equipment.options).toHaveBeenCalledWith('016', 1)
+      const dialog = screen.getByRole('dialog', { name: 'エルヴィンの装備の枠2' })
+      expect(within(dialog).getByRole('button', { name: '火の魔導書（魔術師だけが装備できます）' })).toBeDisabled()
+      await userEvent.click(within(dialog).getByRole('button', { name: '大砲（ルカが装備中）' }))
+      await userEvent.click(within(dialog).getByRole('button', { name: '決定' }))
+      expect(equipment.onEquip).toHaveBeenCalledWith('016', 1, 'gun-1')
+      await userEvent.click(within(profile).getByRole('button', { name: 'ライフルを外す' }))
+      expect(equipment.onUnequip).toHaveBeenCalledWith('016', 0)
+    })
+
+    it('Escape closes the dialog choosing a relic, not the profile', async () => {
+      await openElwin(elwin, actions())
+      await userEvent.click(screen.getByRole('button', { name: '装備の枠1：ライフル' }))
+      expect(screen.getByRole('dialog', { name: 'エルヴィンの装備の枠1' })).toHaveTextContent('いまのライフルは箱に戻ります。')
+      await userEvent.keyboard('{Escape}')
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(screen.getByRole('region', { name: 'エルヴィン' })).toBeInTheDocument()
+    })
+
+    it('cannot be changed with a reason, saying it', async () => {
+      const profile = await openElwin({ ...elwin, equipment: { slots: [rifle, null], unavailableReason: '手番ではありません' } }, actions())
+      expect(within(profile).getByRole('button', { name: '装備の枠2：空き' })).toBeDisabled()
+      expect(within(profile).getByText('手番ではありません')).toBeInTheDocument()
+    })
+
+    it('has no section for a knight without slots', async () => {
+      const profile = await openElwin({ id: '016', name: 'エルヴィン' }, actions())
+      expect(within(profile).queryByRole('list', { name: '装備' })).not.toBeInTheDocument()
+    })
   })
 })

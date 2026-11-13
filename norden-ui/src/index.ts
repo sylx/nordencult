@@ -66,6 +66,18 @@ export { default as StatBar } from './components/parts/StatBar'
 export type { StatBarProps, StatBarSegment } from './components/parts/StatBar'
 export { default as BuildingSlots, BuildingImage, ConstructionProgress } from './components/parts/BuildingSlots'
 export type { BuildingSlotsProps } from './components/parts/BuildingSlots'
+export { default as RelicRow, RelicRarity } from './components/parts/RelicRow'
+export type { RelicRowData, RelicRowProps } from './components/parts/RelicRow'
+export { default as EquipmentSlots } from './components/parts/EquipmentSlots'
+export type { EquipmentSlotsProps } from './components/parts/EquipmentSlots'
+
+// Basic components: choosing from a list in a dialog
+export { default as PickerDialog } from './components/picker/PickerDialog'
+export type { PickerDialogProps } from './components/picker/PickerDialog'
+export { default as KnightPicker } from './components/picker/KnightPicker'
+export type { KnightPickItem, KnightPickerProps } from './components/picker/KnightPicker'
+export { default as RelicPicker } from './components/picker/RelicPicker'
+export type { RelicPickItem, RelicPickerProps } from './components/picker/RelicPicker'
 
 // Sound effects: the game plays them (setSoundPlayer); components only name them
 export { installClickSound, playSound, setSoundPlayer } from './sound/sound'
@@ -81,7 +93,7 @@ export type { ScreenHostProps, ScreenRenderers } from './navigation/ScreenHost'
 
 // Screens
 export type {
-  AssignmentRoleView, BuildOptionView, BuildingView, CityAssignmentsView, CityBuildingsView, CityHistoryView, CityLogLineView, CityStatView, CityView, ConstructionKindView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, FactionResearchSummaryView, FactionSummaryView, FactionView, KnightAbilitiesView, KnightView, MercenaryContractView, MercenaryOfferView, MercenaryProfileView, MercenaryRank, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicRarityView, RelicStatusView, RelicView, SpriteImage, StatBoostView, TechStatusView, TechView, TurnView, UnitTypeView,
+  AssignmentRoleView, BuildOptionView, EquipCandidateView, EquipmentActions, EquipOptionView, EquippedRelicView, KnightEquipmentView, BuildingView, CityAssignmentsView, CityBuildingsView, CityHistoryView, CityLogLineView, CityStatView, CityView, ConstructionKindView, ConstructionView, DomesticBudgetsView, DomesticFundedRole, DomesticOfficerRole, DomesticOfficersView, FactionResearchSummaryView, FactionSummaryView, FactionView, KnightAbilitiesView, KnightView, MercenaryContractView, MercenaryOfferView, MercenaryProfileView, MercenaryRank, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicRarityView, RelicStatusView, RelicView, SpriteImage, StatBoostView, TechStatusView, TechView, TurnView, UnitTypeView,
 } from './screens/types'
 export { default as CityCommandScreen, turnText } from './screens/cityCommand/CityCommandScreen'
 export type { CityCommandLayout, CityCommandScreenProps, CommandState } from './screens/cityCommand/CityCommandScreen'

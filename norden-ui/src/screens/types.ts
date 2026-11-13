@@ -218,6 +218,56 @@ export interface KnightView extends KnightCardData {
   commandRank?: number
   /** Why they cannot be picked (they are shown but cannot be selected) */
   unavailableReason?: string
+  /** Their equipment slots (装備); omitted: they have none (a mercenary), not shown */
+  equipment?: KnightEquipmentView
+}
+
+/** A relic a knight wears, in a slot */
+export interface EquippedRelicView {
+  /** The host's id of the relic (of the faction's box) */
+  id: string
+  name: string
+  image?: SpriteImage
+  rarity: RelicRarityView
+  /** What wearing it gives, e.g. ライフル兵を率いる, 魔法: フレイムランス */
+  effects?: readonly string[]
+}
+
+/** A knight's equipment slots */
+export interface KnightEquipmentView {
+  /** Each slot in order: the relic in it, or null when empty */
+  slots: readonly (EquippedRelicView | null)[]
+  /** Why they cannot be changed now (shown, the slots cannot be pressed), e.g. 手番ではありません */
+  unavailableReason?: string
+}
+
+/** A relic of the box to put in a slot of a knight's (RelicPicker's item: why it cannot be, or who wears it now as its label) */
+export interface EquipOptionView {
+  id: string
+  name: string
+  image?: SpriteImage
+  rarity: RelicRarityView
+  /** e.g. エルヴィンが装備中 (choosing it takes it off them) */
+  label?: string
+  disabledReason?: string
+}
+
+/** What the knight windows ask the host to change a knight's equipment: the relics for a slot, putting one on and taking it off */
+export interface EquipmentActions {
+  /** The relics of the box for the knight's slot, those that cannot go in it with why */
+  options: (knightId: string, slot: number) => readonly EquipOptionView[]
+  /** The relic goes in the knight's slot (the one there goes back into the box) */
+  onEquip: (knightId: string, slot: number, itemId: string) => void
+  onUnequip: (knightId: string, slot: number) => void
+}
+
+/** A knight a relic of the box can be put on (the relic screen's 装備させる): their slots, and why they cannot wear it */
+export interface EquipCandidateView {
+  knight: KnightView
+  /** Each slot: the relic in it (null: empty) and why the relic cannot go in it */
+  slots: readonly { relic: EquippedRelicView | null; unavailableReason?: string }[]
+  /** Why they cannot wear it in any slot */
+  unavailableReason?: string
 }
 
 /** A mercenary the city can reach (契約できる傭兵), hired or not by what the host says */
@@ -333,8 +383,8 @@ export interface RelicOptionView extends BuildOptionView {
 
 export type RelicRarityView = 'S' | 'A' | 'B' | 'C' | 'D'
 
-/** A relic of the box: broken, being repaired in a city, being repaired by 法王府 or repaired; or being produced in a city */
-export type RelicStatusView = 'broken' | 'repairing' | 'producing' | 'papalRepair' | 'repaired'
+/** A relic of the box: broken, being repaired in a city, being repaired by 法王府, repaired, or repaired and worn by a knight; or being produced in a city */
+export type RelicStatusView = 'broken' | 'repairing' | 'producing' | 'papalRepair' | 'repaired' | 'equipped'
 
 export interface RelicView {
   /** Passed back to the screen's callbacks (a relic being repaired or produced has no actions) */
@@ -349,6 +399,14 @@ export interface RelicView {
   description?: string
   /** repairing, producing: the city doing it */
   cityName?: string
+  /** equipped: the knight wearing it */
+  wearerName?: string
+  /** What it gives repaired, e.g. ライフル兵を率いる, 魔法: フレイムランス, 知力 70 以上の魔術師が装備できる */
+  effects?: readonly string[]
+  /** An equipment relic repaired: putting it on a knight (装備させる; the knights from RelicScreen's equipCandidates) */
+  equip?: { unavailableReason?: string }
+  /** equipped: taking it off the knight */
+  unequip?: { unavailableReason?: string }
   /** Dismantling it: the research points it gives */
   dismantle?: { points: number; unavailableReason?: string }
   /** Repairing it in the city the screen is opened on */
