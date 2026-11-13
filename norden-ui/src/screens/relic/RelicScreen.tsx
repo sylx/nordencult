@@ -216,7 +216,7 @@ export default function RelicScreen({
                             reason={relic.repair.unavailableReason} sound="develop" onClick={() => onRepair?.(relic.id)} />
                         )}
                         {relic.status === 'broken' && relic.papalRepair && (
-                          <Action label="法王府に依頼" name={`${relic.name}を法王府に依頼`} needs={`金 ${relic.papalRepair.gold.toLocaleString()}`}
+                          <Action label="法王府に依頼" name={`${relic.name}を法王府に依頼`} needs={`金 ${relic.papalRepair.gold.toLocaleString()}${relic.papalRepair.note ? `（${relic.papalRepair.note}）` : ''}`}
                             reason={relic.papalRepair.unavailableReason} onClick={() => onPapalRepair?.(relic.id)} />
                         )}
                         {relic.status === 'broken' && relic.dismantle && (

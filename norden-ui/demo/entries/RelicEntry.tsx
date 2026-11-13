@@ -11,7 +11,10 @@ const BROKEN = RELICS.filter(relic => relic.brokenName)
 const PRODUCTION_PER_TURN = 120
 
 /** The game's rules of relics (src/game/relics/), for the demo */
-const PAPAL_REPAIR_RATE = 1.5
+/** 法王府's rate as the game's: plain for a relic needing no technology, dearer without it and cheaper with it */
+const PAPAL_REPAIR_RATE = 2.5
+const PAPAL_REPAIR_RATE_UNKNOWN = 3.5
+const PAPAL_REPAIR_RATE_KNOWN = 1.5
 const BROKEN_RARITY: Readonly<Record<RelicRarityView, RelicRarityView>> = { S: 'A', A: 'B', B: 'C', C: 'D', D: 'D' }
 const INITIAL_GOLD = 3000
 
@@ -33,7 +36,12 @@ export default function RelicEntry() {
   const turns = (supplies: number) => Math.ceil(supplies / PRODUCTION_PER_TURN)
   const moneyReason = (cost: number) => (gold < cost ? '金が足りません' : undefined)
   const techReason = (tech?: string) => (tech && !techs ? `技術「${tech}」の研究が必要です` : undefined)
-  const papalGold = (relic: RelicSpec) => Math.ceil(((relic.repair?.gold ?? 0) + (relic.repair?.supplies ?? 0)) * PAPAL_REPAIR_RATE)
+  const papalRate = (relic: RelicSpec) => (!relic.repair?.tech ? PAPAL_REPAIR_RATE : techs ? PAPAL_REPAIR_RATE_KNOWN : PAPAL_REPAIR_RATE_UNKNOWN)
+  const papalGold = (relic: RelicSpec) => Math.ceil(((relic.repair?.gold ?? 0) + (relic.repair?.supplies ?? 0)) * papalRate(relic))
+  const papalNote = (relic: RelicSpec) => {
+    const percent = Math.round((papalRate(relic) / PAPAL_REPAIR_RATE - 1) * 100)
+    return percent === 0 ? undefined : percent < 0 ? `技術「${relic.repair!.tech}」の習得で −${-percent}%` : `技術「${relic.repair!.tech}」が未習得で +${percent}%`
+  }
 
   const view = (item: Item): RelicView => {
     const relic = RELIC_MAP[item.relicId]!
@@ -50,7 +58,7 @@ export default function RelicEntry() {
       repair: relic.repair && {
         ...relic.repair, turns: turns(relic.repair.supplies), unavailableReason: techReason(relic.repair.tech) ?? busy ?? moneyReason(relic.repair.gold),
       },
-      papalRepair: relic.repair && { gold: papalGold(relic), unavailableReason: moneyReason(papalGold(relic)) },
+      papalRepair: relic.repair && { gold: papalGold(relic), note: papalNote(relic), unavailableReason: moneyReason(papalGold(relic)) },
     }
   }
   const repairing: RelicView[] = work?.kind === 'relicRepair'
