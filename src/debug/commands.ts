@@ -7,7 +7,7 @@ import { TECH_LIST, TECH_MAP } from '../data/techs'
 import { UNIT_TYPE_MAP } from '../data/unitTypes'
 import { SCENES, isDialogueId, type DialogueId } from '../dialogue'
 import {
-  awayReason, charactersIn, clearFlag, citiesOf, dateOf, debugAddRelic, debugEquipRelic, debugImprison, debugUnequipRelic, equipmentOf, BALANCE, debugAddResearchPoints, debugCompleteTech, debugFillResearch, debugSetCity, debugSetGold,
+  awayReason, charactersIn, clearFlag, citiesOf, dateOf, debugAddRelic, debugEquipRelic, debugImprison, debugUnequipRelic, equipmentOf, BALANCE, debugAddResearchPoints, debugCompleteTech, debugFillConstruction, debugFillResearch, debugSetCity, debugSetGold,
   debugSetMercenarySoldiers, debugSetStanding, endFactionTurn, setFlag, factionPower, governorOf, isMercenary, isPlayerFaction, isRecovering, mercenaryAt, movementOf, ownerOf, prisonerMovementOf, prisonersIn, relicsOf, researchOf, researchOutput, resolveBattle, turnOrder, unitTypesOf, viewFaction,
   type BattleWinner, type CityConstruction, type CityId, type DebugCityField, type FactionId, type GameState, type GameStore, type RelicItem,
 } from '../game'
@@ -92,9 +92,12 @@ const factionOf = (args: readonly string[], index: number, state: GameState): Fa
 const cityLabel = (id: CityId | null) => (id ? `${CITY_MAP[id]?.name ?? id} (${id})` : 'なし')
 const techLabel = (id: string | null) => (id ? TECH_MAP[id]?.name ?? id : 'なし')
 const knightNames = (ids: readonly string[]) => ids.map((id) => CHARACTER_MAP[id]?.name ?? id).join('・') || 'なし'
-/** What a relic of the box is doing: 法王府に依頼中, worn by a knight */
+/** What a relic of the box is doing: 法王府に依頼中, worn by a knight, used building in a city */
 const relicStatus = (item: RelicItem) =>
-  item.papalRepair ? '依頼中' : item.equippedBy ? `装備: ${CHARACTER_MAP[item.equippedBy.characterId]?.name ?? item.equippedBy.characterId}` : ''
+  item.papalRepair ? '依頼中'
+    : item.equippedBy ? `装備: ${CHARACTER_MAP[item.equippedBy.characterId]?.name ?? item.equippedBy.characterId}`
+    : item.buildingIn ? `建設中: ${CITY_MAP[item.buildingIn]?.name ?? item.buildingIn}`
+    : ''
 const relicsLabel = (state: GameState, factionId: FactionId) =>
   relicsOf(state, factionId).map((item) => `${relicName(item.relicId, item.repaired)}${relicStatus(item) && `（${relicStatus(item)}）`}`).join('・') || 'なし'
 /** A knight's slots: the relic in each, or 空き */
@@ -124,7 +127,9 @@ function researchLabel(state: GameState, factionId: FactionId): string {
 function constructionLabel(construction: CityConstruction | null): string {
   if (!construction) return 'なし'
   const { work, investedSupplies, requiredSupplies, paused } = construction
-  const name = work.kind === 'building' ? BUILDING_MAP[work.buildingId]?.name ?? work.buildingId : relicName(work.relicId, work.kind === 'relicProduction')
+  const name = work.kind === 'building'
+    ? `${BUILDING_MAP[work.buildingId]?.name ?? work.buildingId}${work.relicItemId ? `（遺物 ${work.relicItemId}）` : ''}`
+    : relicName(work.relicId, work.kind === 'relicProduction')
   return `${name} ${investedSupplies}/${requiredSupplies}${paused ? '（中断）' : ''}`
 }
 
@@ -371,6 +376,14 @@ export const DEBUG_COMMANDS: readonly Command[] = [
           const { field, label } = CITY_FIELDS[name]
           store.update((s) => debugSetCity(s, id, field, Number(value)))
           return `${cityLabel(id)} の${label}: ${store.getState().cities[id][field]}`
+        },
+      },
+      {
+        name: 'fill', summary: '建設・修復・生産に必要な物資を全部入れる（中断も解く。次のターンの初めに完成）', args: [cityArg],
+        run: ([id], { store }) => {
+          if (!store.getState().cities[id]?.construction) throw new DebugError(`${cityLabel(id)} は何も建設していません`)
+          store.update((s) => debugFillConstruction(s, id))
+          return `${cityLabel(id)} の建設: ${constructionLabel(store.getState().cities[id].construction)}`
         },
       },
     ],

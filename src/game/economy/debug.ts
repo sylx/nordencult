@@ -14,3 +14,11 @@ export function debugSetCity(state: GameState, cityId: CityId, field: DebugCityF
   const city: CityState = { ...state.cities[cityId], [field]: Math.min(most, Math.max(0, value)) }
   return { ...state, cities: { ...state.cities, [cityId]: city } }
 }
+
+/** Debugging: all the supplies what the city builds, repairs or produces takes (completed by the next economy run, paused or not); nothing changes with none */
+export function debugFillConstruction(state: GameState, cityId: CityId): GameState {
+  const construction = state.cities[cityId]?.construction
+  if (!construction) return state
+  const city: CityState = { ...state.cities[cityId], construction: { ...construction, investedSupplies: construction.requiredSupplies, paused: false } }
+  return { ...state, cities: { ...state.cities, [cityId]: city } }
+}

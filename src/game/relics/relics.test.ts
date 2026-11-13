@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
-  addOrder, addResearchPoints, BALANCE, cancelConstruction, cityOutput, constructionBusyProblem, constructionProblem, constructionTurns, createInitialState, debugAddRelic,
+  addOrder, addResearchPoints, BALANCE, buildingLocked, buildingProblem, cancelConstruction, cityOutput, constructionBusyProblem, constructionProblem, constructionTurns, createInitialState, debugAddRelic,
   dismantleProblem, dismantleRelic, endFactionTurn, GameRuleError, mustChooseResearch, papalRepairCost, papalRepairProblem, pauseConstruction, producibleRelics,
   productionProblem, relicItemInfo, relicWorks, repairProblem, requestPapalRepair, resolveBattle, runEconomy, setResearch, startConstruction, startNextBattle,
   startRelicProduction, startRelicRepair, withRelics,
@@ -259,10 +259,69 @@ describe('producing in a city', () => {
   })
 })
 
+describe('a building using a relic (施設の遺物)', () => {
+  /** カルタ書院's バリスタ repaired, and the gold to build */
+  const ready = (state = playing('carta')): GameState =>
+    withGold(withRelics(state, 'carta', itemsOf(state).map((i) => (i.id === BALLISTA ? { ...i, repaired: true } : i))), 10000)
+
+  it('is hidden and refused until the faction has the relic repaired', () => {
+    const state = withGold(playing('carta'), 10000)
+    expect(buildingLocked(state, FLUEN, 'ballista')).toBe(true)
+    expect(buildingProblem(state, FLUEN, 'ballista')).toBe('遺物「バリスタ」が必要です')
+    expect(buildingLocked(ready(), FLUEN, 'ballista')).toBe(false)
+    expect(buildingProblem(ready(), FLUEN, 'ballista')).toBeNull()
+    expect(constructionProblem(ready(), FLUEN, 'ballista')).toBeNull()
+    // Another faction's city: the relic is カルタ書院's
+    expect(buildingLocked(ready(), AMBARIA, 'ballista')).toBe(true)
+  })
+
+  it('locks the relic while it is built, the box keeping it', () => {
+    const state = startConstruction(ready(), FLUEN, 'ballista')
+    expect(state.cities[FLUEN].construction!.work).toEqual({ kind: 'building', buildingId: 'ballista', relicItemId: BALLISTA })
+    expect(item(state, BALLISTA)).toMatchObject({ repaired: true, buildingIn: FLUEN })
+    // Another city sees it, but cannot build with the relic in use
+    expect(buildingLocked(state, SILVA, 'ballista')).toBe(false)
+    expect(buildingProblem(state, SILVA, 'ballista')).toBe('遺物「バリスタ」はほかの都市の建設に使っています')
+  })
+
+  it('uses the first relic of the kind no other building uses', () => {
+    const second: RelicItem = { id: 'second', relicId: 'ballista', repaired: true }
+    const broken: RelicItem = { id: 'broken', relicId: 'ballista', repaired: false }
+    let state = ready()
+    state = withRelics(state, 'carta', [broken, ...itemsOf(state), second])
+    state = startConstruction(state, FLUEN, 'ballista')
+    expect(item(state, BALLISTA)!.buildingIn).toBe(FLUEN)
+    state = startConstruction(state, SILVA, 'ballista')
+    expect(state.cities[SILVA].construction!.work).toMatchObject({ relicItemId: 'second' })
+    expect(item(state, 'second')!.buildingIn).toBe(SILVA)
+    expect(item(state, 'broken')!.buildingIn).toBeUndefined()
+  })
+
+  it('unlocks the relic when cancelled', () => {
+    const state = cancelConstruction(startConstruction(ready(), FLUEN, 'ballista'), FLUEN)
+    expect(item(state, BALLISTA)).toEqual({ id: BALLISTA, relicId: 'ballista', repaired: true })
+    expect(buildingProblem(state, SILVA, 'ballista')).toBeNull()
+  })
+
+  it('uses the relic up when completed', () => {
+    const state = nextTurn(almostDone(startConstruction(ready(), FLUEN, 'ballista'), FLUEN))
+    expect(state.cities[FLUEN].buildings).toContain('ballista')
+    expect(item(state, BALLISTA)).toBeUndefined()
+    expect(itemsOf(state)).toHaveLength(itemsOf(ready()).length - 1)
+    // No relic left: hidden again
+    expect(buildingLocked(state, SILVA, 'ballista')).toBe(true)
+  })
+
+  it('keeps the relic while it is not completed', () => {
+    const state = nextTurn(startConstruction(ready(), FLUEN, 'ballista'))
+    expect(item(state, BALLISTA)!.buildingIn).toBe(FLUEN)
+  })
+})
+
 describe('a city captured with work under way', () => {
-  /** カルタ書院 takes アンバリア, where `construction` is under way */
-  function captured(construction: CityConstruction) {
-    const start = playing('carta')
+  /** カルタ書院 takes アンバリア, where `construction` is under way (`prepare`: changing the state before) */
+  function captured(construction: CityConstruction, prepare: (state: GameState) => GameState = (s) => s) {
+    const start = prepare(playing('carta'))
     let state = withCity(addOrder(start, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '015', knights: ['015'] }), AMBARIA, { construction })
     while (state.phase === 'strategy') state = endFactionTurn(state)
     state = startNextBattle(state)
@@ -287,6 +346,19 @@ describe('a city captured with work under way', () => {
     const { after } = captured(construction)
     expect(after.cities[AMBARIA].construction).toEqual(construction)
     expect(after.lastBattle!.lostRelicWork).toBeNull()
+  })
+
+  it('loses a building using a relic, and the relic with it', () => {
+    const locked: RelicItem = { id: 'leonis-ballista', relicId: 'ballista', repaired: true, buildingIn: AMBARIA }
+    const work = { kind: 'building', buildingId: 'ballista', relicItemId: locked.id } as const
+    const { before, after } = captured({ work, requiredSupplies: 900, investedSupplies: 300 },
+      (state) => withRelics(state, 'leonis', [...itemsOf(state, 'leonis'), locked]))
+    expect(item(before, locked.id, 'leonis')).toEqual(locked)
+    expect(after.cities[AMBARIA].construction).toBeNull()
+    expect(after.lastBattle!.lostRelicWork).toEqual(work)
+    expect(item(after, locked.id, 'leonis')).toBeUndefined()
+    expect(itemsOf(after, 'leonis')).toHaveLength(itemsOf(before, 'leonis').length - 1)
+    expect(itemsOf(after)).toEqual(itemsOf(before))
   })
 
   it('keeps the work when the city holds', () => {

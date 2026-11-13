@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createGameStore, createInitialState, isMercenary, prisonersIn, researchOf, wanderer, type GameStore } from '../game'
+import { createGameStore, createInitialState, isMercenary, prisonersIn, researchOf, startConstruction, wanderer, type GameStore } from '../game'
+import { playing } from '../game/testing'
 import { setDialogueStarter } from '../scenes/playDialogue'
 import { DEBUG_COMMANDS, type DebugContext } from './commands'
 import { LineEditor } from './lineEditor'
@@ -200,6 +201,19 @@ describe('commands', () => {
     expect(store.getState().cities.P012.troops).toBe(1234)
     expect(store.getState().cities.P012.troopMorale).toBe(100)
     expect(() => run('city set P012 nothing 1')).toThrow(DebugError)
+  })
+
+  it('fills what a city builds, and shows the relic a building uses', () => {
+    const { store, run } = setup()
+    store.update(() => playing('carta'))
+    expect(() => run('city fill P012')).toThrow('何も建設していません')
+    run('relic add ballista carta repaired')
+    run('gold set 5000')
+    store.update((s) => startConstruction(s, 'P012', 'ballista'))
+    expect(run('relic list carta').join('\n')).toContain('建設中: フルーエン')
+    expect(run('city fill P012').join('\n')).toMatch(/バリスタ（遺物 relic-\d+） 900\/900/)
+    const { construction } = store.getState().cities.P012
+    expect(construction!.investedSupplies).toBe(construction!.requiredSupplies)
   })
 
   it('shows the mercenaries and changes their soldiers and the standing', () => {

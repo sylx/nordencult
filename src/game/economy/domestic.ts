@@ -6,8 +6,8 @@ import { TECH_MAP } from '../../data/techs'
 import { isMercenary, mixMorale } from '../army'
 import { GameRuleError } from '../errors'
 import { engagementOf, ownerOf } from '../queries'
-import { addRelic } from '../relics/box'
-import type { AssignmentRole, CharacterId, CityAssignments, CityId, CityState, FundedRole, GameState, OfficerRole } from '../types'
+import { addRelic, facilityRelics, freeFacilityRelic, withRelicItem } from '../relics/box'
+import type { AssignmentRole, CharacterId, CityAssignments, CityId, CityState, FundedRole, GameState, OfficerRole, RelicItem } from '../types'
 import { AFFAIRS_BUDGET_LIMIT, OFFICERS_PER_ROLE, RECRUIT_GOLD } from './balance'
 import { cityOutput } from './output'
 
@@ -185,6 +185,26 @@ function missingTech(state: GameState, cityId: CityId, buildingId: string): stri
   return owner && state.research[owner]?.researched.includes(tech) ? undefined : tech
 }
 
+/**
+ * Why the city's faction cannot build a building needing a relic (Building.requiredRelic) now: it has no such relic
+ * repaired, or the other buildings under way use all it has (RelicItem.buildingIn); null: it can, or the building needs none
+ */
+function facilityRelicProblem(state: GameState, cityId: CityId, buildingId: string): string | null {
+  const relicId = BUILDING_MAP[buildingId]?.requiredRelic
+  if (!relicId) return null
+  const owner = ownerOf(state, cityId)
+  const name = relicName(relicId, true)
+  if (!owner || facilityRelics(state, owner, relicId).length === 0) return `遺物「${name}」が必要です`
+  return freeFacilityRelic(state, owner, relicId) ? null : `遺物「${name}」はほかの都市の建設に使っています`
+}
+
+/** The relic the city's faction would use building it (none for a building needing none, or with no such relic free) */
+export function constructionRelic(state: GameState, cityId: CityId, buildingId: string): string | undefined {
+  const relicId = BUILDING_MAP[buildingId]?.requiredRelic
+  const owner = ownerOf(state, cityId)
+  return relicId && owner ? freeFacilityRelic(state, owner, relicId)?.id : undefined
+}
+
 /** Why a building cannot be started in the city now, or null (the command's checks too) */
 export function buildingProblem(state: GameState, cityId: CityId, buildingId: string): string | null {
   const building = BUILDING_MAP[buildingId]
@@ -200,7 +220,8 @@ export function buildingProblem(state: GameState, cityId: CityId, buildingId: st
   }
   const tech = missingTech(state, cityId, buildingId)
   if (tech) return `技術「${TECH_MAP[tech]?.name ?? tech}」の研究が必要です`
-  if (building.requiredRelic) return `遺物「${relicName(building.requiredRelic, true)}」が必要です`
+  const relicProblem = facilityRelicProblem(state, cityId, buildingId)
+  if (relicProblem) return relicProblem
   // An upgrade is built over the building it replaces, taking no slot of its own
   if (building.upgradeFrom) {
     return city.buildings.includes(building.upgradeFrom) ? null : `${BUILDING_MAP[building.upgradeFrom]?.name ?? building.upgradeFrom}がある都市で建てられます`
@@ -210,8 +231,9 @@ export function buildingProblem(state: GameState, cityId: CityId, buildingId: st
 }
 
 /**
- * Whether the city cannot build it at all yet: a tag, technology or relic it needs is missing, the building it
- * upgrades is not standing, or it has been upgraded past (the screens leave such buildings unrevealed)
+ * Whether the city cannot build it at all yet: a tag, technology or relic it needs is missing (the faction has no such
+ * relic repaired; one other buildings use is not missing), the building it upgrades is not standing, or it has been
+ * upgraded past (the screens leave such buildings unrevealed)
  */
 export function buildingLocked(state: GameState, cityId: CityId, buildingId: string): boolean {
   const building = BUILDING_MAP[buildingId]
@@ -221,7 +243,7 @@ export function buildingLocked(state: GameState, cityId: CityId, buildingId: str
   return upgradesOf(buildingId).some((id) => city.buildings.includes(id))
     || Boolean(building.requiredTags && !building.requiredTags.some((tag) => tags.includes(tag)))
     || Boolean(missingTech(state, cityId, buildingId))
-    || Boolean(building.requiredRelic)
+    || Boolean(building.requiredRelic && facilityRelics(state, ownerOf(state, cityId) ?? '', building.requiredRelic).length === 0)
     || Boolean(building.upgradeFrom && !city.buildings.includes(building.upgradeFrom))
 }
 
@@ -240,20 +262,32 @@ export function constructionProblem(state: GameState, cityId: CityId, buildingId
   return null
 }
 
-/** Starts building in the city, paying the building's gold; the city's 生産 goes into it from the next turn */
+/**
+ * Starts building in the city, paying the building's gold; the city's 生産 goes into it from the next turn.
+ * One needing a relic locks a relic of the box for it (constructionRelic, RelicItem.buildingIn)
+ */
 export function startConstruction(state: GameState, cityId: CityId, buildingId: string): GameState {
   check(constructionProblem(state, cityId, buildingId))
   const building = BUILDING_MAP[buildingId]
   const factionId = state.activeFaction!
+  const relicItemId = constructionRelic(state, cityId, buildingId)
   const next = withCity(state, cityId, {
-    construction: { work: { kind: 'building', buildingId }, requiredSupplies: building.supplies, investedSupplies: 0 },
+    construction: { work: { kind: 'building', buildingId, ...(relicItemId && { relicItemId }) }, requiredSupplies: building.supplies, investedSupplies: 0 },
   })
-  return { ...next, gold: { ...state.gold, [factionId]: state.gold[factionId] - building.gold } }
+  const locked = relicItemId ? withRelicItem(next, factionId, relicItemId, (item) => ({ ...item, buildingIn: cityId })) : next
+  return { ...locked, gold: { ...state.gold, [factionId]: state.gold[factionId] - building.gold } }
+}
+
+/** The relic no longer locked for a building (RelicItem.buildingIn) */
+function unlockRelic(item: RelicItem): RelicItem {
+  const unlocked = { ...item }
+  delete unlocked.buildingIn
+  return unlocked
 }
 
 /**
  * Gives up what the city builds, repairs or produces; half of the supplies put into it return to the city's store
- * (the gold paid does not), and a relic being repaired goes back into the box, broken
+ * (the gold paid does not), a relic being repaired goes back into the box, broken, and the relic a building uses is unlocked
  */
 export function cancelConstruction(state: GameState, cityId: CityId): GameState {
   check(commandProblem(state, cityId))
@@ -265,7 +299,11 @@ export function cancelConstruction(state: GameState, cityId: CityId): GameState 
     storedSupplies: city.storedSupplies + refund,
   })
   const { work } = city.construction
-  return work.kind === 'relicRepair' ? addRelic(cancelled, state.activeFaction!, work.relicId, false) : cancelled
+  if (work.kind === 'relicRepair') return addRelic(cancelled, state.activeFaction!, work.relicId, false)
+  if (work.kind === 'building' && work.relicItemId) {
+    return withRelicItem(cancelled, state.activeFaction!, work.relicItemId, unlockRelic)
+  }
+  return cancelled
 }
 
 /** Pauses or resumes what the city builds, repairs or produces; while paused, the city's 生産 goes into its store */

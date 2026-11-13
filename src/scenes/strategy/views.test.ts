@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { addOrder, debugAddRelic, defaultUnitType, endFactionTurn, equipRelic, hireMercenary, orderProblem, relicsOf, requestPapalRepair, startRelicProduction, startRelicRepair, type GameState } from '../../game'
+import { addOrder, debugAddRelic, defaultUnitType, endFactionTurn, equipRelic, hireMercenary, orderProblem, relicsOf, requestPapalRepair, startConstruction, startRelicProduction, startRelicRepair, withRelics, type GameState } from '../../game'
 import { playing } from '../../game/testing'
 import { RELIC_MAP, relicRarity } from '../../data/relics'
 import { UNIT_TYPE_MAP } from '../../data/unitTypes'
@@ -113,6 +113,30 @@ describe('the domestic screen', () => {
     const option = buildOptions(state, FLUEN).find((b) => !b.locked)
     expect(option?.unavailableReason).toBe('ほかの遺物を修復中です')
   })
+
+  describe('a building using a relic (施設の遺物)', () => {
+    /** カルタ書院's バリスタ repaired, and the gold to build */
+    const ready = (): GameState => {
+      const state = playing('carta')
+      const repaired = withRelics(state, 'carta', relicsOf(state, 'carta').map((i) => (i.id === BALLISTA ? { ...i, repaired: true } : i)))
+      return { ...repaired, gold: { ...repaired.gold, carta: 10000 } }
+    }
+    const ballistaIn = (state: GameState, cityId: string) => buildOptions(state, cityId).find((b) => b.id === 'ballista')
+
+    it('is offered with the relic it uses once the faction has it repaired', () => {
+      expect(ballistaIn(playing('carta'), FLUEN)).toMatchObject({ locked: true, unavailableReason: '遺物「バリスタ」が必要です' })
+      expect(ballistaIn(ready(), FLUEN)).toMatchObject({ locked: false, relicNote: '遺物：バリスタを 1 つ使用' })
+      expect(ballistaIn(ready(), FLUEN)?.unavailableReason).toBeUndefined()
+    })
+
+    it('shows the relic in use in the construction, the box and the other cities', () => {
+      const state = startConstruction(ready(), FLUEN, 'ballista')
+      expect(cityView(state, FLUEN).buildings?.construction).toMatchObject({ kind: 'building', building: { id: 'ballista' }, relicNote: '遺物：バリスタを使用中' })
+      expect(ballistaIn(state, SILVA)?.unavailableReason).toBe('遺物「バリスタ」はほかの都市の建設に使っています')
+      expect(relicsView(state, 'carta', FLUEN).find((r) => r.id === BALLISTA)).toMatchObject({ status: 'building', cityName: 'フルーエン', buildingName: 'バリスタ' })
+      expect(relicsView(ready(), 'carta', FLUEN).find((r) => r.id === BALLISTA)).toMatchObject({ status: 'repaired', buildingName: 'バリスタ' })
+    })
+  })
 })
 
 describe('the mercenaries', () => {
@@ -172,5 +196,6 @@ describe('the notices', () => {
   it('names what was lost with a city', () => {
     expect(relicWorkLabel({ kind: 'relicRepair', relicId: 'rifle' })).toBe('壊れたライフルの修復')
     expect(relicWorkLabel({ kind: 'relicProduction', relicId: 'rifle' })).toBe('ライフルの生産')
+    expect(relicWorkLabel({ kind: 'building', buildingId: 'gunship', relicItemId: 'relic-1' })).toBe('ガンシップの建設（遺物：ガンシップ）')
   })
 })

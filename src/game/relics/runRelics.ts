@@ -1,11 +1,12 @@
 import { isPlayerFaction, ownerOf } from '../queries'
 import type { CityEconomy, CityId, FactionId, GameState, RelicCompleted, RelicItem } from '../types'
 import { CITY_IDS, FACTION_IDS } from '../world'
-import { addRelic, relicsOf, withRelics } from './box'
+import { addRelic, relicsOf, withoutRelicItem, withRelics } from './box'
 
 /**
  * The relics of the economy run (`reports`: what each city did in it):
- * 1. a relic repaired or produced in a city comes into the box of the city's faction, repaired,
+ * 1. a relic repaired or produced in a city comes into the box of the city's faction, repaired, and the relic a
+ *    building completed used (施設の遺物) leaves it for good,
  * 2. those 法王府 was asked to repair (whether it still stands or not) are repaired.
  * A faction the player plays is told (RelicCompleted on `turn`, the turn starting)
  */
@@ -23,6 +24,7 @@ export function runRelics(state: GameState, turn: number, reports: Readonly<Reco
     if (!factionId) continue
     for (const event of reports[cityId].events) {
       if (event.kind === 'relicCompleted') next = tell(addRelic(next, factionId, event.relicId, true), factionId, event.relicId, cityId)
+      if (event.kind === 'buildingCompleted' && event.relicItemId) next = withoutRelicItem(next, factionId, event.relicItemId)
     }
   }
   for (const factionId of FACTION_IDS) {

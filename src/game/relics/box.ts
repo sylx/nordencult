@@ -33,3 +33,21 @@ export function equipmentEffects(state: GameState, characterId: CharacterId): { 
     spells: [...new Set(effects.flatMap((e) => e.spells ?? []))],
   }
 }
+
+// ── 施設の遺物 (Building.requiredRelic) ──
+
+/** The faction's repaired relics of the kind (a building's requiredRelic), locked (RelicItem.buildingIn) or not */
+export const facilityRelics = (state: GameState, factionId: FactionId, relicId: string): RelicItem[] =>
+  relicsOf(state, factionId).filter((item) => item.relicId === relicId && item.repaired && !item.papalRepair)
+
+/** The relic of the kind a building started now would use: the first repaired one no other building uses; undefined: none */
+export const freeFacilityRelic = (state: GameState, factionId: FactionId, relicId: string): RelicItem | undefined =>
+  facilityRelics(state, factionId, relicId).find((item) => !item.buildingIn)
+
+/** The relic of the box with its change (nothing changes when the faction has no such relic) */
+export const withRelicItem = (state: GameState, factionId: FactionId, itemId: string, change: (item: RelicItem) => RelicItem): GameState =>
+  withRelics(state, factionId, relicsOf(state, factionId).map((item) => (item.id === itemId ? change(item) : item)))
+
+/** The relic leaves the box for good (a building completed with it, or lost with its city) */
+export const withoutRelicItem = (state: GameState, factionId: FactionId, itemId: string): GameState =>
+  withRelics(state, factionId, relicsOf(state, factionId).filter((item) => item.id !== itemId))

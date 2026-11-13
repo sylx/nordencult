@@ -59,13 +59,13 @@ function runAffairs(city: CityState, cityId: CityId, tech: BuildingBonus, random
 /** What is completed by a work: a building standing (an upgrade in the place of the one it was built over), or a relic to go into the box */
 function completeWork(work: ConstructionWork, buildings: readonly string[]): { buildings: readonly string[]; event: EconomyEvent } {
   if (work.kind !== 'building') return { buildings, event: { kind: 'relicCompleted', relicId: work.relicId } }
-  const { buildingId } = work
+  const { buildingId, relicItemId } = work
   const replaced = BUILDING_MAP[buildingId]?.upgradeFrom
   return {
     buildings: replaced && buildings.includes(replaced)
       ? buildings.map((id) => (id === replaced ? buildingId : id))
       : [...buildings, buildingId],
-    event: { kind: 'buildingCompleted', buildingId },
+    event: { kind: 'buildingCompleted', buildingId, ...(relicItemId && { relicItemId }) },
   }
 }
 
@@ -135,7 +135,8 @@ function growCity(
  *    and its lord, and its tier and building slots with it (tierOf, slotsOf; a 聖地・要塞 keeps FIXED_SLOTS),
  * 6. each faction's research points (its research buildings' and its 研究 officers') go into the technology it
  *    researches (runResearch); a technology completed counts for its cities from the next run,
- * 7. the relics completed in its cities and those 法王府 was asked to repair come into its box (runRelics),
+ * 7. the relics completed in its cities and those 法王府 was asked to repair come into its box, and those its buildings
+ *    completed used leave it (runRelics),
  * 8. the mercenaries not paid leave, the mercenaries recover and may ask to renew their contract (runMercenaries).
  * Otherwise the bonuses and the base values are those before the run (a building completed or a base raised now counts from the next).
  * `turn` is the turn starting; `random` rolls the gold the officers spend.

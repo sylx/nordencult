@@ -131,6 +131,12 @@ export interface RelicItem {
    * left it). Omitted: nobody wears it
    */
   equippedBy?: { characterId: CharacterId; slot: number }
+  /**
+   * The city building a facility with it (施設の遺物: Building.requiredRelic), whose construction names it
+   * (ConstructionWork.relicItemId): it stays in the box, locked, until the building is completed (it is gone then)
+   * or cancelled (unlocked). Omitted: no building uses it
+   */
+  buildingIn?: CityId
 }
 
 /** Repairing a relic of the faction's, or producing one, in a city: lost with the city, unlike a building (BattleReport.lostRelicWork) */
@@ -139,7 +145,17 @@ export type RelicWork =
   | { kind: 'relicProduction'; relicId: string }
 
 /** What a city's 生産 goes into */
-export type ConstructionWork = { kind: 'building'; buildingId: string } | RelicWork
+export type ConstructionWork = BuildingWork | RelicWork
+
+/**
+ * Building a facility; one needing a relic (Building.requiredRelic) names the relic of the box it uses
+ * (RelicItem.buildingIn): gone when the building is completed, lost with the city captured (BattleReport.lostRelicWork)
+ */
+export interface BuildingWork {
+  kind: 'building'
+  buildingId: string
+  relicItemId?: string
+}
 
 /** A building being built in a city, or a relic being repaired or produced there, one at a time */
 export interface CityConstruction {
@@ -211,7 +227,8 @@ export interface CitySnapshot {
 }
 
 export type EconomyEvent =
-  | { kind: 'buildingCompleted'; buildingId: string }
+  /** relicItemId: the relic of the box it used, gone now (runRelics) */
+  | { kind: 'buildingCompleted'; buildingId: string; relicItemId?: string }
   | { kind: 'tierUp'; tier: CityTier }
   | { kind: 'relicCompleted'; relicId: string }
 
@@ -576,8 +593,11 @@ export interface BattleReport {
   freed: readonly CharacterId[]
   /** Soldiers each city got after the battle, in the order they got there (a mercenary's stay theirs) */
   soldiers: readonly SoldierReturn[]
-  /** The repair or production lost with the city captured: its supplies, its gold and a relic being repaired are gone. null: none */
-  lostRelicWork: RelicWork | null
+  /**
+   * The work with a relic lost with the city captured: a repair or a production (its supplies, its gold and a relic being
+   * repaired are gone) or a building using a relic (BuildingWork.relicItemId; the relic is gone from the box too). null: none
+   */
+  lostRelicWork: RelicWork | BuildingWork | null
 }
 
 /** A faction lost its last city (in a battle) and is no more: every knight of it took to wandering (放浪) */

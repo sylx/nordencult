@@ -17,9 +17,9 @@ import { rejoinCity, runRoaming, wanderer } from './roaming'
 import type {
   ArmyUnit, Battle, BattleEndReason, BattleReport, BattleRetreat, BattleSide, BattleSurvivor, BattleWinner, BattleWipeout, CharacterId,
   CharacterMove, CharacterState, CityId, CityState, DefenseDraft, Entry, FactionDestroyed, FactionId, GameState, GovernorAppointment, Imprisonment,
-  InvasionOrder, MercenaryState, Movement, RelicWork, SoldierReturn,
+  InvasionOrder, MercenaryState, Movement, SoldierReturn,
 } from './types'
-import { relicsOf, withRelics } from './relics/box'
+import { relicsOf, withoutRelicItem, withRelics } from './relics/box'
 import { releaseEquipment } from './relics/equipment'
 import { neighbours } from './world'
 
@@ -418,11 +418,12 @@ export function resolveBattle(
   }
 
   const freed: CharacterId[] = []
-  let lostRelicWork: RelicWork | null = null
+  let lostRelicWork: BattleReport['lostRelicWork'] = null
   if (winner === 'attacker') {
     cityOwners[cityId] = attacker.factionId
+    // A repair, a production or a building using a relic is lost with the city (the relic too); a building needing none goes on for the attacker
     const work = cities[cityId].construction?.work
-    lostRelicWork = work && work.kind !== 'building' ? work : null
+    lostRelicWork = work && (work.kind !== 'building' || work.relicItemId) ? work : null
     cities[cityId] = { ...cities[cityId], assignments: { officers: {} }, ...(lostRelicWork && { construction: null }) }
     for (const id of attacker.knights) if (!left.has(id)) move(id, 'enter', cityId)
     for (const id of released) move(id, 'return', attacker.from)
@@ -513,6 +514,11 @@ export function resolveBattle(
   const mercenaries: Record<CharacterId, MercenaryState> = { ...state.mercenaries }
   for (const [id, soldiers] of mercenaryLeft) mercenaries[id] = { ...mercenaries[id], soldiers }
   let resolved: GameState = { ...state, cityOwners, characters, cities, mercenaries, march: { ...state.march, current: null }, lastBattle: report }
+  // The relic a building lost used leaves the box of the city's owner before (as the faction may be destroyed now, before its box goes to the attacker)
+  const formerOwner = state.cityOwners[cityId]
+  if (lostRelicWork?.kind === 'building' && lostRelicWork.relicItemId && formerOwner) {
+    resolved = withoutRelicItem(resolved, formerOwner, lostRelicWork.relicItemId)
+  }
   for (const m of moves) if (m.kind === 'released') resolved = endContract(resolved, m.characterId, cityId)
   for (const w of wipedOut) resolved = withStanding(resolved, battle[w.side].factionId!, STANDING_WIPED_OUT)
   const lost = defender.factionId

@@ -28,7 +28,7 @@ import {
   researchOf, researchOutput, researchProblem, researchTurns, techStatus,
   MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportKnightProblem, transportOrderOf, treasuryForecast,
   turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type CityConstruction, type CityLogStat,
-  type GameEvent, type GameState, type RelicItem, type RelicWork, type Season,
+  type BattleReport, type GameEvent, type GameState, type RelicItem, type RelicWork, type Season,
 } from '../../game'
 
 /** The game state turned into the view types norden-ui's screens draw */
@@ -287,8 +287,10 @@ const OUTPUT_BAR_MAX = 1000
 /** What the city builds, repairs or produces, for the screens */
 function constructionView(game: GameState, cityId: string, construction: CityConstruction): ConstructionView {
   const { work } = construction
+  const relicId = work.kind === 'building' && work.relicItemId ? BUILDING_MAP[work.buildingId]?.requiredRelic : undefined
   return {
     building: work.kind === 'building' ? buildingView(work.buildingId) : workRelicView(work),
+    ...(relicId && { relicNote: `遺物：${relicName(relicId, true)}を使用中` }),
     kind: work.kind,
     invested: construction.investedSupplies,
     required: construction.requiredSupplies,
@@ -416,6 +418,7 @@ export function buildOptions(game: GameState, cityId: string): BuildOptionView[]
       turns: constructionTurns(game, cityId, b.supplies),
       unavailableReason: constructionProblem(game, cityId, b.id) ?? undefined,
       locked: buildingLocked(game, cityId, b.id),
+      ...(b.requiredRelic && { relicNote: `遺物：${relicName(b.requiredRelic, true)}を 1 つ使用` }),
     }))
 }
 
@@ -504,7 +507,11 @@ function equipActionProblem(game: GameState, factionId: string, itemId: string):
 
 const relicSummary = (relic: Relic, repaired: boolean) => ({ rarity: relicRarity(relic, repaired), useLabel: RELIC_USE_LABELS[relic.use], description: relic.description })
 
-const relicStatus = (item: RelicItem) => (item.equippedBy ? 'equipped' : item.repaired ? 'repaired' : item.papalRepair ? 'papalRepair' : 'broken')
+const relicStatus = (item: RelicItem) =>
+  (item.equippedBy ? 'equipped' : item.buildingIn ? 'building' : item.repaired ? 'repaired' : item.papalRepair ? 'papalRepair' : 'broken')
+
+/** The building a 施設の遺物 lets a city build (Building.requiredRelic) */
+const facilityOf = (relicId: string) => BUILDING_LIST.find((b) => b.requiredRelic === relicId)
 
 /** The faction's box, what it can do with each relic (repairing in `cityId`), then the relics being repaired or produced in its cities */
 export function relicsView(game: GameState, factionId: string, cityId: string): RelicView[] {
@@ -524,6 +531,8 @@ export function relicsView(game: GameState, factionId: string, cityId: string): 
       },
       papalRepair: papalGold === undefined ? undefined : { gold: papalGold, unavailableReason: info.papalProblem ?? undefined },
       effects: relicEffects(relic),
+      ...(item.repaired && facilityOf(item.relicId) && { buildingName: facilityOf(item.relicId)!.name }),
+      ...(item.buildingIn && { cityName: cityName(item.buildingIn) }),
       ...(item.repaired && relic.equipment && { equip: { unavailableReason: equipActionProblem(game, factionId, item.id) } }),
       ...(item.equippedBy && {
         wearerName: knightName(item.equippedBy.characterId),
@@ -561,8 +570,13 @@ export function relicProductionsView(game: GameState, factionId: string, cityId:
   }))
 }
 
-/** What was lost with a city, e.g. 壊れたライフルの修復 */
-export const relicWorkLabel = (work: RelicWork) => `${relicName(work.relicId, work.kind === 'relicProduction')}の${work.kind === 'relicRepair' ? '修復' : '生産'}`
+/** What was lost with a city, e.g. 壊れたライフルの修復, ガンシップの建設（遺物：ガンシップ） */
+export function relicWorkLabel(work: BattleReport['lostRelicWork'] & object): string {
+  if (work.kind !== 'building') return `${relicName(work.relicId, work.kind === 'relicProduction')}の${work.kind === 'relicRepair' ? '修復' : '生産'}`
+  const building = BUILDING_MAP[work.buildingId]
+  const relicId = building?.requiredRelic
+  return `${building?.name ?? work.buildingId}の建設${relicId ? `（遺物：${relicName(relicId, true)}）` : ''}`
+}
 
 /** e.g. +4〜7, or +5 when the least and the most are the same */
 const range = ([low, high]: readonly [number, number]) => (low === high ? `+${low}` : `+${low}〜${high}`)
