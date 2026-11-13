@@ -13,19 +13,20 @@ import { INDIRECT_UNIT_TYPES } from '../../data/unitTypes'
 import {
   BALANCE, MAX_SOLDIERS, MAX_UNITS, addMoveOrder, addOrder, addTransportOrder, assign, cancelConstruction, cancelMoveOrder, cancelOrder, cancelTransportOrder,
   charactersIn, citiesOf, decideInvasion, decideRenewal, defenseKnights, defenseProblem, demolishBuilding, formDefense, resolveBattle, domesticProblem, endFactionTurn,
-  dismantleRelic, dismissMercenary, endFactionTurnProblem, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn, lordChangeProblem, mercenaryCityProblem, mustChooseResearch, requestPapalRepair, researchOf, setResearch,
+  dismantleRelic, dismissMercenary, endFactionTurnProblem, equipRelic, relicsOf, unequipRelic, finishEntry, invadeFromProblem, isPlayerFaction, isPlayerTurn, lordChangeProblem, mercenaryCityProblem, mustChooseResearch, requestPapalRepair, researchOf, setResearch,
   moveFromProblem, moveMonths, moveOrderProblem, moveRoute, moveTargets, movementLegs, openInvasionTargets, orderProblem, ownerOf, pauseConstruction, prisonersIn,
   renewalProblem, runMovements, setAffairsBudget, setOfficers, soldiersLeft, startConstruction, startNextBattle, startRelicProduction, startRelicRepair, stationedIn, suppliesLeft, transportFromProblem,
   transportOrderProblem, dismissEvent, useGame, viewFaction, type CityId, type DefenseDraft, type FactionId, type GameState, type InvasionOrder,
   type MoveOrder, type TransportOrder,
 } from '../../game'
+import type { EquipmentActions } from 'norden-ui'
 import { playDialogue } from '../playDialogue'
 import { useScene } from '../sceneContext'
 import { OrderList } from './OrderList'
 import { useStrategyLayout } from './uiLayout'
 import {
   UNIT_TYPE_VIEWS, budgetsView, buildOptions, cityName, cityView, dateLabel, domesticStats, factionSummary, factionView, knightView, knightsLabel, mapSeason,
-  eventView, mapCities, mercenaryContracts, mercenaryOffers, officerEffects, officersView, phaseLabel, populationGrowthView, relicOptions, relicProductionsView, relicsView, researchPerTurn, researchPointDetails, techsView,
+  equipCandidatesView, equipOptionsView, eventView, mapCities, mercenaryContracts, mercenaryOffers, officerEffects, officersView, phaseLabel, populationGrowthView, relicOptions, relicProductionsView, relicsView, researchPerTurn, researchPointDetails, techsView,
   transportKnightView, turnView, unitPower,
 } from './views'
 import './StrategyScene.css'
@@ -503,6 +504,13 @@ export default function StrategyScene() {
       ? "他勢力の思考中..."
       : null
 
+  /** Changing a knight's equipment from their profile (the city window) */
+  const equipment: EquipmentActions = {
+    options: (knightId, slot) => equipOptionsView(game, knightId, slot),
+    onEquip: (knightId, slot, itemId) => update((s) => equipRelic(s, knightId, slot, itemId)),
+    onUnequip: (knightId, slot) => update((s) => unequipRelic(s, knightId, slot)),
+  }
+
   return (
     <div className={`strategy-scene${ready ? '' : ' strategy-scene--loading'}`}>
       <MapView selectedPlace={selected} onSelectPlace={selectPlace} onMapChange={setMap} showControls={false} showStats={false} copyClickPoint={false}
@@ -517,6 +525,7 @@ export default function StrategyScene() {
               layout={layout} onLayoutChange={(part, position) => updateLayout({ [part]: position })}
               onWindowBoundsChange={({ x, width }) => setCityWindowRight(x + width)}
               knightOf={(id) => CHARACTER_MAP[id] ? knightView(game, id) : undefined}
+              equipment={equipment}
               cityPosition={index < 0 ? undefined : { index, count: playerCities.length }}
               onPrevCity={playerCities.length > 0 ? () => stepCity(cityId, -1) : undefined}
               onNextCity={playerCities.length > 0 ? () => stepCity(cityId, 1) : undefined}
@@ -623,6 +632,12 @@ export default function StrategyScene() {
             onRepair={(id) => update((s) => startRelicRepair(s, cityId, id))}
             onPapalRepair={(id) => update((s) => requestPapalRepair(s, viewFaction(s), id))}
             onProduce={(relicId) => update((s) => startRelicProduction(s, cityId, relicId))}
+            equipCandidates={(id) => equipCandidatesView(game, faction, id)}
+            onEquip={(id, knightId, slot) => update((s) => equipRelic(s, knightId, slot, id))}
+            onUnequip={(id) => update((s) => {
+              const worn = relicsOf(s, viewFaction(s)).find((item) => item.id === id)?.equippedBy
+              return worn ? unequipRelic(s, worn.characterId, worn.slot) : s
+            })}
             onClose={nav.pop} />
         ),
         defense: ({ cityId, battleId }) => {

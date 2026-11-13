@@ -42,8 +42,11 @@ export function freeSlot(state: GameState, characterId: CharacterId): number | n
   return slot < 0 ? null : slot
 }
 
-/** Why the knight cannot have their equipment changed now: not their faction's turn, not serving it, a mercenary, sent on an invasion this turn */
-function wearerProblem(state: GameState, characterId: CharacterId): string | null {
+/**
+ * Why the knight cannot have their equipment changed now, whatever the relic and slot: not serving a faction, not its turn, a mercenary
+ * or a summoned unit, sent on an invasion this turn; null when it can
+ */
+export function equipmentChangeProblem(state: GameState, characterId: CharacterId): string | null {
   const factionId = servedFaction(state, characterId)
   if (!factionId) return '勢力に仕える騎士ではありません'
   if (state.phase !== 'strategy' || state.activeFaction !== factionId) return '手番ではありません'
@@ -59,7 +62,7 @@ function wearerProblem(state: GameState, characterId: CharacterId): string | nul
  * (equipRelic), as long as their equipment can change too
  */
 export function equipProblem(state: GameState, characterId: CharacterId, slot: number, itemId: string): string | null {
-  const problem = wearerProblem(state, characterId)
+  const problem = equipmentChangeProblem(state, characterId)
   if (problem) return problem
   if (!isSlot(slot)) return `装備の枠は${EQUIPMENT_SLOTS}つです`
   const item = relicsOf(state, servedFaction(state, characterId)!).find((i) => i.id === itemId)
@@ -103,7 +106,7 @@ export function equipRelic(state: GameState, characterId: CharacterId, slot: num
 
 /** Why the knight cannot take the relic of the slot off now, or null */
 export function unequipProblem(state: GameState, characterId: CharacterId, slot: number): string | null {
-  const problem = wearerProblem(state, characterId)
+  const problem = equipmentChangeProblem(state, characterId)
   if (problem) return problem
   if (!isSlot(slot)) return `装備の枠は${EQUIPMENT_SLOTS}つです`
   return equipmentOf(state, characterId)[slot] ? null : '装備していません'

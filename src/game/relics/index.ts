@@ -1,7 +1,7 @@
 // The factions' relics: their アイテムボックス, dismantling, repairing and producing them, 法王府's repairs, and the knights wearing them
 export { addRelic, equipmentEffects, relicsOf, withRelics } from './box'
 export {
-  battleSpells, debugEquipRelic, debugUnequipRelic, equipmentOf, equippableKnights, equippableRelics, equipProblem, equipRelic, freeSlot, releaseEquipment, unequipProblem,
+  battleSpells, debugEquipRelic, debugUnequipRelic, equipmentChangeProblem, equipmentOf, equippableKnights, equippableRelics, equipProblem, equipRelic, freeSlot, releaseEquipment, unequipProblem,
   unequipRelic,
 } from './equipment'
 export {

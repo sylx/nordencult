@@ -1,8 +1,9 @@
 import { createElement } from 'react'
 import { basicAttack, basicDefense, mightFor } from '@norden/battle-runtime'
+import { ATTACK_DEFS } from '@norden/battle-runtime/rules'
 import type { UnitType } from '@norden/map-runtime/core/units'
 import type {
-  BuildOptionView, BuildingView, CityStatView, CityView, ConstructionView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, EventDetail, FactionResearchSummaryView,
+  BuildOptionView, BuildingView, CityStatView, EquipCandidateView, EquippedRelicView, EquipOptionView, CityView, ConstructionView, DomesticBudgetsView, DomesticOfficerRole, DomesticOfficersView, EventDetail, FactionResearchSummaryView,
   FactionSummaryView, FactionView, InvasionAssignment, KnightView, MercenaryContractView, MercenaryMark, MercenaryOfferView, PopulationGrowthView, RelicOptionView, RelicProductionView, RelicView, SpriteImage, TechView, TurnView, UnitTypeView,
 } from 'norden-ui'
 import type { MapCity, MapSeason, PlaceType } from 'norden-strategy'
@@ -12,7 +13,7 @@ import { BUILDING_LIST, BUILDING_MAP, describeEffect, type BuildingEffectKind, t
 import buildingSprite from '../../data/buildingSprite.json'
 import relicSheet from '../../assets/relics.webp'
 import relicSprite from '../../data/relicSprite.json'
-import { RELIC_MAP, RELIC_USE_LABELS, relicName, relicRarity, type Relic } from '../../data/relics'
+import { RELIC_MAP, RELIC_USE_LABELS, RELIC_WEARER_LABELS, relicName, relicRarity, type Relic } from '../../data/relics'
 import techSheet from '../../assets/techs.webp'
 import techSprite from '../../data/techSprite.json'
 import { TECH_BRANCH_LABELS, TECH_LIST, TECH_MAP, techChildren } from '../../data/techs'
@@ -20,10 +21,10 @@ import { CHARACTER_MAP, CHARACTER_TYPE_LABELS } from '../../data/character'
 import { FACTION_MAP, factionEmblem } from '../../data/faction'
 import { CITY_MAP } from '../../data/city'
 import { mercenaryProfile, UNIT_IMAGES } from './mercenaryProfile'
-import { UNIT_TYPES } from '../../data/unitTypes'
+import { UNIT_TYPE_MAP, UNIT_TYPES } from '../../data/unitTypes'
 import {
   assignmentLabel, assignmentOf, awayReason, BALANCE, buildingLocked, charactersIn, citiesOf, cityOutput, commandRank, constructionProblem, constructionTurns, dateOf, defaultUnitType,
-  availableTechs, dismissProblem, engagementOf, FUNDED_ROLES, governorOf, hiredMercenaries, hireOfferProblem, isMercenary, mercenaryMarket, officerTraining, producibleRelics, productionProblem, relicItemInfo, relicsOf, relicWorks, repairableRelics, repairProblem,
+  availableTechs, dismissProblem, engagementOf, equipmentChangeProblem, equipmentOf, equippableKnights, equipProblem, unequipProblem, FUNDED_ROLES, governorOf, hiredMercenaries, hireOfferProblem, isMercenary, mercenaryMarket, officerTraining, producibleRelics, productionProblem, relicItemInfo, relicsOf, relicWorks, repairableRelics, repairProblem,
   researchOf, researchOutput, researchProblem, researchTurns, techStatus,
   MAX_MORALE, moveOrderOf, movementOf, orderOf, ownerOf, prisonerMovementOf, prisonerOrderOf, prisonersIn, seasonOf, tierOf, transportKnightProblem, transportOrderOf, treasuryForecast,
   turnsToNextTier, unitAbilities, unitTypesOf, viewFaction, type CityConstruction, type CityLogStat,
@@ -240,7 +241,19 @@ export function knightView(game: GameState, id: string): KnightView {
     unitTypes: unitTypesOf(game, id),
     commandRank: commandRank(game, id),
     unavailableReason: engagementOf(game, id) ?? (carried ? '移送中' : carriedOrder ? '移送予約中' : undefined),
+    equipment: knightEquipment(game, id),
   }
+}
+
+/**
+ * A knight's equipment slots: those serving a faction but mercenaries (prisoners, wanderers and mercenaries have none to show).
+ * They change only in the turn of the faction the screens are about, for its own knights
+ */
+function knightEquipment(game: GameState, id: string): KnightView['equipment'] {
+  const character = game.characters[id]
+  if (!character?.factionId || character.prisoner || character.roaming || isMercenary(id)) return undefined
+  const problem = character.factionId === viewFaction(game) ? equipmentChangeProblem(game, id) : '他勢力の騎士です'
+  return { slots: equipmentOf(game, id).map((item) => item && equippedRelicView(item)), unavailableReason: problem ?? undefined }
 }
 
 /** The mercenaries a city can reach, with their rank and why one cannot be talked to now */
@@ -427,9 +440,71 @@ export function relicOptions(game: GameState, cityId: string): RelicOptionView[]
   return [...repairs, ...productions]
 }
 
+/** What an equipment relic gives and who can wear it, e.g. ライフル兵を率いる, 魔法: フレイムランス, 知力 70 以上の魔術師が装備できる */
+export function relicEffects(relic: Relic): string[] {
+  const equipment = relic.equipment
+  if (!equipment) return []
+  const wearer = `${equipment.minIntelligence ? `知力 ${equipment.minIntelligence} 以上の` : ''}${RELIC_WEARER_LABELS[equipment.wearer]}が装備できる`
+  return [
+    ...(equipment.unitTypes ?? []).map((id) => `${UNIT_TYPE_MAP[id]?.name ?? id}を率いる`),
+    ...(equipment.spells?.length ? [`魔法: ${equipment.spells.map((id) => ATTACK_DEFS[id]?.name ?? id).join('・')}`] : []),
+    wearer,
+  ]
+}
+
+/** A relic of the box (repaired) as it is worn in a slot */
+const equippedRelicView = (item: RelicItem): EquippedRelicView => {
+  const relic = RELIC_MAP[item.relicId]
+  return {
+    id: item.id, name: relicName(item.relicId, true), image: relicImage(item.relicId, true), rarity: relic ? relicRarity(relic, true) : 'C',
+    effects: relic ? relicEffects(relic).slice(0, -1) : [],
+  }
+}
+
+/** The repaired equipment relics of the faction's box */
+const equipmentItems = (game: GameState, factionId: string) =>
+  relicsOf(game, factionId).filter((item) => item.repaired && RELIC_MAP[item.relicId]?.equipment)
+
+/** The equipment relics of the knight's faction for their slot, who wears each now and why one cannot go in it */
+export function equipOptionsView(game: GameState, knightId: string, slot: number): EquipOptionView[] {
+  const factionId = game.characters[knightId]?.factionId
+  if (!factionId) return []
+  return equipmentItems(game, factionId).map((item) => {
+    const holder = item.equippedBy
+    return {
+      ...equippedRelicView(item),
+      label: holder ? `${holder.characterId === knightId ? 'この騎士' : knightName(holder.characterId)}が装備中` : relicEffects(RELIC_MAP[item.relicId]).join('・'),
+      disabledReason: equipProblem(game, knightId, slot, item.id) ?? undefined,
+    }
+  })
+}
+
+/** The knights of the faction serving it, in id order, a relic of its box can be put on: their slots and why it cannot go in each */
+export function equipCandidatesView(game: GameState, factionId: string, itemId: string): EquipCandidateView[] {
+  const holder = relicsOf(game, factionId).find((item) => item.id === itemId)?.equippedBy?.characterId
+  return Object.keys(game.characters).sort().flatMap((id): EquipCandidateView[] => {
+    const character = game.characters[id]
+    if (character.factionId !== factionId || character.prisoner || character.roaming) return []
+    const slots = equipmentOf(game, id).map((item, slot) => ({
+      relic: item && equippedRelicView(item), unavailableReason: equipProblem(game, id, slot, itemId) ?? undefined,
+    }))
+    const open = slots.some((slot) => !slot.unavailableReason)
+    return [{
+      knight: knightView(game, id), slots,
+      unavailableReason: id === holder ? '装備しています' : open ? undefined : (slots.find((slot) => !slot.relic) ?? slots[0]).unavailableReason,
+    }]
+  })
+}
+
+/** Why the relic of the faction's box cannot be put on any knight now (装備させる), or undefined */
+function equipActionProblem(game: GameState, factionId: string, itemId: string): string | undefined {
+  if (game.phase !== 'strategy' || game.activeFaction !== factionId) return '手番ではありません'
+  return equippableKnights(game, factionId, itemId).length > 0 ? undefined : '装備できる騎士がいません'
+}
+
 const relicSummary = (relic: Relic, repaired: boolean) => ({ rarity: relicRarity(relic, repaired), useLabel: RELIC_USE_LABELS[relic.use], description: relic.description })
 
-const relicStatus = (item: RelicItem) => (item.repaired ? 'repaired' : item.papalRepair ? 'papalRepair' : 'broken')
+const relicStatus = (item: RelicItem) => (item.equippedBy ? 'equipped' : item.repaired ? 'repaired' : item.papalRepair ? 'papalRepair' : 'broken')
 
 /** The faction's box, what it can do with each relic (repairing in `cityId`), then the relics being repaired or produced in its cities */
 export function relicsView(game: GameState, factionId: string, cityId: string): RelicView[] {
@@ -448,6 +523,12 @@ export function relicsView(game: GameState, factionId: string, cityId: string): 
         supplies: repair.supplies, gold: repair.gold, turns: constructionTurns(game, cityId, repair.supplies), unavailableReason: info.repairProblem ?? undefined,
       },
       papalRepair: papalGold === undefined ? undefined : { gold: papalGold, unavailableReason: info.papalProblem ?? undefined },
+      effects: relicEffects(relic),
+      ...(item.repaired && relic.equipment && { equip: { unavailableReason: equipActionProblem(game, factionId, item.id) } }),
+      ...(item.equippedBy && {
+        wearerName: knightName(item.equippedBy.characterId),
+        unequip: { unavailableReason: unequipProblem(game, item.equippedBy.characterId, item.equippedBy.slot) ?? undefined },
+      }),
     }]
   })
   const works = relicWorks(game, factionId).flatMap(({ cityId: workCity, work }): RelicView[] => {

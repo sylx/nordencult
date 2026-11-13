@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { defaultUnitType, hireMercenary, orderProblem, requestPapalRepair, startRelicProduction, startRelicRepair, type GameState } from '../../game'
+import { addOrder, debugAddRelic, defaultUnitType, endFactionTurn, equipRelic, hireMercenary, orderProblem, relicsOf, requestPapalRepair, startRelicProduction, startRelicRepair, type GameState } from '../../game'
 import { playing } from '../../game/testing'
 import { RELIC_MAP, relicRarity } from '../../data/relics'
 import { UNIT_TYPE_MAP } from '../../data/unitTypes'
-import { buildOptions, cityView, eventView, knightView, mercenaryContracts, mercenaryOffers, relicOptions, relicProductionsView, relicsView, relicWorkLabel } from './views'
+import { buildOptions, cityView, equipCandidatesView, equipOptionsView, eventView, knightView, mercenaryContracts, mercenaryOffers, relicOptions, relicProductionsView, relicsView, relicWorkLabel } from './views'
 
 // Neither is drawn here: the battle's runtime needs a window, and the picture of a knight its sheets
 vi.mock('@norden/battle-runtime', () => ({}))
@@ -50,6 +50,50 @@ describe('the relic screen', () => {
     const state = startRelicRepair(researched(playing('carta'), 'fire_magic'), FLUEN, BALLISTA)
     expect(relicProductionsView(state, 'carta', FLUEN)).toEqual([expect.objectContaining({ id: 'grimoire_flame_lance', unavailableReason: 'ほかの遺物を修復中です' })])
     expect(relicProductionsView(state, 'carta', SILVA)[0].unavailableReason).toBeUndefined()
+  })
+})
+
+describe('equipment', () => {
+  // カルタ書院 starts with a repaired ライフル (carta-2); エルヴィン (016), ルカ (027) and クラリス (015) serve in フルーエン
+  const REPAIRED_RIFLE = 'carta-2'
+  const worn = () => equipRelic(playing('carta'), '027', 1, REPAIRED_RIFLE)
+
+  it('shows a knight\'s slots, which change only in their faction\'s turn', () => {
+    expect(knightView(playing('carta'), '016').equipment).toEqual({ slots: [null, null], unavailableReason: undefined })
+    const state = worn()
+    expect(knightView(state, '027').equipment?.slots[1]).toMatchObject({ id: REPAIRED_RIFLE, name: 'ライフル', effects: ['ライフル兵を率いる'] })
+    expect(knightView(endFactionTurn(state), '027').equipment?.unavailableReason).toBe('手番ではありません')
+    expect(knightView(state, '013').equipment?.unavailableReason).toBe('他勢力の騎士です')
+    expect(knightView(addOrder(state, { factionId: 'carta', from: FLUEN, to: AMBARIA, commander: '027', knights: ['027'] }), '027').equipment?.unavailableReason)
+      .toBe('侵攻予約中は装備を変えられません')
+  })
+
+  it('shows the relic worn, by whom, what it gives, and putting it on or taking it off', () => {
+    const rifle = relicsView(worn(), 'carta', FLUEN).find((relic) => relic.id === REPAIRED_RIFLE)
+    expect(rifle).toMatchObject({
+      status: 'equipped', wearerName: 'ルカ・シルヴァ', effects: ['ライフル兵を率いる', '魔術師以外が装備できる'],
+      equip: { unavailableReason: undefined }, unequip: { unavailableReason: undefined },
+    })
+    const broken = relicsView(worn(), 'carta', FLUEN).find((relic) => relic.id === RIFLE)
+    expect(broken?.equip).toBeUndefined()
+    expect(relicsView(endFactionTurn(worn()), 'carta', FLUEN).find((relic) => relic.id === REPAIRED_RIFLE)?.equip?.unavailableReason).toBe('手番ではありません')
+  })
+
+  it('lists the relics for a slot, who wears each and why one cannot go in it', () => {
+    const state = debugAddRelic(worn(), 'carta', 'grimoire_flame_lance', true)
+    const grimoire = relicsOf(state, 'carta').at(-1)!.id
+    expect(equipOptionsView(state, '016', 0).map(({ id, label, disabledReason }) => [id, label, disabledReason])).toEqual([
+      [REPAIRED_RIFLE, 'ルカ・シルヴァが装備中', undefined],
+      [grimoire, '魔法: フレイムランス・知力 70 以上の魔術師が装備できる', '魔術師だけが装備できます'],
+    ])
+  })
+
+  it('lists the knights a relic can be put on, the one wearing it and those who cannot with why', () => {
+    const candidates = equipCandidatesView(worn(), 'carta', REPAIRED_RIFLE)
+    const of = (id: string) => candidates.find((c) => c.knight.id === id)!
+    expect(of('016')).toMatchObject({ unavailableReason: undefined, slots: [{ relic: null }, { relic: null }] })
+    expect(of('027')).toMatchObject({ unavailableReason: '装備しています', slots: [{ relic: null }, { relic: { id: REPAIRED_RIFLE } }] })
+    expect(candidates.map((c) => c.knight.id)).not.toContain('013')
   })
 })
 
