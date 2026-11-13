@@ -98,7 +98,7 @@
   {"id": "097", "cityId": "P025", "factionId": "leonis"},
   {"id": "098", "cityId": "P022", "factionId": "aqua"},
   {"id": "099", "cityId": "P026"},
-  {"id": "100", "cityId": "P025", "factionId": "leonis"},
+  {"id": "100", "cityId": "P025"},
   {"id": "101", "cityId": "P022"},
   {"id": "102", "cityId": "P001", "factionId": "taurus"},
   {"id": "103", "cityId": "P024", "factionId": "leonis"},
@@ -128,5 +128,15 @@
   {"id": "127", "cityId": "P018"},
   {"id": "128", "cityId": "P022"},
   {"id": "129", "cityId": "P018"},
-  {"id": "130", "cityId": "P017"}
+  {"id": "130", "cityId": "P017"},
+  {"id": "131", "cityId": "P009"},
+  {"id": "132", "cityId": "P016", "factionId": "valhardt"},
+  {"id": "133", "cityId": "P016", "factionId": "valhardt"},
+  {"id": "134", "cityId": "P025", "factionId": "leonis"},
+  {"id": "135", "cityId": "P011"},
+  {"id": "136", "cityId": "P026", "factionId": "carta"},
+  {"id": "137", "cityId": "P020", "factionId": "nordis"},
+  {"id": "138", "cityId": "P022"},
+  {"id": "139", "cityId": "P000"},
+  {"id": "140", "cityId": "P024"}
 ]
