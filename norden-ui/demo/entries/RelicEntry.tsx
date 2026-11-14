@@ -12,12 +12,11 @@ const PRODUCTION_PER_TURN = 120
 
 /** The game's rules of relics (src/game/relics/), for the demo */
 /**
- * 法王府's rate as the game's: plain for a relic needing no technology; else the least with it researched, plus so
- * much for each research point short of it (the demo takes DEMO_SHORTFALL short without 技術を習得)
+ * 法王府's rate as the game's: plain for a relic needing no technology or with it researched, plus so much for each
+ * research point short of it (the demo takes DEMO_SHORTFALL short without 技術を習得)
  */
 const PAPAL_REPAIR_RATE = 2.5
-const PAPAL_REPAIR_RATE_KNOWN = 1.5
-const PAPAL_REPAIR_RATE_RISE = 2
+const PAPAL_REPAIR_RATE_RISE = 1
 const PAPAL_REPAIR_RISE_POINTS = 700
 /** 法王府 turns down a repair dearer than this */
 const PAPAL_REPAIR_MAX_GOLD = 5000
@@ -44,13 +43,12 @@ export default function RelicEntry() {
   const moneyReason = (cost: number) => (gold < cost ? '金が足りません' : undefined)
   const techReason = (tech?: string) => (tech && !techs ? `技術「${tech}」の研究が必要です` : undefined)
   const shortfall = techs ? 0 : DEMO_SHORTFALL
-  const papalRate = (relic: RelicSpec) => (!relic.repair?.tech ? PAPAL_REPAIR_RATE : PAPAL_REPAIR_RATE_KNOWN + (PAPAL_REPAIR_RATE_RISE * shortfall) / PAPAL_REPAIR_RISE_POINTS)
+  const papalRate = (relic: RelicSpec) => (!relic.repair?.tech ? PAPAL_REPAIR_RATE : PAPAL_REPAIR_RATE + (PAPAL_REPAIR_RATE_RISE * shortfall) / PAPAL_REPAIR_RISE_POINTS)
   const papalGold = (relic: RelicSpec) => Math.ceil(((relic.repair?.gold ?? 0) + (relic.repair?.supplies ?? 0)) * papalRate(relic))
   const papalNote = (relic: RelicSpec) => {
-    if (!relic.repair?.tech) return undefined
+    if (!relic.repair?.tech || shortfall === 0) return undefined
     const percent = Math.round((papalRate(relic) / PAPAL_REPAIR_RATE - 1) * 100)
-    const change = percent === 0 ? '' : percent < 0 ? ` −${-percent}%` : ` +${percent}%`
-    return shortfall === 0 ? `技術「${relic.repair.tech}」の習得で${change}` : `技術「${relic.repair.tech}」まで研究あと${shortfall.toLocaleString()}で${change}`
+    return `技術「${relic.repair.tech}」まで研究あと${shortfall.toLocaleString()}で +${percent}%`
   }
 
   const view = (item: Item): RelicView => {
