@@ -17,8 +17,11 @@ const PRODUCTION_PER_TURN = 120
  */
 const PAPAL_REPAIR_RATE = 2.5
 const PAPAL_REPAIR_RATE_KNOWN = 1.5
-const PAPAL_REPAIR_RATE_PER_POINT = 0.0015
-const DEMO_SHORTFALL = 1000
+const PAPAL_REPAIR_RATE_RISE = 2
+const PAPAL_REPAIR_RISE_POINTS = 700
+/** 法王府 turns down a repair dearer than this */
+const PAPAL_REPAIR_MAX_GOLD = 5000
+const DEMO_SHORTFALL = 700
 const BROKEN_RARITY: Readonly<Record<RelicRarityView, RelicRarityView>> = { S: 'A', A: 'B', B: 'C', C: 'D', D: 'D' }
 const INITIAL_GOLD = 3000
 
@@ -41,7 +44,7 @@ export default function RelicEntry() {
   const moneyReason = (cost: number) => (gold < cost ? '金が足りません' : undefined)
   const techReason = (tech?: string) => (tech && !techs ? `技術「${tech}」の研究が必要です` : undefined)
   const shortfall = techs ? 0 : DEMO_SHORTFALL
-  const papalRate = (relic: RelicSpec) => (!relic.repair?.tech ? PAPAL_REPAIR_RATE : PAPAL_REPAIR_RATE_KNOWN + PAPAL_REPAIR_RATE_PER_POINT * shortfall)
+  const papalRate = (relic: RelicSpec) => (!relic.repair?.tech ? PAPAL_REPAIR_RATE : PAPAL_REPAIR_RATE_KNOWN + (PAPAL_REPAIR_RATE_RISE * shortfall) / PAPAL_REPAIR_RISE_POINTS)
   const papalGold = (relic: RelicSpec) => Math.ceil(((relic.repair?.gold ?? 0) + (relic.repair?.supplies ?? 0)) * papalRate(relic))
   const papalNote = (relic: RelicSpec) => {
     if (!relic.repair?.tech) return undefined
@@ -65,7 +68,10 @@ export default function RelicEntry() {
       repair: relic.repair && {
         ...relic.repair, turns: turns(relic.repair.supplies), unavailableReason: techReason(relic.repair.tech) ?? busy ?? moneyReason(relic.repair.gold),
       },
-      papalRepair: relic.repair && { gold: papalGold(relic), note: papalNote(relic), unavailableReason: moneyReason(papalGold(relic)) },
+      papalRepair: relic.repair && {
+        gold: papalGold(relic), note: papalNote(relic),
+        unavailableReason: papalGold(relic) > PAPAL_REPAIR_MAX_GOLD ? `金${PAPAL_REPAIR_MAX_GOLD.toLocaleString()}を超える修復は法王府に断られます` : moneyReason(papalGold(relic)),
+      },
     }
   }
   const repairing: RelicView[] = work?.kind === 'relicRepair'
