@@ -168,6 +168,10 @@ export function papalRepairRate(state: GameState, factionId: FactionId, relic: R
 export const papalRepairCost = (state: GameState, factionId: FactionId, relic: Relic): number =>
   Math.ceil(((relic.repair?.gold ?? 0) + (relic.repair?.supplies ?? 0)) * papalRepairRate(state, factionId, relic))
 
+/** 法王府 turns down repairing the relic for the faction: it would cost more than PAPAL_REPAIR_MAX_GOLD (the screens tell neither the limit nor the price) */
+export const papalRepairRefused = (state: GameState, factionId: FactionId, relic: Relic): boolean =>
+  papalRepairCost(state, factionId, relic) > PAPAL_REPAIR_MAX_GOLD
+
 export function papalRepairProblem(state: GameState, factionId: FactionId, itemId: string): string | null {
   const item = itemOf(state, factionId, itemId)
   const problem = turnProblem(state, factionId) ?? brokenItemProblem(item)
@@ -177,9 +181,8 @@ export function papalRepairProblem(state: GameState, factionId: FactionId, itemI
   if (factionId === PAPAL_FACTION) return '法王府は自らに依頼できません'
   if (citiesOf(state, PAPAL_FACTION).length === 0) return '法王府は滅んでいます'
   if (relicsOf(state, factionId).some((other) => other.papalRepair)) return '法王府への依頼は同時に1件までです'
-  const cost = papalRepairCost(state, factionId, relic)
-  if (cost > PAPAL_REPAIR_MAX_GOLD) return '法王府はこの遺物についての修復を拒否します'
-  return (state.gold[factionId] ?? 0) < cost ? '金が足りません' : null
+  if (papalRepairRefused(state, factionId, relic)) return '法王府はこの遺物についての修復を拒否します'
+  return (state.gold[factionId] ?? 0) < papalRepairCost(state, factionId, relic) ? '金が足りません' : null
 }
 
 /**
@@ -219,7 +222,9 @@ export interface RelicItemInfo {
   repair?: RelicWorkCost
   /** Repairing it in `cityId` */
   repairProblem: string | null
-  /** The gold 法王府 takes */
+  /** Whether 法王府 can be asked to repair it at all (it has a repair); the problem says why not now */
+  papalRepair: boolean
+  /** The gold 法王府 takes; undefined: it has no repair, or 法王府 turns it down (papalRepairRefused, the price is not told) */
   papalGold?: number
   papalProblem: string | null
 }
@@ -236,7 +241,8 @@ export function relicItemInfo(state: GameState, factionId: FactionId, cityId: Ci
     dismantleProblem: dismantleProblem(state, factionId, itemId),
     repair: relic.repair,
     repairProblem: repairProblem(state, cityId, itemId),
-    papalGold: relic.repair && papalRepairCost(state, factionId, relic),
+    papalRepair: Boolean(relic.repair),
+    papalGold: relic.repair && !papalRepairRefused(state, factionId, relic) ? papalRepairCost(state, factionId, relic) : undefined,
     papalProblem: papalRepairProblem(state, factionId, itemId),
   }
 }

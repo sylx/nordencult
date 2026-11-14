@@ -555,7 +555,7 @@ export function relicsView(game: GameState, factionId: string, cityId: string): 
       repair: repair && {
         supplies: repair.supplies, gold: repair.gold, turns: constructionTurns(game, cityId, repair.supplies), unavailableReason: info.repairProblem ?? undefined,
       },
-      papalRepair: papalGold === undefined ? undefined : { gold: papalGold, unavailableReason: info.papalProblem ?? undefined },
+      papalRepair: info.papalRepair ? { gold: papalGold, unavailableReason: info.papalProblem ?? undefined } : undefined,
       effects: relicEffects(relic),
       ...(item.repaired && facilityOf(item.relicId) && { buildingName: facilityOf(item.relicId)!.name }),
       ...(item.buildingIn && { cityName: cityName(item.buildingIn) }),
