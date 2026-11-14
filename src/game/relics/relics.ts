@@ -181,7 +181,7 @@ export function papalRepairProblem(state: GameState, factionId: FactionId, itemI
   if (factionId === PAPAL_FACTION) return '法王府は自らに依頼できません'
   if (citiesOf(state, PAPAL_FACTION).length === 0) return '法王府は滅んでいます'
   if (relicsOf(state, factionId).some((other) => other.papalRepair)) return '法王府への依頼は同時に1件までです'
-  if (papalRepairRefused(state, factionId, relic)) return '法王府はこの遺物についての修復を拒否します'
+  if (papalRepairRefused(state, factionId, relic)) return '法王府はこの遺物の修復を拒否します'
   return (state.gold[factionId] ?? 0) < papalRepairCost(state, factionId, relic) ? '金が足りません' : null
 }
 

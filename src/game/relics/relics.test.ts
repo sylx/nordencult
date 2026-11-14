@@ -453,7 +453,7 @@ describe('法王府', () => {
     const state = withGold(debugAddRelic(playing('carta'), 'carta', 'colossus'), 100_000)
     const id = itemsOf(state).at(-1)!.id
     expect(papalRepairCost(state, 'carta', RELIC_MAP.colossus)).toBeGreaterThan(BALANCE.PAPAL_REPAIR_MAX_GOLD)
-    expect(papalRepairProblem(state, 'carta', id)).toBe('法王府はこの遺物についての修復を拒否します')
+    expect(papalRepairProblem(state, 'carta', id)).toBe('法王府はこの遺物の修復を拒否します')
     // The screen is told neither the price nor the limit
     expect(relicItemInfo(state, 'carta', FLUEN, id)).toMatchObject({ papalRepair: true, papalGold: undefined })
     expect(() => requestPapalRepair(state, 'carta', id)).toThrow(GameRuleError)
