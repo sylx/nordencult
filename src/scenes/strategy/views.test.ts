@@ -33,10 +33,12 @@ describe('the relic screen', () => {
   })
 
   it('notes how far the faction is from the technology 法王府\'s price goes by', () => {
-    // ライフル: 物理文明, 火薬 and ライフル, 700 research points; the price is (1.5 + 2 × 700 / 700) / 2.5 of the plain one
+    // ライフル: 物理文明, 火薬 and ライフル, 700 research points; the price is (2.5 + 700 / 700) / 2.5 of the plain one
     const note = (state: GameState) => relicsView(state, 'carta', FLUEN)[0].papalRepair?.note
     expect(note(researched(playing('carta')))).toBe('技術「ライフル」まで研究あと700で +40%')
-    expect(note(researched(playing('carta'), 'physical_civ', 'gunpowder', 'rifle'))).toBe('技術「ライフル」の習得で −40%')
+    expect(note(researched(playing('carta'), 'physical_civ', 'gunpowder'))).toBe('技術「ライフル」まで研究あと400で +23%')
+    // Researched, it is the plain price
+    expect(note(researched(playing('carta'), 'physical_civ', 'gunpowder', 'rifle'))).toBeUndefined()
     expect(relicsView(playing('carta'), 'carta', FLUEN)[1].papalRepair?.note).toBeUndefined()
   })
 

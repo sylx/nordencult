@@ -1,6 +1,6 @@
 import { RELIC_LIST, RELIC_MAP, type Relic, type RelicWorkCost } from '../../data/relics'
 import { TECH_MAP } from '../../data/techs'
-import { PAPAL_REPAIR_MAX_GOLD, PAPAL_REPAIR_RATE, PAPAL_REPAIR_RATE_KNOWN, PAPAL_REPAIR_RATE_RISE, PAPAL_REPAIR_RISE_POINTS } from '../economy/balance'
+import { PAPAL_REPAIR_MAX_GOLD, PAPAL_REPAIR_RATE, PAPAL_REPAIR_RATE_RISE, PAPAL_REPAIR_RISE_POINTS } from '../economy/balance'
 import { commandProblem, constructionBusyProblem, withCity } from '../economy/domestic'
 import { GameRuleError } from '../errors'
 import { citiesOf } from '../queries'
@@ -161,7 +161,7 @@ export function papalRepairShortfall(state: GameState, factionId: FactionId, rel
 export function papalRepairRate(state: GameState, factionId: FactionId, relic: Relic): number {
   const shortfall = papalRepairShortfall(state, factionId, relic)
   if (shortfall === undefined) return PAPAL_REPAIR_RATE
-  return PAPAL_REPAIR_RATE_KNOWN + (PAPAL_REPAIR_RATE_RISE * shortfall) / PAPAL_REPAIR_RISE_POINTS
+  return PAPAL_REPAIR_RATE + (PAPAL_REPAIR_RATE_RISE * shortfall) / PAPAL_REPAIR_RISE_POINTS
 }
 
 /** Gold 法王府 takes from the faction to repair the relic: dearer the farther the faction is from its technology */
@@ -221,7 +221,7 @@ export interface RelicItemInfo {
   repairProblem: string | null
   /** The gold 法王府 takes */
   papalGold?: number
-  /** papalGold against the rate for a relic needing no technology: below 1 cheaper, above dearer (the technology researched); undefined: no such relic */
+  /** papalGold against the rate for a relic needing no technology: 1, or above it the farther the technology is; undefined: no such relic */
   papalRateRatio?: number
   /** The research points the faction lacks to reach the repair's technology (papalRepairShortfall); undefined: no such relic */
   papalShortfall?: number

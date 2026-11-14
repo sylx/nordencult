@@ -101,16 +101,15 @@ export const SUMMON_RECOVERY_RATE = 0.1
 export const SUMMON_MORALE = 70
 
 /**
- * 法王府 repairs a relic for ceil((its repair's gold + supplies) × rate) gold. The rate is PAPAL_REPAIR_RATE for a relic
- * whose repair needs no technology; for one that needs a technology, it is PAPAL_REPAIR_RATE_KNOWN (the technology
- * researched) plus PAPAL_REPAIR_RATE_RISE for every PAPAL_REPAIR_RISE_POINTS research points the faction still lacks to
- * reach it: of the technology and every one it requires, those not researched yet, less what it has put into them (the
- * farther the faction is from the technology, the more it depends on 法王府). The rise is set so that ライフル with
- * nothing of 物理文明・火薬・ライフル researched (700 points) costs 3.5 times
+ * 法王府 repairs a relic for ceil((its repair's gold + supplies) × rate) gold. The rate is PAPAL_REPAIR_RATE, never less
+ * (asking 法王府 is never cheaper than a relic needing no technology, whatever the faction has researched); for a relic
+ * whose repair needs a technology, plus PAPAL_REPAIR_RATE_RISE for every PAPAL_REPAIR_RISE_POINTS research points the
+ * faction still lacks to reach it: of the technology and every one it requires, those not researched yet, less what it
+ * has put into them (the farther the faction is from the technology, the more it depends on 法王府). The rise is set so
+ * that ライフル with nothing of 物理文明・火薬・ライフル researched (700 points) costs 3.5 times
  */
 export const PAPAL_REPAIR_RATE = 2.5
-export const PAPAL_REPAIR_RATE_KNOWN = 1.5
-export const PAPAL_REPAIR_RATE_RISE = 2
+export const PAPAL_REPAIR_RATE_RISE = 1
 export const PAPAL_REPAIR_RISE_POINTS = 700
 
 /** 法王府 turns down a repair that would cost more gold than this */

@@ -540,16 +540,14 @@ const relicStatus = (item: RelicItem) =>
 const facilityOf = (relicId: string) => BUILDING_LIST.find((b) => b.requiredRelic === relicId)
 
 /**
- * How the technology moves 法王府's price, e.g. 技術「ライフル」の習得で −40% or 技術「ライフル」まで研究あと700で +2%;
- * undefined: it needs no technology
+ * How far the technology is moves 法王府's price, e.g. 技術「ライフル」まで研究あと700で +40%; undefined: it needs no
+ * technology, or the faction has researched it (the price is the plain one)
  */
 function papalRateNote(relic: Relic, ratio: number | undefined, shortfall: number | undefined): string | undefined {
-  if (ratio === undefined || shortfall === undefined) return undefined
+  if (ratio === undefined || !shortfall) return undefined
   const percent = Math.round((ratio - 1) * 100)
-  const change = percent === 0 ? '' : percent < 0 ? ` −${-percent}%` : ` +${percent}%`
   const tech = TECH_MAP[relic.repair!.tech!]?.name ?? relic.repair!.tech!
-  if (shortfall === 0) return change ? `技術「${tech}」の習得で${change}` : undefined
-  return `技術「${tech}」まで研究あと${shortfall.toLocaleString()}で${change}`
+  return `技術「${tech}」まで研究あと${shortfall.toLocaleString()}${percent > 0 ? `で +${percent}%` : ''}`
 }
 
 /** The faction's box, what it can do with each relic (repairing in `cityId`), then the relics being repaired or produced in its cities */

@@ -26,7 +26,7 @@ vi.mock('../../data/relicData.json', () => ({
     },
     { id: 'ballista', name: 'バリスタ', brokenName: '壊れたバリスタ', description: '', rarity: 'C', use: 'building', dismantlePoints: 60, repair: { supplies: 500, gold: 151 } },
     { id: 'grimoire', name: '魔導書', description: '', rarity: 'B', use: 'equipment', production: { supplies: 400, gold: 200, tech: 'root' } },
-    { id: 'colossus', name: '巨像', brokenName: '壊れた巨像', description: '', rarity: 'A', use: 'building', repair: { supplies: 2400, gold: 900, tech: 'rifle' } },
+    { id: 'colossus', name: '巨像', brokenName: '壊れた巨像', description: '', rarity: 'A', use: 'building', repair: { supplies: 1400, gold: 600, tech: 'rifle' } },
   ],
 }))
 
@@ -385,7 +385,7 @@ describe('法王府', () => {
 
   it('asks more the farther the faction is from the repair\'s technology, by the research points it lacks', () => {
     const state = playing('carta')
-    const rate = (shortfall: number) => BALANCE.PAPAL_REPAIR_RATE_KNOWN + (BALANCE.PAPAL_REPAIR_RATE_RISE * shortfall) / BALANCE.PAPAL_REPAIR_RISE_POINTS
+    const rate = (shortfall: number) => BALANCE.PAPAL_REPAIR_RATE + (BALANCE.PAPAL_REPAIR_RATE_RISE * shortfall) / BALANCE.PAPAL_REPAIR_RISE_POINTS
     const rifle = (next: GameState) => papalRepairCost(next, 'carta', RELIC_MAP.rifle)
     // ライフル needs 根 before it: 100 + 200 research points
     expect(papalRepairShortfall(researched(state), 'carta', RELIC_MAP.rifle)).toBe(300)
@@ -395,7 +395,7 @@ describe('法王府', () => {
     // What it has put into one counts; researched, the rate is the least
     const halfway = withResearch(state, 'carta', { researched: ['root'], current: 'rifle', progress: { rifle: 150 } })
     expect(papalRepairShortfall(halfway, 'carta', RELIC_MAP.rifle)).toBe(50)
-    expect(rifle(researched(state, 'root', 'rifle'))).toBe(Math.ceil(550 * BALANCE.PAPAL_REPAIR_RATE_KNOWN))
+    expect(rifle(researched(state, 'root', 'rifle'))).toBe(Math.ceil(550 * BALANCE.PAPAL_REPAIR_RATE))
     // What follows from it does not count; a relic needing no technology keeps the plain rate
     expect(rifle(researched(state, 'root', 'rifle', 'rifle_production'))).toBe(rifle(researched(state, 'root', 'rifle')))
     expect(papalRepairShortfall(state, 'carta', RELIC_MAP.ballista)).toBeUndefined()
@@ -449,14 +449,14 @@ describe('法王府', () => {
   })
 
   it('turns down a repair dearer than PAPAL_REPAIR_MAX_GOLD, however rich the faction', () => {
-    // 巨像: 3300 × (1.5 + 2 × 300 / 700) ≈ 7,629 with nothing researched, 3300 × 1.5 = 4,950 with ライフル
+    // 巨像: 2000 × (2.5 + 300 / 700) ≈ 5,858 with nothing researched, 2000 × 2.5 = 5,000 (not over it) with ライフル
     const state = withGold(debugAddRelic(playing('carta'), 'carta', 'colossus'), 100_000)
     const id = itemsOf(state).at(-1)!.id
     expect(papalRepairCost(state, 'carta', RELIC_MAP.colossus)).toBeGreaterThan(BALANCE.PAPAL_REPAIR_MAX_GOLD)
     expect(papalRepairProblem(state, 'carta', id)).toBe('金5,000を超える修復は法王府に断られます')
     expect(() => requestPapalRepair(state, 'carta', id)).toThrow(GameRuleError)
     const skilled = researched(state, 'root', 'rifle')
-    expect(papalRepairCost(skilled, 'carta', RELIC_MAP.colossus)).toBe(4950)
+    expect(papalRepairCost(skilled, 'carta', RELIC_MAP.colossus)).toBe(5000)
     expect(papalRepairProblem(skilled, 'carta', id)).toBeNull()
   })
 
