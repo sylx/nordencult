@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import Button from '../../components/parts/Button'
-import ThinFrameWithTitle from '../../components/parts/ThinFrameWithTitle'
+import InfoWindow from '../../components/window/InfoWindow'
 import { BuildingImage, ConstructionProgress, workLabel } from '../../components/parts/BuildingSlots'
 import type { BuildingView, ConstructionView } from '../types'
 import './BuildingDetailDialog.css'
@@ -17,9 +17,9 @@ export interface BuildingDetailDialogProps {
 }
 
 /**
- * A building's details over the whole page, the rest masked: its picture large on the left, and on the right what it
- * gives, its description and, if it is being built, the construction's progress. Escape closes it without reaching
- * the screen under it
+ * A building's details over the whole page in the middle of the mask, in the medium-framed window titled
+ * 施設詳細：<name>: its picture large on the left, and on the right what it gives, its description and, if it is
+ * being built, the construction's progress. Escape closes it without reaching the screen under it
  */
 export default function BuildingDetailDialog({ building, work, onOpenDomestic, onClose }: BuildingDetailDialogProps) {
   useEffect(() => {
@@ -33,11 +33,11 @@ export default function BuildingDetailDialog({ building, work, onOpenDomestic, o
     return () => window.removeEventListener('keydown', onKeyDown, true)
   }, [onClose])
 
+  const title = `施設詳細：${building.name}`
   return createPortal(
     <div className="norden-building-detail-backdrop" onClick={onClose}>
-      <div role="dialog" aria-modal="true" aria-label={`${building.name}の詳細`} className="norden-building-detail-wrap"
-        onClick={event => event.stopPropagation()}>
-        <ThinFrameWithTitle as="div" title={building.name} className="norden-building-detail">
+      <div role="dialog" aria-modal="true" aria-label={title} className="norden-building-detail-wrap" onClick={event => event.stopPropagation()}>
+        <InfoWindow title={title} draggable={false} minWidth={480} maxWidth={760} minHeight={0} className="norden-building-detail">
           <div className="norden-building-detail-layout">
             <div className="norden-building-detail-figure">
               <BuildingImage building={building} className="norden-building-detail-image" />
@@ -60,7 +60,7 @@ export default function BuildingDetailDialog({ building, work, onOpenDomestic, o
               </div>
             </div>
           </div>
-        </ThinFrameWithTitle>
+        </InfoWindow>
       </div>
     </div>,
     document.body,

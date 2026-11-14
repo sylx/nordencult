@@ -1,65 +1,56 @@
-/* BuildingDetailDialog over the whole page: the building's picture large on the left, its details on the right */
+/* BuildingDetailDialog over the whole page: the medium-framed window in the middle, the building's picture large on the left */
 .norden-building-detail-backdrop {
   position: fixed;
   inset: 0;
   z-index: 1000;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: 32px 24px 24px;
   background: rgb(10 7 4 / 0.72);
   animation: norden-building-detail-fade 160ms ease-out both;
 }
-.norden-building-detail-wrap { max-width: 100%; max-height: 100%; animation: norden-building-detail-enter 180ms ease-out both; }
+.norden-building-detail-wrap { max-width: 100%; }
 @keyframes norden-building-detail-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes norden-building-detail-enter { from { opacity: 0; scale: .97; } to { opacity: 1; scale: 1; } }
-@media (prefers-reduced-motion: reduce) {
-  .norden-building-detail-backdrop,
-  .norden-building-detail-wrap { animation: none; }
-}
+@media (prefers-reduced-motion: reduce) { .norden-building-detail-backdrop { animation: none; } }
 
-.norden-building-detail {
-  box-sizing: border-box;
-  width: min(720px, calc(100vw - 48px));
-  max-height: calc(100vh - 48px);
-  padding: 30px 24px 20px;
-  overflow: auto;
-  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
-}
+/* InfoWindow places itself by left/top (both 0 here): in the flow, the mask centres it */
+.norden-info-window.norden-building-detail { position: relative; max-width: calc(100vw - 48px); }
+
 .norden-building-detail-layout { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px; align-items: start; }
 
 /* The sprite's cell is 2:3 (256 × 384); shown at its own size, smaller when the screen is short */
 .norden-building-detail-figure {
-  padding: 6px;
-  background: #15110d80;
-  border: 1px solid #a3824b66;
-  box-shadow: inset 0 0 0 1px #00000066, 0 4px 14px #00000066;
+  padding: 5px;
+  background: #fff9e680;
+  border: 1px solid #b38d52;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px #fff9e699, 0 3px 10px #38251040;
 }
 .norden-building-detail-image.norden-building-image {
-  width: min(256px, calc((100vh - 140px) * 2 / 3));
+  width: min(256px, calc((100vh - 200px) * 2 / 3));
   height: auto;
   aspect-ratio: 2 / 3;
   border-radius: 2px;
 }
 .norden-building-detail-image.norden-building-image.is-placeholder { font-size: 72px; }
 
-.norden-building-detail-body { display: grid; align-content: start; gap: 14px; min-width: 0; color: var(--norden-text); }
-.norden-building-detail-badge { margin: 0; color: var(--norden-text-warn); font-size: 14px; font-weight: 700; }
+.norden-building-detail-body { display: grid; align-content: start; gap: 14px; min-width: 0; color: var(--norden-ink); }
+.norden-building-detail-badge { margin: 0; color: var(--norden-ink-accent); font-size: 14px; font-weight: 700; }
 .norden-building-detail-effects { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .norden-building-detail-effects li {
-  padding: 3px 10px;
-  color: var(--norden-text-good);
+  padding: 2px 10px;
+  color: var(--norden-ink-good, var(--norden-ink));
   font-size: 14px;
   font-weight: 600;
-  background: #211b14;
-  border: 1px solid #6e5838;
+  background: #fff4d5;
+  border: 1px solid #cbb282;
   border-radius: 3px;
 }
-.norden-building-detail-desc { margin: 0; color: var(--norden-text); font-size: 15px; line-height: 1.8; white-space: pre-line; }
-.norden-building-detail .norden-construction-progress-text { color: var(--norden-text-muted); }
+.norden-building-detail-desc { margin: 0; color: var(--norden-ink-soft); font-size: 15px; line-height: 1.8; white-space: pre-line; }
 .norden-building-detail-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
 
 @media (max-width: 560px) {
   .norden-building-detail-layout { grid-template-columns: 1fr; }
   .norden-building-detail-figure { justify-self: center; }
-  .norden-building-detail-image.norden-building-image { width: min(180px, calc((100vh - 140px) * 2 / 3)); }
+  .norden-building-detail-image.norden-building-image { width: min(180px, calc((100vh - 200px) * 2 / 3)); }
 }
