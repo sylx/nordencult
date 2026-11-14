@@ -442,8 +442,8 @@ export interface RelicView {
   dismantle?: { points: number; unavailableReason?: string }
   /** Repairing it in the city the screen is opened on */
   repair?: { supplies: number; gold: number; turns?: number | null; unavailableReason?: string }
-  /** Asking 法王府 to repair it */
-  papalRepair?: { gold: number; unavailableReason?: string }
+  /** Asking 法王府 to repair it; gold omitted: 法王府 turns it down (its price is not told) */
+  papalRepair?: { gold?: number; unavailableReason?: string }
 }
 
 /** A relic the faction has the technology to produce */

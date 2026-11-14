@@ -61,10 +61,10 @@ export default function RelicEntry() {
       repair: relic.repair && {
         ...relic.repair, turns: turns(relic.repair.supplies), unavailableReason: techReason(relic.repair.tech) ?? busy ?? moneyReason(relic.repair.gold),
       },
-      papalRepair: relic.repair && {
-        gold: papalGold(relic),
-        unavailableReason: papalGold(relic) > PAPAL_REPAIR_MAX_GOLD ? '法王府はこの遺物についての修復を拒否します' : moneyReason(papalGold(relic)),
-      },
+      // Turned down, its price is not told
+      papalRepair: relic.repair && (papalGold(relic) > PAPAL_REPAIR_MAX_GOLD
+        ? { unavailableReason: '法王府はこの遺物についての修復を拒否します' }
+        : { gold: papalGold(relic), unavailableReason: moneyReason(papalGold(relic)) }),
     }
   }
   const repairing: RelicView[] = work?.kind === 'relicRepair'

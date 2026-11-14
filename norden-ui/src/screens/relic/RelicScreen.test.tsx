@@ -73,6 +73,14 @@ describe('RelicScreen', () => {
     expect(screen.getByText('金が足りません')).toBeInTheDocument()
   })
 
+  it('tells no price of a relic 法王府 turns down', () => {
+    const refused: RelicView = { ...BROKEN, papalRepair: { unavailableReason: '法王府はこの遺物についての修復を拒否します' } }
+    shown({ relics: [refused] })
+    const action = screen.getByRole('button', { name: '壊れたライフルを法王府に依頼' }).closest('.norden-relic-action')!
+    expect(action).toHaveTextContent('法王府はこの遺物についての修復を拒否します')
+    expect(action).not.toHaveTextContent('金')
+  })
+
   it('summons with a summon relic in the city, saying why it cannot', async () => {
     const onSummon = vi.fn()
     const egg: RelicView = { id: 'dragon-2', status: 'repaired', name: 'ドラゴン', rarity: 'A', useLabel: '召喚', effects: ['ドラゴンを召喚する（HP 600）'], summon: {} }
