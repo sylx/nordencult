@@ -1,0 +1,154 @@
+/**
+ * 攻撃の演出でカメラを寄せる。指定したユニットがすべて画面に収まるところまで寄り、決めた時間そのままにして、
+ * 元の位置へ戻る。その間はカメラの操作を止める。俯角・向きは変えない（注視点と距離だけを動かす）。
+ * 当たったときにカメラを小さく揺らす（shake）。
+ * 注視点だけを滑らかに動かすこともできる（panTo。強制退却で退却先を選ぶユニットを画面に入れるときなど）。
+ */
+import * as THREE from 'three';
+import type { SceneContext } from '@norden/map-runtime/render/scene';
+import type { UnitPlacement } from '@norden/map-runtime/render/units';
+import { fxClock } from './fxClock';
+
+/** 寄ったとき、ユニットの絵の範囲が画面の幅・高さに占める割合（play で変えなければ） */
+export const FOCUS_FILL = 0.6;
+/** 揺れの時間（秒） */
+const SHAKE_SEC = 0.28;
+/** panTo で注視点を動かす時間（秒） */
+const PAN_SEC = 0.5;
+
+/** 寄る・そのまま・戻るの時間（秒） */
+export interface FocusTiming {
+  in: number;
+  hold: number;
+  out: number;
+}
+
+interface View {
+  target: THREE.Vector3;
+  position: THREE.Vector3;
+}
+
+export class CameraFocus {
+  private readonly ctx: SceneContext;
+  /** 寄る前のカメラ（寄っていなければ null） */
+  private home: View | null = null;
+  private readonly focus: View = { target: new THREE.Vector3(), position: new THREE.Vector3() };
+  private timing: FocusTiming = { in: 0, hold: 0, out: 0 };
+  private start = 0;
+  private shakeStart = -Infinity;
+  private shakeAmount = 0;
+  /** panTo で動かしている注視点（動かしていなければ null）。from は動かし始めたときの注視点、delta は動かす量 */
+  private pan: { from: View; delta: THREE.Vector3; start: number } | null = null;
+
+  constructor(ctx: SceneContext) {
+    this.ctx = ctx;
+  }
+
+  /** units の絵がすべて画面に収まるところまで寄って、timing のとおりに戻る。fill は絵の範囲が画面に占める割合（小さいほど離れる） */
+  play(units: readonly UnitPlacement[], timing: FocusTiming, fill = FOCUS_FILL): void {
+    const { camera, controls } = this.ctx;
+    if (units.length === 0) return;
+    // 続けて寄るときは、最初に寄る前の位置へ戻す
+    const home = this.home ?? { target: controls.target.clone(), position: camera.position.clone() };
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+    // 絵の四隅を画面の右・上方向に並べたときの範囲
+    let x0 = Infinity;
+    let x1 = -Infinity;
+    let y0 = Infinity;
+    let y1 = -Infinity;
+    const mean = new THREE.Vector3();
+    for (const p of units) {
+      const x = p.foot.dot(right);
+      const y = p.foot.dot(up);
+      x0 = Math.min(x0, x - p.width / 2);
+      x1 = Math.max(x1, x + p.width / 2);
+      y0 = Math.min(y0, y);
+      y1 = Math.max(y1, y + p.height);
+      mean.add(p.foot);
+    }
+    mean.divideScalar(units.length);
+    const target = mean
+      .clone()
+      .addScaledVector(right, (x0 + x1) / 2 - mean.dot(right))
+      .addScaledVector(up, (y0 + y1) / 2 - mean.dot(up));
+    const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const dist = THREE.MathUtils.clamp(
+      Math.max((x1 - x0) / (2 * tanV * camera.aspect * fill), (y1 - y0) / (2 * tanV * fill)),
+      controls.minDistance,
+      controls.maxDistance,
+    );
+    const back = home.position.clone().sub(home.target).normalize();
+    this.focus.target.copy(target);
+    this.focus.position.copy(target).addScaledVector(back, dist);
+    this.home = home;
+    this.timing = timing;
+    this.start = fxClock.now();
+    this.pan = null;
+    controls.enabled = false;
+  }
+
+  /** 注視点を point の真上へ滑らかに動かす（距離・向きは変えない。寄っている間は何もしない） */
+  panTo(point: THREE.Vector3): void {
+    if (this.home) return;
+    const { camera, controls } = this.ctx;
+    const delta = point.clone().sub(controls.target).setY(0);
+    this.pan = { from: { target: controls.target.clone(), position: camera.position.clone() }, delta, start: fxClock.now() };
+    controls.enabled = false;
+  }
+
+  /** カメラを揺らす（amount はワールド単位の揺れ幅） */
+  shake(amount: number): void {
+    this.shakeStart = fxClock.now();
+    this.shakeAmount = amount;
+  }
+
+  /** 寄ったままにする時間を sec 秒延ばす（セリフを読み終えるまで待つときなど。寄っていなければ何もしない） */
+  extendHold(sec: number): void {
+    if (this.home) this.timing = { ...this.timing, hold: this.timing.hold + sec };
+  }
+
+  /** 寄るのをやめる（元の位置へは戻さない。マップを読み直したときなど） */
+  stop(): void {
+    this.home = null;
+    this.pan = null;
+    this.shakeStart = -Infinity;
+    this.ctx.controls.enabled = true;
+  }
+
+  /** 毎フレーム、描画の前に呼ぶ */
+  update(now: number): void {
+    const { camera, controls } = this.ctx;
+    const pan = this.pan;
+    if (pan) {
+      const k = easeInOut(Math.min((now - pan.start) / 1000 / PAN_SEC, 1));
+      controls.target.copy(pan.from.target).addScaledVector(pan.delta, k);
+      camera.position.copy(pan.from.position).addScaledVector(pan.delta, k);
+      if (k >= 1) this.stop();
+    }
+    const home = this.home;
+    if (!home) return;
+    const t = (now - this.start) / 1000;
+    const { in: tin, hold, out } = this.timing;
+    let k = 0;
+    if (t < tin) k = easeInOut(t / tin);
+    else if (t < tin + hold) k = 1;
+    else if (t < tin + hold + out) k = 1 - easeInOut((t - tin - hold) / out);
+    controls.target.lerpVectors(home.target, this.focus.target, k);
+    camera.position.lerpVectors(home.position, this.focus.position, k);
+    const st = (now - this.shakeStart) / 1000;
+    if (st < SHAKE_SEC) {
+      const a = this.shakeAmount * (1 - st / SHAKE_SEC) ** 2;
+      const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+      const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+      const offset = right.multiplyScalar(Math.sin(st * 95) * a).addScaledVector(up, Math.sin(st * 70 + 1.3) * a * 0.6);
+      controls.target.add(offset);
+      camera.position.add(offset);
+    }
+    if (t >= tin + hold + out) this.stop();
+  }
+}
+
+function easeInOut(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+}

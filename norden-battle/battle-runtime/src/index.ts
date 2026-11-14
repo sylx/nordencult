@@ -1,0 +1,70 @@
+// 戦闘画面（React）
+export { default as BattleScreen } from './ui/BattleScreen';
+export type { BattleCutInTexts, BattleScreenProps } from './ui/BattleScreen';
+export type { AttackLogEntry } from './ui/BattleLogWindow';
+
+// 戦闘画面の本体（three.js のマップ・ユニット・入力）
+export { BattleApp, TURN_ORDER } from './app';
+// 戦闘のルールで状態を書き換える処理（engine）のうち、BattleApp に渡すもの。engine の全体は '@norden/battle-runtime/engine'（three.js を読み込まない）
+export { mathRng, seededRng } from './engine';
+export type { BattleState, Decision, Player, Rng } from './engine';
+// CPU の思考（軍ごとに BattleScreen の cpu・BattleApp の setCpu で渡す。CPU の番の早送りの倍率は CPU_FAST_FORWARD）
+export { CPU_FAST_FORWARD } from './app';
+export { cpuPlayer, DIFFICULTIES, DIFFICULTY_NAMES } from './cpu';
+export type { CpuOptions, Difficulty } from './cpu';
+export type { AttackPreview, BattleEvents, BattlePhase, ExecuteReport, FacilityReport, InterceptReport, Plan, PlannedAttack, SplashHit, StatusFactory } from './app';
+export type { ActionMenuModel, MenuFrame, MenuState, RetreatMenu } from './menuModel';
+
+// 配備フェーズ
+export { demoTroops, MAX_DEPLOY, SIDE_NAMES, SIDE_TEAM } from './deployment';
+export type { DeployState, Troop, TroopFactory } from './deployment';
+
+// 勢力（軍を勢力の名前で呼ぶ。ゲームは陣営ごとの勢力を BattleScreen の factions で渡す）
+export { demoFactions, OTHER_FACTION_NAME, teamName, unitName } from './factions';
+export type { BattleFaction, BattleFactions } from './factions';
+
+// 攻撃の定義（兵種ごとの使える攻撃は COMBAT_DEFS）と、ユニットに付く状態
+export { ATTACK_DEFS, ATTACK_IDS, SPELL_IDS } from './attacks';
+export type { AttackDef, AttackId, Inflict, MenuAttackId, Shape, SpellId, StrikeFxKind } from './attacks';
+export { CONDITION_DEFS, CONDITION_IDS } from './conditions';
+export type { Condition, ConditionDef, ConditionId } from './conditions';
+
+// ユニットの戦闘中の状態
+export { BATTLE_STYLE_NAMES, BATTLE_STYLES, battleStyleOf, demoStatus, demoStatuses, MAX_MORALE, troopStatus, typeTraits } from './unitStatus';
+export type { BattleStyle, Portrait, TroopInit, UnitStatus } from './unitStatus';
+
+// ユニットそのものの力（基本攻撃力・基本防御力。戦う前の比べ合いに使う）
+export { basicAttack, basicDefense, MAX_BASIC_DEFENSE, STANDARD_UNIT } from './damage';
+export type { UnitPower } from './damage';
+// ダメージの計算そのもの（battle-editor のダメージ計算機で使う）
+export { attackSoldiers, calcCounter, calcDamage, counterRate, damageFactors, FIXED_ATTACK_SOLDIERS, guard, INDIRECT_TAKEN, MAGIC_TAKEN, offense, RANDOM_SPREAD, UNIT_POWER } from './damage';
+export type { DamageFactors, Fighter, Hit } from './damage';
+export { LOSING_RATIO, moraleBreakdown, moraleChange, STRONG_FROM, volleyMoraleRate } from './morale';
+export type { MoraleBreakdown, MoraleChange } from './morale';
+export { attacksOf, canFight, COMBAT_DEFS, mightFor, resolveAttack, WALLED_FEATURES } from './combat';
+export type { CombatDef, ResolvedAttack } from './combat';
+export type { ActionId, MenuAction, MenuChild, SkillId } from './actions';
+
+// 拠点の施設（陣営ごとに BattleScreen の facilities で渡す。撃った結果は BattleApp の facility で受け取る）
+export { DEFAULT_INTERVALS, FACILITY_NAMES, FORTRESS_CANNON_RANGE } from './facilities';
+export type { BattleFacilities, FiringFacility, SideFacilities } from './facilities';
+
+// 退却（退却先の拠点は軍ごとに使う側が渡し、結果は RetreatReport で受け取る）
+export { adjacentEnemies, RETREAT_FAIL_CHANCE, retreatFailChance } from './retreat';
+export type { RetreatDestination, RetreatDestinations, RetreatReport } from './retreat';
+
+// 殲滅されたときの指揮官の自動退却と捕縛（結果は WipeoutReport で受け取る）
+export { WIPEOUT_CAPTURE_CHANCE, wipeoutCaptureChance } from './wipeout';
+export type { WipeoutReport } from './wipeout';
+
+// 勝敗（決着は BattleScreen の onEnd・BattleApp の end で受け取る）
+export { BATTLE_END_REASON_NAMES, judgeBattle, loserOf } from './victory';
+export type { BattleEndReason, BattleOutcome, CapturedUnit, CommanderLoss, RemainingUnit } from './victory';
+
+// セリフ（何を喋るか。ゲームではセリフのデータから引く BarkSource を lineBarks で作って渡す）
+export { BARK_CHANCE, BARK_SITUATION_NAMES, BARK_SITUATIONS, BARK_TONE, demoBarks, EXCHANGE_CHANCE, lineBarks, lineSituationId } from './barks';
+export type { BarkSituation, BarkSource, BarkSpeaker, BarkTone, ExchangeLine, LineSituation } from './barks';
+
+// 戦闘中の地形変化（アーススパイクで耕す）
+export { canPlow, PLOWED_TERRAIN, plowCell, plowPreview, plowText } from './terrain';
+export type { PlowChange } from './terrain';

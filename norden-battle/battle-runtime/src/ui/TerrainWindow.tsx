@@ -1,0 +1,149 @@
+/**
+ * カーソルの HEX の地形を出すウィンドウ（画面の左下、ステータス行の上）。
+ *
+ * - 地形の名前と色、人工物（防衛拠点ならその札も）、座標、標高、入るのに使う行動力、地形効果（受けるダメージの減り方）、街道を出す。
+ * - 移動先・攻撃の相手を選んでいる間は、その HEX への移動・攻撃の予測を下に足す（アーススパイクは耕して変わる地形も）。
+ *   ライフル兵の弾が目標の手前のユニットにも当たるときは、そのダメージも出す（味方に当たるなら巻き添えとして赤字）。
+ * - カーソルがマップの外にあるときは隠す。
+ * - 枠は norden-ui の ThinFrameWithTitle（細いベゼルと題名の札）。表示するだけなので、マウスは下のマップへ通す。
+ */
+import { useEffect, useState, type ReactNode } from 'react';
+import { ThinFrameWithTitle } from 'norden-ui';
+import { FEATURE_DEFS } from '@norden/map-runtime/core/features';
+import type { HexCell } from '@norden/map-runtime/core/mapData';
+import { TERRAIN_DEFS } from '@norden/map-runtime/core/terrainTypes';
+import type { BattleApp } from '../app';
+import { cellDefense } from '../combat';
+import { highGroundRate, volleyRate } from '../damage';
+import { cellMoveCost } from '../movement';
+import { plowText } from '../terrain';
+import { Err } from './statusText';
+
+/** 予測などの行。[見出し, 中身] */
+type InfoRow = readonly [string, ReactNode];
+
+export default function TerrainWindow({ app }: { app: BattleApp }) {
+  const [shown, setShown] = useState<{ cell: HexCell; extra: InfoRow[] } | null>(null);
+  useEffect(() => app.on('hover', (cell) => setShown(cell && { cell, extra: forecastRows(app, cell) })), [app]);
+  if (!shown) return null;
+
+  const { cell, extra } = shown;
+  const terrain = TERRAIN_DEFS[cell.terrain];
+  const [r, g, b] = terrain.color.map((v) => Math.round(v * 255));
+  const cost = cellMoveCost(cell);
+  const defense = cellDefense(cell);
+  return (
+    <ThinFrameWithTitle title="地形" className="battle-window terrain-info">
+      <div className="terrain-head">
+        <i className="terrain-swatch" style={{ background: `rgb(${r}, ${g}, ${b})` }} />
+        <span className="terrain-name">{terrain.name}</span>
+        {cell.feature && (
+          <span className="terrain-feature">
+            {FEATURE_DEFS[cell.feature].name}
+            {cell.breached && (cell.feature === 'castle' ? '（城壁が崩れた）' : '（木柵が倒れた）')}
+          </span>
+        )}
+        {app.stronghold?.col === cell.col && app.stronghold.row === cell.row && (
+          <span className="terrain-feature stronghold" title="攻撃側のユニットが入ると防衛側の負け（入城）">
+            防衛拠点
+          </span>
+        )}
+        <span className="terrain-coord">
+          ({cell.col}, {cell.row})
+        </span>
+      </div>
+      <Rows
+        rows={[
+          ['標高', `Lv ${cell.elevation}`],
+          ['移動', cost === null ? <span className="blocked">通れない</span> : <>行動力 <b>{cost}</b></>],
+          ['地形効果', defense > 0 ? <><b>{percent(defense)}</b>（ダメージ軽減）</> : <span className="none">なし</span>],
+          ['街道', cell.roads?.length ? `（行動力が半分）` : <span className="none">なし</span>],
+        ]}
+      />
+      {extra.length > 0 && <Rows rows={extra} className="terrain-extra" />}
+    </ThinFrameWithTitle>
+  );
+}
+
+function Rows({ rows, className }: { rows: readonly InfoRow[]; className?: string }) {
+  return (
+    <dl className={className}>
+      {rows.map(([k, v]) => (
+        <div key={k} className="row">
+          <dt>{k}</dt>
+          <dd>{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/** 移動先を選んでいる間はそこまでに使う行動力、攻撃の相手を選んでいる間は結果の予測 */
+function forecastRows(app: BattleApp, cell: HexCell): InfoRow[] {
+  const rows: InfoRow[] = [];
+  const step = app.moveStepAt(cell);
+  if (step) {
+    rows.push([
+      '移動先',
+      <>
+        行動力 {step.cost}（予約の合計）
+        {step.zoc && (
+          <>
+            <br />
+            敵の ZOC: 入るとそれ以上動けない
+          </>
+        )}
+      </>,
+    ]);
+  }
+  const f = app.attackPreviewAt(cell);
+  if (f && 'rejected' in f) rows.push(['攻撃', <Err>{f.rejected}</Err>]);
+  else if (f?.expected) {
+    const { direct, encircled, defense, highGround, supporters, morale } = f.expected;
+    rows.push([
+      '攻撃',
+      <>
+        {supporters > 0 && (
+          <>
+            一斉攻撃: 味方 {supporters} 隊が加わる（×{volleyRate(supporters)}）
+            <br />
+          </>
+        )}
+        敵 {range(f.damage)}
+        {encircled && '（包囲 ×1.2）'}
+        {defense > 0 && `（地形効果 -${percent(defense)}）`}
+        {highGround > 0 && `（高所 +${highGround} ×${highGroundRate(highGround)}）`}
+        <br />
+        {direct ? `反撃 ${range(f.counter)}` : '反撃なし'}
+        <br />
+        士気 {signed(morale.attacker)} / 敵の士気 {signed(morale.defender)}（目安）
+      </>,
+    ]);
+  }
+  if (f && !('rejected' in f)) {
+    if (!f.expected && (f.splash.length > 0 || !f.plow)) rows.push(['攻撃', f.splash.length > 0 ? '目標なし（範囲の全員に当たる）' : '範囲に誰もいない']);
+    if (f.plow) rows.push(['地形', plowText(f.plow)]);
+    const team = app.plan?.unit.team;
+    for (const p of f.splash) {
+      const text = `(${p.unit.col}, ${p.unit.row}) ${range(p.damage)}`;
+      if (p.unit.team === team) rows.push(['巻き添え', <Err>味方 {text}</Err>]);
+      else rows.push(['範囲の敵', text]);
+    }
+  }
+  return rows;
+}
+
+/** 兵数の減少の幅（-96〜-144） */
+function range([min, max]: readonly [number, number]): string {
+  return min === max ? `-${min}` : `-${min}〜-${max}`;
+}
+
+/** 割合（0.2 → 20%） */
+function percent(rate: number): string {
+  return `${Math.round(rate * 100)}%`;
+}
+
+/** 符号付きの数（+7・-3・±0） */
+function signed(n: number): string {
+  return n > 0 ? `+${n}` : n < 0 ? String(n) : '±0';
+}

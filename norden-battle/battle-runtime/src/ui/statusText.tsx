@@ -1,0 +1,161 @@
+/**
+ * 画面の下のステータス行に出す案内（操作の説明・予約の中身・実行した結果）。
+ * 軍は勢力の名前で呼ぶ（factions。BattleScreen に渡されたもの）。部隊は name で呼ぶ（率いる騎士の名前で「{騎士の名前}隊」。factions.ts の unitName）。
+ */
+import type { ReactNode } from 'react';
+import { UNIT_DEFS, type TeamId, type UnitData } from '@norden/map-runtime/core/units';
+import type { MenuAction } from '../actions';
+import type { ExecuteReport, SplashHit, Plan } from '../app';
+import { planCost } from '../engine/plan';
+import { isAttack } from '../combat';
+import { SIDE_NAMES, SIDE_TEAM, type DeployState } from '../deployment';
+import { teamName, type BattleFactions } from '../factions';
+import { BATTLE_END_REASON_NAMES, loserOf, type BattleOutcome } from '../victory';
+
+export const IDLE_STATUS = 'クリック: 味方のユニットを選択 / Esc: 予約を 1 つ戻す・選択を外す';
+const BACK = 'Esc・範囲外クリック: メニューに戻る';
+
+export const LOADED_STATUS = `左ドラッグ: 移動 / ホイール: ズーム / ${IDLE_STATUS}`;
+
+export function Err({ children }: { children: ReactNode }) {
+  return <span className="err">{children}</span>;
+}
+
+/** 部隊を呼ぶ名前 */
+export type UnitNamer = (u: UnitData) => string;
+
+const unitLabel = (name: UnitNamer, u: UnitData) => `${name(u)} (${u.col}, ${u.row})`;
+
+/** 行動メニューで行動を選んだとき */
+export function actionStatus(name: UnitNamer, u: UnitData, a: MenuAction): string {
+  if (a.id === 'move') return `${unitLabel(name, u)}: 移動先を選んでください（青い HEX。橙の斜線は敵の ZOC で、入るとそれ以上動けない）/ ${BACK}`;
+  if (a.id === 'volley') return `${unitLabel(name, u)}: ${a.name}の相手を選んでください（金の斜線: ほかの味方とも接している敵）/ ${BACK}`;
+  if (isAttack(a.id)) return `${unitLabel(name, u)}: ${a.name}の相手を選んでください（赤い HEX）/ ${BACK}`;
+  if (a.id === 'retreat') return `${unitLabel(name, u)}: 退却先の拠点を選んでください（隣接する敵が多いほど失敗しやすく、失敗すると捕虜になる）/ Esc・戻る: メニューに戻る`;
+  // 移動・攻撃以外の処理はまだ無いので、選んだものを知らせるだけ
+  return `${unitLabel(name, u)}: 「${a.name}」を選択${a.cost !== undefined ? `（行動力 ${a.cost}）` : ''}— 未実装`;
+}
+
+/** 予約が増えた・減ったとき。攻撃の前の移動 → 攻撃 → 攻撃の後の移動（騎兵）の順に並べる */
+export function planStatus(name: UnitNamer, plan: Plan): string {
+  const split = plan.attack?.afterLeg ?? plan.legs.length;
+  const moves = (legs: typeof plan.legs) => {
+    const last = legs.at(-1);
+    return last && `(${last.col}, ${last.row}) まで移動（${legs.length} 回）`;
+  };
+  const parts = [
+    moves(plan.legs.slice(0, split)),
+    plan.attack &&
+      (plan.attack.target ? `${unitLabel(name, plan.attack.target)} に` : `(${plan.attack.at.col}, ${plan.attack.at.row}) に`) +
+        plan.attack.action.name +
+        (plan.attack.landing ? `（(${plan.attack.landing.col}, ${plan.attack.landing.row}) へ突破）` : plan.attack.action.id === 'charge' ? '（突破できない）' : ''),
+    moves(plan.legs.slice(split)),
+  ].filter(Boolean);
+  return parts.length > 0
+    ? `${unitLabel(name, plan.unit)}: ${parts.join(' → ')} を予約（行動力 ${planCost(plan)}）/ 決定: 実行 / 取消: すべて取り消す / Esc: 1 つ戻す`
+    : `${unitLabel(name, plan.unit)}: 予約を取り消しました / ${IDLE_STATUS}`;
+}
+
+/** 相手方のユニットを調べたとき */
+export function inspectStatus(name: UnitNamer, u: UnitData): string {
+  return `${unitLabel(name, u)}: 次のターンに動ける範囲（青。橙の斜線は ZOC で止まる）と攻撃できる範囲（赤）/ もう一度クリック・Esc: 閉じる`;
+}
+
+/** 選べない攻撃の相手を選んだとき */
+export function rejectStatus(reason: string): ReactNode {
+  return (
+    <>
+      <Err>{reason}</Err> — ほかの味方とも接している敵（金の斜線）を選んでください / {BACK}
+    </>
+  );
+}
+
+export function turnStatus(f: BattleFactions, turn: number, team: TeamId): string {
+  return `ターン ${turn} ${teamName(f, team)}のターン — 全ユニットの行動力が回復しました / ${IDLE_STATUS}`;
+}
+
+/** 配備を終えて戦闘が始まったとき（配備フェーズの無いマップは読み込んだとき） */
+export function battleStartStatus(f: BattleFactions, team: TeamId): string {
+  return `戦闘開始 — ${teamName(f, team)}のターン / ${LOADED_STATUS}`;
+}
+
+/** 戦闘が決着したとき */
+export function endStatus(f: BattleFactions, { winner, reason, turn }: BattleOutcome): string {
+  return `決着 — ターン ${turn}、${BATTLE_END_REASON_NAMES[reason]}で${teamName(f, SIDE_TEAM[winner])}（${SIDE_NAMES[winner]}）の勝利`;
+}
+
+/** 軍団長部隊の全滅・退却、入城で決着し、負けた陣営の残りの部隊（count 部隊）の強制退却を始めたとき */
+export function routStatus(f: BattleFactions, outcome: BattleOutcome, count: number): string {
+  const loser = loserOf(outcome);
+  return (
+    `${BATTLE_END_REASON_NAMES[outcome.reason]} — ${teamName(f, SIDE_TEAM[loser])}（${SIDE_NAMES[loser]}）の敗北。` +
+    `残りの ${count} 部隊は強制退却: 部隊ごとに退却先の拠点を選んでください（隣接する敵が多いほど失敗しやすく、失敗すると捕虜になる）`
+  );
+}
+
+/** 配備の様子が変わったとき */
+export function deployStatus(f: BattleFactions, { side, team, troops, picked, placed, limit }: DeployState): string {
+  const who = `${teamName(f, team)}（${SIDE_NAMES[side]}）の配備`;
+  const troop = troops.find((t) => t.id === picked);
+  if (troop) {
+    const name = UNIT_DEFS[troop.type].name;
+    if (placed.has(troop.id))
+      return `${who}: ${name}の移し先を選んでください（軍の色の HEX。部隊の上なら入れ替え）/ Esc・範囲外クリック: 選ぶのをやめる`;
+    if (placed.size >= limit)
+      return `${who}: ${limit} 部隊まで置きました。${name}は置いた部隊の上に置くと入れ替えられます / Esc・範囲外クリック: 選ぶのをやめる`;
+    return `${who}: ${name}を置く HEX を選んでください（軍の色の HEX。部隊の上なら入れ替え）/ Esc・範囲外クリック: 選ぶのをやめる`;
+  }
+  return `${who}: 一覧で部隊を選び、軍の色の HEX に置いてください（${limit} 部隊まで。軍団長の部隊は必ず置く）/ 置いた部隊をクリック: 選び直して動かす / 左ドラッグ: 移動 / ホイール: ズーム`;
+}
+
+/** 決定で予約を実行し終えたとき */
+export function executeStatus(name: UnitNamer, { unit, from, moveCost, attack, intercepts, wipeouts, lost, halted, intercept, wait, inspire, retreat }: ExecuteReport): string {
+  const parts: string[] = [];
+  if (retreat) {
+    const odds = `失敗 ${Math.round(retreat.failChance * 100)}%・隣接する敵 ${retreat.enemies}`;
+    const kind = retreat.forced ? '強制退却' : '退却';
+    parts.push(retreat.captured ? `${retreat.to.name}への${kind}に失敗し、捕虜になった（${odds}）` : `${retreat.to.name}へ${kind}した（${odds}）`);
+  }
+  if (moveCost > 0) parts.push(`(${from.col}, ${from.row}) から移動（行動力 ${moveCost}）`);
+  // 目標の手前で弾が当たったユニット（味方に当たったものは巻き添え）
+  const splash = (hits: readonly SplashHit[]) => {
+    for (const h of hits) parts.push(`${name(h.unit)}${h.friendly ? 'に巻き添え' : 'にも命中'}: -${h.result.damage}${h.destroyed ? '（壊滅）' : ''}`);
+  };
+  // 移動の途中で受けた迎撃（攻撃の前の移動・後の移動）
+  const interceptParts = (afterAttack: boolean) => {
+    for (const i of intercepts) {
+      if (i.afterAttack !== afterAttack) continue;
+      parts.push(`${name(i.unit)}の迎撃: -${i.result.damage}${i.targetLeft <= 0 ? '（壊滅）' : ''}`);
+      splash(i.splash);
+    }
+  };
+  interceptParts(false);
+  if (attack && !attack.result) {
+    parts.push(`${attack.action.name}`);
+    splash(attack.splash);
+  } else if (attack?.result && attack.target) {
+    const { result } = attack;
+    parts.push(
+      `${name(attack.target)}に${attack.action.name}: ` +
+        `敵 -${result.damage}${attack.targetDestroyed ? '（壊滅）' : ''}${result.encircled ? '（包囲）' : ''}` +
+        (result.direct ? ` / 反撃 -${result.counter}${attack.unitDestroyed ? '（壊滅）' : ''}` : '') +
+        (attack.landing && !attack.unitDestroyed ? ` → (${attack.landing.col}, ${attack.landing.row}) へ突破` : ''),
+    );
+    splash(attack.splash);
+  }
+  interceptParts(true);
+  if (halted && !lost) parts.push(`(${unit.col}, ${unit.row}) で足止めされた（行動終了）`);
+  else if (intercept && !lost) parts.push('迎撃の構えで待機（行動終了）');
+  else if (wait && !lost) parts.push('待機（行動終了）');
+  if (inspire !== undefined) parts.push(`鼓舞: 士気 +${inspire}`);
+  for (const w of wipeouts) {
+    const odds = `捕縛 ${Math.round(w.captureChance * 100)}%・隣接する敵 ${w.enemies}`;
+    if (w.status.uncapturable) {
+      parts.push(`${name(w.unit)}は壊滅し、戦場を去った`);
+      continue;
+    }
+    const fate = w.captured ? '捕縛された' : w.to ? `${w.to.name}へ落ち延びた` : '落ち延びたが、退却先が無かった';
+    parts.push(`${name(w.unit)}の指揮官は${fate}（${odds}）`);
+  }
+  return `${unitLabel(name, unit)}: ${parts.join(' → ')}`;
+}

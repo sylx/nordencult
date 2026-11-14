@@ -1,0 +1,2387 @@
+/**
+ * 戦闘画面。マップの描画は map-editor と同じ MapView を使い、パラメータは map-editor の初期値のまま。
+ * 戦闘の UI・演出はここに積み上げていく。
+ *
+ * 戦闘のルールで状態を書き換える処理（行動の実行・番の始まりと終わり・施設・決着）は engine/ にあり、ここは演出の拍子
+ * （歩き着いた・当たった瞬間など）で engine の関数を呼んで、返った結果で数字・セリフ・イベントを出す。戦闘の状態は state（BattleState）。
+ * ルールの乱数は rng（engine/rng.ts）から引く。セリフ・演出の乱数は Math.random のまま。
+ *
+ * 行動は予約してから「決定」でまとめて実行する:
+ * ユニットを選択 → 行動メニュー → 移動 → 移動先を選ぶ → 移動先でメニュー → … → 攻撃 → 相手を選ぶ → 決定。
+ * - 移動は何回かに分けて予約でき、予約したルートは地面に矢印で出す。
+ * - 攻撃は 1 ターンに 1 回で、予約した移動先から射程内の敵を選ぶ（射程内の HEX を薄い赤、相手のいる HEX を濃い赤で塗る）。相手へ赤い矢印を出す（遠隔攻撃は放物線。ライフル兵は直線）。
+ *   一斉攻撃は、ほかの味方とも隣接している敵（金の斜線）しか選べない。ほかの敵を選ぶと「包囲していません」でやり直し。
+ *   相手に隣接している味方からも細い赤い矢印を出し、実行するとその味方も一緒に踏み込んで攻撃する。
+ *   攻撃を予約した後は移動できない。騎兵だけは攻撃の後にも移動を予約できる（一撃離脱。攻撃の直後は敵の ZOC の中からでも
+ *   動き出せるが、ZOC から ZOC へは移れない）。
+ * - 突撃（騎兵）は相手を突き抜けて向こうの HEX へ飛び出る。飛び出る先は予約のときに決め、矢印もそこまで伸ばす。
+ * - 決定でユニットがルートに沿って歩き、攻撃し、（騎兵なら）続きを歩く（その間は操作を受け付けない）。
+ *   攻撃の演出: カメラが両者へ寄り（cameraFocus.ts）、攻撃して、カメラが元へ戻る。
+ *   歩兵の通常攻撃は踏み込んで光の剣で斬る（attackFx/slashFx.ts）。騎兵の通常攻撃・突撃は光るランスで貫く（attackFx/lanceFx.ts）。
+ *   弓兵の通常攻撃は無数の光の矢を放物線で降らせる（attackFx/arrowFx.ts）。弓兵の迎撃も同じ演出で、弓兵と撃たれるユニットへ寄る。
+ *   魔術師のサンダーフォールは相手の頭上に雷を落とす（attackFx/thunderFx.ts）。魔術師の迎撃も同じ演出。
+ *   トールハンマーはカメラを大きく引き、目標の周りに雷を次々と落としてから太い雷を目標に落とす（thunderFx.ts の storm）。
+ *   ライフル兵の通常攻撃は光の弾を続けてまっすぐ撃ち、砲兵の通常攻撃は大きな光の弾を放物線で撃つ（attackFx/projectileFx.ts）。迎撃も同じ演出。
+ *   一斉攻撃は、加わる味方も含めた全員へ寄り、それぞれの兵種の演出（斬撃・ランス）を少しずつずらして出す。
+ *   突撃で駆け抜けるときは、飛び出る先の HEX まで画面に収める。
+ *   兵数が 0 になったユニットは消える。
+ * - 攻撃の範囲（attacks.ts の shape）にいる目標以外のユニットにも巻き添えで当たる（combat.ts の splashUnits）。ライフル兵の弾は、
+ *   目標の手前の HEX にいるユニットにも敵・味方を問わず当たる。迎撃も同じ。攻撃の相手を選ぶときは、カーソルを乗せた相手で当たる範囲を塗る。
+ * - クールタイムのある攻撃は、使った次の自分の番から使えない（UnitStatus.cooldowns。軍の番が始まるときに減らす）。
+ * - 状態（conditions.ts）は、付いたユニットの軍の番が終わるときに残りのターンを減らす。攻撃の inflicts で付く。
+ *   軍の番が始まるときに効く（startTeamTurn）: 凍結はその番に行動できない、
+ *   混乱は操作できず、番を終えるときにランダムな HEX へ勝手に移動して行動を終える（順に自動で実行する。その間は操作を受け付けない）。
+ * - 入城の決まり: 攻撃側のユニットは、番の初めに城の HEX の中かそのとなりにいたときだけ城の HEX へ入れる（UnitStatus.atCastle。
+ *   movement.ts の castleLocked。突撃の飛び出しも）。防衛拠点も同じで、番の初めに拠点の HEX の中かそのとなりにいたときだけ拠点の HEX へ入れる
+ *   （UnitStatus.atStronghold。movement.ts の strongholdLocked）。城に入ったら一度拠点の前で番を終えないと入城できない。
+ * - 拠点の施設（facilities.ts。陣営ごとに facilities で渡す）: 番を終えると、その陣営の撃つ施設（要塞砲・ガンシップ）が間隔のターンごとに
+ *   1 発ずつ撃ち（salvo。カメラを寄せて演出し、その間は操作を受け付けない）、撃ち終えてから次の軍の番になる。撃つ施設で軍団長部隊が殲滅されれば
+ *   そこで決着する。バリスタ・魔導台は城の HEX にいるその陣営の弓兵・魔術師の射程を伸ばし（rangeBonusAt）、魔導台は番の初めにクールタイムをさらに減らす。
+ * - 自分が中心の攻撃（乱撃）は、行動メニューで選ぶとすぐ予約する。地点を狙う攻撃（アーススパイク・メテオ）は空いた HEX も選べ、
+ *   狙った HEX に敵がいればそれが目標、いなければ範囲のユニットはすべて巻き添え。目標の無い攻撃の士気は、敵に与えたダメージの合計で上がる。
+ *   味方に当たったときだけ「巻き添え」と出す。手前で当たって壊滅したユニットも、実行を終えたときに消える
+ *   （迎撃の構えのユニットなら、それより後の迎撃は撃たない）。
+ * - 迎撃（騎兵はできない）は選んだらすぐに実行する。予約した移動があればそこまで歩き、迎撃の構えで待機して行動を終える（行動力は 0 になる）。
+ *   構えは次にそのユニットが行動するまで続く（ターンをまたいでも続く）。
+ *   近接ユニットの構えは、受けるダメージを減らして反撃を増やす（damage.ts）。
+ *   間接ユニットの構えは、敵が歩いて射程に入った HEX でその敵を止めて 1 回だけ自動で攻撃し、構えを解く。
+ *   撃たれた敵は壊滅しなければ続きを歩く。ただし弓兵に撃たれた敵（騎兵を除く）はそこで足止めされ、残りの予約を捨てて
+ *   行動を終える（行動力は 0 になる）。味方のいる HEX で止められたときは、通ってきた道を空いている HEX まで戻る。
+ *
+ * 戦闘画面に入った直後は配備フェーズ（deployment.ts）。マップに初期配置地点（deploy）があれば、防衛側 → 攻撃側の順に
+ * 部隊を選んで配置地点に置く。初期配置地点が無いマップは、マップに置いてあるユニットのまま戦闘を始める。
+ *
+ * ターンは軍ごとの交互（防衛側の red → 攻撃側の blue。TURN_ORDER）。いまの番の軍のユニットだけを選んで行動させられる。
+ * 相手方のユニットは暗くし、クリックするとそのユニットが次の番に動ける範囲（青）と攻撃できる範囲（赤）を出す（inspect）。
+ * いまの番の軍で、もう移動・攻撃・迎撃のどれもできないユニットは行動済みとして、絵を暗くして右上に E の印を付ける。
+ * その軍のユニットがすべて行動済みになったら allDone のイベントで知らせる（画面はターン終了のボタンを目立たせる）。
+ * 未行動のユニット（行動済みでない、いまの番の軍のユニット）は、画面のナビゲーションから順に選べる（selectPending。カメラも寄せる）。
+ * ターン終了で次の軍の番になり、その軍の全ユニットの行動力が最大まで戻る（全軍が 1 回ずつ行動したらターンの数が進む）。
+ * 敵の ZOC の中のユニットは、その番にまだ移動も攻撃もしていなければ動き出せる。
+ *
+ * 勝敗（victory.ts）: 行動を実行し終えるたびと軍の番を終えるときに調べる。どちらかの陣営の部隊がすべて殲滅・退却するか、攻撃側のユニットが
+ * 防衛拠点（マップの stronghold。地面を金色に塗る）で行動を終える（もう行動できなくなる・拠点にいるまま番を終える。入城）か、
+ * どちらかの陣営の軍団長の部隊が殲滅される・退却する（軍団長部隊の全滅・退却）と決着し、戦闘を終える（end のイベント。outcome に残す）。
+ * 軍団長部隊の全滅・退却、入城で決着したときは、負けた陣営に残っている部隊を強制退却させてから戦闘を終える（rout のイベント。routing）:
+ * 1 部隊ずつ選んでカメラを寄せ、行動メニューに退却先の拠点の一覧を出す（「戻る」は無く、Esc も効かない）。拠点を選ぶと
+ * 退却と同じように実行し（失敗すると捕虜になる。RetreatReport の forced）、次の部隊へ進む。負けた陣営に退却先が無ければすぐに終える。
+ * 決着した後（強制退却の間も）はユニットを選べず、ターンも終えられない。
+ *
+ * - 待機は選んだらすぐに実行する。予約した行動があれば実行してから、残りの行動力を捨てて行動を終える（行動力は 0 になる）。
+ * - 鼓舞（指揮官のスキル。行動力 2）は選んだらすぐに実行する。予約した行動があれば実行してから、自分の士気を 10〜20 回復する。
+ *   予約した行動の途中で壊滅・足止めされたときは鼓舞しない。
+ * - 退却（ターンの初めだけ。行動力は使わない）は、選ぶと行動メニューに退却先の拠点（retreats。軍ごとに使う側が渡す）の一覧を出し、
+ *   拠点を選ぶとすぐに実行する。退却先の無い軍のユニットは選べない。隣接している敵ユニットの数で決まる確率で失敗し（retreat.ts）、
+ *   失敗すると捕虜になる。成功したユニットは敵から離れる向きへ下がりながら消え、失敗したユニットは下がりかけたところで止められて消える。
+ *   結果は retreat のイベントで知らせ、retreated に残す（捕虜をどう扱うかは使う側が決める）。
+ * - 兵数が 0 になった（殲滅された）ユニットの指揮官は自動退却し、そのとき隣接している敵ユニットの数で決まる確率で捕縛される（wipeout.ts）。
+ *   捕縛されなければ軍の最初の退却先へ落ち延びる（退却先が無ければ落ち延びる先は無い）。結果は wipeout のイベントで知らせ、wipedOut に残す。
+ * - 戦闘を終えるときに、勝った陣営が捕縛した指揮官（退却に失敗した・殲滅されて捕縛された負けた陣営の部隊）を outcome.captives に付ける。
+ *   負けた陣営が捕縛したものは無効なので付けない。
+ *
+ * セリフ（barks.ts。吹き出しは speechBubbles.ts）:
+ * - 攻撃: カメラが寄ったところで攻撃するユニットが確率で喋り、読み終えてから攻撃する。
+ *   一斉攻撃は、確率で攻撃するユニットと加わる味方の掛け合いになる（掛け合いが無ければ攻撃のつぶやき）。
+ * - 迎撃: 迎撃の構えの間接ユニットが、射程に入った敵を自動で攻撃する前に喋る（構えをとったときは喋らない）。
+ * - 鼓舞: 士気を回復したときに喋る。退却: 退却先の拠点を選んで退却し始めるときに喋る（読み終えてから下がる）。
+ * - 殲滅: 兵数が 0 になったユニットが喋り、続いて討ち取ったユニットが確率で喋る。読み終えるまでカメラを寄せたままにする。
+ *
+ * メニューの「取消」で予約をすべて取り消す。
+ * Esc: 移動先・攻撃の相手を選ぶのをやめる → 2 階層目を閉じる → 予約を 1 つ戻す → 選択を外す（配備フェーズでは部隊を選ぶのをやめる）。
+ */
+import * as THREE from 'three';
+import type { Offset } from '@norden/map-runtime/core/hex';
+import { Polyline, smoothPath } from '@norden/map-runtime/core/polyline';
+import { HexMap, type DeploySide, type HexCell, type MapData } from '@norden/map-runtime/core/mapData';
+import { TEAM_DEFS, type Facing, type TeamId, type UnitData } from '@norden/map-runtime/core/units';
+import { MapView } from '@norden/map-runtime/render/mapView';
+import { SceneContext } from '@norden/map-runtime/render/scene';
+import type { RangeCell } from '@norden/map-runtime/render/hexOverlay';
+import type { UnitPlacement } from '@norden/map-runtime/render/units';
+import type { MenuAction } from './actions';
+import type { AttackId, MenuAttackId, StrikeFxKind } from './attacks';
+import { BARK_CHANCE, BARK_TONE, demoBarks, EXCHANGE_CHANCE, type BarkSituation, type BarkSource, type BarkSpeaker } from './barks';
+import {
+  attackArc,
+  attackForecast,
+  attackRange,
+  hexDistance,
+  areaCells,
+  attacksOf,
+  isAttack,
+  mainTargetAt,
+  resolveAttack,
+  splashUnits,
+  volleySupporters,
+  type ResolvedAttack,
+  type AttackForecast,
+  COMBAT_DEFS,
+} from './combat';
+import * as engine from './engine';
+import type { ActionEnd, ActionPhase, ActionRun, AttackReport, BattleState, Decision, ExecuteReport, FacilityReport, FinishedAction, Plan, Player, Rng, SplashHit } from './engine';
+import { ARROW_HIT_SEC, ARROW_RELEASE_SEC, ArrowEffects } from './attackFx/arrowFx';
+import { BEAM_HIT_SEC, BeamEffects, BLAST_STYLE, FROST_STYLE, HAMMER_STYLE, IMPACT_HIT_SEC, ImpactEffects, PILLAR_HIT_SEC, PillarEffects, SMASH_STYLE, SPIKE_STYLE } from './attackFx/areaFx';
+import { EARTH_SPIKE_HIT_SEC } from './attackFx/earthSpikeFx';
+import { BREATH_STYLE, BreathEffects, breathHitSec, FLAME_LANCE_STYLE } from './attackFx/breathFx';
+import { CameraFocus, type FocusTiming } from './cameraFocus';
+import { fxClock } from './fxClock';
+import { hasCondition, setCondition, type ConditionId } from './conditions';
+import { demoTroops, Deployment, SIDE_TEAM, type DeployState, type TroopFactory } from './deployment';
+import { InterceptEffects } from './interceptFx';
+import { ConditionEffects } from './conditionFx';
+import { LANCE_HIT_SEC, LanceEffects } from './attackFx/lanceFx';
+import { ActionMenuModel } from './menuModel';
+import { adjacentEnemies, retreatFailChance, type RetreatDestination, type RetreatDestinations, type RetreatReport } from './retreat';
+import type { WipeoutReport } from './wipeout';
+import { plowPreview, type PlowChange } from './terrain';
+import { movePath, moveRange, nearCastle, nearStronghold, type MoveStep } from './movement';
+import { Popups } from './popups';
+import { BULLET_STYLE, GUNSHIP_STYLE, ProjectileEffects, SHELL_STYLE } from './attackFx/projectileFx';
+import { FACILITY_NAMES, type FiringFacility, type SideFacilities } from './facilities';
+import { SLASH_HIT_SEC, SlashEffects } from './attackFx/slashFx';
+import { SpeechBubbles } from './speechBubbles';
+import { HAMMER_HIT_SEC, THUNDER_HIT_SEC, ThunderEffects } from './attackFx/thunderFx';
+import { UnitTags } from './unitTags';
+import { demoStatuses, type UnitStatus } from './unitStatus';
+import type { BattleOutcome } from './victory';
+
+/** 戦闘の状態や予約・実行の結果の型は engine に移した（使う側の import を変えないように、ここからも出す） */
+export type { ExecuteReport, FacilityReport, InterceptReport, Plan, PlannedAttack, SplashHit } from './engine';
+export { TURN_ORDER } from './engine';
+
+/** 移動できる HEX の色と、そのうち敵の ZOC で止まる HEX の印の色 */
+const MOVE_RANGE_COLOR = 0x4aa8ff;
+const MOVE_ZOC_COLOR = 0xff8a3a;
+/** 攻撃できる相手の HEX の色と、一斉攻撃でそのうち選べる（味方と取り囲んだ）相手の印の色 */
+const ATTACK_RANGE_COLOR = 0xff4a3a;
+const VOLLEY_MARK_COLOR = 0xffd060;
+/** 攻撃の相手を選ぶときに、カーソルを乗せた相手で当たる範囲の色 */
+const SPLASH_AREA_COLOR = 0xffa040;
+/** 移動のアニメーションの速さ（1 秒に進む HEX 数）と、最短の時間（秒） */
+const WALK_HEX_PER_SEC = 3.5;
+const WALK_MIN_SEC = 0.3;
+/** 歩くときの上下の弾み（hexSize 比）と、1 HEX あたりの歩数 */
+const WALK_BOB = 0.035;
+const WALK_STEPS_PER_HEX = 2;
+/** 攻撃のアニメーションの時間（秒）。半分の時点で当たる */
+const STRIKE_SEC = 0.6;
+/** 直接攻撃で相手へ踏み込む量（相手までの距離比） */
+const STRIKE_LUNGE = 0.3;
+/** 突撃で相手を突き抜けて飛び出るときのアニメーションの時間（秒）。相手を通り過ぎる時点（半分）で当たる */
+const CHARGE_SEC = 0.8;
+/** 当たったユニットの揺れ（hexSize 比） */
+const HIT_SHAKE = 0.05;
+/** 遠隔攻撃でその場で跳ねる高さ（hexSize 比） */
+const RANGED_HOP = 0.05;
+/** 攻撃の演出で、カメラが両者へ寄る時間、攻撃した後に寄ったままにする時間、元へ戻る時間（秒） */
+const FX_ZOOM_IN_SEC = 0.45;
+const FX_HOLD_SEC = 0.45;
+const FX_ZOOM_OUT_SEC = 0.5;
+/**
+ * 攻撃の演出のときの攻撃のアニメーションの時間（秒。半分の時点で当たる）。
+ * 斬撃（歩兵）、ランスで踏み込んで貫く（騎兵の通常攻撃）、ランスを構えて駆け抜ける（突撃）、矢を射て届くまで（弓兵）、
+ * 雷を落とす（魔術師）、弾を撃って届くまで（ライフル兵・砲兵）
+ */
+const SLASH_STRIKE_SEC = 0.7;
+const LANCE_STRIKE_SEC = 0.7;
+const LANCE_CHARGE_SEC = 1.0;
+const ARROW_STRIKE_SEC = 1.5;
+const THUNDER_STRIKE_SEC = 1.0;
+const BULLET_STRIKE_SEC = 1.0;
+const SHELL_STRIKE_SEC = 1.9;
+/** 爪で引き裂く（ドラゴンのクロウ）、炎を吹き出して範囲の端まで届き消えるまで（ブレス・フレイムランス） */
+const CLAW_STRIKE_SEC = 0.7;
+const BREATH_STRIKE_SEC = 2 * breathHitSec(BREATH_STYLE);
+const FLAME_STRIKE_SEC = 2 * breathHitSec(FLAME_LANCE_STYLE);
+/** 周りをなぎ払う（乱撃）、地面を揺らす（殴り）、溜めた光線で範囲を薙ぎ払う（光線）、大きな雷が落ちて衝撃が広がる（トールハンマー）、凍らせる（フロスト）、岩が突き出る（スパイク）、魔法陣から光の柱が降って爆発する（メテオ） */
+const WHIRL_STRIKE_SEC = 0.8;
+const SMASH_STRIKE_SEC = 0.6;
+const BEAM_STRIKE_SEC = 2 * BEAM_HIT_SEC;
+const HAMMER_STRIKE_SEC = 2 * HAMMER_HIT_SEC;
+const FROST_STRIKE_SEC = 0.8;
+const SPIKE_STRIKE_SEC = 2 * EARTH_SPIKE_HIT_SEC;
+const METEOR_STRIKE_SEC = 2 * PILLAR_HIT_SEC;
+/** 要塞砲の弾・ガンシップの掃射のアニメーションの時間（秒。半分の時点で当たる） */
+const CANNON_STRIKE_SEC = 2 * SHELL_STYLE.hitSec;
+const GUNSHIP_STRIKE_SEC = 2 * GUNSHIP_STYLE.hitSec;
+/** ガンシップの掃射を撃つところ（目標の上空。HEX の大きさ比の横・高さ） */
+const GUNSHIP_OFFSET = { x: -2.5, y: 7 };
+/** 操作できない味方（混乱・凍結）を選んだときの頭上の文字は、少しだけ浮かんですぐ消す */
+const LOCKED_POPUP = { duration: 0.8, rise: 10 };
+/** 耕す攻撃（アーススパイク）で地形が変わったときの頭上の文字 */
+const PLOW_POPUP = '地形破壊';
+/** CPU の番: カットインの後に動き出すまで・予約を見せてから実行するまで・次の部隊へ進むまでの間（演出の時刻でミリ秒） */
+const CPU_START_MS = 500;
+const CPU_SHOW_MS = 650;
+const CPU_GAP_MS = 250;
+/** CPU の番の早送りで、演出の速度にさらに掛ける倍率 */
+export const CPU_FAST_FORWARD = 3;
+/** CPU の番をスキップしたとき、実行中の演出を終わらせるまでの速度の倍率 */
+const SKIP_SPEED = 40;
+/** 混乱したユニットが勝手に動き出すまでの間（ミリ秒。番を終えてから・前の動きの後） */
+const AUTO_DELAY_MS = 900;
+/** 魔術師が雷を呼んで跳ねる時間（秒。雷が落ちる時点で終わる） */
+const THUNDER_CAST_SEC = 0.35;
+/** 砲兵が撃った反動で跳ねる時間（秒） */
+const SHELL_RECOIL_SEC = 0.25;
+/** 攻撃・迎撃の前のセリフを、カメラが寄り始めてから出すまでの時間（秒） */
+const BARK_BEFORE_SEC = 0.25;
+/** 殲滅されたときの言葉を、当たってから出すまでの時間（秒） */
+const BARK_AFTER_HIT_SEC = 0.3;
+/** 退却のアニメーションの時間（秒。セリフを読み終えてから）と、その間に下がる距離（HEX 数） */
+const RETREAT_SEC = 1.2;
+const RETREAT_HEX = 0.6;
+/** 退却に失敗したユニットが止められる時点（退却のアニメーションの 0〜1） */
+const RETREAT_CAPTURE_T = 0.35;
+/** 防衛拠点の HEX の地面の色 */
+const STRONGHOLD_COLOR = 0xf0c030;
+
+/** 一斉攻撃で、加わるユニットごとにエフェクトをずらす時間（秒） */
+const VOLLEY_FX_STAGGER_SEC = 0.06;
+/** メテオの演出で寄るときの、ユニットの絵の範囲が画面に占める割合（ほかの攻撃より離れて、魔法陣と降る光の柱の大きさを見せる） */
+const METEOR_FOCUS_FILL = 0.3;
+/** トールハンマーの演出で寄るときの割合（メテオよりさらに引いて、周りに次々と落ちる雷と空の高さを見せる） */
+const HAMMER_FOCUS_FILL = 0.18;
+
+/** 攻撃の演出の種類ごとの、エフェクトを出してから当たるまでの時間（秒）と、当たったときのカメラの揺れ（hexSize 比） */
+const STRIKE_FX: Record<StrikeFxKind, { hitSec: number; cameraShake: number }> = {
+  slash: { hitSec: SLASH_HIT_SEC, cameraShake: 0.04 },
+  lance: { hitSec: LANCE_HIT_SEC, cameraShake: 0.06 },
+  arrows: { hitSec: ARROW_HIT_SEC, cameraShake: 0.03 },
+  thunder: { hitSec: THUNDER_HIT_SEC, cameraShake: 0.08 },
+  bullets: { hitSec: BULLET_STYLE.hitSec, cameraShake: 0.02 },
+  shell: { hitSec: SHELL_STYLE.hitSec, cameraShake: 0.1 },
+  claw: { hitSec: SLASH_HIT_SEC, cameraShake: 0.07 },
+  breath: { hitSec: breathHitSec(BREATH_STYLE), cameraShake: 0.09 },
+  flame: { hitSec: breathHitSec(FLAME_LANCE_STYLE), cameraShake: 0.05 },
+  whirl: { hitSec: SLASH_HIT_SEC, cameraShake: 0.06 },
+  smash: { hitSec: IMPACT_HIT_SEC, cameraShake: 0.1 },
+  beam: { hitSec: BEAM_HIT_SEC, cameraShake: 0.14 },
+  hammer: { hitSec: HAMMER_HIT_SEC, cameraShake: 0.2 },
+  frost: { hitSec: IMPACT_HIT_SEC, cameraShake: 0.03 },
+  spike: { hitSec: EARTH_SPIKE_HIT_SEC, cameraShake: 0.13 },
+  meteor: { hitSec: PILLAR_HIT_SEC, cameraShake: 0.18 },
+};
+
+/** deploy: 配備フェーズ、battle: 戦闘 */
+export type BattlePhase = 'deploy' | 'battle';
+
+/** 攻撃の相手を選ぶ状態のときの、カーソルの HEX への攻撃の予測（plow は耕す攻撃で地形が変わるとき、その変化） */
+export type AttackPreview = AttackForecast & { plow: PlowChange | null };
+
+/** BattleApp が知らせること（on で受け取る）。値は受け取る関数の引数 */
+export interface BattleEvents {
+  /** マップを読み込んだとき */
+  load: [];
+  /** 配備フェーズ・戦闘が始まったとき */
+  phase: [phase: BattlePhase];
+  /** 配備の様子が変わったとき（配備する陣営が変わった・部隊を置いた・選んだ） */
+  deploy: [state: DeployState];
+  /** カーソルの HEX が変わったとき */
+  hover: [cell: HexCell | null];
+  /** 行動メニューで行動を選んだとき（決定・取消を除く） */
+  action: [unit: UnitData, action: MenuAction];
+  /** 予約が増えた・減ったとき */
+  planChange: [plan: Plan];
+  /** 移動先・攻撃の相手を選ぶ状態をやめたとき */
+  targetCancel: [];
+  /** 選べない攻撃の相手を選んだとき（選び直しになる） */
+  targetReject: [reason: string];
+  /** ユニットを選択した・相手方のユニットを調べたとき（外したときは null） */
+  select: [unit: UnitData | null];
+  /** 行動する軍が変わったとき（戦闘が始まったときも） */
+  turn: [turn: number, team: TeamId];
+  /** 行動済みの印を数え直したとき。allDone はいまの番の軍のユニットがすべて行動済みか（配備フェーズ・強制退却の間は false） */
+  allDone: [allDone: boolean];
+  /** 決定で予約を実行し終えたとき（退却も。そのときは retreat の後） */
+  execute: [report: ExecuteReport];
+  /** ユニットが退却した・退却に失敗して捕虜になったとき（ユニットはもうマップにいない） */
+  retreat: [report: RetreatReport];
+  /** ユニットが殲滅されたとき（ユニットはもうマップにいない。指揮官が捕縛されたかは report.captured） */
+  wipeout: [report: WipeoutReport];
+  /** 軍団長部隊の全滅・退却、入城で決着し、負けた陣営に残った部隊（units）の強制退却を始めるとき（execute の後。終えたら end） */
+  rout: [outcome: BattleOutcome, units: readonly UnitData[]];
+  /** 戦闘が決着したとき（execute の後。強制退却があれば、すべて退却し終えた後） */
+  end: [outcome: BattleOutcome];
+  /** ユニットがセリフを言うと決まったとき（掛け合いの 2 行目からなど、吹き出しを出すのは遅れることがある） */
+  bark: [unit: UnitData, situation: BarkSituation | 'exchange', text: string];
+  /** 番の終わりに施設が撃ったとき（撃たれたユニットが殲滅されたら、この後に wipeout） */
+  facility: [report: FacilityReport];
+  /** 実行のほかで、ユニットの状態（付いている状態など）を書き換えたとき（表示確認用の setCondition など） */
+  statusChange: [unit: UnitData];
+  /** CPU に任せる軍・CPU が操作しているか（cpuActive）が変わったとき */
+  cpu: [active: boolean];
+}
+
+/** マップのユニットに戦闘中の状態を配る（既定は表示確認用の仮の値） */
+export type StatusFactory = (units: readonly UnitData[]) => Map<UnitData, UnitStatus>;
+
+/** 移動先・攻撃の相手を選んでいる状態 */
+type Targeting =
+  | { kind: 'move'; cells: Map<number, MoveStep> }
+  | {
+      kind: 'attack';
+      action: MenuAction;
+      attack: ResolvedAttack;
+      /** 選べる HEX（敵ユニットを狙う攻撃は敵のいる HEX、地点を狙う攻撃は射程のすべての HEX） */
+      cells: Map<number, Offset>;
+      /** 狙える HEX の塗り（カーソルを乗せた相手で当たる範囲を重ねる前） */
+      range: RangeCell[];
+    };
+
+/**
+ * 決定した予約の実行（アニメーション）。段階（engine の ActionPhase）を 1 つずつ演出し、着いた・当たった瞬間に engine の関数を呼ぶ。
+ * plan・report は run のものと同じ
+ */
+interface Execution {
+  run: ActionRun;
+  plan: Plan;
+  report: ExecuteReport;
+  /** 演出している段階 */
+  phase: ActionPhase;
+  start: number;
+  /** 秒 */
+  duration: number;
+  line: Polyline | null;
+  facing: Facing | undefined;
+  /** 攻撃が当たった（兵数を減らした）か */
+  hit: boolean;
+  /** 一斉攻撃で一緒に攻撃する味方（strike の段階を始めるときに決める） */
+  supporters: UnitData[];
+  /** strike の段階の演出（カメラを寄せる）。演出の無い攻撃は null */
+  fx: StrikeFx | null;
+  /** 退却の演出（退却するときだけ）。away は下がる向き（ワールドの xz の単位ベクトル）、lead はセリフを読み終えて下がり始めるまでの秒数 */
+  retreat: { away: { x: number; z: number }; lead: number } | null;
+}
+
+/** 施設が撃つ 1 発（演出の進み具合） */
+interface SalvoShot {
+  kind: FiringFacility;
+  target: UnitData;
+  start: number;
+  /** カメラが寄るのを待つ時間・撃つアニメーションの時間・全体の時間（秒） */
+  lead: number;
+  strikeSec: number;
+  duration: number;
+  spawned: boolean;
+  hit: boolean;
+}
+
+/** 実行中の攻撃の演出 */
+interface StrikeFx {
+  /** 攻撃するユニット（迎撃では迎撃したユニット）の演出の種類 */
+  kind: StrikeFxKind;
+  /** 攻撃のアニメーションの時間（秒。カメラが寄る・戻る時間を除く） */
+  strikeSec: number;
+  /** カメラが寄り始めてから攻撃のアニメーションを始めるまでの時間（秒）。前のセリフがあれば読み終えるまで延ばす */
+  lead: number;
+  /** エフェクトを出すユニットごとの演出（先頭が攻撃するユニット。一斉攻撃は加わる味方の分も続く） */
+  shots: FxShot[];
+  /** 範囲の端の HEX（直線に吹く炎は、目標ではなくここまで届かせる。範囲の無い攻撃は null） */
+  end: Offset | null;
+  /** 範囲のエフェクトを出す HEX（なぎ払い・岩・メテオ・光線・跳ねる雷。順に出すものは並びの順） */
+  area: Offset[];
+}
+
+interface FxShot {
+  unit: UnitData;
+  kind: StrikeFxKind;
+  /** 当たりの時点に対するずれ（秒） */
+  offset: number;
+  /** エフェクトを出したか */
+  spawned: boolean;
+}
+
+/** マップを読み込む前の、空の戦闘中の状態 */
+const NO_STATUSES = new Map<UnitData, UnitStatus>();
+
+export class BattleApp {
+  readonly ctx: SceneContext;
+  readonly view: MapView;
+  /** ユニットの頭上の情報札（顔・兵士数・士気） */
+  readonly tags: UnitTags;
+  /** 選択中のユニットの行動メニュー（中身と位置。描画は ui/ActionMenu.tsx） */
+  readonly menu = new ActionMenuModel();
+  /** 兵数の減少などを頭上に出す */
+  readonly popups: Popups;
+  /** 迎撃の構えのユニットの足元の光の輪 */
+  readonly interceptFx = new InterceptEffects();
+  /** 状態の付いたユニットに重ねる印（混乱の頭上の輪と星・凍結の氷） */
+  readonly conditionFx = new ConditionEffects();
+  /** 光の剣の斬撃（歩兵の通常攻撃） */
+  readonly slashFx = new SlashEffects();
+  /** 3 本の爪の跡（ドラゴンのクロウ） */
+  readonly clawFx = new SlashEffects({ color: 0xff6a3a, blades: 3, gap: 0.16 });
+  /** 範囲の端まで吹く炎（ドラゴンのブレス・フレイムランス） */
+  readonly breathFx = new BreathEffects();
+  /** 地面の衝撃（殴り・氷・岩・爆発） */
+  readonly impactFx = new ImpactEffects();
+  /** 溜めて放つ光線（ベヒーモス） */
+  readonly beamFx = new BeamEffects();
+  /** 魔法陣と、降ってくる光の柱・爆発（メテオフォール） */
+  readonly pillarFx = new PillarEffects();
+  /** 光るランスの突き（騎兵の通常攻撃・突撃） */
+  readonly lanceFx = new LanceEffects();
+  /** 光の矢の雨（弓兵の通常攻撃） */
+  readonly arrowFx = new ArrowEffects();
+  /** 頭上に落ちる雷（魔術師のサンダーフォール） */
+  readonly thunderFx = new ThunderEffects();
+  /** まっすぐ飛ぶ光の弾（ライフル兵の通常攻撃） */
+  readonly bulletFx = new ProjectileEffects(BULLET_STYLE);
+  /** 放物線で飛ぶ大きな光の弾（砲兵の通常攻撃・要塞砲） */
+  readonly shellFx = new ProjectileEffects(SHELL_STYLE);
+  /** 上空から降らせる光の弾（ガンシップ） */
+  readonly gunshipFx = new ProjectileEffects(GUNSHIP_STYLE);
+  /** 攻撃の演出でカメラを寄せる */
+  readonly cameraFocus: CameraFocus;
+  /** セリフの吹き出し */
+  readonly bubbles: SpeechBubbles;
+  /** 何を喋るか（ゲームでは会話データから引くものを渡す） */
+  barks: BarkSource = demoBarks;
+  /** 確率に関係なく、喋る場面では必ず喋る（表示確認用） */
+  alwaysBark = false;
+  /** ルールの乱数（engine/rng.ts。既定は Math.random。シードで再現したいときは seededRng を入れる）。セリフ・演出の乱数は別 */
+  rng: Rng = engine.mathRng;
+  /** 選択中のユニットの HEX */
+  selected: Offset | null = null;
+  hovered: Offset | null = null;
+  /** 選択中のユニットの予約（選択していなければ null） */
+  plan: Plan | null = null;
+  /** 調べている相手方のユニット（動ける範囲・攻撃できる範囲を出している。いなければ null） */
+  inspected: UnitData | null = null;
+  /** いまの番の軍の、行動済み（もう移動・攻撃・迎撃のどれもできない）ユニット */
+  readonly done = new Set<UnitData>();
+  /** 配備フェーズの間の配備（戦闘が始まったら null） */
+  deployment: Deployment | null = null;
+  /** 演出の速度の倍率（設定。プレイヤーの行動にも効く。戦闘の途中でも変えられ、演出の途中で変えても途切れない。fxClock.ts） */
+  speed = 1;
+  /** CPU の番を早送りする（CPU が操作している間だけ、演出の速度にさらに CPU_FAST_FORWARD を掛ける） */
+  fastForward = false;
+  /** CPU の打ち手の乱数（ルールの乱数 rng とは別） */
+  cpuRng: Rng = engine.mathRng;
+  /** 戦闘の状態（engine。マップを読み込むまでは null） */
+  private battle: BattleState | null = null;
+  /** 軍ごとの CPU の打ち手（いない軍は人が操作する） */
+  private cpus: Partial<Record<TeamId, Player>> = {};
+  /** CPU を待たせているもの（カットインなど）の数 */
+  private cpuHolds = 0;
+  /** CPU が次に動く時刻（演出の時刻） */
+  private cpuAt = 0;
+  /** この番に CPU が動かすのをやめた部隊と、部隊ごとの行動の回数 */
+  private cpuPassed = new Set<UnitData>();
+  private cpuCount = new Map<UnitData, number>();
+  /** CPU が予約を見せている行動（cpuAt に実行する） */
+  private cpuShow: Decision | null = null;
+  /** この番の軍の作戦を立てたか */
+  private cpuBegun = false;
+  /** CPU の番のスキップを頼まれている（実行中の演出を速く終わらせてから、残りを演出なしで進める） */
+  private cpuSkip = false;
+  /** 前のフレームの cpuActive（変わったら cpu のイベントで知らせる） */
+  private cpuWasActive = false;
+  private retreatsOf: RetreatDestinations = {};
+  private facilitiesOf: SideFacilities = {};
+
+  private readonly listeners = new Map<keyof BattleEvents, Set<(...args: never[]) => void>>();
+  private readonly container: HTMLElement;
+  private readonly onKeyDown = (e: KeyboardEvent) => {
+    if (e.key !== 'Escape' || this.exec || this.outcome || this.routing || this.cpuActive) return;
+    if (this.deployment) this.pickTroop(null);
+    else if (this.targeting) this.cancelTargeting();
+    else if (this.menu.closeRetreat()) this.emit('targetCancel');
+    else if (this.menu.closeSub()) return;
+    else if (this.plan && engine.planned(this.plan)) this.undo();
+    else this.setSelected(null);
+  };
+  private targeting: Targeting | null = null;
+  private exec: Execution | null = null;
+  /** 番の終わりに勝手に動かす混乱したユニット（順に）と、次を動かす時刻（fxClock.now()）。動かしている間は autoRunning */
+  private autoQueue: UnitData[] = [];
+  private autoAt = 0;
+  private autoRunning = false;
+  /** 混乱したユニットを動かし終えたら番を終える（endTurn の続き） */
+  private autoEnding = false;
+  /** この番の混乱したユニットをもう動かしたか（強制退却などで番の終わりが中断して、もう一度終えるときに動かし直さない） */
+  private autoDone = false;
+  /** 番の終わりに施設が撃っている（queue はこれから撃つ施設、cur は撃っている 1 発）。撃ち終えたら次の軍の番にする */
+  private salvo: { side: DeploySide; queue: FiringFacility[]; cur: SalvoShot | null } | null = null;
+  /** 行動メニューで隠したくない、予約した移動のルートと攻撃の矢印（ワールドの折れ線。予約が無ければ空） */
+  private menuAvoid: THREE.Vector3[][] = [];
+
+  private readonly raycaster = new THREE.Raycaster();
+  private readonly pointer = new THREE.Vector2();
+  private pointerDirty = false;
+  private downPos: { x: number; y: number } | null = null;
+
+  /** container にキャンバス・情報札・頭上の数字を置く（行動メニューやウィンドウは置かない。ui/BattleScreen.tsx） */
+  constructor(container: HTMLElement, options: { speed?: number } = {}) {
+    this.container = container;
+    this.speed = options.speed ?? 1;
+    this.ctx = new SceneContext(container);
+    this.view = new MapView(this.ctx);
+    this.tags = new UnitTags(container);
+    this.popups = new Popups(container);
+    this.bubbles = new SpeechBubbles(container);
+    this.cameraFocus = new CameraFocus(this.ctx);
+    this.ctx.overlay.add(this.interceptFx.group, this.conditionFx.group, this.slashFx.group, this.lanceFx.group, this.arrowFx.group, this.thunderFx.group, this.bulletFx.group, this.shellFx.group, this.clawFx.group, this.breathFx.group, this.impactFx.group, this.beamFx.group, this.pillarFx.group, this.gunshipFx.group);
+    this.menu.onAction = (unit, action) => {
+      // 混乱したユニットを勝手に動かしている間・施設が撃っている間・CPU が操作している間は操作を受け付けない
+      if (this.autoMoving || this.autoEnding || this.salvo || this.cpuActive) return;
+      // 混乱・凍結しているユニットは操作できない
+      if (engine.locked(this.statuses.get(unit))) return;
+      if (action.id === 'confirm') return this.execute('confirm');
+      if (action.id === 'intercept') return this.execute('intercept');
+      if (action.id === 'wait') return this.execute('wait');
+      if (action.id === 'skill:inspire') return this.execute('inspire');
+      if (action.id === 'cancel') return this.clearPlan();
+      if (action.id === 'retreat') this.openRetreat(unit);
+      else if (action.id === 'move') this.startMove();
+      else if (isAttack(action.id)) this.startAttack(action, action.id);
+      this.emit('action', unit, action);
+    };
+    this.menu.onRetreat = (_unit, to) => {
+      if (!this.cpuActive) this.execute('retreat', to);
+    };
+    const el = this.ctx.renderer.domElement;
+    el.addEventListener('pointermove', (e) => this.setPointer(e));
+    el.addEventListener('pointerleave', () => this.setHover(null));
+    el.addEventListener('pointerdown', (e) => {
+      this.downPos = { x: e.clientX, y: e.clientY };
+    });
+    el.addEventListener('pointerup', (e) => {
+      if (e.button !== 0 || !this.downPos) return;
+      const moved = Math.hypot(e.clientX - this.downPos.x, e.clientY - this.downPos.y);
+      this.downPos = null;
+      if (moved > 4 || this.exec) return; // ドラッグ（パン）・実行中はクリック扱いしない
+      this.setPointer(e);
+      this.click(this.pick());
+    });
+    window.addEventListener('keydown', this.onKeyDown);
+    this.ctx.renderer.setAnimationLoop(() => this.frame());
+  }
+
+  /** type のことを fn で受け取る。戻り値で受け取るのをやめる */
+  on<K extends keyof BattleEvents>(type: K, fn: (...args: BattleEvents[K]) => void): () => void {
+    let set = this.listeners.get(type);
+    if (!set) this.listeners.set(type, (set = new Set()));
+    const f = fn as (...args: never[]) => void;
+    set.add(f);
+    return () => set.delete(f);
+  }
+
+  private emit<K extends keyof BattleEvents>(type: K, ...args: BattleEvents[K]): void {
+    for (const fn of this.listeners.get(type) ?? []) (fn as (...args: BattleEvents[K]) => void)(...args);
+  }
+
+  /** 描画を止め、キャンバス・情報札などを取り除いて GPU の資源を手放す（画面を離れるとき） */
+  dispose(): void {
+    window.removeEventListener('keydown', this.onKeyDown);
+    this.ctx.renderer.setAnimationLoop(null);
+    this.listeners.clear();
+    this.exec = null;
+    this.menu.open(null);
+    this.popups.dispose();
+    this.bubbles.dispose();
+    this.tags.dispose();
+    this.interceptFx.dispose();
+    this.conditionFx.dispose();
+    this.view.dispose();
+    this.ctx.dispose();
+  }
+
+  get map(): HexMap | null {
+    return this.view.map;
+  }
+
+  /** 戦闘の状態（engine。マップを読み込むまでは null）。CPU の思考・描画なしの実行はこれを読む */
+  get state(): BattleState | null {
+    return this.battle;
+  }
+
+  /** 戦闘中のユニットの状態 */
+  get statuses(): Map<UnitData, UnitStatus> {
+    return this.battle?.statuses ?? NO_STATUSES;
+  }
+
+  /** 何ターン目か（1 から。全軍が 1 回ずつ行動したら進む） */
+  get turn(): number {
+    return this.battle?.turn ?? 1;
+  }
+
+  /** いま行動している軍 */
+  get activeTeam(): TeamId {
+    return this.battle?.activeTeam ?? engine.TURN_ORDER[0];
+  }
+
+  /** 軍ごとの退却先の拠点（無い軍は退却できない） */
+  get retreats(): RetreatDestinations {
+    return this.retreatsOf;
+  }
+
+  set retreats(v: RetreatDestinations) {
+    this.retreatsOf = v;
+    if (this.battle) this.battle.retreats = v;
+  }
+
+  /** 陣営ごとの拠点の施設（ゲームは都市の施設から渡す） */
+  get facilities(): SideFacilities {
+    return this.facilitiesOf;
+  }
+
+  set facilities(v: SideFacilities) {
+    this.facilitiesOf = v;
+    if (this.battle) this.battle.facilities = v;
+  }
+
+  /** この戦闘で退却した・退却に失敗して捕虜になったユニット（順に） */
+  get retreated(): readonly RetreatReport[] {
+    return this.battle?.retreated ?? [];
+  }
+
+  /** この戦闘で殲滅されたユニット（順に） */
+  get wipedOut(): readonly WipeoutReport[] {
+    return this.battle?.wipedOut ?? [];
+  }
+
+  /** 防衛拠点の HEX（マップの stronghold。無ければ入城では決着しない） */
+  get stronghold(): Offset | null {
+    return this.battle?.stronghold ?? null;
+  }
+
+  /** 戦闘の決着（まだなら null） */
+  get outcome(): BattleOutcome | null {
+    return this.battle?.outcome ?? null;
+  }
+
+  /** 負けた陣営の残りの部隊を強制退却させている最中か */
+  get routing(): boolean {
+    return !!this.battle?.rout;
+  }
+
+  /**
+   * マップを読み込む。マップに置いてあるユニットの戦闘中の状態は makeStatuses で配る。
+   * 初期配置地点（deploy）があれば、makeTroops で配った部隊を置く配備フェーズから始める
+   */
+  loadMap(data: MapData, makeStatuses: StatusFactory = demoStatuses, makeTroops: TroopFactory = demoTroops): void {
+    const map = new HexMap(data);
+    this.exec = null;
+    fxClock.clearTimers();
+    this.popups.clear();
+    this.bubbles.clear();
+    this.slashFx.clear();
+    this.clawFx.clear();
+    this.breathFx.clear();
+    this.impactFx.clear();
+    this.beamFx.clear();
+    this.pillarFx.clear();
+    this.gunshipFx.clear();
+    this.autoQueue = [];
+    this.autoEnding = false;
+    this.salvo = null;
+    this.lanceFx.clear();
+    this.arrowFx.clear();
+    this.thunderFx.clear();
+    this.bulletFx.clear();
+    this.shellFx.clear();
+    this.cameraFocus.stop();
+    this.cpuSkip = false;
+    this.cpuShow = null;
+    this.cpuTurnStart();
+    this.battle = engine.createBattleState(map, makeStatuses(map.allUnits()), {
+      stronghold: data.stronghold ?? null,
+      retreats: this.retreatsOf,
+      facilities: this.facilitiesOf,
+    });
+    const troops = data.deploy ? makeTroops(data.deploy) : [];
+    this.deployment = data.deploy ? new Deployment(map, data.deploy, troops, this.statuses) : null;
+    if (!this.deployment?.side) this.deployment = null;
+    this.tags.setStatuses(this.statuses);
+    this.view.setMap(map);
+    this.paintStronghold();
+    this.setSelected(null);
+    this.emit('load');
+    if (this.deployment) {
+      this.emit('phase', 'deploy');
+      this.deployChanged();
+    } else {
+      this.startBattle();
+    }
+  }
+
+  /** いまの番の軍のユニット（上の行から、同じ行なら左から。配備フェーズ・決着の後・強制退却の間は空） */
+  teamUnits(): UnitData[] {
+    const map = this.map;
+    if (!map || this.deployment || this.outcome || this.routing) return [];
+    return map
+      .allUnits()
+      .filter((u) => u.team === this.activeTeam)
+      .sort((a, b) => a.row - b.row || a.col - b.col);
+  }
+
+  /** いまの番の軍の、まだ行動済みでないユニット（teamUnits の順） */
+  pendingUnits(): UnitData[] {
+    return this.teamUnits().filter((u) => !this.done.has(u));
+  }
+
+  /**
+   * 未行動のユニットを順に選ぶ（dir = 1 で次、-1 で前。選択中のユニットから teamUnits の順にたどり、端では反対の端へ戻る）。
+   * 選んだユニットへカメラを動かす。選んだら true（実行中・未行動のユニットがいなければ false）
+   */
+  selectPending(dir: 1 | -1): boolean {
+    if (this.exec || this.autoMoving || this.autoEnding || this.cpuActive) return false;
+    const all = this.teamUnits();
+    const pending = all.filter((u) => !this.done.has(u));
+    if (pending.length === 0) return false;
+    const current = this.plan?.unit ?? null;
+    const start = current ? all.indexOf(current) : -1;
+    let next: UnitData | undefined;
+    if (start < 0) next = dir > 0 ? pending[0] : pending[pending.length - 1];
+    else {
+      for (let k = 1; k <= all.length && !next; k++) {
+        const u = all[(start + dir * k + all.length * k) % all.length];
+        if (!this.done.has(u)) next = u;
+      }
+    }
+    if (!next) return false;
+    if (next !== current) this.setSelected({ col: next.col, row: next.row });
+    const p = this.view.units.placements().find((x) => x.unit === next);
+    if (p) this.cameraFocus.panTo(p.foot);
+    return true;
+  }
+
+  /** 部隊のウィンドウに出すユニット（カーソルの下 → 選択中 → 調べている相手方の順。どれも無ければ null） */
+  infoUnit(): UnitData | null {
+    const map = this.map;
+    const hovered = this.hovered && map?.unitAt(this.hovered.col, this.hovered.row);
+    return hovered ?? this.plan?.unit ?? this.inspected;
+  }
+
+  /** ユニットを率いる騎士の名前（戦場からいなくなったユニットも引ける。騎士がいなければ undefined） */
+  leaderOf(unit: UnitData): string | undefined {
+    return this.battle ? engine.leaderOf(this.battle, unit) : undefined;
+  }
+
+  /** 配備の様子（配備フェーズでなければ null） */
+  get deployState(): DeployState | null {
+    return this.deployment?.state() ?? null;
+  }
+
+  /** 配備フェーズで部隊を選ぶ（null・選んでいる部隊で選ぶのをやめる） */
+  pickTroop(id: string | null): void {
+    this.deployment?.pick(id);
+    this.deployChanged();
+  }
+
+  /** 配備フェーズで、配備した部隊を外す */
+  unplaceTroop(id: string): void {
+    this.deployment?.unplace(id);
+    this.deployChanged();
+  }
+
+  /** 配備フェーズで、未配備の部隊を空いている配置地点へ順に置く */
+  autoDeploy(): void {
+    this.deployment?.auto();
+    this.deployChanged();
+  }
+
+  /** 配備を終えて次の陣営の配備へ進む。最後の陣営なら戦闘を始める。進めたら true（1 部隊も置いていないか、軍団長の部隊を置いていなければ false） */
+  finishDeploy(): boolean {
+    const d = this.deployment;
+    if (!d?.finish()) return false;
+    if (d.side) this.deployChanged();
+    else this.startBattle();
+    return true;
+  }
+
+  /** 配備した部隊を描き直し、配置地点を塗って、選んでいる部隊を強調する */
+  private deployChanged(): void {
+    const d = this.deployment;
+    const state = d?.state();
+    if (!d || !state) return;
+    this.tags.setStatuses(this.statuses);
+    this.view.rebuildUnits();
+    this.view.setRange(d.slots(), TEAM_DEFS[state.team].color);
+    this.view.setFocus(d.pickedAt());
+    this.refreshMarks();
+    this.emit('deploy', state);
+  }
+
+  /** 配備を終えて戦闘を始める（最初の軍の番にする） */
+  private startBattle(): void {
+    const state = this.battle!;
+    if (this.deployment) state.troopIds = this.deployment.troopIds();
+    this.deployment = null;
+    this.view.setRange(null);
+    this.setSelected(null);
+    engine.startBattle(state);
+    this.autoDone = false;
+    this.cpuTurnStart();
+    this.refreshMarks();
+    this.emit('phase', 'battle');
+    this.emit('turn', this.turn, this.activeTeam);
+  }
+
+  /**
+   * いまの軍の番を終えて次の軍の番にする。選択と予約を捨て、次の軍の全ユニットの行動力を最大まで戻して
+   * 移動済み・攻撃済みを消す。全軍が 1 回ずつ行動したらターンの数を進める（実行中・配備フェーズは何もしない）。
+   * 混乱したユニットがいれば、先に順に勝手に動かしてから番を終える（autoEnding）
+   */
+  endTurn(): boolean {
+    return !this.cpuActive && this.doEndTurn();
+  }
+
+  /** 番を終える（endTurn の中身。CPU からも呼ぶ） */
+  private doEndTurn(): boolean {
+    const state = this.battle;
+    if (this.exec || !state || this.deployment || this.outcome || this.routing || this.autoMoving || this.autoEnding || this.salvo) return false;
+    this.setSelected(null);
+    // 混乱したユニットは、番を終える前に少し間をおいてから順に勝手に動かす（動かし終えたら finishTurn）
+    if (!this.autoDone) {
+      this.autoDone = true;
+      const confused = engine.confusedUnits(state);
+      if (confused.length > 0) {
+        this.autoQueue = confused;
+        this.autoAt = fxClock.now() + AUTO_DELAY_MS;
+        this.autoEnding = true;
+        return true;
+      }
+    }
+    this.finishTurn();
+    return true;
+  }
+
+  /** 番を終える（行動を終えさせて入城を判定し、施設が撃ってから次の軍の番にする） */
+  private finishTurn(): void {
+    const state = this.battle;
+    if (!state) return;
+    // 番を終えると、その軍のユニットは行動を終える（防衛拠点にいれば入城）
+    this.onJudged(engine.endTeamTurn(state));
+    if (this.outcome || this.routing) return;
+    // この番に撃つ施設があれば、撃ち終えてから次の軍の番にする
+    const firing = engine.firingFacilities(state);
+    if (firing) {
+      this.salvo = { side: firing.side, queue: [...firing.kinds], cur: null };
+      return;
+    }
+    this.passTurn();
+  }
+
+  /** 番を終えた軍の状態のターンを減らして、次の軍の番にする */
+  private passTurn(): void {
+    const state = this.battle;
+    if (!state) return;
+    engine.passTurn(state);
+    this.autoDone = false;
+    this.cpuTurnStart();
+    this.refreshMarks();
+    this.emit('turn', this.turn, this.activeTeam);
+  }
+
+  /** 施設が撃っている間を進める。1 発ずつ目標を選んでカメラを寄せ、演出の半分で当てる。撃ち終えたら次の軍の番にする */
+  private stepSalvo(now: number): void {
+    const salvo = this.salvo!;
+    const map = this.map;
+    const state = this.battle;
+    if (!map || !state) return;
+    let shot = salvo.cur;
+    if (!shot) {
+      const kind = salvo.queue.shift();
+      if (!kind) {
+        this.salvo = null;
+        return this.passTurn();
+      }
+      const target = engine.facilityTarget(state, kind, salvo.side, this.rng);
+      if (!target) return;
+      const strikeSec = kind === 'fortressCannon' ? CANNON_STRIKE_SEC : GUNSHIP_STRIKE_SEC;
+      const lead = FX_ZOOM_IN_SEC;
+      shot = salvo.cur = { kind, target, start: now, lead, strikeSec, duration: lead + strikeSec + FX_HOLD_SEC + FX_ZOOM_OUT_SEC, spawned: false, hit: false };
+      this.focusOn([target], null, { in: FX_ZOOM_IN_SEC, hold: strikeSec + FX_HOLD_SEC, out: FX_ZOOM_OUT_SEC }, kind === 'fortressCannon' ? this.stronghold : null);
+    }
+    const elapsed = (now - shot.start) / 1000;
+    const t = (elapsed - shot.lead) / shot.strikeSec;
+    const hitSec = shot.kind === 'fortressCannon' ? SHELL_STYLE.hitSec : GUNSHIP_STYLE.hitSec;
+    if (!shot.spawned && t >= 0.5 - hitSec / shot.strikeSec) {
+      shot.spawned = true;
+      this.spawnFacilityFx(shot.kind, shot.target);
+    }
+    if (!shot.hit && t >= 0.5) {
+      shot.hit = true;
+      this.applyFacilityShot(shot.kind, salvo.side, shot.target);
+      this.cameraFocus.shake((shot.kind === 'fortressCannon' ? STRIKE_FX.shell.cameraShake : 0.05) * map.layout.size);
+    }
+    if (elapsed < shot.duration) return;
+    salvo.cur = null;
+    // 撃った施設で決着した（軍団長部隊の全滅）ら、次の軍の番にはしない
+    if (this.outcome || this.routing) this.salvo = null;
+  }
+
+  /** 施設の弾を撃つ（要塞砲は拠点から、ガンシップは目標の上空から） */
+  private spawnFacilityFx(kind: FiringFacility, target: UnitData): void {
+    const tp = this.view.units.placements().find((p) => p.unit === target);
+    const size = this.map!.layout.size;
+    if (!tp) return;
+    if (kind === 'fortressCannon' && this.stronghold) {
+      return this.shellFx.spawn({ ...tp, foot: this.groundPoint(this.stronghold) }, tp, this.ctx.camera);
+    }
+    const sky = tp.foot.clone().add(new THREE.Vector3(GUNSHIP_OFFSET.x * size, GUNSHIP_OFFSET.y * size, 0));
+    this.gunshipFx.spawn({ ...tp, foot: sky }, tp, this.ctx.camera);
+  }
+
+  /** 施設の 1 発を当てる（engine の fireFacility）。頭上に数字を出し、殲滅したら絵を作り直して知らせ、決着を調べる */
+  private applyFacilityShot(kind: FiringFacility, side: DeploySide, target: UnitData): void {
+    const state = this.battle!;
+    if (!state.statuses.has(target)) return;
+    const p = this.view.units.placements().find((x) => x.unit === target);
+    const { wipeout: w, ...report } = engine.fireFacility(state, kind, side, target, this.rng);
+    if (p) this.popups.show(p, `${FACILITY_NAMES[kind]} -${report.result.damage}${wipeoutLabel(w)}`, 'damage');
+    if (w) this.unitsRemoved([target]);
+    this.emit('facility', report);
+    if (!w) return;
+    this.emit('wipeout', w);
+    this.judge();
+  }
+
+  /** engine が戦場からユニットを除いた後に、情報札と絵を作り直す */
+  private unitsRemoved(units: readonly UnitData[]): void {
+    if (units.length > 0) this.tags.setStatuses(this.statuses);
+    this.view.rebuildUnits();
+  }
+
+  /** unit が pos（城の HEX）にいるときに施設で伸びる射程（バリスタ・魔導台） */
+  private rangeBonusAt(unit: UnitData, pos: Offset): number {
+    return this.battle ? engine.rangeBonusAt(this.battle, unit, pos) : 0;
+  }
+
+  /** 混乱・凍結していて操作できないユニットか（混乱したユニットは番の終わりに勝手に動く） */
+  static locked(status: UnitStatus | undefined): boolean {
+    return engine.locked(status);
+  }
+
+  /** 混乱したユニットを 1 部隊、ランダムな HEX へ動かして行動を終えさせる（動ける HEX が無ければその場で行動を終える） */
+  private nextAuto(): void {
+    const map = this.map;
+    const state = this.battle;
+    let unit = this.autoQueue.shift();
+    while (unit && !map?.allUnits().includes(unit)) unit = this.autoQueue.shift();
+    const status = unit && this.statuses.get(unit);
+    if (!map || !state || !unit || !status || this.outcome || this.routing) return;
+    this.autoAt = fxClock.now() + AUTO_DELAY_MS;
+    this.setSelected({ col: unit.col, row: unit.row });
+    const p = this.view.units.placements().find((x) => x.unit === unit);
+    if (p) this.popups.show(p, '混乱', 'retreat');
+    const auto = engine.confusedPlan(state, unit, this.rng);
+    const plan = this.plan;
+    if (!auto || !plan) {
+      status.ap = 0;
+      this.setSelected(null);
+      this.refreshMarks();
+      return;
+    }
+    plan.legs = auto.legs;
+    this.autoRunning = true;
+    this.execute('wait');
+  }
+
+  /**
+   * team を CPU に任せる（player は CPU の打ち手。null で人の操作に戻す）。戦闘の途中でも変えられる。
+   * CPU の打ち手は cpu/ の cpuPlayer で作る（描画なしの対戦シミュレータと同じもの）
+   */
+  setCpu(team: TeamId, player: Player | null): void {
+    if (player) this.cpus[team] = player;
+    else delete this.cpus[team];
+    this.cpuShow = null;
+    this.cpuAt = Math.max(this.cpuAt, fxClock.now() + CPU_START_MS);
+    // 操作する側が変わったら、選択と行動メニューを作り直す
+    if (!this.exec) this.setSelected(null);
+    this.refreshMarks();
+    this.cpuWasActive = this.cpuActive;
+    this.emit('cpu', this.cpuWasActive);
+  }
+
+  /** team の CPU の打ち手（人が操作する軍なら null） */
+  cpuOf(team: TeamId): Player | null {
+    return this.cpus[team] ?? null;
+  }
+
+  /** いま CPU が操作しているか（CPU の軍の配備・番・強制退却）。その間は人の操作を受け付けない */
+  get cpuActive(): boolean {
+    if (this.deployment) {
+      const team = this.deployState?.team;
+      return !!team && !!this.cpus[team];
+    }
+    const state = this.battle;
+    if (!state || state.outcome) return false;
+    return !!this.cpus[state.rout?.team ?? state.activeTeam];
+  }
+
+  /** p が終わるまで CPU を待たせる（カットインを出している間など） */
+  holdCpu(p: Promise<unknown>): void {
+    this.cpuHolds++;
+    void p.finally(() => {
+      this.cpuHolds--;
+      this.cpuAt = Math.max(this.cpuAt, fxClock.now() + CPU_START_MS);
+    });
+  }
+
+  /** CPU の番をスキップする（実行中の演出を速く終わらせてから、番の残りを演出なしで進める）。CPU の番でなければ false */
+  skipCpuTurn(): boolean {
+    if (!this.cpuActive || this.deployment || this.routing) return false;
+    this.cpuSkip = true;
+    return true;
+  }
+
+  /** CPU の番をスキップしている最中か */
+  get cpuSkipping(): boolean {
+    return this.cpuSkip;
+  }
+
+  /** この番の演出の速度（設定の速度。CPU の番の早送り・スキップでさらに速くする） */
+  private fxSpeed(): number {
+    if (this.cpuSkip) return SKIP_SPEED;
+    return this.speed * (this.fastForward && this.cpuActive ? CPU_FAST_FORWARD : 1);
+  }
+
+  /** 軍の番が始まったときに、CPU の番の様子を戻す */
+  private cpuTurnStart(): void {
+    this.cpuPassed = new Set();
+    this.cpuCount = new Map();
+    this.cpuBegun = false;
+    this.cpuShow = null;
+    this.cpuSkip = false;
+    this.cpuAt = fxClock.now() + CPU_START_MS;
+  }
+
+  /**
+   * CPU を 1 歩進める（毎フレーム）。演出・カットインの間は待つ。
+   * 配備: 打ち手が置いて（打ち手の deploy。無ければ自動配置）配備を終える。番: 部隊を 1 つ選んで行動を決め（打ち手の order・decide）、予約を少し見せてから実行する。
+   * 行動できる部隊がいなくなったら番を終える。強制退却: 退却先を選んで退却する
+   */
+  private stepCpu(): void {
+    const active = this.cpuActive;
+    if (active !== this.cpuWasActive) {
+      this.cpuWasActive = active;
+      this.emit('cpu', active);
+    }
+    const state = this.battle;
+    if (!state || !active || this.exec || this.salvo || this.autoMoving || this.autoEnding || this.cpuHolds > 0) return;
+    if (this.deployment) {
+      // CPU の打ち手が配備する（兵種に合わせて前後を考える。打ち手が配備しなければ自動配置）
+      const cpu = this.cpus[this.deployState!.team];
+      if (cpu?.deploy) cpu.deploy(state, this.deployment);
+      else this.deployment.auto();
+      this.deployChanged();
+      if (!this.finishDeploy()) this.setCpu(this.deployState!.team, null);
+      return;
+    }
+    if (state.outcome || fxClock.now() < this.cpuAt) return;
+    if (state.rout) {
+      const cpu = this.cpus[state.rout.team];
+      const unit = this.plan?.unit;
+      const to = cpu && unit && (cpu.routTo?.(state, unit) ?? engine.retreatDestinations(state, unit)[0]);
+      if (to) this.execute('retreat', to);
+      this.cpuAt = fxClock.now() + CPU_GAP_MS;
+      return;
+    }
+    const cpu = this.cpus[state.activeTeam]!;
+    if (this.cpuSkip) return this.skipRest(cpu);
+    // 予約を見せていた行動を実行する
+    const shown = this.cpuShow;
+    if (shown) {
+      this.cpuShow = null;
+      this.execute(shown.end, shown.to);
+      this.cpuAt = fxClock.now() + CPU_GAP_MS;
+      return;
+    }
+    const d = this.cpuNext(cpu);
+    if (d === 'end') {
+      this.doEndTurn();
+      return;
+    }
+    if (!d) return;
+    // 部隊を選んでカメラを寄せ、予約を見せてから実行する（予約の無い待機などはすぐ）
+    const unit = d.plan.unit;
+    this.setSelected({ col: unit.col, row: unit.row });
+    if (!engine.planned(d.plan)) {
+      this.execute(d.end, d.to);
+      this.cpuAt = fxClock.now() + CPU_GAP_MS;
+      return;
+    }
+    this.plan = d.plan;
+    this.planChanged();
+    const p = this.view.units.placements().find((x) => x.unit === unit);
+    if (p) this.cameraFocus.panTo(p.foot);
+    this.cpuShow = d;
+    this.cpuAt = fxClock.now() + CPU_SHOW_MS;
+  }
+
+  /**
+   * CPU の次の行動（部隊を選んで決める）。行動できる部隊がいなければ 'end'（番を終える）、
+   * 選んだ部隊が何もしなければ null（その部隊はこの番はもう動かさない）
+   */
+  private cpuNext(cpu: Player): Decision | 'end' | null {
+    const state = this.battle!;
+    if (!this.cpuBegun) {
+      this.cpuBegun = true;
+      cpu.beginTurn?.(state, this.cpuRng);
+    }
+    const pending = engine.pendingUnits(state, this.cpuPassed);
+    if (pending.length === 0) return 'end';
+    const unit = (cpu.order ? cpu.order(state, pending, this.cpuRng) : pending)[0];
+    const d = cpu.decide(state, unit, this.cpuRng);
+    const n = (this.cpuCount.get(unit) ?? 0) + 1;
+    this.cpuCount.set(unit, n);
+    if (!d || n >= engine.MAX_ACTIONS_PER_UNIT) this.cpuPassed.add(unit);
+    return d;
+  }
+
+  /**
+   * CPU の番の残りを演出なしで進める（スキップ）。部隊の行動・番の終わり（混乱の移動・入城の判定・施設の射撃）を engine で続けて行い、
+   * 戦闘記録のためにイベントは演出ありと同じ順に出す（セリフ・頭上の数字は出さない）。終わったら絵を作り直して次の軍の番にする。
+   * 人の軍の強制退却になったら、そこで止めて退却先を選ばせる
+   */
+  private skipRest(cpu: Player): void {
+    const state = this.battle!;
+    this.cpuSkip = false;
+    this.cpuShow = null;
+    this.setSelected(null);
+    let plowed = false;
+    let stopped = false;
+    const executed = (report: ExecuteReport) => {
+      if (report.attack?.plowed) plowed = true;
+      if (report.retreat) this.emit('retreat', report.retreat);
+      for (const w of report.wipeouts) this.emit('wipeout', w);
+      this.emit('execute', report);
+    };
+    /** 決着を調べた結果を進める。CPU の軍の強制退却は演出なしで進め、人の軍なら止める。決着した・止めたら true */
+    const settle = (r: engine.JudgeResult): boolean => {
+      if (r.kind === 'none') return false;
+      if (r.kind === 'end') return true;
+      const rout = state.rout;
+      const loser = rout && this.cpus[rout.team];
+      if (r.kind === 'routStart') this.emit('rout', r.outcome, r.units);
+      if (!loser) {
+        stopped = true;
+        return true;
+      }
+      for (let unit = engine.nextRoutUnit(state); unit; unit = engine.nextRoutUnit(state)) {
+        const plan = engine.newPlan(state, unit);
+        const to = loser.routTo?.(state, unit) ?? engine.retreatDestinations(state, unit)[0];
+        const done = plan && to && engine.runAction(state, plan, 'retreat', to, this.rng);
+        if (done) executed(done.report);
+      }
+      return true;
+    };
+    const run = (d: Decision): FinishedAction | null => {
+      const done = engine.runAction(state, d.plan, d.end, d.to, this.rng);
+      if (done) executed(done.report);
+      return done?.finished ?? null;
+    };
+    let over = false;
+    // 残りの部隊を動かす
+    for (;;) {
+      const d = this.cpuNext(cpu);
+      if (d === 'end') break;
+      const fin = d && run(d);
+      if (fin && settle(engine.judge(state, fin.ended))) {
+        over = true;
+        break;
+      }
+    }
+    // 番を終える: 混乱したユニットの移動 → 入城の判定 → 施設の射撃 → 次の軍の番
+    if (!over && !this.autoDone) {
+      this.autoDone = true;
+      for (const unit of engine.confusedUnits(state)) {
+        if (!state.map.allUnits().includes(unit)) continue;
+        const plan = engine.confusedPlan(state, unit, this.rng);
+        const fin = plan && run({ plan, end: 'wait' });
+        if (fin && settle(engine.judge(state, fin.ended))) {
+          over = true;
+          break;
+        }
+      }
+    }
+    if (!over) over = settle(engine.endTeamTurn(state));
+    if (!over) {
+      const firing = engine.firingFacilities(state);
+      for (const kind of firing?.kinds ?? []) {
+        const target = engine.facilityTarget(state, kind, firing!.side, this.rng);
+        if (!target) continue;
+        const { wipeout, ...report } = engine.fireFacility(state, kind, firing!.side, target, this.rng);
+        this.emit('facility', report);
+        if (!wipeout) continue;
+        this.emit('wipeout', wipeout);
+        if (settle(engine.judge(state))) {
+          over = true;
+          break;
+        }
+      }
+    }
+    // 絵を作り直す
+    this.tags.setStatuses(this.statuses);
+    if (plowed) this.terrainChanged();
+    this.view.rebuildUnits();
+    if (state.outcome) return this.ended();
+    if (stopped) {
+      // 人の軍の強制退却: 退却先を選ばせる
+      this.refreshMarks();
+      return this.nextRout();
+    }
+    if (!over) this.passTurn();
+    else this.refreshMarks();
+  }
+
+  /** 混乱したユニットを勝手に動かしている（その間は操作を受け付けない） */
+  get autoMoving(): boolean {
+    return this.autoQueue.length > 0 || this.autoRunning;
+  }
+
+  /** 番の終わりに混乱したユニットを動かし終えたら、番を終える（決着や強制退却になっていたらやめる） */
+  private stepAutoEnding(): void {
+    if (this.exec || this.autoMoving || fxClock.now() < this.autoAt) return;
+    this.autoEnding = false;
+    if (this.outcome || this.routing) return;
+    this.finishTurn();
+  }
+
+  /**
+   * 行動済みのユニット（done）を数え直して絵の右上に E の印を付け、行動済みのユニットと相手方のユニット
+   * （配備フェーズでは配備していない陣営のユニット、強制退却の間は退却する陣営のほかのユニット）の絵を暗くする（情報札は暗くしない）
+   */
+  private refreshMarks(): void {
+    const map = this.map;
+    const state = this.battle;
+    // 強制退却の間は、退却する陣営のほかを暗くして、E の印は付けない
+    const team = state?.rout?.team ?? this.deployState?.team ?? this.activeTeam;
+    this.done.clear();
+    if (map && state && !this.deployment && !this.routing) {
+      for (const unit of this.statuses.keys()) {
+        if (unit.team === team && engine.isDone(state, unit)) this.done.add(unit);
+      }
+    }
+    this.view.units.setDimmed((u) => u.team !== team || this.done.has(u));
+    this.tags.setMarks(this.done);
+    const own = map && !this.deployment && !this.routing ? map.allUnits().filter((u) => u.team === team) : [];
+    this.emit('allDone', own.length > 0 && own.every((u) => this.done.has(u)));
+  }
+
+  /**
+   * 表示確認用: unit に id の状態を turns ターン付ける（付いていれば長いほうにする。turns が 0 以下なら外す）。
+   * ゲームの進行では攻撃の inflicts で付く
+   */
+  setCondition(unit: UnitData, id: ConditionId, turns: number): void {
+    const status = this.statuses.get(unit);
+    if (!status) return;
+    setCondition(status, id, turns);
+    this.statusChanged(unit);
+  }
+
+  /** 表示確認用: unit の id の攻撃を、あと turns 回の自分の番は使えないようにする（0 以下で外す）。ゲームの進行では攻撃の cooldown で入る */
+  setCooldown(unit: UnitData, id: AttackId, turns: number): void {
+    const status = this.statuses.get(unit);
+    if (!status) return;
+    if (turns > 0) status.cooldowns[id] = turns;
+    else delete status.cooldowns[id];
+    this.statusChanged(unit);
+  }
+
+  /** 実行のほかでユニットの状態を書き換えたら、行動メニューと行動済みの印を作り直して知らせる */
+  private statusChanged(unit: UnitData): void {
+    // 混乱・凍結して操作できなくなったら選択を外す
+    if (this.plan?.unit === unit && !this.exec && !this.autoMoving && engine.locked(this.statuses.get(unit))) this.setSelected(null);
+    else if (this.plan?.unit === unit && !this.targeting && !this.exec) this.openMenu();
+    this.refreshMarks();
+    this.emit('statusChange', unit);
+  }
+
+  /** 移動先を選ぶ状態のとき、o へ移動するときの最短経路（移動できなければ null） */
+  moveStepAt(o: Offset | null): MoveStep | null {
+    if (!o || this.targeting?.kind !== 'move' || !this.map) return null;
+    return this.targeting.cells.get(o.row * this.map.layout.cols + o.col) ?? null;
+  }
+
+  /**
+   * 攻撃の相手を選ぶ状態のとき、o のユニットを攻撃したときの結果の予測（攻撃できなければ null）。
+   * 範囲内でも選べない相手（一斉攻撃で取り囲んでいない）なら、その理由
+   */
+  attackPreviewAt(o: Offset | null): AttackPreview | { rejected: string } | null {
+    const map = this.map;
+    const plan = this.plan;
+    if (!o || this.targeting?.kind !== 'attack' || !map || !plan) return null;
+    const at = this.targeting.cells.get(o.row * map.layout.cols + o.col);
+    if (!at) return null;
+    const id = this.targeting.attack.id;
+    const target = mainTargetAt(map, plan.unit, at, id);
+    const ts = target && this.statuses.get(target);
+    const reason = target && this.rejectReason(this.targeting.attack, target);
+    if (reason) return { rejected: reason };
+    const attacker = { unit: plan.unit, status: plan.status, pos: engine.planPos(plan) };
+    const splash = splashUnits(map, plan.unit, attacker.pos, target, at, id).flatMap((u) => {
+      const status = this.statuses.get(u);
+      return status ? [{ unit: u, status, pos: u }] : [];
+    });
+    return {
+      ...attackForecast(map, attacker, target && ts ? { unit: target, status: ts, pos: target } : null, id, splash),
+      plow: this.targeting.attack.plows ? plowPreview(map, at) : null,
+    };
+  }
+
+  /** attack で target を攻撃できない理由（できれば null）。一斉攻撃は、ほかの味方とも隣接している相手しか選べない */
+  private rejectReason(attack: ResolvedAttack, target: UnitData): string | null {
+    return engine.rejectReason(this.battle!, this.plan!, attack, target);
+  }
+
+  private click(o: Offset | null): void {
+    if (this.outcome || this.routing || this.autoMoving || this.autoEnding || this.salvo || this.cpuActive) return;
+    if (this.deployment) {
+      this.deployment.click(o);
+      return this.deployChanged();
+    }
+    const map = this.map;
+    // 選べるのは、いま行動している軍のユニットだけ
+    const unit = (o && map?.unitAt(o.col, o.row)) || null;
+    // 混乱・凍結している味方は選べない（調べるだけ）
+    const own = unit?.team === this.activeTeam && !engine.locked(this.statuses.get(unit)) ? unit : null;
+    const isSelf = !!unit && unit === this.plan?.unit;
+    const t = this.targeting;
+    if (t && map) {
+      const key = o ? o.row * map.layout.cols + o.col : -1;
+      if (t.kind === 'move' && t.cells.has(key)) this.addLeg(t.cells.get(key)!);
+      else if (t.kind === 'attack' && t.cells.has(key)) {
+        const at = t.cells.get(key)!;
+        const target = mainTargetAt(map, this.plan!.unit, at, t.attack.id);
+        const reason = target && this.rejectReason(t.attack, target);
+        if (reason) this.emit('targetReject', reason);
+        else this.setAttack(t.action, t.attack, at);
+      }
+      // ほかの味方は選び直し、それ以外（範囲外・自分・敵）はメニューに戻る
+      else if (own && !isSelf) this.setSelected(o);
+      else this.cancelTargeting();
+      return;
+    }
+    // 選択中のユニットをもう一度クリックしたときはそのまま（予約を捨てない）
+    if (isSelf) return;
+    // 味方のいる HEX ならそのユニットを選択し、相手方なら動ける範囲・攻撃できる範囲を出す。ユニットのいない HEX なら選択を外す
+    if (unit && !own) return this.inspect(unit, unit.team !== this.activeTeam);
+    this.setSelected(own ? o : null);
+  }
+
+  /**
+   * 相手方のユニット（と操作できない味方）を調べる（選択を外し、そのユニットを強調する）。もう一度で外す。
+   * range なら動ける範囲・攻撃できる範囲も出す（操作できない味方は出さない）
+   */
+  private inspect(unit: UnitData, range = true): void {
+    const again = this.inspected === unit;
+    this.setSelected(null);
+    if (again) return;
+    this.inspected = unit;
+    this.view.setFocus(unit);
+    if (range) this.view.setRange(this.threatRange(unit), MOVE_RANGE_COLOR, MOVE_ZOC_COLOR, ATTACK_RANGE_COLOR);
+    if (!range) {
+      const p = this.view.units.placements().find((x) => x.unit === unit);
+      const status = this.statuses.get(unit);
+      if (p && status) this.popups.show(p, hasCondition(status, 'freeze') ? '凍結中' : '混乱中', 'retreat', false, LOCKED_POPUP);
+    }
+    this.emit('select', unit);
+  }
+
+  /**
+   * unit が次の番に（最大の行動力で）動ける HEX と、そこから攻撃できる HEX。
+   * 動ける HEX は青（敵の ZOC で止まる HEX は印付き）、その外の攻撃できる HEX は赤（alt）。
+   * 攻撃は、動いた後に残る行動力でいちばん軽い攻撃ができる HEX からだけ数える
+   */
+  private threatRange(unit: UnitData): RangeCell[] {
+    const map = this.map!;
+    const status = this.statuses.get(unit);
+    if (!status) return [];
+    const cols = map.layout.cols;
+    const ap = status.maxAp;
+    // 次の番は、いまの位置が番の初めの位置になる（入城の決まり）
+    const attacker = unit.team !== SIDE_TEAM.defender;
+    const castleLocked = attacker && !nearCastle(map, unit);
+    const strongholdLocked = attacker && !nearStronghold(map, this.stronghold, unit) ? this.stronghold : null;
+    const moves = moveRange(map, unit, unit, ap, { escapeZoc: true, castleLocked, strongholdLocked });
+    const out = new Map<number, RangeCell>();
+    for (const [k, step] of moves) out.set(k, { col: step.col, row: step.row, mark: step.zoc });
+    const attacks = attacksOf(unit.type, status).map((id) => resolveAttack(unit.type, id));
+    if (attacks.length === 0) return [...out.values()];
+    const self = unit.row * cols + unit.col;
+    const froms = [{ pos: unit as Offset, spent: 0 }, ...[...moves.values()].map((step) => ({ pos: step as Offset, spent: step.cost }))];
+    for (const { pos, spent } of froms) {
+      for (const a of attacks) {
+        // 動いた後に残る行動力でできる攻撃の射程だけ数える
+        if (ap - spent < a.cost) continue;
+        for (const o of attackRange(map, unit, pos, a.id, this.rangeBonusAt(unit, pos))) {
+          const k = o.row * cols + o.col;
+          if (k !== self && !out.has(k)) out.set(k, { ...o, alt: true });
+        }
+      }
+    }
+    return [...out.values()];
+  }
+
+  /** unit の軍の退却先の拠点 */
+  retreatDestinations(unit: UnitData): readonly RetreatDestination[] {
+    return this.battle ? engine.retreatDestinations(this.battle, unit) : [];
+  }
+
+  /** 行動メニューに退却先の拠点の一覧と、退却に失敗する確率を出す（forced: 負けた陣営の強制退却） */
+  private openRetreat(unit: UnitData, forced = false): void {
+    const destinations = this.retreatDestinations(unit);
+    if (!this.map || destinations.length === 0) return;
+    const enemies = adjacentEnemies(this.map, unit).length;
+    this.menu.openRetreat({ destinations, enemies, failChance: retreatFailChance(enemies, this.statuses.get(unit)?.uncapturable), forced });
+  }
+
+  /** 移動できる HEX を出して、移動先を選ぶ状態にする */
+  private startMove(): void {
+    const state = this.battle;
+    const plan = this.plan;
+    if (!state || !plan) return;
+    const cells = engine.moveCells(state, plan);
+    this.targeting = { kind: 'move', cells };
+    const range = [...cells.values()].map((s) => ({ col: s.col, row: s.row, mark: s.zoc }));
+    this.view.setRange(range, MOVE_RANGE_COLOR, MOVE_ZOC_COLOR);
+    this.menu.suspended = true;
+    this.setHover(this.hovered);
+  }
+
+  /** 攻撃できる相手の HEX を出して、相手を選ぶ状態にする */
+  private startAttack(action: MenuAction, id: MenuAttackId): void {
+    const map = this.map;
+    const state = this.battle;
+    const plan = this.plan;
+    if (!map || !state || !plan) return;
+    const cols = map.layout.cols;
+    const pos = engine.planPos(plan);
+    const attack = resolveAttack(plan.unit.type, id);
+    // 自分が中心の攻撃（乱撃）は相手を選ばずにすぐ予約する
+    if (attack.aim === 'self') return this.setAttack(action, attack, pos);
+    const bonus = this.rangeBonusAt(plan.unit, pos);
+    const cells = new Map(engine.aimCells(state, plan, attack).map((o): [number, Offset] => [o.row * cols + o.col, o]));
+    // 射程内の HEX を薄く塗り、選べる HEX は濃く塗る。一斉攻撃は、選べる（ほかの味方と取り囲んだ）相手に印を付ける
+    const range = attackRange(map, plan.unit, pos, id, bonus).map((o): RangeCell => {
+      if (!cells.has(o.row * cols + o.col)) return { ...o, weak: true };
+      const u = mainTargetAt(map, plan.unit, o, id);
+      return { ...o, mark: attack.special === 'volley' && !!u && !this.rejectReason(attack, u) };
+    });
+    this.targeting = { kind: 'attack', action, attack, cells, range };
+    this.menu.suspended = true;
+    this.setHover(this.hovered);
+  }
+
+  /**
+   * 攻撃の相手を選ぶ状態の塗り。狙える HEX に、カーソルを乗せた相手で当たる範囲（目標のほかにも当たる攻撃だけ）を別の色で重ねる
+   */
+  private paintAttackRange(t: Extract<Targeting, { kind: 'attack' }>, hover: Offset | null): void {
+    const map = this.map!;
+    const plan = this.plan!;
+    const cols = map.layout.cols;
+    const target = hover && t.cells.get(hover.row * cols + hover.col);
+    const pos = engine.planPos(plan);
+    // 範囲の HEX と、跳ねる雷などで当たるユニットの HEX
+    const area = target && t.attack.shape.kind !== 'single'
+      ? [...areaCells(map, pos, target, t.attack.shape), ...splashUnits(map, plan.unit, pos, mainTargetAt(map, plan.unit, target, t.attack.id), target, t.attack.id)]
+      : [];
+    if (!target || area.length === 0) return this.view.setRange(t.range, ATTACK_RANGE_COLOR, VOLLEY_MARK_COLOR);
+    const cells = new Map<number, RangeCell>(t.range.map((c) => [c.row * cols + c.col, c]));
+    for (const o of area) {
+      const k = o.row * cols + o.col;
+      // 目標の HEX はそのまま濃く塗る
+      if (o.col === target.col && o.row === target.row) continue;
+      cells.set(k, { col: o.col, row: o.row, alt: true });
+    }
+    this.view.setRange(cells.values(), ATTACK_RANGE_COLOR, VOLLEY_MARK_COLOR, SPLASH_AREA_COLOR);
+  }
+
+  /** 移動先・攻撃の相手を選ぶ状態をやめてメニューに戻る */
+  private cancelTargeting(): void {
+    if (!this.targeting) return;
+    this.endTargeting();
+    this.emit('targetCancel');
+  }
+
+  private endTargeting(): void {
+    this.targeting = null;
+    this.view.setRange(null);
+    this.menu.suspended = false;
+    this.setHover(this.hovered);
+  }
+
+  /** 移動を 1 回分予約して、移動先でメニューを開き直す */
+  private addLeg(step: MoveStep): void {
+    engine.addLeg(this.plan!, step);
+    this.endTargeting();
+    this.planChanged();
+  }
+
+  /** attack を at を狙って予約する（目標は at のユニット。自分が中心の攻撃は at が攻撃する HEX） */
+  private setAttack(action: MenuAction, attack: ResolvedAttack, at: Offset): void {
+    engine.setAttack(this.battle!, this.plan!, action, attack, at);
+    this.endTargeting();
+    this.planChanged();
+  }
+
+  /** 予約をすべて取り消す（ユニットのいる HEX でメニューを開き直す） */
+  private clearPlan(): void {
+    this.plan!.legs = [];
+    this.plan!.attack = null;
+    this.planChanged();
+  }
+
+  /** 最後の予約を取り消す */
+  private undo(): void {
+    engine.undoPlan(this.plan!);
+    this.planChanged();
+  }
+
+  private planChanged(): void {
+    const plan = this.plan!;
+    // 攻撃の前と後の移動は別の矢印にする（突撃の後は飛び出た先から歩き出すので、1 本につなぐと相手を横切ってしまう）
+    const split = plan.attack?.afterLeg ?? plan.legs.length;
+    const path = (legs: MoveStep[]) => (legs.length > 0 ? movePath(legs) : null);
+    this.view.setPath(path(plan.legs.slice(0, split)), path(plan.legs.slice(split)));
+    this.showAttackArrow(plan);
+    this.menuAvoid = this.planLines(plan, split);
+    this.openMenu();
+    this.emit('planChange', plan);
+  }
+
+  /** 予約した移動のルート（攻撃の前・後）と攻撃の矢印を、HEX の中心を結んだワールドの折れ線にする（行動メニューが避ける） */
+  private planLines(plan: Plan, split: number): THREE.Vector3[][] {
+    const map = this.map!;
+    const at = (o: Offset) => {
+      const c = map.layout.offsetToWorld(o.col, o.row);
+      return new THREE.Vector3(c.x, this.view.groundAt(c.x, c.z), c.z);
+    };
+    const lines = [plan.legs.slice(0, split), plan.legs.slice(split)].filter((legs) => legs.length > 0).map((legs) => movePath(legs));
+    const attack = plan.attack;
+    if (attack) lines.push([engine.attackPos(plan), attack.at, ...(attack.landing ? [attack.landing] : [])]);
+    return lines.map((line) => line.map(at));
+  }
+
+  /** 攻撃の矢印。一斉攻撃は、加わる味方からも細い矢印を出す */
+  private showAttackArrow(plan: Plan | null): void {
+    if (!plan?.attack) {
+      this.view.setSupportAttacks([], null);
+      return this.view.setAttack(null, null);
+    }
+    const { id, target, at, landing } = plan.attack;
+    const def = resolveAttack(plan.unit.type, id);
+    // 自分が中心の攻撃は矢印を出さない
+    this.view.setAttack(def.aim === 'self' ? null : engine.attackPos(plan), def.aim === 'self' ? null : at, attackArc(plan.unit.type, id), landing);
+    this.view.setSupportAttacks(def.special === 'volley' && target ? volleySupporters(this.map!, plan.unit, target) : [], target);
+  }
+
+  /**
+   * 予約を実行する。攻撃の前の移動 → 攻撃 → 攻撃の後の移動（騎兵）の順に進め、最後に end のこと（迎撃の構え・待機・鼓舞）をする。
+   * 決定（confirm）は予約が無ければ何もしない。迎撃は攻撃を予約していないときだけ選べる。
+   * 退却（retreat）は予約の無いターンの初めだけで、to へ退却する（成否はここで決める）。強制退却はいつでも退却する。
+   */
+  private execute(end: ActionEnd, to?: RetreatDestination): void {
+    const state = this.battle;
+    const plan = this.plan;
+    if (!state || !plan) return;
+    const run = engine.beginAction(state, plan, end, to, this.rng);
+    if (!run) return;
+    let retreat: Execution['retreat'] = null;
+    if (run.report.retreat) {
+      retreat = { away: this.awayFromEnemies(plan.unit), lead: 0 };
+      // 去っていくユニットに選択の光を残さない
+      this.view.setFocus(null);
+    }
+    this.menu.open(null);
+    this.exec = { run, plan, report: run.report, phase: run.phases[0], start: 0, duration: 0, line: null, facing: undefined, hit: false, supporters: [], fx: null, retreat };
+    this.nextPhase();
+  }
+
+  /**
+   * 実行の次の段階へ進む（歩かない移動は確定だけして飛ばす）。段階が無くなったら終える。
+   * 移動は、迎撃の構えの間接ユニットの射程に入る HEX があれば、そこで区切って迎撃の段階を挟む。
+   */
+  private nextPhase(): void {
+    const exec = this.exec!;
+    const map = this.map!;
+    // 歩かない移動は確定だけして飛ばし、壊滅した迎撃の構えのユニットは撃たない。移動は迎撃の射程に入る HEX で区切られている
+    const { phase, committed } = engine.nextPhase(this.battle!, exec.run);
+    if (committed) this.view.rebuildUnits();
+    if (!phase) {
+      this.exec = null;
+      return this.finish(exec);
+    }
+    exec.start = fxClock.now();
+    exec.hit = false;
+    exec.fx = null;
+    exec.phase = phase;
+    if (phase.kind === 'retreat') {
+      // 退却のセリフを読み終えてから下がる
+      const retreat = exec.retreat!;
+      retreat.lead = this.bark('retreat', exec.plan.unit, null);
+      exec.duration = retreat.lead + RETREAT_SEC;
+      return;
+    }
+    if (phase.kind !== 'walk') {
+      const attack = exec.plan.attack;
+      const volley = phase.kind === 'strike' && !!attack && resolveAttack(exec.plan.unit.type, attack.id).special === 'volley';
+      exec.supporters = volley && attack?.target ? volleySupporters(map, exec.plan.unit, attack.target) : [];
+      const kind = phase.kind === 'strike' ? BattleApp.strikeFx(exec.plan.unit, attack!.id) : BattleApp.interceptFx(phase.shooter);
+      // 攻撃・迎撃の前のセリフ（演出のある攻撃は、カメラが寄ったまま読み終えるのを待ってから攻撃する）
+      const talk = phase.kind === 'strike' ? this.strikeTalk(exec) : this.bark('intercept', phase.shooter, exec.plan.unit, BARK_BEFORE_SEC);
+      if (kind) {
+        const strikeSec = {
+          slash: SLASH_STRIKE_SEC,
+          lance: attack?.landing ? LANCE_CHARGE_SEC : LANCE_STRIKE_SEC,
+          arrows: ARROW_STRIKE_SEC,
+          thunder: THUNDER_STRIKE_SEC,
+          bullets: BULLET_STRIKE_SEC,
+          shell: SHELL_STRIKE_SEC,
+          claw: CLAW_STRIKE_SEC,
+          breath: BREATH_STRIKE_SEC,
+          flame: FLAME_STRIKE_SEC,
+          whirl: WHIRL_STRIKE_SEC,
+          smash: SMASH_STRIKE_SEC,
+          beam: BEAM_STRIKE_SEC,
+          hammer: HAMMER_STRIKE_SEC,
+          frost: FROST_STRIKE_SEC,
+          spike: SPIKE_STRIKE_SEC,
+          meteor: METEOR_STRIKE_SEC,
+        }[kind];
+        // 一斉攻撃は、加わる味方もそれぞれの兵種の演出を、当たりの時点を中心に少しずつずらして出す
+        const units = phase.kind === 'strike' ? [exec.plan.unit, ...exec.supporters] : [phase.shooter];
+        const shots = units.flatMap((unit, i): FxShot[] => {
+          const k = i === 0 ? kind : BattleApp.strikeFx(unit, 'volley');
+          return k ? [{ unit, kind: k, offset: (i - (units.length - 1) / 2) * VOLLEY_FX_STAGGER_SEC, spawned: false }] : [];
+        });
+        const lead = Math.max(FX_ZOOM_IN_SEC, talk);
+        exec.fx = {
+          kind,
+          strikeSec,
+          shots,
+          lead,
+          end: phase.kind === 'strike' ? this.areaEnd(exec.plan) : null,
+          area: phase.kind === 'strike' ? this.fxArea(exec.plan, kind) : [],
+        };
+        exec.duration = lead + strikeSec + FX_HOLD_SEC + FX_ZOOM_OUT_SEC;
+        const timing = { in: FX_ZOOM_IN_SEC, hold: lead - FX_ZOOM_IN_SEC + strikeSec + FX_HOLD_SEC, out: FX_ZOOM_OUT_SEC };
+        if (phase.kind === 'strike') {
+          // 範囲の巻き添えになるユニットも画面に収める
+          const a = attack!;
+          const splash = splashUnits(map, exec.plan.unit, exec.plan.unit, a.target, a.at, a.id);
+          this.focusOn([exec.plan.unit, ...(a.target ? [a.target] : []), ...exec.supporters, ...splash], a.landing, timing, a.at, kind === 'meteor' ? METEOR_FOCUS_FILL : kind === 'hammer' ? HAMMER_FOCUS_FILL : undefined);
+        }
+        else this.focusOn([phase.shooter, exec.plan.unit], null, timing);
+      } else {
+        exec.duration = phase.kind === 'strike' && attack!.landing ? CHARGE_SEC : STRIKE_SEC;
+      }
+      return;
+    }
+    exec.line = new Polyline(smoothPath(phase.path.map((o) => map.layout.offsetToWorld(o.col, o.row))));
+    const hexStep = map.layout.size * Math.sqrt(3);
+    exec.duration = Math.max(exec.line.length / hexStep / WALK_HEX_PER_SEC, WALK_MIN_SEC);
+    exec.facing = undefined;
+  }
+
+  /** 移動のアニメーションを進める。着いたら移動を確定して次の段階へ */
+  private stepWalk(exec: Execution, phase: Extract<ActionPhase, { kind: 'walk' }>, now: number): void {
+    const map = this.map!;
+    const s = map.layout.size;
+    const line = exec.line!;
+    const t = Math.min((now - exec.start) / 1000 / exec.duration, 1);
+    // 歩き出しと止まるところだけゆっくり
+    const e = t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
+    const d = line.length * (0.35 * e + 0.65 * t);
+    const p = line.at(d);
+    // 向きは左右に動いているときだけ変える（真上・真下へ進むときはそのまま）
+    if (p.tx > 0.2) exec.facing = 'right';
+    else if (p.tx < -0.2) exec.facing = 'left';
+    const steps = (d / (s * Math.sqrt(3))) * WALK_STEPS_PER_HEX;
+    const bob = Math.abs(Math.sin(steps * Math.PI)) * WALK_BOB * s * Math.min(1, (1 - t) * 8);
+    const foot = new THREE.Vector3(p.x, this.view.groundAt(p.x, p.z) + bob, p.z);
+    this.view.units.moveTo(exec.plan.unit, foot, exec.facing);
+    if (t < 1) return;
+
+    if (phase.commit) {
+      engine.commitMove(this.battle!, exec.run, phase.path[phase.path.length - 1]);
+      this.view.rebuildUnits();
+    }
+    this.nextPhase();
+  }
+
+  /**
+   * 迎撃のアニメーションを進める。迎撃したユニットはその場で跳ね、半分の時点で当てて兵数を減らす。
+   * 弓兵・魔術師の迎撃は攻撃と同じ演出（カメラを寄せて光の矢を降らせる・雷を落とす）
+   */
+  private stepIntercept(exec: Execution, phase: Extract<ActionPhase, { kind: 'intercept' }>, now: number): void {
+    const map = this.map!;
+    const s = map.layout.size;
+    const elapsed = (now - exec.start) / 1000;
+    const fx = exec.fx;
+    const t = BattleApp.strikeT(exec, elapsed);
+    const a = map.layout.offsetToWorld(phase.shooter.col, phase.shooter.row);
+    const b = map.layout.offsetToWorld(phase.at.col, phase.at.row);
+    const facing: Facing = b.x >= a.x ? 'right' : 'left';
+    const hop = (fx ? fxMotion(fx, t) : strikeCurve(t)) * RANGED_HOP * s;
+    this.view.units.moveTo(phase.shooter, new THREE.Vector3(a.x, this.view.groundAt(a.x, a.z) + hop, a.z), facing);
+    if (fx) this.spawnFxOnTime(fx, elapsed, exec.plan.unit, phase.at);
+    if (t >= 0.5 && !exec.hit) {
+      exec.hit = true;
+      this.applyIntercept(exec, phase);
+      if (fx) this.fxShake(fx);
+      if (exec.report.lost) this.holdForTalk(exec, this.lossTalk([[exec.plan.unit, phase.shooter]]));
+    }
+    if (exec.hit) {
+      const shake = Math.sin(t * 60) * HIT_SHAKE * s * (1 - t) * 2;
+      this.view.units.moveTo(exec.plan.unit, new THREE.Vector3(b.x + shake, this.view.groundAt(b.x, b.z), b.z));
+    }
+    if (elapsed < exec.duration) return;
+    // 壊滅したらそこで打ち切る。弓兵に撃たれたら（騎兵を除く）そこで足止め
+    engine.afterIntercept(this.battle!, exec.run, phase);
+    this.nextPhase();
+  }
+
+  /** 迎撃の自動攻撃を当てて（engine の resolveIntercept）、頭上に減った数を出す */
+  private applyIntercept(exec: Execution, phase: Extract<ActionPhase, { kind: 'intercept' }>): void {
+    const { plan, report } = exec;
+    const r = engine.resolveIntercept(this.battle!, exec.run, phase, this.rng);
+    this.showSplash(report, r.splash);
+    const w = report.lost ? this.wipeoutOf(report, plan.unit) : null;
+    const p = this.view.units.placements().find((x) => x.unit === plan.unit);
+    if (p) this.popups.show(p, `迎撃 -${r.result.damage}${wipeoutLabel(w)}`, 'damage');
+  }
+
+  /**
+   * 退却のアニメーションを進める。セリフを読み終えたら敵から離れる向きへ歩いて下がりながら消える。
+   * 退却に失敗したユニットは、下がりかけたところ（RETREAT_CAPTURE_T）で止められて揺れ、最後に消える
+   */
+  private stepRetreat(exec: Execution, now: number): void {
+    const phase = exec.retreat!;
+    const map = this.map!;
+    const s = map.layout.size;
+    const unit = exec.plan.unit;
+    const { captured } = exec.report.retreat!;
+    const elapsed = (now - exec.start) / 1000;
+    const t = THREE.MathUtils.clamp((elapsed - phase.lead) / RETREAT_SEC, 0, 1);
+    const stop = captured ? RETREAT_CAPTURE_T : 1;
+    const k = Math.min(t, stop);
+    const hexes = k * RETREAT_HEX;
+    const d = hexes * s * Math.sqrt(3);
+    const a = map.layout.offsetToWorld(unit.col, unit.row);
+    const bob = t < stop ? Math.abs(Math.sin(hexes * WALK_STEPS_PER_HEX * Math.PI)) * WALK_BOB * s : 0;
+    const shake = captured && t >= stop ? Math.sin(t * 60) * HIT_SHAKE * s * Math.max(0, 1 - (t - stop) / 0.3) : 0;
+    const x = a.x + phase.away.x * d + shake;
+    const z = a.z + phase.away.z * d;
+    const facing: Facing | undefined = elapsed < phase.lead ? undefined : phase.away.x >= 0 ? 'right' : 'left';
+    this.view.units.moveTo(unit, new THREE.Vector3(x, this.view.groundAt(x, z) + bob, z), facing);
+    // 成功したら下がり始めてから、失敗したら止められてから消えていく
+    const fadeFrom = captured ? 0.7 : 0.3;
+    this.view.units.setOpacity(unit, t <= fadeFrom ? 1 : 1 - THREE.MathUtils.smoothstep(t, fadeFrom, 1));
+    if (elapsed >= phase.lead && t >= (captured ? stop : 0) && !exec.hit) {
+      exec.hit = true;
+      const p = this.view.units.placements().find((x) => x.unit === unit);
+      if (p) this.popups.show(p, captured ? '退却失敗 捕縛' : '退却', captured ? 'captured' : 'retreat');
+    }
+    if (elapsed < exec.duration) return;
+    this.nextPhase();
+  }
+
+  /** unit が敵から離れる向き（近い敵ほど重く見る。ワールドの xz の単位ベクトル。敵がいなければ右） */
+  private awayFromEnemies(unit: UnitData): { x: number; z: number } {
+    const layout = this.map!.layout;
+    const enemies = this.map!.allUnits().filter((u) => u.team !== unit.team);
+    const a = layout.offsetToWorld(unit.col, unit.row);
+    let x = 0;
+    let z = 0;
+    for (const e of enemies) {
+      const b = layout.offsetToWorld(e.col, e.row);
+      const dx = a.x - b.x;
+      const dz = a.z - b.z;
+      // 向きを距離の 2 乗で割る（遠い敵ほど効かない）
+      const w = 1 / Math.max(dx * dx + dz * dz, 1e-6);
+      x += dx * w;
+      z += dz * w;
+    }
+    const len = Math.hypot(x, z);
+    return len > 1e-6 ? { x: x / len, z: z / len } : { x: 1, z: 0 };
+  }
+
+  /** 予約した攻撃の演出の種類（攻撃の定義の fx。省略は兵種の通常攻撃の演出） */
+  static strikeFx(unit: UnitData, id: MenuAttackId): StrikeFxKind | null {
+    // 一斉攻撃は、加わる兵種それぞれの通常攻撃の演出
+    return resolveAttack(unit.type, id === 'volley' ? 'attack' : id).fx;
+  }
+
+  /**
+   * 迎撃の自動攻撃の演出の種類。それぞれの兵種の攻撃と同じ演出
+   * （弓兵は矢の雨、魔術師は雷、ライフル兵は光の弾、砲兵は大きな光の弾）
+   */
+  static interceptFx(shooter: UnitData): StrikeFxKind | null {
+    return resolveAttack(shooter.type, 'interceptFire').fx;
+  }
+
+  /** 攻撃・迎撃のアニメーションの進み具合（0〜1。半分の時点で当たる）。演出のある攻撃はカメラが寄る時間（とセリフを待つ時間）を除く */
+  private static strikeT(exec: Execution, elapsed: number): number {
+    const fx = exec.fx;
+    return fx ? THREE.MathUtils.clamp((elapsed - fx.lead) / fx.strikeSec, 0, 1) : Math.min(elapsed / exec.duration, 1);
+  }
+
+  /** 演出のエフェクトを、それぞれ当たりの時点（からずらした時点）に合わせて出す（まだ出していなければ）。target は at にいる */
+  private spawnFxOnTime(fx: StrikeFx, elapsed: number, target: UnitData | null, at: Offset): void {
+    const layout = this.map!.layout;
+    const time = (elapsed - fx.lead) / fx.strikeSec;
+    const b = layout.offsetToWorld(at.col, at.row);
+    for (const shot of fx.shots) {
+      if (shot.spawned || time < 0.5 + (shot.offset - STRIKE_FX[shot.kind].hitSec) / fx.strikeSec) continue;
+      shot.spawned = true;
+      const a = layout.offsetToWorld(shot.unit.col, shot.unit.row);
+      this.spawnStrikeFx(shot.kind, shot.unit, target, at, b.x >= a.x ? 'right' : 'left', fx);
+    }
+  }
+
+  /** HEX の中心の地面の点（ワールド） */
+  private groundPoint(o: Offset): THREE.Vector3 {
+    const c = this.map!.layout.offsetToWorld(o.col, o.row);
+    return new THREE.Vector3(c.x, this.view.groundAt(c.x, c.z), c.z);
+  }
+
+  /** 予約した攻撃の範囲の端の HEX（直線の範囲の攻撃だけ。ほかは null） */
+  private areaEnd(plan: Plan): Offset | null {
+    const attack = plan.attack;
+    if (!attack) return null;
+    const def = resolveAttack(plan.unit.type, attack.id);
+    if (def.shape.kind !== 'line') return null;
+    return areaCells(this.map!, plan.unit, attack.at, def.shape).at(-1) ?? null;
+  }
+
+  /** kind の演出で、範囲のエフェクトを出す HEX（なぎ払いは当たるユニット、岩・メテオ・光線は範囲） */
+  private fxArea(plan: Plan, kind: StrikeFxKind): Offset[] {
+    const attack = plan.attack;
+    const map = this.map!;
+    if (!attack) return [];
+    const splash = splashUnits(map, plan.unit, plan.unit, attack.target, attack.at, attack.id);
+    if (kind === 'whirl') return splash.map((u) => ({ col: u.col, row: u.row }));
+    if (kind === 'spike' || kind === 'meteor' || kind === 'beam') return areaCells(map, plan.unit, attack.at, resolveAttack(plan.unit.type, attack.id).shape);
+    return [];
+  }
+
+  /** 演出で当たったときのカメラの揺れ（一斉攻撃は加わるユニットの演出のうち一番大きいもの） */
+  private fxShake(fx: StrikeFx): void {
+    this.cameraFocus.shake(Math.max(...fx.shots.map((shot) => STRIKE_FX[shot.kind].cameraShake)) * this.map!.layout.size);
+  }
+
+  /**
+   * 攻撃の演出で、units（先頭が攻撃するユニット）の絵が画面に収まるところまでカメラを寄せる。
+   * landing（突撃で飛び出る先）があれば、そこに置いた攻撃するユニットの絵も収める。fill は絵の範囲が画面に占める割合（省くと既定）
+   */
+  private focusOn(units: readonly UnitData[], landing: Offset | null, timing: FocusTiming, aimed: Offset | null = null, fill?: number): void {
+    const placements = this.view.units.placements().filter((p) => units.includes(p.unit));
+    const self = placements.find((p) => p.unit === units[0]);
+    // 突撃で飛び出る先と、狙った地点（ユニットのいない HEX を狙ったとき）も収める
+    for (const o of [landing, aimed]) if (o && self) placements.push({ ...self, foot: this.groundPoint(o) });
+    this.cameraFocus.play(placements, timing, fill);
+  }
+
+  /**
+   * 攻撃の演出のエフェクトを出す。target は at にいる目標（いなければ null）。fx は範囲の端の HEX（直線に吹く炎が届くところ）と
+   * 範囲のエフェクトを出す HEX を持つ
+   */
+  private spawnStrikeFx(kind: StrikeFxKind, unit: UnitData, target: UnitData | null, at: Offset, facing: Facing, fx: StrikeFx | null = null): void {
+    const placements = this.view.units.placements();
+    const size = this.map!.layout.size;
+    const up = placements.find((p) => p.unit === unit);
+    const placementAt = (o: Offset) => placements.find((p) => p.unit.col === o.col && p.unit.row === o.row);
+    const area = fx?.area ?? [];
+    // 範囲に出すもの（目標がいなくても出す）
+    if (kind === 'whirl') {
+      for (const o of area) {
+        const p = placementAt(o);
+        if (p && up) this.slashFx.spawn(p, p.foot.x >= up.foot.x ? 'right' : 'left');
+      }
+      return;
+    }
+    if (kind === 'spike') return area.forEach((o) => this.impactFx.spawn(this.groundPoint(o), size, SPIKE_STYLE));
+    // 光の柱が届いたところで爆発する
+    const map = this.map;
+    const blastAt = (sec: number) => fxClock.after(sec, () => this.map === map && this.impactFx.spawn(this.groundPoint(at), size, BLAST_STYLE));
+    if (kind === 'meteor') {
+      // 魔法陣と爆発は範囲の HEX をすべて覆う大きさ（一番遠い HEX の中心まで + HEX の内接円の半径）
+      const center = this.groundPoint(at);
+      const far = Math.max(0, ...area.map((o) => { const g = this.groundPoint(o); return Math.hypot(g.x - center.x, g.z - center.z); }));
+      this.pillarFx.spawn(center, size, far + size * Math.sqrt(3) / 2);
+      return void blastAt(PILLAR_HIT_SEC);
+    }
+    if (kind === 'beam' && up) {
+      // 各 HEX の爆発は、光線の通過に合わせて BeamEffects が再生する。
+      this.beamFx.spawn(up, this.groundPoint(at), area.map((o) => this.groundPoint(o)), size);
+      return;
+    }
+    const tp = target && placements.find((p) => p.unit === target);
+    if (!tp) return;
+    if (kind === 'hammer') {
+      // 周りに雷を次々と落としてから太い雷を目標に落とし、落ちたところで衝撃を広げる
+      this.thunderFx.storm(tp, (x, z) => this.view.groundAt(x, z), size);
+      return void fxClock.after(HAMMER_HIT_SEC, () => this.map === map && this.impactFx.spawn(tp.foot.clone(), size, HAMMER_STYLE));
+    }
+    if ((kind === 'breath' || kind === 'flame') && up) {
+      const to = fx?.end ? this.groundPoint(fx.end) : tp.foot;
+      return this.breathFx.spawn(up, to, kind === 'breath' ? BREATH_STYLE : FLAME_LANCE_STYLE);
+    }
+    if (kind === 'smash') return this.impactFx.spawn(tp.foot, size, SMASH_STYLE);
+    if (kind === 'frost') return this.impactFx.spawn(tp.foot, size, FROST_STYLE);
+    if (kind === 'slash') this.slashFx.spawn(tp, facing);
+    else if (kind === 'claw') this.clawFx.spawn(tp, facing);
+    else if (kind === 'thunder') this.thunderFx.spawn(tp);
+    else if (up && kind === 'lance') this.lanceFx.spawn(up, tp, this.ctx.camera);
+    else if (up && kind === 'bullets') this.bulletFx.spawn(up, tp, this.ctx.camera);
+    else if (up && kind === 'shell') this.shellFx.spawn(up, tp, this.ctx.camera);
+    else if (up) this.arrowFx.spawn(up, tp, this.ctx.camera);
+  }
+
+  /**
+   * 攻撃のアニメーションを進める。直接攻撃は相手へ踏み込み、半分の時点で当てて兵数を減らす。
+   * 突撃で飛び出せるときは、相手を突き抜けて向こうの HEX まで駆け抜け、着いたらそこへ移動を確定する。
+   * 演出のある攻撃では、カメラが寄るのを待ってから攻撃し（踏み込みは、踏み込んだまま当てて戻る。弓兵は矢を放つ間に跳ねる）、
+   * カメラが戻るのを待つ。エフェクトは、斬撃の刃が相手の中心を通る・ランスが相手を貫く・矢の大半が届く時点が当たりの時点になるように出す。
+   */
+  private stepStrike(exec: Execution, now: number): void {
+    const map = this.map!;
+    const s = map.layout.size;
+    const { plan } = exec;
+    const attack = plan.attack!;
+    const elapsed = (now - exec.start) / 1000;
+    const fx = exec.fx;
+    const t = BattleApp.strikeT(exec, elapsed);
+    const a = map.layout.offsetToWorld(plan.unit.col, plan.unit.row);
+    const b = map.layout.offsetToWorld(attack.at.col, attack.at.row);
+    const facing: Facing = b.x >= a.x ? 'right' : 'left';
+    const target = attack.target;
+    const landing = attack.landing;
+    if (landing) {
+      // 相手（中間点）を通り過ぎて向こうの HEX まで。出だしと止まるところだけゆっくり
+      const c = map.layout.offsetToWorld(landing.col, landing.row);
+      const e = t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
+      const x = a.x + (c.x - a.x) * e;
+      const z = a.z + (c.z - a.z) * e;
+      this.view.units.moveTo(plan.unit, new THREE.Vector3(x, this.view.groundAt(x, z), z), facing);
+    } else {
+      const k = fx ? fxMotion(fx, t) : strikeCurve(t);
+      this.lunge(plan.unit, attack.at, k, attack.id);
+    }
+    // 一斉攻撃は、取り囲んでいる味方も一緒に踏み込む
+    for (const u of exec.supporters) this.lunge(u, attack.at, fx ? holdCurve(t) : strikeCurve(t), 'attack');
+
+    if (fx) this.spawnFxOnTime(fx, elapsed, target, attack.at);
+    if (t >= 0.5 && !exec.hit) {
+      exec.hit = true;
+      this.applyAttack(exec);
+      if (fx) this.fxShake(fx);
+      const r = exec.report.attack!;
+      const losses: [UnitData, UnitData][] = [];
+      if (target && r.targetDestroyed) losses.push([target, plan.unit]);
+      if (target && r.unitDestroyed) losses.push([plan.unit, target]);
+      this.holdForTalk(exec, this.lossTalk(losses));
+    }
+    if (exec.hit && target) {
+      // 当たった相手を揺らす
+      const shake = Math.sin(t * 60) * HIT_SHAKE * s * (1 - t) * 2;
+      this.view.units.moveTo(target, new THREE.Vector3(b.x + shake, this.view.groundAt(b.x, b.z), b.z));
+    }
+    if (elapsed < exec.duration) return;
+    // 攻撃で壊滅したら飛び出し・続きの移動はしない。突撃なら飛び出た HEX へ移動を確定する
+    engine.afterStrike(this.battle!, exec.run);
+    this.view.rebuildUnits();
+    this.nextPhase();
+  }
+
+  /**
+   * unit が target を id の攻撃で攻撃する動き。直接攻撃は相手へ踏み込む。遠隔攻撃（遠隔の兵種か、反撃を受けない攻撃。ブレスなど）は
+   * その場で小さく跳ねる（k は踏み込み・跳ねる量の 0〜1）
+   */
+  private lunge(unit: UnitData, target: Offset, k: number, id: AttackId): void {
+    const map = this.map!;
+    const a = map.layout.offsetToWorld(unit.col, unit.row);
+    const b = map.layout.offsetToWorld(target.col, target.row);
+    const ranged = COMBAT_DEFS[unit.type].ranged || resolveAttack(unit.type, id).indirect;
+    const lunge = ranged ? 0 : k * STRIKE_LUNGE;
+    const x = a.x + (b.x - a.x) * lunge;
+    const z = a.z + (b.z - a.z) * lunge;
+    const hop = ranged ? k * RANGED_HOP * map.layout.size : 0;
+    this.view.units.moveTo(unit, new THREE.Vector3(x, this.view.groundAt(x, z) + hop, z), b.x >= a.x ? 'right' : 'left');
+  }
+
+  /** report で unit が殲滅されたときの記録（殲滅されていなければ null） */
+  private wipeoutOf(report: ExecuteReport, unit: UnitData): WipeoutReport | null {
+    return report.wipeouts.find((w) => w.unit === unit) ?? null;
+  }
+
+  /** 範囲の巻き添えで当たったユニットの頭上に減った数を出す（味方に当たったときだけ巻き添えと出す） */
+  private showSplash(report: ExecuteReport, hits: readonly SplashHit[]): void {
+    const placements = this.view.units.placements();
+    for (const h of hits) {
+      const w = h.destroyed ? this.wipeoutOf(report, h.unit) : null;
+      const p = placements.find((x) => x.unit === h.unit);
+      if (p) this.popups.show(p, `${h.friendly ? '巻き添え ' : ''}-${h.result.damage}${wipeoutLabel(w)}`, 'damage');
+    }
+  }
+
+  /** 予約した攻撃を当てて（engine の resolveStrike）、頭上に減った数を出す。耕したら地形を描き直す */
+  private applyAttack(exec: Execution): void {
+    const { plan, report } = exec;
+    const r: AttackReport = engine.resolveStrike(this.battle!, exec.run, this.rng);
+    const target = r.target;
+    const tw = target && r.targetDestroyed ? this.wipeoutOf(report, target) : null;
+    const uw = target && r.unitDestroyed ? this.wipeoutOf(report, plan.unit) : null;
+    this.showSplash(report, r.splash);
+    if (r.plowed) this.terrainChanged();
+    const placements = this.view.units.placements();
+    const at = (u: UnitData) => placements.find((p) => p.unit === u);
+    const tp = target && at(target);
+    const up = at(plan.unit);
+    const result = r.result;
+    if (result) {
+      const label = result.supporters > 0 ? `一斉 -${result.damage}` : `-${result.damage}`;
+      if (tp) this.popups.show(tp, `${label}${wipeoutLabel(tw)}`, 'damage');
+      // 突撃は当たる時点で相手と重なっているので、反撃の数字は駆け抜ける絵に付いていかせて、相手の数字から離す
+      const counterText = `-${result.counter}${wipeoutLabel(uw)}`;
+      if (up && result.direct) this.popups.show(up, counterText, 'counter', !!r.landing);
+    }
+    if (r.plowed) this.showPlowed(r.plowed.at);
+  }
+
+  /** 耕した HEX に「地形破壊」と出す。そこにユニットがいればダメージの数字の下に添え、空いた HEX なら地面から出す */
+  private showPlowed(o: Offset): void {
+    const map = this.map!;
+    const unit = map.unitAt(o.col, o.row);
+    const p = unit && this.view.units.placements().find((x) => x.unit === unit);
+    if (p) return this.popups.addLine(p, PLOW_POPUP, 'terrain');
+    const c = map.layout.offsetToWorld(o.col, o.row);
+    this.popups.show({ foot: new THREE.Vector3(c.x, this.view.groundAt(c.x, c.z), c.z), height: 0 }, PLOW_POPUP, 'terrain');
+  }
+
+  /**
+   * 実行を終える。行動力を使い、end のこと（迎撃の構え・待機・鼓舞）をして、兵数が 0 になったユニットを消し、
+   * 生き残っていれば選び直す
+   */
+  private finish(exec: Execution): void {
+    const { plan, report } = exec;
+    const fin = engine.finishAction(this.battle!, exec.run, this.rng);
+    // 鼓舞で士気を回復した
+    if (report.inspire !== undefined) {
+      const p = this.view.units.placements().find((x) => x.unit === plan.unit);
+      if (p) this.popups.show(p, `鼓舞 士気+${report.inspire}`, 'boost');
+      this.bark('rally', plan.unit, null);
+    }
+    const wasAuto = this.autoRunning;
+    this.autoRunning = false;
+    this.unitsRemoved(fin.removed);
+    // 動いた先で選び直す（残りの行動力でメニューを開く）
+    // 混乱して勝手に動いたユニットは選ばない
+    this.setSelected(fin.gone || wasAuto ? null : { col: report.unit.col, row: report.unit.row });
+    this.refreshMarks();
+    if (report.retreat) this.emit('retreat', report.retreat);
+    for (const w of report.wipeouts) this.emit('wipeout', w);
+    this.emit('execute', report);
+    // もう行動できなくなった（行動済みの印が付いた）ら、そのユニットは行動を終えた
+    this.judge(fin.ended);
+  }
+
+  /**
+   * 決着したか調べ、決着していたら戦闘を終える。軍団長部隊の全滅・退却、入城で負けた陣営に部隊が残っていて退却先もあれば、
+   * 先に強制退却させる（強制退却の間は、1 部隊が退却し終えるたびに次の部隊へ進む）。
+   * ended はいま行動を終えたユニット（防衛拠点にいる攻撃側のユニットなら入城）
+   */
+  private judge(ended: readonly UnitData[] = []): void {
+    if (!this.battle || this.deployment) return;
+    this.onJudged(engine.judge(this.battle, ended));
+  }
+
+  /** 決着を調べた結果で、強制退却を始める・次の部隊へ進む・戦闘を終える */
+  private onJudged(r: engine.JudgeResult): void {
+    if (r.kind === 'end') return this.ended();
+    if (r.kind === 'rout') return this.nextRout();
+    if (r.kind !== 'routStart') return;
+    this.setSelected(null);
+    this.refreshMarks();
+    this.emit('rout', r.outcome, r.units);
+    this.nextRout();
+  }
+
+  /** 強制退却で、次の部隊を選んで退却先の拠点の一覧を出す（カメラをその部隊へ動かす）。残っていなければ戦闘を終える */
+  private nextRout(): void {
+    const unit = engine.nextRoutUnit(this.battle!);
+    if (!unit) return this.ended();
+    this.setSelected({ col: unit.col, row: unit.row });
+    // CPU の軍は CPU が退却先を選ぶ（stepCpu）
+    if (!this.cpuActive) this.openRetreat(unit, true);
+    else this.cpuAt = fxClock.now() + CPU_SHOW_MS;
+    const p = this.view.units.placements().find((x) => x.unit === unit);
+    if (p) this.cameraFocus.panTo(p.foot);
+  }
+
+  /** 戦闘を終えた（engine が outcome を付けた）。選択を外し、行動済みの印を消して end で知らせる */
+  private ended(): void {
+    const outcome = this.outcome;
+    if (!outcome) return;
+    this.cpuSkip = false;
+    this.cpuShow = null;
+    this.setSelected(null);
+    this.done.clear();
+    this.view.units.setDimmed(() => false);
+    this.tags.setMarks(this.done);
+    this.emit('end', outcome);
+  }
+
+  /** 防衛拠点の HEX の地面を塗る */
+  /** 戦闘中にマップの地形を書き換えた（耕した）後、地形・木・人工物・街道を描き直す（HEX の塗り・範囲の表示はそのまま残る） */
+  private terrainChanged(): void {
+    this.view.regenerate();
+  }
+
+
+  private paintStronghold(): void {
+    const hold = this.stronghold;
+    const color = new THREE.Color(STRONGHOLD_COLOR);
+    this.view.overlay.setCellColors((col, row) => (hold && hold.col === col && hold.row === row ? color : null));
+  }
+
+  /**
+   * unit が situation のセリフを（BARK_CHANCE の確率で）delay 秒後に言う。other は相手（吹き出しを反対の側に出す）。
+   * 言うなら読み終えるまでの秒数、言わなければ 0
+   */
+  private bark(situation: BarkSituation, unit: UnitData, other: UnitData | null, delay = 0): number {
+    const speaker = this.speaker(unit);
+    if (!speaker || (!this.alwaysBark && Math.random() >= BARK_CHANCE[situation])) return 0;
+    const text = this.barks.line(situation, speaker, other && this.speaker(other));
+    if (!text) return 0;
+    this.emit('bark', unit, situation, text);
+    return this.bubbles.say(unit, speaker.status, text, { delay, tone: BARK_TONE[situation], away: other });
+  }
+
+  /**
+   * 一斉攻撃の掛け合い（EXCHANGE_CHANCE の確率）。members の先頭が攻撃するユニット、続いて加わる味方。
+   * 1 行ずつ、前の行を読み終えてから出す。起きたら最後の行を読み終えるまでの秒数、起きなければ 0
+   */
+  private exchange(members: readonly UnitData[], target: UnitData, delay = 0): number {
+    const speakers = members.map((u) => this.speaker(u));
+    const ts = this.speaker(target);
+    if (!ts || speakers.some((s) => !s) || (!this.alwaysBark && Math.random() >= EXCHANGE_CHANCE)) return 0;
+    const lines = this.barks.exchange(speakers as BarkSpeaker[], ts);
+    if (!lines?.length) return 0;
+    let at = delay;
+    for (const { who, text } of lines) {
+      const s = speakers[who];
+      if (!s) continue;
+      this.emit('bark', s.unit, 'exchange', text);
+      at = this.bubbles.say(s.unit, s.status, text, { delay: at, tone: BARK_TONE.exchange, away: target });
+    }
+    return at;
+  }
+
+  private speaker(unit: UnitData): BarkSpeaker | null {
+    const status = this.statuses.get(unit);
+    return status ? { unit, status } : null;
+  }
+
+  /** 攻撃の前のセリフ。一斉攻撃は確率で掛け合い、それ以外（掛け合いが起きなければ）は確率で攻撃のつぶやき。読み終えるまでの秒数 */
+  private strikeTalk(exec: Execution): number {
+    const { unit, attack } = exec.plan;
+    if (!attack) return 0;
+    const talk = exec.supporters.length > 0 && attack.target ? this.exchange([unit, ...exec.supporters], attack.target, BARK_BEFORE_SEC) : 0;
+    return talk || this.bark('attack', unit, attack.target, BARK_BEFORE_SEC);
+  }
+
+  /**
+   * 殲滅されたユニットの言葉と、続いて討ち取ったユニットの言葉（討ち取った側も殲滅されたら言わない）。
+   * losses は [殲滅されたユニット, 討ち取ったユニット]。読み終えるまでの秒数（誰も言わなければ 0）
+   */
+  private lossTalk(losses: readonly [lost: UnitData, by: UnitData][]): number {
+    const lost = new Set(losses.map(([u]) => u));
+    let end = 0;
+    for (const [u, by] of losses) {
+      const t = this.bark('wiped_out', u, by, BARK_AFTER_HIT_SEC);
+      end = Math.max(end, t);
+      if (!lost.has(by)) end = Math.max(end, this.bark('enemy_eliminated', by, u, Math.max(t, BARK_AFTER_HIT_SEC)));
+    }
+    return end;
+  }
+
+  /** 当たった後のセリフを talk 秒後に読み終えるまで、カメラを寄せたままにして実行の段階を延ばす */
+  private holdForTalk(exec: Execution, talk: number): void {
+    if (talk <= 0) return;
+    const fx = exec.fx;
+    const elapsed = (fxClock.now() - exec.start) / 1000;
+    // カメラが戻り始める時点（演出の無い攻撃は段階の終わり）
+    const holdEnd = fx ? fx.lead + fx.strikeSec + FX_HOLD_SEC : exec.duration;
+    const extra = elapsed + talk - holdEnd;
+    if (extra <= 0) return;
+    exec.duration += extra;
+    if (fx) this.cameraFocus.extendHold(extra);
+  }
+
+  /**
+   * 表示確認用: 選択中か調べているユニットに situation のセリフを言わせる（確率に関係なく）。
+   * 相手はいちばん近い敵、掛け合いはいちばん近い味方 2 部隊と。言わせるユニットがいない・実行中なら false
+   */
+  testBark(situation: BarkSituation | 'exchange'): boolean {
+    const map = this.map;
+    const unit = this.plan?.unit ?? this.inspected;
+    if (!map || !unit || this.exec) return false;
+    const near = (team: (u: UnitData) => boolean) =>
+      map
+        .allUnits()
+        .filter((u) => u !== unit && team(u))
+        .sort((a, b) => hexDistance(map, unit, a) - hexDistance(map, unit, b));
+    const enemy = near((u) => u.team !== unit.team)[0] ?? null;
+    const always = this.alwaysBark;
+    this.alwaysBark = true;
+    try {
+      if (situation !== 'exchange') return this.bark(situation, unit, situation === 'rally' || situation === 'retreat' ? null : enemy) > 0;
+      const allies = near((u) => u.team === unit.team).slice(0, 2);
+      return !!enemy && this.exchange([unit, ...allies], enemy) > 0;
+    } finally {
+      this.alwaysBark = always;
+    }
+  }
+
+  private openMenu(): void {
+    // CPU が操作している間は行動メニューを出さない
+    this.menu.open(this.battle && this.plan && !this.cpuActive ? engine.menuContext(this.battle, this.plan) : null);
+  }
+
+
+  private setPointer(e: PointerEvent): void {
+    const rect = this.ctx.renderer.domElement.getBoundingClientRect();
+    this.pointer.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+    this.pointerDirty = true;
+  }
+
+  private pick(): Offset | null {
+    this.raycaster.setFromCamera(this.pointer, this.ctx.camera);
+    return this.view.pick(this.raycaster);
+  }
+
+  private setHover(o: Offset | null): void {
+    this.hovered = o;
+    this.view.setHover(o);
+    if (this.targeting?.kind === 'attack') this.paintAttackRange(this.targeting, o);
+    this.emit('hover', this.cellAndUnit(o)[0]);
+  }
+
+  /** ユニットを選択する（予約は捨てる） */
+  private setSelected(o: Offset | null): void {
+    if (this.targeting) this.endTargeting();
+    if (this.inspected) {
+      this.inspected = null;
+      this.view.setRange(null);
+    }
+    this.selected = o;
+    this.view.setFocus(o);
+    this.view.setPath(null);
+    this.menuAvoid = [];
+    this.showAttackArrow(null);
+    const unit = this.cellAndUnit(o)[1];
+    const status = unit && this.statuses.get(unit);
+    this.plan = unit && status ? { unit, status, legs: [], attack: null } : null;
+    this.openMenu();
+    this.emit('select', this.plan?.unit ?? null);
+  }
+
+  private cellAndUnit(o: Offset | null): [HexCell | null, UnitData | null] {
+    const map = this.map;
+    if (!o || !map) return [null, null];
+    return [map.get(o.col, o.row) ?? null, map.unitAt(o.col, o.row) ?? null];
+  }
+
+  /** メニューを置く位置。移動・突撃を予約していれば、ユニットの絵を予約した行動の後にいる HEX に置いたときの位置 */
+  private menuAnchor(placements: readonly UnitPlacement[]): UnitPlacement | null {
+    const plan = this.plan;
+    const map = this.map;
+    const p = plan && placements.find((x) => x.unit === plan.unit);
+    if (!plan || !map || !p) return p ?? null;
+    const pos = engine.planPos(plan);
+    if (pos.col === plan.unit.col && pos.row === plan.unit.row) return p;
+    const c = map.layout.offsetToWorld(pos.col, pos.row);
+    return { ...p, foot: new THREE.Vector3(c.x, this.view.groundAt(c.x, c.z), c.z) };
+  }
+
+  private frame(): void {
+    fxClock.speed = this.fxSpeed();
+    fxClock.tick();
+    if (this.pointerDirty) {
+      this.pointerDirty = false;
+      this.setHover(this.pick());
+    }
+    const exec = this.exec;
+    if (exec?.phase.kind === 'walk') this.stepWalk(exec, exec.phase, fxClock.now());
+    else if (exec?.phase.kind === 'strike') this.stepStrike(exec, fxClock.now());
+    else if (exec?.phase.kind === 'intercept') this.stepIntercept(exec, exec.phase, fxClock.now());
+    else if (exec?.phase.kind === 'retreat') this.stepRetreat(exec, fxClock.now());
+    // 攻撃の演出の間は、移動のルートと攻撃の矢印を隠す（演出が終われば、残りのルートをまた出す）
+    const v = this.view;
+    const arrowsShown = !this.exec?.fx;
+    for (const arrow of [v.pathArrow, v.afterPathArrow, v.attackArrow, v.supportArrow]) arrow.group.visible = arrowsShown;
+    this.cameraFocus.update(fxClock.now());
+    this.slashFx.update(this.ctx.camera);
+    this.clawFx.update(this.ctx.camera);
+    this.breathFx.update();
+    this.impactFx.update(this.ctx.camera);
+    this.beamFx.update(this.ctx.camera);
+    this.pillarFx.update(this.ctx.camera);
+    this.gunshipFx.update(this.ctx.camera);
+    if (this.salvo) this.stepSalvo(fxClock.now());
+    // 混乱したユニットを順に勝手に動かし、動かし終えたら番を終える
+    if (!this.exec && this.autoQueue.length > 0 && fxClock.now() >= this.autoAt) this.nextAuto();
+    else if (this.autoEnding) this.stepAutoEnding();
+    this.stepCpu();
+    this.lanceFx.update(this.ctx.camera);
+    this.arrowFx.update(this.ctx.camera);
+    this.thunderFx.update(this.ctx.camera);
+    this.bulletFx.update(this.ctx.camera);
+    this.shellFx.update(this.ctx.camera);
+    // 輪は描画の前に足元へ合わせる（移動のアニメーションで動かした絵に同じフレームで付いていく）
+    this.interceptFx.update(this.view.units.placements(), this.statuses, this.map?.layout.size ?? 1, this.view.display.units);
+    this.conditionFx.update(this.view.units.placements(), this.statuses, this.view.display.units);
+    this.view.render();
+    const placements = this.view.units.placements();
+    this.tags.update(placements, this.ctx.camera, this.view.display.units, this.hovered, this.selected);
+    this.menu.update(this.menuAnchor(placements), this.ctx.camera, this.container.clientWidth, this.container.clientHeight, this.menuAvoid);
+    this.popups.update(this.ctx.camera);
+    this.bubbles.update(placements, this.ctx.camera, this.view.display.units);
+  }
+}
+
+/** 頭上の数字に付ける殲滅の印（殲滅されていなければ空。指揮官が捕縛されたら「捕縛」も） */
+function wipeoutLabel(w: WipeoutReport | null): string {
+  return w ? (w.captured ? ' 壊滅 捕縛' : ' 壊滅') : '';
+}
+
+/** 攻撃の踏み込み・跳ねる量（t は攻撃のアニメーションの 0〜1）。前半で踏み込んで戻る */
+function strikeCurve(t: number): number {
+  return Math.sin(Math.min(t * 2, 1) * Math.PI);
+}
+
+/** 演出のある攻撃の踏み込みの量（t は 0〜1）。素早く踏み込み、踏み込んだまま当てて（半分の時点）、ゆっくり戻る */
+function holdCurve(t: number): number {
+  if (t < 0.3) return 1 - (1 - t / 0.3) ** 2;
+  if (t < 0.65) return 1;
+  const u = (t - 0.65) / 0.35;
+  return 1 - u * u * (3 - 2 * u);
+}
+
+/**
+ * 演出のある攻撃の、攻撃するユニットの踏み込み・跳ねる量（t は攻撃のアニメーションの 0〜1）。
+ * 直接攻撃は踏み込んだまま当てて戻る。弓兵は矢を放ち始めてから放ち終えるまで、魔術師は雷を呼んでから落ちるまで（トールハンマーは雷を呼び始めるとき）、
+ * ライフル兵は弾を撃ち始めてから撃ち終えるまでに 1 回跳ねる。砲兵は撃った反動で 1 回跳ねる
+ */
+function fxMotion(fx: StrikeFx, t: number): number {
+  if (fx.kind === 'arrows') return hopCurve(t, fx.strikeSec, ARROW_HIT_SEC, ARROW_RELEASE_SEC);
+  if (fx.kind === 'thunder') return hopCurve(t, fx.strikeSec, THUNDER_CAST_SEC, THUNDER_CAST_SEC);
+  // トールハンマーは雷を呼び始めるときに跳ねる
+  if (fx.kind === 'hammer') return hopCurve(t, fx.strikeSec, HAMMER_HIT_SEC, THUNDER_CAST_SEC);
+  if (fx.kind === 'bullets') return hopCurve(t, fx.strikeSec, BULLET_STYLE.hitSec, BULLET_STYLE.fireSpread);
+  if (fx.kind === 'shell') return hopCurve(t, fx.strikeSec, SHELL_STYLE.hitSec, SHELL_RECOIL_SEC);
+  return holdCurve(t);
+}
+
+/** 当たりの時点（t = 0.5）の beforeHit 秒前から duration 秒の間に 1 回跳ねる量（strikeSec は攻撃のアニメーションの時間） */
+function hopCurve(t: number, strikeSec: number, beforeHit: number, duration: number): number {
+  const u = (t - 0.5 + beforeHit / strikeSec) / (duration / strikeSec);
+  return u > 0 && u < 1 ? Math.sin(u * Math.PI) : 0;
+}

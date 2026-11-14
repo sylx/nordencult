@@ -1,0 +1,251 @@
+/**
+ * ユニットの行動の定義と、行動メニューの項目の組み立て。
+ *
+ * メニューは 2 階層。1 階層目は常に全部並べ、選べないものは無効にする。
+ * 2 階層目（攻撃の種類・指揮官のスキルと退却）は選べるものだけを並べる。ただし退却は選べないときも灰色で残す（keepDisabled）。
+ * 2 階層目に選べるものが 1 つでもあれば 1 階層目の項目は開ける。灰色のものしか無ければ、1 階層目の項目も選べない（理由は灰色の項目の理由）。
+ * 選べるかどうかは残り行動力・兵種・指揮官のスキルで決まる。コスト・兵種の制限は仮の値。
+ *
+ * 行動は予約してから最後にまとめて実行する。移動・攻撃を予約すると、残り行動力は予約した分を引いたものになり、
+ * 最後に予約を実行する「決定」と、予約をすべて取り消す「取消」が並ぶ。
+ * 攻撃は 1 ターンに 1 回で、攻撃を予約した後は移動できない（騎兵は除く）。
+ * 退却は「特殊」の中（指揮官のスキルの後）に並べ、ターンの初め（待機・鼓舞などで行動力を使う前）だけ選べる。行動力は使わない。
+ * 退却先の拠点が無い軍のユニット・ターンの初めでないときは選べない（灰色で理由を持つ）。選ぶと退却先の拠点の一覧を出し、拠点を選ぶと退却する（retreat.ts）。
+ * 「攻撃」の 2 階層目は兵種の攻撃の一覧（combat.ts の COMBAT_DEFS の attacks。定義は attacks.ts）の順に並ぶ。
+ * 魔術師・上級魔術師は通常攻撃の代わりにサンダーフォール（行動力 4。最大行動力と同じなので移動した後は撃てない）。
+ * 一斉攻撃は一斉攻撃を持つ兵種（歩兵・騎兵・ランツクネヒト）だけで、射程内に自分のほかの味方とも隣接している敵がいるときだけ並ぶ（hasVolleyTargets）。
+ * クールタイム中の攻撃（UnitStatus.cooldowns）は灰色で残し、残りターンを表示用の数値と理由に持たせる。
+ * 迎撃は選んだらすぐに実行し（予約した移動があればそこまで動く）、迎撃の構えで待機して行動を終える。攻撃の後と騎兵はできない。
+ * 待機（行動力 0）も選んだらすぐに実行し（予約した行動があれば実行してから）、残りの行動力を捨てて行動を終える。
+ * 行動力が残っていない（待機・迎撃で行動を終えた後など）ときは待機を選べない。
+ * 指揮官のスキルのうち鼓舞（行動力 2）は、選んだらすぐに実行し（予約した行動があれば実行してから）、自分の士気を 10〜20 回復する。
+ * ほかのスキルはまだ処理が無い。
+ */
+import type { UnitData, UnitType } from '@norden/map-runtime/core/units';
+import { ATTACK_DEFS, type MenuAttackId } from './attacks';
+import { attacksOf } from './combat';
+import type { UnitStatus } from './unitStatus';
+
+export type ActionId =
+  | 'move'
+  | MenuAttackId
+  | 'intercept'
+  | 'wait'
+  | 'retreat'
+  | 'confirm'
+  | 'cancel'
+  | `skill:${SkillId}`;
+
+/** 指揮官のスキル（特殊の項目） */
+export type SkillId = 'betray' | 'inspire' | 'fireAttack' | 'ambush';
+
+interface SkillDef {
+  name: string;
+  /** 消費する行動力 */
+  cost: number;
+}
+
+export const SKILL_DEFS: Record<SkillId, SkillDef> = {
+  betray: { name: '寝返り', cost: 4 },
+  inspire: { name: '鼓舞', cost: 2 },
+  fireAttack: { name: '火計', cost: 3 },
+  ambush: { name: '伏兵', cost: 2 },
+};
+
+interface ActionDef {
+  id: ActionId;
+  name: string;
+  /** 消費する行動力（省略時は決まっていない。移動は地形で変わる） */
+  cost?: number;
+  /** 使える兵種（省略時はすべて） */
+  types?: readonly UnitType[];
+  /** 2 階層目で、選べないときも灰色で残す（省略時は選べなければ並べない） */
+  keepDisabled?: boolean;
+}
+
+interface GroupDef {
+  name: string;
+  /** 攻撃の項目（2 階層目は兵種の攻撃の一覧。攻撃できる相手・攻撃済みかで選べるかが変わる） */
+  attack?: boolean;
+  /** 2 階層目の先頭に指揮官のスキルを並べる */
+  skills?: boolean;
+  /** 2 階層目 */
+  children: readonly ActionDef[];
+}
+
+/** 1 階層目の並び */
+const MENU: readonly (ActionDef | GroupDef)[] = [
+  { id: 'move', name: '移動' },
+  { name: '攻撃', attack: true, children: [] },
+  // 騎兵はできない
+  { id: 'intercept', name: '迎撃', cost: 2, types: ['infantry', 'archer', 'mage', 'rifleman', 'artillery', 'landsknecht', 'wizard', 'dragon', 'golem', 'behemoth', 'brain'] },
+  // 行動力が余ったときに行動を終える
+  { id: 'wait', name: '待機', cost: 0 },
+  { name: '特殊', skills: true, children: [{ id: 'retreat', name: '退却', keepDisabled: true }] },
+];
+
+export interface MenuAction {
+  id: ActionId;
+  name: string;
+  cost?: number;
+}
+
+/** メニューを組み立てるときの状況 */
+export interface MenuContext {
+  unit: UnitData;
+  status: UnitStatus;
+  /** 予約した行動の分を引いた残り行動力 */
+  ap: number;
+  /** 移動できる HEX があるか */
+  canMove: boolean;
+  /** 敵の ZOC の中にいて移動できないか（ターンの初めは ZOC の中でも動ける） */
+  zocLocked: boolean;
+  /** ターンの初めか（まだ移動も攻撃もしておらず、予約も無い）。退却はこのときだけ */
+  turnStart: boolean;
+  /** 退却先の拠点があるか */
+  canRetreat: boolean;
+  /** 予約した行動があるか（最後に「決定」「取消」を出す） */
+  planned: boolean;
+  /** 攻撃を予約したか（それ以上は攻撃できない。移動は canMoveAfterAttack のときだけ） */
+  attackPlanned: boolean;
+  /** 攻撃の後に移動できる兵種か */
+  canMoveAfterAttack: boolean;
+  /** 攻撃できる敵がいるか（予約した移動先から） */
+  hasTargets: boolean;
+  /** 予約した移動先から狙える相手のいる攻撃（射程が攻撃ごとに違うため。無い攻撃は並べない） */
+  targetable: readonly MenuAttackId[];
+  /** 一斉攻撃できる敵（攻撃できる敵のうち、自分のほかの味方とも隣接している敵）がいるか */
+  hasVolleyTargets: boolean;
+}
+
+const CONFIRM: MenuAction = { id: 'confirm', name: '決定' };
+const CANCEL: MenuAction = { id: 'cancel', name: '取消' };
+
+/** 2 階層目の行動 */
+export interface MenuChild extends MenuAction {
+  /** 選べない理由（選べないときだけ。灰色で出す） */
+  reason?: string;
+  /** クールタイムの残りターン数（クールタイム中だけ） */
+  cooldown?: number;
+}
+
+export interface MenuEntry {
+  name: string;
+  enabled: boolean;
+  /** 選べない理由（enabled = false のとき） */
+  reason?: string;
+  /** 全候補がクールタイム中のとき、最初に使えるようになるまでのターン数 */
+  cooldown?: number;
+  /** 1 階層目で直接選ぶ行動 */
+  action?: MenuAction;
+  /** 2 階層目（選べるものと、選べないときも残すもの） */
+  children?: MenuChild[];
+}
+
+/** ユニットの行動メニューの 1 階層目 */
+export function buildActionMenu(ctx: MenuContext): MenuEntry[] {
+  const { unit, status, ap, canMove, zocLocked, planned } = ctx;
+  const lacksAp = (cost: number | undefined) => ap < (cost ?? 0);
+  const cooldownTurns = (c: MenuAction): number | undefined => {
+    const n = isMenuAttack(c.id) ? status.cooldowns[c.id] : undefined;
+    return n !== undefined && n > 0 ? n : undefined;
+  };
+  /** 2 階層目の行動を選べない理由（選べるなら null） */
+  const childReason = (c: MenuAction): string | null =>
+    (cooldownTurns(c) ? `あと ${cooldownTurns(c)} ターン` : null) ??
+    (lacksAp(c.cost)
+      ? '行動力が足りない'
+      : isMenuAttack(c.id) && !ctx.targetable.includes(c.id)
+        ? '狙える敵がいない'
+        : c.id === 'volley' && !ctx.hasVolleyTargets
+        ? '取り囲んだ敵がいない'
+        : c.id === 'retreat' && status.noRetreat
+          ? 'この部隊は退却できない'
+          : c.id === 'retreat' && !ctx.canRetreat
+          ? '退却できる拠点がない'
+          : c.id === 'retreat' && (!ctx.turnStart || status.ap < status.maxAp)
+            ? 'ターンの初めしか退却できない'
+            : null);
+  const entries = MENU.map((def): MenuEntry => {
+    if ('id' in def) {
+      const action = { id: def.id, name: def.name, cost: def.cost };
+      if (def.types && !def.types.includes(unit.type)) return { name: def.name, enabled: false, reason: 'この兵種は使えない', action };
+      // 攻撃した（予約した・このターンに実行した）後は移動できない（騎兵は除く）
+      if (def.id === 'move' && (ctx.attackPlanned || status.attacked) && !ctx.canMoveAfterAttack) return { name: def.name, enabled: false, reason: '攻撃の後は移動できない', action };
+      if (def.id === 'intercept' && (ctx.attackPlanned || status.attacked)) return { name: def.name, enabled: false, reason: '攻撃の後は迎撃できない', action };
+      // 待機・迎撃などで行動を終えた後は、もう待機しても意味がない
+      if (def.id === 'wait' && status.ap <= 0) return { name: def.name, enabled: false, reason: '行動は終わっている', action };
+      if (def.id === 'move' && zocLocked) return { name: def.name, enabled: false, reason: '敵の ZOC の中にいる', action };
+      if (def.id === 'move' && !canMove) return { name: def.name, enabled: false, reason: '移動できる HEX がない', action };
+      if (lacksAp(def.cost)) return { name: def.name, enabled: false, reason: '行動力が足りない', action };
+      return { name: def.name, enabled: true, action };
+    }
+    const cands: (MenuAction & { keepDisabled?: boolean })[] = [
+      ...(def.skills ? status.skills.map((s) => ({ id: `skill:${s}` as const, name: SKILL_DEFS[s].name, cost: SKILL_DEFS[s].cost })) : []),
+      ...(def.attack ? attackActions(unit.type, status) : []),
+      ...def.children.filter((c) => !c.types || c.types.includes(unit.type)).map(({ id, name, cost, keepDisabled }) => ({ id, name, cost, keepDisabled })),
+    ];
+    // 親の項目を選べないとき、クールタイム中の候補があれば最短の残りターンを親にも出す（サブメニューを開けないため）
+    const parentCooldown = (): { cooldown?: number } => {
+      const turns = cands.map(cooldownTurns).filter((n) => n !== undefined);
+      return turns.length > 0 ? { cooldown: Math.min(...turns) } : {};
+    };
+    if (def.attack) {
+      // 攻撃した・予約した後は、使った攻撃のクールタイムを出さない（このターンの分が入っていて 1 多い）
+      if (status.attacked) return { name: def.name, enabled: false, reason: 'このターンは攻撃済み' };
+      if (ctx.attackPlanned) return { name: def.name, enabled: false, reason: '攻撃は予約済み' };
+      if (!ctx.hasTargets) return { name: def.name, enabled: false, reason: '攻撃できる敵がいない', ...parentCooldown() };
+    }
+    if (cands.length === 0) return { name: def.name, enabled: false, reason: 'この兵種は使えない' };
+    const children = cands.flatMap(({ keepDisabled, ...c }): MenuChild[] => {
+      const reason = childReason(c);
+      if (reason === null) return [c];
+      // クールタイム中の攻撃は灰色で残す
+      const cooldown = cooldownTurns(c);
+      if (cooldown) return [{ ...c, reason, cooldown }];
+      return keepDisabled ? [{ ...c, reason }] : [];
+    });
+    // 選べるものが無ければ選べない（灰色で残したものの理由を先に出す）
+    if (!children.some((c) => !c.reason)) {
+      const cd = parentCooldown();
+      const allCooling = cands.every((c) => cooldownTurns(c));
+      return { name: def.name, enabled: false, reason: allCooling ? `あと ${cd.cooldown} ターン` : (children[0]?.reason ?? childReason(cands[0])!), ...cd };
+    }
+    return { name: def.name, enabled: true, children };
+  });
+  if (planned) entries.push(...[CONFIRM, CANCEL].map((action) => ({ name: action.name, enabled: true, action })));
+  return entries;
+}
+
+/** 処理のある特殊の行動（ほかのスキルはまだ処理が無い） */
+const WORKING_SPECIALS: readonly ActionId[] = ['skill:inspire', 'retreat'];
+
+/**
+ * まだ行動できるか（移動・攻撃・迎撃・処理のある特殊の行動のどれかを選べるか）。どれも選べなければ行動済み（E の印）。
+ * 待機は数えない（行動力が残っていればいつでも選べる）
+ */
+export function canAct(ctx: MenuContext): boolean {
+  return buildActionMenu(ctx).some((entry, i) => {
+    const def = MENU[i];
+    if (!entry.enabled || !def || entry.action?.id === 'wait') return false;
+    if ('skills' in def && def.skills) return !!entry.children?.some((c) => !c.reason && WORKING_SPECIALS.includes(c.id));
+    return true;
+  });
+}
+
+/** 部隊の攻撃の行動メニューの項目（兵種の攻撃の一覧の順に、持たせた魔法が続く） */
+function attackActions(type: UnitType, status: Pick<UnitStatus, 'spells'>): MenuAction[] {
+  return attacksOf(type, status).map((id) => ({ id, name: ATTACK_DEFS[id].name, cost: ATTACK_DEFS[id].cost }));
+}
+
+function isMenuAttack(id: ActionId): id is MenuAttackId {
+  return id in ATTACK_DEFS;
+}
+
+/** 兵種の攻撃（一斉攻撃を除く）のうち、いちばん少ない行動力（攻撃できない兵種は null） */
+export function minAttackCost(type: UnitType): number | null {
+  const costs = attackActions(type, { spells: [] })
+    .filter((a) => a.id !== 'volley')
+    .map((a) => a.cost ?? 0);
+  return costs.length > 0 ? Math.min(...costs) : null;
+}

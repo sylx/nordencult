@@ -1,0 +1,274 @@
+/**
+ * ダメージの計算（値は仮）。攻撃 1 回で相手の兵数をどれだけ減らすか。マップには関わらない（包囲かどうかは呼ぶ側で決める）。
+ *
+ * ユニットそのものの力（兵数・兵種・指揮官・士気。UnitPower）と、戦う状況（地形・包囲など）の倍率に分けて計算する。
+ *
+ * ユニットそのものの力（offense・guard。基本攻撃力・基本防御力もここから出す）:
+ *   兵の攻め = 兵数 × DAMAGE_RATE × 兵種の攻撃力 × (1 + (統率 − 50) × LEADERSHIP_ATTACK)（兵数が多いほど大きい）
+ *              魔術師・上級魔術師・ドラゴン・ゴーレム・ベヒーモスは残りの兵数に関わらず、決まった兵数（FIXED_ATTACK_SOLDIERS）で計算する（attackSoldiers）
+ *   兵の守り = 兵種の防御力 ÷ (1 − (統率 − 50) × LEADERSHIP_GUARD)（兵の攻めをこれで割る）
+ *   武力     = 武力 × STRENGTH_ATTACK − 相手の武力 × STRENGTH_GUARD（兵数に関わらず一定のダメージ・軽減。魔術師は武力の代わりに知力）
+ *   士気     = 1 + (士気 − 50) × MORALE_RATE（50 より高ければ増え、低ければ減る）
+ *
+ *   基本ダメージ = (兵の攻め × 攻撃の倍率 ÷ 相手の兵の守り + 武力) × 士気（0 未満は 0）
+ *   攻撃の倍率は攻撃の定義（attacks.ts の power。範囲の巻き添えは splashPower）
+ *
+ * 戦う状況の倍率:
+ *   包囲     = 相手が包囲されていれば ENCIRCLED_RATE
+ *   地形     = 1 − 相手のいる HEX の地形効果（森 10%・砦 20%・城 30% など。人工物があればその値）
+ *              攻城の兵種（砲兵）が城・砦にいる相手を攻撃するときは、地形効果を SIEGE_RATE 倍にする（terrainDefense）
+ *   高所     = 弓兵・砲兵が相手より高い HEX にいれば 1 + 標高レベルの差 × HIGH_GROUND_RATE
+ *   ランダム = 1 + roll × RANDOM_SPREAD（roll は −1〜1）
+ *
+ *   迎撃     = 相手が迎撃の構えの近接ユニットなら INTERCEPT_GUARD
+ *   一斉攻撃 = 一斉攻撃なら VOLLEY_RATE[加わる味方の数]（多いほど 1 隊あたりの増え方も大きくなる）
+ *   魔法相性 = 魔法なら MAGIC_TAKEN[相手の兵種]（ゴーレムは弱く、ドラゴンは強い。無ければ 1）
+ *   間接     = 間接攻撃（反撃の無い攻撃か、距離 2 以上から）なら INDIRECT_TAKEN[相手の兵種]（ライフル兵・砲兵は強い。無ければ 1）
+ *
+ *   ダメージ = 基本ダメージ × 包囲 × 地形 × 高所 × 迎撃 × 一斉攻撃 × 魔法相性 × 間接 × ランダム（0〜相手の兵数）
+ *
+ * 基本攻撃力・基本防御力（basicAttack・basicDefense）は、標準のユニット（STANDARD_UNIT）を相手にした
+ * 通常攻撃の基本ダメージで表す。戦う前の比べ合い（侵攻画面など）に使う。
+ *
+ * 魔法（Hit.magic。魔術師の攻撃。サンダーフォール・迎撃の自動攻撃）は、相手の武力による軽減と、相手の迎撃の構えの影響を受けない。
+ * 反撃は通常攻撃として計算するので魔法ではない（COUNTER_HIT）。
+ *
+ * 反撃は、攻撃された側が攻撃した側へ通常攻撃をしたときのダメージ × COUNTER_RATE
+ * （攻撃された側が迎撃の構えの近接ユニットなら、さらに × INTERCEPT_COUNTER）。
+ */
+import type { UnitType } from '@norden/map-runtime/core/units';
+import { ATTACK_DEFS } from './attacks';
+import { mathRng, roll, type Rng } from './engine/rng';
+import type { UnitStatus } from './unitStatus';
+
+/** 兵種ごとの攻撃力・防御力（倍率） */
+export const UNIT_POWER: Record<UnitType, { attack: number; defense: number }> = {
+  infantry: { attack: 1.0, defense: 1.0 },
+  archer: { attack: 1.0, defense: 0.7 },
+  cavalry: { attack: 1.2, defense: 0.9 },
+  mage: { attack: 1.3, defense: 0.6 },
+  rifleman: { attack: 1.8, defense: 0.7 },
+  artillery: { attack: 2.5, defense: 0.5 },
+  landsknecht: { attack: 2.2, defense: 1.5 },
+  wizard: { attack: 1.3, defense: 0.6 },
+  dragon: { attack: 2.0, defense: 1.5 },
+  golem: { attack: 0.8, defense: 2.5 },
+  behemoth: { attack: 1.8, defense: 1.5 },
+  // 攻撃しない（反撃もしない）
+  brain: { attack: 0, defense: 3.0 },
+};
+
+/** 攻撃 1 回の当たり方（ダメージの計算に効くところ） */
+export interface Hit {
+  /** 兵種の攻撃力に掛ける倍率 */
+  power: number;
+  /** 魔法か（相手の武力で軽減されず、迎撃の構えの影響を受けない） */
+  magic: boolean;
+  /** 一斉攻撃か（攻撃する側の supporters の数でダメージが増える） */
+  volley: boolean;
+  /** 間接攻撃か（反撃の無い攻撃か、距離 2 以上からの攻撃。INDIRECT_TAKEN の兵種は受けるダメージが減る） */
+  indirect: boolean;
+}
+
+/** 通常攻撃の当たり方（反撃と、基本攻撃力・基本防御力の物差し） */
+export const COUNTER_HIT: Hit = { power: ATTACK_DEFS.attack.power, magic: false, volley: false, indirect: false };
+
+/** 兵数に対する、与えるダメージの割合 */
+const DAMAGE_RATE = 0.12;
+/** 統率 1 あたりのダメージの増減（50 が基準。自分は増やし、相手は減らす） */
+const LEADERSHIP_ATTACK = 0.005;
+const LEADERSHIP_GUARD = 0.004;
+/** 武力 1 あたりの、兵数に関わらない一定のダメージと、その軽減 */
+const STRENGTH_ATTACK = 0.5;
+const STRENGTH_GUARD = 0.3;
+/** 士気 1 あたりのダメージの増減（50 が基準。士気 0 で ×2/3・100 で ×4/3 になり、士気 0 は士気 100 の半分） */
+const MORALE_RATE = 1 / 150;
+/** 包囲された相手へのダメージの倍率 */
+const ENCIRCLED_RATE = 1.2;
+/** 高所の兵種が相手より高い HEX から攻撃したときの、標高レベルの差 1 あたりのダメージの増え方 */
+const HIGH_GROUND_RATE = 0.1;
+/** 高所からの攻撃でダメージが増える兵種 */
+const HIGH_GROUND_TYPES: readonly UnitType[] = ['archer', 'artillery'];
+/** 城・砦にいる相手の地形効果を減らす攻城の兵種と、地形効果に掛ける倍率 */
+const SIEGE_TYPES: readonly UnitType[] = ['artillery'];
+const SIEGE_RATE = 0.5;
+/** ランダムの幅（± の割合） */
+export const RANDOM_SPREAD = 0.2;
+/** 反撃の、通常攻撃のダメージに対する割合 */
+const COUNTER_RATE = 0.25;
+/** 迎撃の構えの近接ユニットが受けるダメージと、返す反撃の倍率 */
+const INTERCEPT_GUARD = 0.75;
+const INTERCEPT_COUNTER = 1.5;
+/**
+ * 一斉攻撃のダメージの倍率。添え字は加わる味方の数（相手の周りの 6 HEX のうち自分の分を除いて最大 5）。
+ * 加わる隊が多いほど 1 隊あたりの増え方も大きくする
+ */
+const VOLLEY_RATE = [1, 1.3, 1.7, 2.2, 2.8, 3.5];
+/** 魔法で受けるダメージの倍率（相手の兵種ごと。無ければ 1）。ゴーレムは魔法に弱く、ドラゴンは魔法に強い */
+export const MAGIC_TAKEN: Partial<Record<UnitType, number>> = { golem: 2.0, dragon: 0.75 };
+/** 間接攻撃（Hit.indirect）で受けるダメージの倍率（相手の兵種ごと。無ければ 1）。ライフル兵・砲兵は間接攻撃に強い */
+export const INDIRECT_TAKEN: Partial<Record<UnitType, number>> = { rifleman: 0.8, artillery: 0.8 };
+
+/** ユニットそのものの力（兵数・兵種・指揮官・士気）。strength は武力（魔術師は知力を入れる。mightFor） */
+export interface UnitPower extends Pick<UnitStatus, 'soldiers' | 'morale' | 'leadership' | 'strength'> {
+  type: UnitType;
+}
+
+/**
+ * 基本攻撃力・基本防御力の物差しにする標準のユニット: 歩兵 500 人、指揮官の統率・武力 50、士気 50。
+ * この相手の基本防御力が 100 になる
+ */
+export const STANDARD_UNIT: UnitPower = { type: 'infantry', soldiers: 500, morale: 50, leadership: 50, strength: 50 };
+
+/** ダメージの計算に使う、ユニットそのものの力と戦う状況 */
+export interface Fighter extends UnitPower {
+  /** 包囲されているか */
+  encircled: boolean;
+  /** 迎撃の構えの近接ユニットか（受けるダメージが減り、反撃が増える） */
+  guarding: boolean;
+  /** 一斉攻撃に加わる味方の数（一斉攻撃のときだけ効く） */
+  supporters: number;
+  /** いる HEX の地形効果（受けるダメージを減らす割合） */
+  defense: number;
+  /** いる HEX が城・砦か（攻城の兵種に攻撃されると地形効果が減る） */
+  walled: boolean;
+  /** いる HEX の標高レベル */
+  elevation: number;
+}
+
+/** 味方が supporters 隊加わったときの一斉攻撃のダメージの倍率 */
+export function volleyRate(supporters: number): number {
+  return VOLLEY_RATE[Math.min(supporters, VOLLEY_RATE.length - 1)];
+}
+
+/** att が def より高い HEX にいてダメージが増える標高レベルの差（増えなければ 0） */
+export function highGroundLevels(att: Fighter, def: Fighter): number {
+  return HIGH_GROUND_TYPES.includes(att.type) ? Math.max(0, att.elevation - def.elevation) : 0;
+}
+
+/** 標高レベルの差が levels のときの高所からの攻撃のダメージの倍率 */
+export function highGroundRate(levels: number): number {
+  return 1 + levels * HIGH_GROUND_RATE;
+}
+
+/** att が def を攻撃するときの、def のいる HEX の地形効果（攻城の兵種が城・砦にいる相手を攻撃するときは SIEGE_RATE 倍） */
+export function terrainDefense(att: Fighter, def: Fighter): number {
+  return def.walled && SIEGE_TYPES.includes(att.type) ? def.defense * SIEGE_RATE : def.defense;
+}
+
+/** −1〜1 の乱数（ランダム係数の roll。rng は戦闘のルールの乱数で、既定は Math.random） */
+export function randomRoll(rng: Rng = mathRng): number {
+  return roll(rng);
+}
+
+/** 攻撃力が残りの兵数に依存しない兵種と、兵の攻めの計算に使う兵数（固定値） */
+export const FIXED_ATTACK_SOLDIERS: Partial<Record<UnitType, number>> = { mage: 500, wizard: 500, dragon: 600, golem: 800, behemoth: 600 };
+
+/** 兵の攻めの計算に使う兵数（FIXED_ATTACK_SOLDIERS の兵種は固定値、ほかは残りの兵数） */
+export function attackSoldiers(unit: Pick<UnitPower, 'type' | 'soldiers'>): number {
+  return FIXED_ATTACK_SOLDIERS[unit.type] ?? unit.soldiers;
+}
+
+/** ユニットそのものの攻める力: 兵の攻め（相手の兵の守りで割る前）・武力による一定のダメージ・士気の倍率 */
+export function offense(unit: UnitPower): { troops: number; might: number; morale: number } {
+  return {
+    troops: attackSoldiers(unit) * DAMAGE_RATE * UNIT_POWER[unit.type].attack * Math.max(0, 1 + (unit.leadership - 50) * LEADERSHIP_ATTACK),
+    might: unit.strength * STRENGTH_ATTACK,
+    morale: 1 + (unit.morale - 50) * MORALE_RATE,
+  };
+}
+
+/** ユニットそのものの守る力: 相手の兵の攻めを割る兵の守り（統率が高いほど大きい）と、武力による一定の軽減 */
+export function guard(unit: UnitPower): { troops: number; might: number } {
+  return {
+    troops: UNIT_POWER[unit.type].defense / Math.max(0, 1 - (unit.leadership - 50) * LEADERSHIP_GUARD),
+    might: unit.strength * STRENGTH_GUARD,
+  };
+}
+
+/** att が def に kind の倍率の攻撃をしたときの、戦う状況を除いた基本ダメージ。magic なら相手の武力で軽減されない */
+export function baseDamage(att: UnitPower, def: UnitPower, kind: number, magic = false): number {
+  const o = offense(att);
+  const g = guard(def);
+  return Math.max(0, (o.troops * kind) / g.troops + o.might - (magic ? 0 : g.might)) * o.morale;
+}
+
+/** 基本攻撃力: 標準のユニット（STANDARD_UNIT）への通常攻撃の基本ダメージ（兵数） */
+export function basicAttack(unit: UnitPower): number {
+  return Math.round(baseDamage(unit, STANDARD_UNIT, COUNTER_HIT.power));
+}
+
+/**
+ * 基本防御力: 標準のユニットの通常攻撃に対する強さ。標準のユニット自身が 100 で、受ける基本ダメージが半分なら 200
+ * （標準のユニットが受ける基本ダメージ ÷ unit が受ける基本ダメージ × 100。ダメージを受けなければ MAX_BASIC_DEFENSE）
+ */
+export function basicDefense(unit: UnitPower): number {
+  const standard = baseDamage(STANDARD_UNIT, STANDARD_UNIT, COUNTER_HIT.power);
+  const taken = baseDamage(STANDARD_UNIT, unit, COUNTER_HIT.power);
+  return taken > 0 ? Math.min(MAX_BASIC_DEFENSE, Math.round((standard / taken) * 100)) : MAX_BASIC_DEFENSE;
+}
+
+/** 基本防御力の上限 */
+export const MAX_BASIC_DEFENSE = 999;
+
+/** ダメージの内訳（calcDamage の基本ダメージと、戦う状況の倍率。ランダムは含まない） */
+export interface DamageFactors {
+  /** 基本ダメージ */
+  base: number;
+  /** 包囲の倍率 */
+  encircled: number;
+  /** 効いた地形効果（受けるダメージを減らす割合。攻城の兵種が城・砦を攻撃するときは減らした値） */
+  defense: number;
+  /** 地形の倍率（1 − defense） */
+  terrain: number;
+  /** 高所からの攻撃でダメージが増えた標高レベルの差 */
+  highGroundLevels: number;
+  /** 高所の倍率 */
+  highGround: number;
+  /** 迎撃の構えの倍率 */
+  intercept: number;
+  /** 一斉攻撃の倍率 */
+  volley: number;
+  /** 魔法相性の倍率（魔法で、相手の兵種が MAGIC_TAKEN にあるとき） */
+  magic: number;
+  /** 間接攻撃の倍率（間接攻撃で、相手の兵種が INDIRECT_TAKEN にあるとき） */
+  indirect: number;
+}
+
+/** att が def を hit で攻撃したときのダメージの内訳 */
+export function damageFactors(att: Fighter, def: Fighter, hit: Hit): DamageFactors {
+  const { magic } = hit;
+  const defense = terrainDefense(att, def);
+  const levels = highGroundLevels(att, def);
+  return {
+    base: baseDamage(att, def, hit.power, magic),
+    encircled: def.encircled ? ENCIRCLED_RATE : 1,
+    defense,
+    terrain: 1 - defense,
+    highGroundLevels: levels,
+    highGround: highGroundRate(levels),
+    intercept: def.guarding && !magic ? INTERCEPT_GUARD : 1,
+    volley: hit.volley ? volleyRate(att.supporters) : 1,
+    magic: magic ? (MAGIC_TAKEN[def.type] ?? 1) : 1,
+    indirect: hit.indirect ? (INDIRECT_TAKEN[def.type] ?? 1) : 1,
+  };
+}
+
+/** att が def を hit で攻撃したときのダメージ */
+export function calcDamage(att: Fighter, def: Fighter, hit: Hit, roll: number): number {
+  if (att.soldiers <= 0 || def.soldiers <= 0) return 0;
+  const f = damageFactors(att, def, hit);
+  const random = 1 + roll * RANDOM_SPREAD;
+  return Math.min(def.soldiers, Math.round(f.base * f.encircled * f.terrain * f.highGround * f.intercept * f.volley * f.magic * f.indirect * random));
+}
+
+/** 反撃する def の、通常攻撃のダメージに対する反撃の割合（迎撃の構えなら増える） */
+export function counterRate(def: Pick<Fighter, 'guarding'>): number {
+  return COUNTER_RATE * (def.guarding ? INTERCEPT_COUNTER : 1);
+}
+
+/** att に攻撃された def（兵数は攻撃を受けた後）の反撃で、att が受けるダメージ */
+export function calcCounter(att: Fighter, def: Fighter, roll: number): number {
+  if (att.soldiers <= 0 || def.soldiers <= 0) return 0;
+  return Math.min(att.soldiers, Math.round(calcDamage(def, att, COUNTER_HIT, roll) * counterRate(def)));
+}

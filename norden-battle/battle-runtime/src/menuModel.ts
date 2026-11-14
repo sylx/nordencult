@@ -1,0 +1,207 @@
+/**
+ * 選択中のユニットの行動メニューの状態（DOM を持たない）。描画は ui/ActionMenu.tsx。
+ *
+ * - BattleApp が開け閉めし、毎フレーム、メニューを添えるユニットの絵の画面上の範囲と、メニューで隠したくない線
+ *   （予約した移動のルート・攻撃の矢印）の画面上の位置を渡す。
+ * - React の側は subscribe / getState（useSyncExternalStore）で中身の変化を受け取り、
+ *   onFrame で毎フレームの位置の更新を受け取る（位置は再描画せずに DOM を直接動かす）。
+ * - 2 階層目の開け閉めもここで持つ（Esc で BattleApp から閉じるため）。
+ * - 退却を選んだ後は、項目の代わりに退却先の拠点の一覧を出す（openRetreat。Esc・「戻る」で項目に戻る）。
+ *   強制退却（forced）のときは項目に戻れない（BattleApp が Esc を受け付けず、「戻る」も出さない）。
+ */
+import * as THREE from 'three';
+import type { UnitData } from '@norden/map-runtime/core/units';
+import type { UnitPlacement } from '@norden/map-runtime/render/units';
+import { buildActionMenu, type MenuAction, type MenuContext, type MenuEntry } from './actions';
+import type { RetreatDestination } from './retreat';
+
+/** 画面上の範囲（コンテナの左上からの CSS ピクセル） */
+export interface ScreenRect {
+  l: number;
+  t: number;
+  r: number;
+  b: number;
+}
+
+/** 退却先の拠点の一覧 */
+export interface RetreatMenu {
+  destinations: readonly RetreatDestination[];
+  /** 隣接している敵ユニットの数と、退却に失敗する確率（0〜1） */
+  enemies: number;
+  failChance: number;
+  /** 負けた陣営の強制退却か（項目に戻れない） */
+  forced: boolean;
+}
+
+export interface MenuState {
+  /** 開いているユニットのメニュー（閉じていれば null） */
+  ctx: MenuContext | null;
+  entries: readonly MenuEntry[];
+  /** 2 階層目を開いている 1 階層目の項目の番号 */
+  openIndex: number | null;
+  /** true の間はメニューを隠しておく（移動先を選んでいる間など） */
+  suspended: boolean;
+  /** 項目の代わりに出している退却先の拠点の一覧（出していなければ null） */
+  retreat: RetreatMenu | null;
+}
+
+/** 画面上の点（コンテナの左上からの CSS ピクセル） */
+export interface ScreenPoint {
+  x: number;
+  y: number;
+}
+
+/** 毎フレームの位置の基準。sprite はユニットの絵の範囲（画面の外・カメラの後ろなら null） */
+export interface MenuFrame {
+  sprite: ScreenRect | null;
+  /** メニューで隠したくない折れ線（予約した移動のルート・攻撃の矢印。カメラの後ろの点は除く） */
+  avoid: ScreenPoint[][];
+  /** コンテナの大きさ */
+  width: number;
+  height: number;
+}
+
+export class ActionMenuModel {
+  /** 行動を選んだとき */
+  onAction: (unit: UnitData, action: MenuAction) => void = () => {};
+  /** 退却先の拠点を選んだとき */
+  onRetreat: (unit: UnitData, to: RetreatDestination) => void = () => {};
+
+  private state: MenuState = { ctx: null, entries: [], openIndex: null, suspended: false, retreat: null };
+  private readonly listeners = new Set<() => void>();
+  private readonly frameListeners = new Set<(frame: MenuFrame) => void>();
+
+  readonly subscribe = (fn: () => void): (() => void) => {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  };
+
+  readonly getState = (): MenuState => this.state;
+
+  /** 毎フレームの位置の更新を受け取る */
+  onFrame(fn: (frame: MenuFrame) => void): () => void {
+    this.frameListeners.add(fn);
+    return () => this.frameListeners.delete(fn);
+  }
+
+  get isOpen(): boolean {
+    return this.state.ctx !== null;
+  }
+
+  get suspended(): boolean {
+    return this.state.suspended;
+  }
+
+  set suspended(suspended: boolean) {
+    if (suspended !== this.state.suspended) this.set({ suspended });
+  }
+
+  /** ユニットのメニューを開く（null で閉じる）。開いたまま呼ぶと中身を作り直す */
+  open(ctx: MenuContext | null): void {
+    this.set({ ctx, entries: ctx ? buildActionMenu(ctx) : [], openIndex: null, retreat: null });
+  }
+
+  /** 項目の代わりに退却先の拠点の一覧を出す */
+  openRetreat(retreat: RetreatMenu): void {
+    this.set({ openIndex: null, retreat });
+  }
+
+  /** 退却先の拠点の一覧を閉じて項目に戻る。閉じたものがあれば true */
+  closeRetreat(): boolean {
+    if (!this.state.retreat) return false;
+    this.set({ retreat: null });
+    return true;
+  }
+
+  chooseRetreat(to: RetreatDestination): void {
+    const unit = this.state.ctx?.unit;
+    this.closeRetreat();
+    if (unit) this.onRetreat(unit, to);
+  }
+
+  /** 1 階層目の index の項目の 2 階層目を開く */
+  openSub(index: number): void {
+    if (this.state.openIndex !== index) this.set({ openIndex: index });
+  }
+
+  /** 2 階層目だけを閉じる。閉じたものがあれば true */
+  closeSub(): boolean {
+    if (this.state.openIndex === null) return false;
+    this.set({ openIndex: null });
+    return true;
+  }
+
+  choose(action: MenuAction): void {
+    this.closeSub();
+    const unit = this.state.ctx?.unit;
+    if (unit) this.onAction(unit, action);
+  }
+
+  /**
+   * 毎フレーム、描画の後に呼ぶ。anchor（メニューを添えるユニットの絵の位置と大きさ）と、avoid（メニューで隠したくない
+   * ワールドの折れ線）の画面上の位置を知らせる
+   */
+  update(
+    anchor: UnitPlacement | null,
+    camera: THREE.PerspectiveCamera,
+    width: number,
+    height: number,
+    avoid: readonly (readonly THREE.Vector3[])[] = [],
+  ): void {
+    if (!this.state.ctx || this.frameListeners.size === 0) return;
+    const frame: MenuFrame = { sprite: anchor && spriteRect(anchor, camera, width, height), avoid: projectLines(avoid, camera, width, height), width, height };
+    for (const fn of this.frameListeners) fn(frame);
+  }
+
+  private set(patch: Partial<MenuState>): void {
+    this.state = { ...this.state, ...patch };
+    for (const fn of this.listeners) fn();
+  }
+}
+
+/** ワールドの折れ線を画面上の折れ線にする（カメラの後ろの点は除く） */
+export function projectLines(lines: readonly (readonly THREE.Vector3[])[], camera: THREE.PerspectiveCamera, w: number, h: number): ScreenPoint[][] {
+  const v = new THREE.Vector3();
+  return lines.map((line) =>
+    line.flatMap((p) => {
+      v.copy(p).project(camera);
+      return v.z > 1 ? [] : [{ x: ((v.x + 1) / 2) * w, y: ((1 - v.y) / 2) * h }];
+    }),
+  );
+}
+
+/** 画面上の折れ線（lines）のうち rect に入る部分の長さ（step ピクセル刻みで数える） */
+export function lengthInRect(rect: ScreenRect, lines: readonly (readonly ScreenPoint[])[], step = 4): number {
+  let inside = 0;
+  for (const line of lines) {
+    for (let i = 1; i < line.length; i++) {
+      const a = line[i - 1];
+      const b = line[i];
+      const len = Math.hypot(b.x - a.x, b.y - a.y);
+      const n = Math.max(1, Math.ceil(len / step));
+      for (let k = 0; k < n; k++) {
+        const t = (k + 0.5) / n;
+        const x = a.x + (b.x - a.x) * t;
+        const y = a.y + (b.y - a.y) * t;
+        if (x >= rect.l && x <= rect.r && y >= rect.t && y <= rect.b) inside += len / n;
+      }
+    }
+  }
+  return inside;
+}
+
+/** 画面上のユニットの絵の範囲（足元・頭・幅から求める。カメラの後ろなら null） */
+export function spriteRect(p: UnitPlacement, camera: THREE.PerspectiveCamera, w: number, h: number): ScreenRect | null {
+  const v = new THREE.Vector3();
+  const toScreen = (q: THREE.Vector3) => {
+    v.copy(q).project(camera);
+    return { x: ((v.x + 1) / 2) * w, y: ((1 - v.y) / 2) * h, behind: v.z > 1 };
+  };
+  const up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
+  const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
+  const foot = toScreen(p.foot);
+  if (foot.behind) return null;
+  const head = toScreen(up.multiplyScalar(p.height).add(p.foot));
+  const half = toScreen(right.multiplyScalar(p.width / 2).add(p.foot)).x - foot.x;
+  return { l: head.x - half, t: head.y, r: head.x + half, b: foot.y };
+}

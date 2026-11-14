@@ -1,0 +1,416 @@
+/**
+ * 戦闘記録のウィンドウ（画面の右下、ターン表示の上）。攻撃・迎撃を実行するたびに 1 件ずつ足す。
+ * 行動メニューより奥に表示する（battle.css の z-index）。
+ *
+ * - 枠は norden-ui の ThinFrameWithTitle（細いベゼルと題名の札）。
+ * - ターン・行動する軍が変わって最初の記録の前に、飾り罫の区切り（第 n ターン 勢力の名前）を入れる。
+ * - 新しい記録は下に足し、いちばん下までスクロールする（上を読んでいる間は動かさない）。
+ * - 題名の横のボタンで畳める。マップを読み込み直すと空にする。
+ * - 記録の一覧と畳むボタン以外（題名の札・枠）をつかんでドラッグで動かせる。画面の外へは出さない。
+ */
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { ThinFrameWithTitle } from 'norden-ui';
+import type { Offset } from '@norden/map-runtime/core/hex';
+import { TEAM_DEFS, type TeamId, type UnitData } from '@norden/map-runtime/core/units';
+import type { BattleApp, ExecuteReport, FacilityReport, SplashHit } from '../app';
+import { FACILITY_NAMES } from '../facilities';
+import { plowText } from '../terrain';
+import type { MoraleChange } from '../morale';
+import { useTeamName, useUnitName } from './factionsContext';
+
+/** 攻撃 1 回分の記録 */
+export interface AttackLogEntry {
+  /**
+   * intercept: 迎撃の構えの間接ユニットの自動攻撃、splash: 攻撃の範囲の巻き添えで当たった（ライフル兵の弾が目標の手前のユニットに当たったなど。味方なら巻き添え）、
+   * facility: 番の終わりに拠点の施設が撃った（attacker は無く、attackerName が施設の名前）
+   */
+  kind?: 'intercept' | 'splash' | 'facility';
+  turn: number;
+  /** 記録した番の軍（迎撃は相手の番に起きる） */
+  team: TeamId;
+  /** 攻撃したユニット（施設なら null で、attackerName に名前） */
+  attacker: UnitData | null;
+  attackerName?: string;
+  target: UnitData;
+  /** 攻撃したユニット・相手を率いる騎士の名前（騎士がいなければ無し） */
+  attackerLeader?: string;
+  targetLeader?: string;
+  /** 行動の名前（攻撃・斉射・突撃など） */
+  actionName: string;
+  damage: number;
+  /** 反撃による減少（直接攻撃でなければ使わない） */
+  counter: number;
+  direct: boolean;
+  /** 相手が包囲されていたか */
+  encircled: boolean;
+  /** 相手のいた HEX の地形効果（受けるダメージを減らす割合。なければ 0） */
+  defense: number;
+  /** 高所から攻撃してダメージが増えた標高レベルの差（増えなければ 0） */
+  highGround: number;
+  morale: MoraleChange;
+  /** 攻撃の後の兵数 */
+  attackerLeft: number;
+  targetLeft: number;
+  /** 突撃で飛び出た HEX */
+  landing: Offset | null;
+  /** 迎撃で相手の行動を止めたか */
+  halted?: boolean;
+  /** 殲滅されて指揮官が捕縛されたか（攻撃したユニット・相手） */
+  attackerCaptured?: boolean;
+  targetCaptured?: boolean;
+}
+
+/** 攻撃で地形が変わった記録（アーススパイクで耕した。攻撃の記録の後に並べる） */
+interface TerrainLogEntry {
+  kind: 'terrain';
+  turn: number;
+  team: TeamId;
+  attacker: UnitData;
+  attackerLeader?: string;
+  actionName: string;
+  /** 変わった HEX */
+  at: Offset;
+  /** 変化の説明（terrain.ts の plowText） */
+  text: string;
+}
+
+type LogEntry = AttackLogEntry | TerrainLogEntry;
+
+/** 下端からこれ以内にいれば「最新を見ている」とみなして自動でスクロールする（CSS ピクセル） */
+const STICK_BOTTOM = 24;
+/** 動かすときに空ける画面の端との間（上は題名の札が枠からはみ出す分も空ける） */
+const MARGIN = 6;
+const MARGIN_TOP = 16;
+
+export default function BattleLogWindow({ app }: { app: BattleApp }) {
+  const [entries, setEntries] = useState<LogEntry[]>([]);
+  const [collapsed, setCollapsed] = useState(false);
+  const teamName = useTeamName();
+  const rootRef = useRef<HTMLElement>(null);
+  const listRef = useRef<HTMLOListElement>(null);
+  /** 足す前にいちばん下を見ていたか */
+  const stick = useRef(true);
+  /** 一度でも動かしたか（動かすまでは CSS の右下の位置のまま） */
+  const moved = useRef(false);
+  /** ドラッグ中のポインターと、つかんだ位置（ウィンドウの左上から） */
+  const drag = useRef<{ id: number; dx: number; dy: number } | null>(null);
+  const [moving, setMoving] = useState(false);
+
+  useEffect(() => {
+    const offLoad = app.on('load', () => setEntries([]));
+    const add = (added: LogEntry[]) => {
+      if (added.length === 0) return;
+      const list = listRef.current;
+      stick.current = !list || list.scrollHeight - list.scrollTop - list.clientHeight <= STICK_BOTTOM;
+      setEntries((prev) => [...prev, ...added]);
+    };
+    const offExecute = app.on('execute', (report) => add(logEntries(app, report)));
+    const offFacility = app.on('facility', (report) => add([facilityEntry(app, report)]));
+    return () => {
+      offLoad();
+      offExecute();
+      offFacility();
+    };
+  }, [app]);
+
+  /** 左上を (x, y)（画面の左上から）へ動かす（画面からはみ出さないように詰める） */
+  const moveTo = (x: number, y: number) => {
+    const root = rootRef.current;
+    const area = root?.offsetParent;
+    if (!root || !area) return;
+    const left = Math.max(MARGIN, Math.min(x, area.clientWidth - MARGIN - root.offsetWidth));
+    const top = Math.max(MARGIN_TOP, Math.min(y, area.clientHeight - MARGIN - root.offsetHeight));
+    const st = root.style;
+    st.left = `${Math.round(left)}px`;
+    st.top = `${Math.round(top)}px`;
+    st.right = st.bottom = 'auto';
+    moved.current = true;
+  };
+  /** 動かした後に画面の大きさ・ウィンドウの高さが変わったら、はみ出さないように詰め直す */
+  const clampToView = () => {
+    const root = rootRef.current;
+    if (moved.current && root) moveTo(root.offsetLeft, root.offsetTop);
+  };
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (list && stick.current) list.scrollTop = list.scrollHeight;
+    clampToView();
+  }, [entries, collapsed]);
+
+  useEffect(() => {
+    window.addEventListener('resize', clampToView);
+    return () => window.removeEventListener('resize', clampToView);
+  }, []);
+
+  const onPointerDown = (e: ReactPointerEvent<HTMLElement>) => {
+    const root = rootRef.current;
+    if (!root || e.button !== 0 || (e.target as Element).closest('.log-list, .log-toggle')) return;
+    const r = root.getBoundingClientRect();
+    drag.current = { id: e.pointerId, dx: e.clientX - r.left, dy: e.clientY - r.top };
+    root.setPointerCapture(e.pointerId);
+    setMoving(true);
+    e.preventDefault();
+  };
+  const onPointerMove = (e: ReactPointerEvent<HTMLElement>) => {
+    const d = drag.current;
+    const area = rootRef.current?.offsetParent?.getBoundingClientRect();
+    if (d?.id === e.pointerId && area) moveTo(e.clientX - area.left - d.dx, e.clientY - area.top - d.dy);
+  };
+  const onPointerEnd = (e: ReactPointerEvent<HTMLElement>) => {
+    if (drag.current?.id !== e.pointerId) return;
+    drag.current = null;
+    setMoving(false);
+  };
+
+  return (
+    <ThinFrameWithTitle
+      ref={rootRef}
+      title="戦闘記録"
+      className={`battle-window battle-log${collapsed ? ' collapsed' : ''}${moving ? ' moving' : ''}`}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerEnd}
+      onPointerCancel={onPointerEnd}
+    >
+      <button
+        type="button"
+        className="log-toggle"
+        title={collapsed ? '広げる' : '畳む'}
+        aria-expanded={!collapsed}
+        onClick={() => {
+          stick.current = collapsed; // 広げたら最新を見せる
+          setCollapsed(!collapsed);
+        }}
+      />
+      <span className="log-count">{entries.length} 件</span>
+      <ol ref={listRef} className="log-list">
+        {entries.length === 0 ? <li className="log-empty">まだ戦闘はありません</li> : entries.map((e, i) => (
+          <Fragment key={i}>
+            {(e.turn !== entries[i - 1]?.turn || e.team !== entries[i - 1]?.team) && (
+              <li className="log-turn">
+                <span>
+                  第 {e.turn} ターン {teamName(e.team)}
+                </span>
+              </li>
+            )}
+            {e.kind === 'terrain' ? <TerrainEntry entry={e} /> : <Entry entry={e} />}
+          </Fragment>
+        ))}
+      </ol>
+    </ThinFrameWithTitle>
+  );
+}
+
+function Entry({ entry: e }: { entry: AttackLogEntry }) {
+  return (
+    // 足したときだけ光らせる（畳んで広げたときにもう一度光らないよう、終わったら外す）
+    <li className={`log-entry fresh${e.kind ? ` ${e.kind}` : ''}`} onAnimationEnd={(ev) => ev.currentTarget.classList.remove('fresh')}>
+      <div className="log-who">
+        {e.attacker ? <Unit unit={e.attacker} leader={e.attackerLeader} /> : <span className="log-facility">{e.attackerName}</span>}
+        <span className="log-verb">が</span>
+        <Unit unit={e.target} leader={e.targetLeader} />
+        <span className="log-verb">に</span>
+        {e.encircled && <span className="log-encircled">包囲</span>}
+        {e.defense > 0 && <span className="log-terrain">地形-{Math.round(e.defense * 100)}%</span>}
+        {e.highGround > 0 && <span className="log-terrain">高所+{e.highGround}</span>}
+        <span className="log-action">{e.actionName}</span>
+      </div>
+      <div className="log-result">
+        <Loss label="損害" kind="damage" n={e.damage} left={e.targetLeft} morale={e.morale.defender} captured={e.targetCaptured} />
+        {e.direct ? (
+          <Loss label="反撃" kind="counter" n={e.counter} left={e.attackerLeft} morale={e.morale.attacker} captured={e.attackerCaptured} />
+        ) : (
+          <span className="log-none">
+            反撃なし
+            <Morale n={e.morale.attacker} />
+          </span>
+        )}
+      </div>
+      {e.landing && e.attackerLeft > 0 && <div className="log-note">({e.landing.col}, {e.landing.row}) へ突破</div>}
+      {e.halted && e.targetLeft > 0 && <div className="log-note halted">迎撃で足止めされ、行動を中断</div>}
+    </li>
+  );
+}
+
+function TerrainEntry({ entry: e }: { entry: TerrainLogEntry }) {
+  return (
+    <li className="log-entry fresh terrain" onAnimationEnd={(ev) => ev.currentTarget.classList.remove('fresh')}>
+      <div className="log-who">
+        <Unit unit={e.attacker} leader={e.attackerLeader} />
+        <span className="log-verb">の</span>
+        <span className="log-action">{e.actionName}</span>
+      </div>
+      <div className="log-note">
+        ({e.at.col}, {e.at.row}) の{e.text}
+      </div>
+    </li>
+  );
+}
+
+/** 軍の色の印を付けたユニット名 */
+function Unit({ unit, leader }: { unit: UnitData; leader?: string }) {
+  const team = TEAM_DEFS[unit.team];
+  const unitName = useUnitName();
+  return (
+    <span className="log-unit" style={{ '--team': team.color } as CSSProperties}>
+      {unitName(unit, leader)}
+    </span>
+  );
+}
+
+/** 兵数の減少（減った数と残り。0 なら壊滅。指揮官が捕縛されたら捕縛も）と士気の増減 */
+function Loss({ label, kind, n, left, morale, captured }: { label: string; kind: string; n: number; left: number; morale: number; captured?: boolean }) {
+  let rest: ReactNode;
+  if (left <= 0) rest = <span className="log-destroyed">{captured ? '壊滅・捕縛' : '壊滅'}</span>;
+  else
+    rest = (
+      <>
+        <span className="left">残 {left}</span>
+        <Morale n={morale} />
+      </>
+    );
+  return (
+    <span className={`log-loss ${kind}`}>
+      <span className="label">{label}</span>
+      <b>−{n}</b>
+      {rest}
+    </span>
+  );
+}
+
+/** 士気の増減（変わらなければ出さない） */
+function Morale({ n }: { n: number }) {
+  if (n === 0) return null;
+  return <span className={`log-morale ${n > 0 ? 'up' : 'down'}`}>士気 {n > 0 ? '+' : '−'}{Math.abs(n)}</span>;
+}
+
+/** 番の終わりに施設が撃った記録 */
+function facilityEntry(app: BattleApp, r: FacilityReport): AttackLogEntry {
+  const { result } = r;
+  return {
+    kind: 'facility',
+    turn: r.turn,
+    team: app.activeTeam,
+    attacker: null,
+    attackerName: FACILITY_NAMES[r.kind],
+    target: r.target,
+    targetLeader: app.leaderOf(r.target),
+    actionName: '砲撃',
+    damage: result.damage,
+    counter: 0,
+    direct: false,
+    encircled: result.encircled,
+    defense: result.defense,
+    highGround: 0,
+    morale: result.morale,
+    attackerLeft: 0,
+    targetLeft: r.left,
+    landing: null,
+    targetCaptured: r.destroyed && app.wipedOut.some((w) => w.unit === r.target && w.captured),
+  };
+}
+
+/** 実行の結果から記録を作る（攻撃の前の移動で受けた迎撃 → 攻撃 → 攻撃の後の移動で受けた迎撃の順） */
+function logEntries(app: BattleApp, { unit, attack, intercepts, wipeouts }: ExecuteReport): LogEntry[] {
+  const out: LogEntry[] = [];
+  const captured = (u: UnitData) => wipeouts.some((w) => w.unit === u && w.captured);
+  // 目標の手前で弾が当たったユニットは、撃った攻撃の記録の後に並べる（味方に当たったものは巻き添えと出す）
+  const addSplash = (shooter: UnitData, actionName: string, hits: readonly SplashHit[]) => {
+    for (const h of hits) {
+      const { result } = h;
+      out.push({
+        kind: 'splash',
+        turn: app.turn,
+        team: app.activeTeam,
+        attacker: shooter,
+        target: h.unit,
+        attackerLeader: app.leaderOf(shooter),
+        targetLeader: app.leaderOf(h.unit),
+        actionName: h.friendly ? `${actionName}（巻き添え）` : actionName,
+        damage: result.damage,
+        counter: 0,
+        direct: false,
+        encircled: result.encircled,
+        defense: result.defense,
+        highGround: result.highGround,
+        morale: result.morale,
+        attackerLeft: app.statuses.get(shooter)?.soldiers ?? 0,
+        targetLeft: h.left,
+        landing: null,
+        targetCaptured: h.destroyed && captured(h.unit),
+      });
+    }
+  };
+  const addIntercepts = (afterAttack: boolean) => {
+    for (const i of intercepts) {
+      if (i.afterAttack !== afterAttack) continue;
+      const { result } = i;
+      out.push({
+        kind: 'intercept',
+        turn: app.turn,
+        team: app.activeTeam,
+        attacker: i.unit,
+        target: unit,
+        attackerLeader: app.leaderOf(i.unit),
+        targetLeader: app.leaderOf(unit),
+        actionName: '迎撃',
+        damage: result.damage,
+        counter: 0,
+        direct: false,
+        encircled: result.encircled,
+        defense: result.defense,
+        highGround: result.highGround,
+        morale: result.morale,
+        attackerLeft: app.statuses.get(i.unit)?.soldiers ?? 0,
+        targetLeft: i.targetLeft,
+        landing: null,
+        halted: i.halted,
+        targetCaptured: i.targetLeft <= 0 && captured(unit),
+      });
+      addSplash(i.unit, '迎撃', i.splash);
+    }
+  };
+  addIntercepts(false);
+  // 目標の無い攻撃（乱撃・敵のいない地点）は、範囲で当たったものだけを並べる
+  if (attack?.result && attack.target) {
+    const { result, target } = attack;
+    out.push({
+      turn: app.turn,
+      team: app.activeTeam,
+      attacker: unit,
+      target,
+      attackerLeader: app.leaderOf(unit),
+      targetLeader: app.leaderOf(target),
+      // 一斉攻撃は加わった隊の数（自分を含む）も出す
+      actionName: result.supporters > 0 ? `${attack.action.name} ${result.supporters + 1}隊` : attack.action.name,
+      damage: result.damage,
+      counter: result.counter,
+      direct: result.direct,
+      encircled: result.encircled,
+      defense: result.defense,
+      highGround: result.highGround,
+      morale: result.morale,
+      attackerLeft: attack.unitLeft,
+      targetLeft: attack.targetLeft,
+      landing: attack.landing,
+      attackerCaptured: captured(unit),
+      targetCaptured: captured(target),
+    });
+  }
+  if (attack) addSplash(unit, attack.action.name, attack.splash);
+  if (attack?.plowed) {
+    out.push({
+      kind: 'terrain',
+      turn: app.turn,
+      team: app.activeTeam,
+      attacker: unit,
+      attackerLeader: app.leaderOf(unit),
+      actionName: attack.action.name,
+      at: attack.plowed.at,
+      text: plowText(attack.plowed),
+    });
+  }
+  addIntercepts(true);
+  return out;
+}

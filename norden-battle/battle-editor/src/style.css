@@ -1,0 +1,456 @@
+:root {
+  --panel-bg: rgba(38, 28, 20, 0.92);
+  --panel-border: #8a6a3a;
+  --text: #f1e6cc;
+  --text-dim: #bfae8a;
+  --accent: #e2b75a;
+  --input-bg: #1e1610;
+  font-family: 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic UI', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #1a140e;
+}
+
+/* --- ツールバーと道具のウィンドウ（EditorApp.tsx。エディタの道具で、ゲームの画面には出さない） --- */
+.editor-toolbar {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 24px);
+  padding: 5px 6px 5px 12px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+}
+
+.editor-toolbar h1 {
+  flex: none;
+  margin: 0 6px 0 0;
+  font-size: 14px;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.editor-toolbar .tool {
+  flex: none;
+  padding: 3px 12px;
+}
+
+.editor-toolbar .tool.active {
+  color: #fff4d0;
+  border-color: var(--accent);
+  background: linear-gradient(#7a5226, #4e3216);
+}
+
+.editor-toolbar .sub {
+  min-width: 0;
+  margin: 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+
+/* 位置（left・top）は EditorApp.tsx で開くボタンの下に合わせる */
+.tool-window {
+  position: fixed;
+  top: 56px;
+  left: 12px;
+  z-index: 30;
+  width: 280px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  padding: 8px 12px 12px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+}
+
+.tool-window[hidden] {
+  display: none;
+}
+
+.tool-window header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.tool-window h2 {
+  margin: 0;
+  padding-left: 6px;
+  border-left: 3px solid var(--accent);
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.tool-window .close {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  line-height: 1;
+}
+
+.tool-window label.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.tool-window label.row span {
+  width: 64px;
+  color: var(--text-dim);
+}
+
+.tool-window label.row select,
+.tool-window label.row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.tool-window label.check {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.tool-window input[type='checkbox'] {
+  accent-color: var(--accent);
+}
+
+.tool-window input,
+.tool-window select,
+.editor-toolbar button,
+.tool-window button {
+  font: inherit;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid #5a4630;
+  border-radius: 3px;
+  padding: 3px 6px;
+}
+
+.tool-window .buttons {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.editor-toolbar button,
+.tool-window button {
+  flex: 1;
+  cursor: pointer;
+  background: linear-gradient(#5a3e26, #3e2a1a);
+  border-color: var(--panel-border);
+}
+
+.editor-toolbar button:hover,
+.tool-window button:hover {
+  background: linear-gradient(#6e4c2e, #4a3220);
+}
+
+.tool-window .hint {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin: 6px 0 0;
+}
+
+/* JSON ファイルをドロップしている間 */
+.drop-hint {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: var(--accent);
+  background: rgba(0, 0, 0, 0.45);
+  border: 3px dashed var(--accent);
+  pointer-events: none;
+}
+
+/* セリフの記録（新しいものが上） */
+.tool-window .bark-log {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 6px 0 0;
+  border-top: 1px solid #5a4630;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.tool-window .bark-log__who {
+  display: block;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* 部隊（編成）の道具 */
+.tool-window.wide {
+  width: 680px;
+}
+
+.tool-window button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tool-window table.roster {
+  width: 100%;
+  margin-top: 6px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.tool-window table.roster th {
+  font-weight: normal;
+  color: var(--text-dim);
+  text-align: left;
+  padding: 0 2px 2px;
+}
+
+.tool-window table.roster td {
+  padding: 2px;
+  vertical-align: middle;
+}
+
+.tool-window table.roster select {
+  width: 100%;
+  max-width: 220px;
+}
+
+.tool-window table.roster td:nth-child(4) select {
+  max-width: 130px;
+}
+
+.tool-window table.roster input.num {
+  width: 64px;
+}
+
+.tool-window table.roster input.num.narrow {
+  width: 48px;
+}
+
+.tool-window table.roster button.remove {
+  width: 22px;
+  padding: 0;
+}
+
+.roster-face {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--panel-border);
+  background-repeat: no-repeat;
+}
+
+.tool-window table.roster label.spell {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.tool-window table.roster .none {
+  color: var(--text-dim);
+}
+
+/* ダメージ計算 */
+.damage-calc .dc-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+@media (max-width: 720px) {
+  .damage-calc .dc-sides {
+    grid-template-columns: 1fr;
+  }
+}
+
+.damage-calc fieldset.dc-side {
+  margin: 0;
+  padding: 4px 8px 8px;
+  min-width: 0;
+  border: 1px solid #5a4630;
+  border-radius: 4px;
+}
+
+.damage-calc legend {
+  padding: 0 4px;
+  color: var(--accent);
+}
+
+.damage-calc label.row.dc-num input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.damage-calc label.row.dc-num input.num {
+  flex: none;
+  width: 64px;
+}
+
+.damage-calc label.row.dc-num em {
+  font-style: normal;
+  color: var(--text-dim);
+}
+
+.damage-calc label.row.dc-num.dim {
+  opacity: 0.45;
+}
+
+.damage-calc .dc-modes button {
+  font-size: 11px;
+  padding: 3px 2px;
+}
+
+.damage-calc button:disabled,
+.damage-calc input:disabled,
+.damage-calc select:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.damage-calc .dc-result {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.damage-calc .dc-headline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.damage-calc .dc-headline > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px;
+  background: var(--input-bg);
+  border: 1px solid #5a4630;
+  border-radius: 4px;
+}
+
+.damage-calc .dc-label,
+.damage-calc .dc-range {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.damage-calc .dc-headline strong {
+  font-size: 26px;
+  line-height: 1.2;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.damage-calc .dc-headline strong.none {
+  color: var(--text-dim);
+}
+
+.damage-calc .dc-headline strong.up {
+  color: #7fd07f;
+}
+
+.damage-calc .dc-headline strong.down {
+  color: #e07a6a;
+}
+
+.damage-calc table.dc-morale {
+  margin-top: 8px;
+}
+
+.damage-calc table {
+  width: 100%;
+  margin-top: 6px;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.damage-calc table th,
+.damage-calc table td {
+  padding: 1px 4px;
+  text-align: left;
+  font-weight: normal;
+  vertical-align: top;
+}
+
+.damage-calc .dc-breakdown th {
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+
+.damage-calc .dc-breakdown td:nth-child(2) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.damage-calc .dc-breakdown td:nth-child(3) {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.damage-calc .dc-breakdown tr.sum th,
+.damage-calc .dc-breakdown tr.sum td:nth-child(2) {
+  color: var(--accent);
+  border-top: 1px solid #5a4630;
+}
+
+.damage-calc .dc-breakdown tr.idle {
+  opacity: 0.45;
+}
+
+.damage-calc .dc-compare {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.damage-calc .dc-compare summary {
+  cursor: pointer;
+  color: var(--text-dim);
+}
+
+.damage-calc .dc-compare td,
+.damage-calc .dc-compare thead th {
+  text-align: right;
+}
+
+.damage-calc .dc-compare tr.current th,
+.damage-calc .dc-compare tr.current td {
+  color: var(--accent);
+}
