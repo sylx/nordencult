@@ -1,0 +1,318 @@
+import { Instrument, loadInstrument } from './instrument.ts'
+import { createReverbImpulse, type ReverbOptions } from './reverb.ts'
+import type { InstrumentIndex, InstrumentIndexEntry, RegionData } from './types.ts'
+import { Voice, type VoiceTarget } from './voice.ts'
+
+export interface SynthOptions {
+  // index.json の URL
+  indexUrl?: string
+  // 同時発音数の上限。超えたら古いボイスから止める
+  maxVoices?: number
+  // 音量とリバーブの初期値。書いていない項目は DEFAULT_MIX
+  mix?: Partial<MixSettings>
+}
+
+export type ReverbSettings = Required<ReverbOptions>
+
+// マスター・原音・リバーブの戻りの量と、リバーブの残響
+export interface MixSettings extends ReverbSettings {
+  master: number
+  dry: number
+  wet: number
+}
+
+// ゲームで鳴らすときのミックス。サンプルの音色は素のままだと薄いので、原音を絞って深めのリバーブで包む
+export const DEFAULT_MIX: MixSettings = { master: 1.5, dry: 0.25, wet: 3.45, duration: 3.1, preDelay: 0.008, damping: 0.7 }
+
+export class Synth {
+  readonly ctx: AudioContext
+  readonly master: GainNode
+  // コンプレッサの後の最終的な音量 (ゲームの音量設定用)。既定 1
+  readonly output: GainNode
+  // チャンネルのリバーブ送りの行き先
+  readonly reverb: GainNode
+  // リバーブの戻りの量 (全体のリバーブの深さ)
+  readonly reverbReturn: GainNode
+  // 原音の量
+  readonly dry: GainNode
+  readonly maxVoices: number
+  private readonly convolvers: { node: ConvolverNode; input: GainNode }[]
+  private activeConvolver = 0
+  private reverbOptions: ReverbSettings
+  private readonly indexUrl: URL
+  private index?: Promise<InstrumentIndexEntry[]>
+  private readonly instruments = new Map<string, Promise<Instrument>>()
+  private readonly voices = new Set<Voice>()
+
+  constructor(ctx: AudioContext = new AudioContext(), options: SynthOptions = {}) {
+    this.ctx = ctx
+    this.indexUrl = new URL(options.indexUrl ?? 'instruments/index.json', location.href)
+    this.maxVoices = options.maxVoices ?? 96
+    const { master, dry, wet, ...reverb } = { ...DEFAULT_MIX, ...options.mix }
+    this.reverbOptions = reverb
+
+    // dry と reverb をまとめて、リミッタ代わりのコンプレッサを通して出力する
+    const compressor = new DynamicsCompressorNode(ctx, { threshold: -6, knee: 6, ratio: 8, attack: 0.003, release: 0.25 })
+    this.master = new GainNode(ctx, { gain: master })
+    this.output = new GainNode(ctx)
+    this.master.connect(compressor).connect(this.output).connect(ctx.destination)
+
+    this.dry = new GainNode(ctx, { gain: dry })
+    this.dry.connect(this.master)
+
+    // インパルス応答を差し替えるときに残響が途切れないよう、コンボルバを 2 つ用意して入力を切り替える
+    this.reverb = new GainNode(ctx)
+    this.reverbReturn = new GainNode(ctx, { gain: wet })
+    this.reverbReturn.connect(this.master)
+    this.convolvers = [0, 1].map((i) => {
+      const input = new GainNode(ctx, { gain: i === 0 ? reverbGain(this.reverbOptions.duration) : 0 })
+      const node = new ConvolverNode(ctx, { buffer: i === 0 ? createReverbImpulse(ctx, this.reverbOptions) : null })
+      this.reverb.connect(input).connect(node).connect(this.reverbReturn)
+      return { node, input }
+    })
+  }
+
+  get reverbSettings(): ReverbSettings {
+    return { ...this.reverbOptions }
+  }
+
+  // リバーブの残響時間などを変える。インパルス応答を作り直すので、スライダーの操作中などは間引いて呼ぶ。
+  // 鳴っている残響はそのまま減衰させ、新しい音から新しい残響になる
+  setReverb(options: ReverbOptions): void {
+    this.reverbOptions = { ...this.reverbOptions, ...options }
+    const next = 1 - this.activeConvolver
+    const from = this.convolvers[this.activeConvolver]
+    const to = this.convolvers[next]
+    to.node.buffer = createReverbImpulse(this.ctx, this.reverbOptions)
+    const t = this.ctx.currentTime
+    from.input.gain.setTargetAtTime(0, t, 0.02)
+    to.input.gain.cancelScheduledValues(t)
+    to.input.gain.setTargetAtTime(reverbGain(this.reverbOptions.duration), t, 0.02)
+    this.activeConvolver = next
+  }
+
+  // ブラウザの自動再生制限で suspended の場合があるので、ユーザー操作の中で呼ぶ
+  resume(): Promise<void> {
+    return this.ctx.resume()
+  }
+
+  get currentTime(): number {
+    return this.ctx.currentTime
+  }
+
+  get activeVoiceCount(): number {
+    return this.voices.size
+  }
+
+  listInstruments(): Promise<InstrumentIndexEntry[]> {
+    this.index ??= fetch(this.indexUrl)
+      .then((r) => {
+        if (!r.ok) throw new Error(`failed to fetch ${this.indexUrl}: ${r.status}`)
+        return r.json() as Promise<InstrumentIndex>
+      })
+      .then((i) => i.instruments)
+    return this.index
+  }
+
+  // id (例: "violin") または音色名で楽器を読み込む。同じ楽器は一度だけ読み込む
+  async loadInstrument(idOrName: string): Promise<Instrument> {
+    const entries = await this.listInstruments()
+    const entry = entries.find((e) => e.id === idOrName || e.name === idOrName)
+    if (!entry) throw new Error(`unknown instrument: ${idOrName}`)
+    let loading = this.instruments.get(entry.id)
+    if (!loading) {
+      loading = loadInstrument(new URL(entry.url, this.indexUrl))
+      loading.catch(() => this.instruments.delete(entry.id))
+      this.instruments.set(entry.id, loading)
+    }
+    return loading
+  }
+
+  // bus を渡すと、そのバスを通して出力する (曲ごとにまとめてフェードするときなど)
+  createChannel(instrument: Instrument, bus?: Bus): Channel {
+    return bus ? new Channel(this, instrument, bus.dryIn, bus.wetIn) : new Channel(this, instrument, this.dry, this.reverb)
+  }
+
+  createBus(): Bus {
+    return new Bus(this)
+  }
+
+  allNotesOff(time = this.ctx.currentTime): void {
+    for (const v of this.voices) v.release(time)
+  }
+
+  /** @internal Channel から呼ばれる */
+  startVoice(
+    instrument: Instrument,
+    key: number,
+    velocity: number,
+    time: number,
+    target: VoiceTarget,
+  ): Voice[] {
+    // キーは小数 (微分音) でもよい。リージョンは最も近い半音で選び、音程は小数のまま使う
+    velocity = Math.max(1, Math.min(127, Math.round(velocity)))
+    const regions = instrument.findRegions(Math.round(key), velocity)
+    this.killExclusive(regions, time, target)
+    const started: Voice[] = []
+    for (const region of regions) {
+      const voice = new Voice(this.ctx, region, instrument.samples[region.sample], key, velocity, time, target)
+      voice.onended = (v) => this.voices.delete(v)
+      this.voices.add(voice)
+      started.push(voice)
+    }
+    this.stealVoices(time)
+    return started
+  }
+
+  // exclusiveClass: 同じチャンネルで同じクラスの音を鳴らすと、それまで鳴っていた音をすぐ止める
+  // (ミュートトライアングルでオープントライアングルの余韻を切るなど)。
+  // 音はシーケンサから時刻順に予約される前提で、この音より後に始まる予約済みの音は止めない
+  private killExclusive(regions: RegionData[], time: number, target: VoiceTarget): void {
+    const classes = new Set(regions.map((r) => r.exclusiveClass).filter((c) => c !== 0))
+    if (classes.size === 0) return
+    for (const v of this.voices) {
+      if (v.target === target && classes.has(v.exclusiveClass) && v.startTime <= time) v.kill(time)
+    }
+  }
+
+  private stealVoices(time: number): void {
+    const alive = [...this.voices].filter((v) => !v.killed)
+    let excess = alive.length - this.maxVoices
+    if (excess <= 0) return
+    // リリース中のものを優先し、古い順に止める
+    const candidates = alive.sort(
+      (a, b) => Number(b.released) - Number(a.released) || a.startTime - b.startTime,
+    )
+    for (const v of candidates) {
+      if (excess-- <= 0) break
+      v.kill(time)
+    }
+  }
+}
+
+// ConvolverNode はインパルス応答のエネルギーを揃えるので、長い残響ほど薄く聞こえる。
+// 残響時間に応じて少し持ち上げる (2.4 秒で 1 倍、12 秒で約 1.5 倍)
+function reverbGain(duration: number): number {
+  return (duration / 2.4) ** 0.25
+}
+
+// 複数のチャンネルをまとめて音量を変える。原音とリバーブ送りの両方に掛けるので、
+// フェードアウトしても鳴っている残響はそのまま減衰する
+//
+//   channels → dryIn → Synth の dry
+//   channels → wetIn → Synth の reverb
+export class Bus {
+  readonly synth: Synth
+  readonly dryIn: GainNode
+  readonly wetIn: GainNode
+
+  constructor(synth: Synth) {
+    this.synth = synth
+    this.dryIn = new GainNode(synth.ctx)
+    this.wetIn = new GainNode(synth.ctx)
+    this.dryIn.connect(synth.dry)
+    this.wetIn.connect(synth.reverb)
+  }
+
+  get gain(): number {
+    return this.dryIn.gain.value
+  }
+
+  // 今から duration 秒かけて、from (既定は今の値) から gain まで直線で変える。duration が 0 ならすぐ
+  fade(gain: number, duration: number, from = this.gain): void {
+    const time = this.synth.currentTime
+    for (const param of [this.dryIn.gain, this.wetIn.gain]) {
+      param.cancelScheduledValues(time)
+      param.setValueAtTime(duration > 0 ? from : gain, time)
+      if (duration > 0) param.linearRampToValueAtTime(gain, time + duration)
+    }
+  }
+
+  disconnect(): void {
+    this.dryIn.disconnect()
+    this.wetIn.disconnect()
+  }
+}
+
+// 1 つの楽器を鳴らすパート。音量・パン・リバーブ量を持つ
+//
+//   voices → dryIn → panner → Synth の dry
+//   voices → wetIn → reverbAmount → Synth の reverb
+export class Channel {
+  readonly synth: Synth
+  instrument: Instrument
+  private readonly dryIn: GainNode
+  private readonly wetIn: GainNode
+  private readonly reverbAmount: GainNode
+  private readonly panner: StereoPannerNode
+  private readonly target: VoiceTarget
+  private readonly held = new Map<number, Voice[]>()
+
+  constructor(synth: Synth, instrument: Instrument, dry: AudioNode, reverb: AudioNode) {
+    const ctx = synth.ctx
+    this.synth = synth
+    this.instrument = instrument
+    this.dryIn = new GainNode(ctx)
+    this.wetIn = new GainNode(ctx)
+    this.reverbAmount = new GainNode(ctx)
+    this.panner = new StereoPannerNode(ctx)
+    this.dryIn.connect(this.panner).connect(dry)
+    this.wetIn.connect(this.reverbAmount).connect(reverb)
+    this.target = { output: this.dryIn, reverb: this.wetIn }
+  }
+
+  // 0..1 程度
+  set volume(value: number) {
+    this.dryIn.gain.value = value
+    this.wetIn.gain.value = value
+  }
+
+  get volume(): number {
+    return this.dryIn.gain.value
+  }
+
+  // 音色ごとのリバーブ送り量に掛ける倍率。1 で SF2 の設定どおり
+  set reverb(value: number) {
+    this.reverbAmount.gain.value = value
+  }
+
+  get reverb(): number {
+    return this.reverbAmount.gain.value
+  }
+
+  // -1 (左) .. 1 (右)
+  set pan(value: number) {
+    this.panner.pan.value = value
+  }
+
+  get pan(): number {
+    return this.panner.pan.value
+  }
+
+  // time は AudioContext の時刻。省略時は即時
+  noteOn(key: number, velocity = 100, time = this.synth.currentTime): Voice[] {
+    const voices = this.synth.startVoice(this.instrument, key, velocity, time, this.target)
+    const list = this.held.get(key)
+    if (list) list.push(...voices)
+    else this.held.set(key, voices)
+    return voices
+  }
+
+  noteOff(key: number, time = this.synth.currentTime): void {
+    const list = this.held.get(key)
+    if (!list) return
+    for (const v of list) v.release(time)
+    this.held.delete(key)
+  }
+
+  // 長さの決まった音を予約する。BGM の再生は基本的にこれを使う
+  playNote(key: number, velocity: number, time: number, duration: number): Voice[] {
+    const voices = this.synth.startVoice(this.instrument, key, velocity, time, this.target)
+    for (const v of voices) v.release(time + duration)
+    return voices
+  }
+
+  allNotesOff(time = this.synth.currentTime): void {
+    for (const key of [...this.held.keys()]) this.noteOff(key, time)
+  }
+}

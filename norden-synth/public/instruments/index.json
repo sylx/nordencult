@@ -1,0 +1,197 @@
+{
+  "instruments": [
+    {
+      "id": "yamaha-grand-piano",
+      "name": "Yamaha Grand Piano",
+      "bank": 0,
+      "program": 0,
+      "url": "yamaha-grand-piano.json",
+      "bytes": 971052
+    },
+    {
+      "id": "accordian",
+      "name": "Accordian",
+      "bank": 0,
+      "program": 21,
+      "url": "accordian.json",
+      "bytes": 239740
+    },
+    {
+      "id": "nylon-string-guitar",
+      "name": "Nylon String Guitar",
+      "bank": 0,
+      "program": 24,
+      "url": "nylon-string-guitar.json",
+      "bytes": 228667
+    },
+    {
+      "id": "acoustic-bass",
+      "name": "Acoustic Bass",
+      "bank": 0,
+      "program": 32,
+      "url": "acoustic-bass.json",
+      "bytes": 156042
+    },
+    {
+      "id": "violin",
+      "name": "Violin",
+      "bank": 0,
+      "program": 40,
+      "url": "violin.json",
+      "bytes": 357902
+    },
+    {
+      "id": "viola",
+      "name": "Viola",
+      "bank": 0,
+      "program": 41,
+      "url": "viola.json",
+      "bytes": 483245
+    },
+    {
+      "id": "cello",
+      "name": "Cello",
+      "bank": 0,
+      "program": 42,
+      "url": "cello.json",
+      "bytes": 619020
+    },
+    {
+      "id": "contrabass",
+      "name": "Contrabass",
+      "bank": 0,
+      "program": 43,
+      "url": "contrabass.json",
+      "bytes": 201304
+    },
+    {
+      "id": "pizzicato-section",
+      "name": "Pizzicato Section",
+      "bank": 0,
+      "program": 45,
+      "url": "pizzicato-section.json",
+      "bytes": 374590
+    },
+    {
+      "id": "harp",
+      "name": "Harp",
+      "bank": 0,
+      "program": 46,
+      "url": "harp.json",
+      "bytes": 199978
+    },
+    {
+      "id": "timpani",
+      "name": "Timpani",
+      "bank": 0,
+      "program": 47,
+      "url": "timpani.json",
+      "bytes": 159699
+    },
+    {
+      "id": "ahh-choir",
+      "name": "Ahh Choir",
+      "bank": 0,
+      "program": 52,
+      "url": "ahh-choir.json",
+      "bytes": 683705
+    },
+    {
+      "id": "trumpet",
+      "name": "Trumpet",
+      "bank": 0,
+      "program": 56,
+      "url": "trumpet.json",
+      "bytes": 83257
+    },
+    {
+      "id": "trombone",
+      "name": "Trombone",
+      "bank": 0,
+      "program": 57,
+      "url": "trombone.json",
+      "bytes": 154560
+    },
+    {
+      "id": "french-horns",
+      "name": "French Horns",
+      "bank": 0,
+      "program": 60,
+      "url": "french-horns.json",
+      "bytes": 397436
+    },
+    {
+      "id": "alto-sax",
+      "name": "Alto Sax",
+      "bank": 0,
+      "program": 65,
+      "url": "alto-sax.json",
+      "bytes": 297822
+    },
+    {
+      "id": "piccolo",
+      "name": "Piccolo",
+      "bank": 0,
+      "program": 72,
+      "url": "piccolo.json",
+      "bytes": 166300
+    },
+    {
+      "id": "flute",
+      "name": "Flute",
+      "bank": 0,
+      "program": 73,
+      "url": "flute.json",
+      "bytes": 191999
+    },
+    {
+      "id": "sitar",
+      "name": "Sitar",
+      "bank": 0,
+      "program": 104,
+      "url": "sitar.json",
+      "bytes": 139622
+    },
+    {
+      "id": "steel-drums",
+      "name": "Steel Drums",
+      "bank": 0,
+      "program": 114,
+      "url": "steel-drums.json",
+      "bytes": 34802
+    },
+    {
+      "id": "taiko-drum",
+      "name": "Taiko Drum",
+      "bank": 0,
+      "program": 116,
+      "url": "taiko-drum.json",
+      "bytes": 16963
+    },
+    {
+      "id": "orchestra-kit",
+      "name": "Orchestra Kit",
+      "bank": 128,
+      "program": 48,
+      "url": "orchestra-kit.json",
+      "bytes": 1792480
+    },
+    {
+      "id": "choral-aahhs",
+      "name": "Choral Aahhs",
+      "bank": 0,
+      "program": 0,
+      "url": "choral-aahhs.json",
+      "bytes": 491268
+    },
+    {
+      "id": "irina-brochin",
+      "name": "Irina Brochin",
+      "bank": 0,
+      "program": 0,
+      "url": "irina-brochin.json",
+      "bytes": 697574,
+      "credit": "\"Papelmedia Final SF2 XXL - Irina Brochin\" by Simon Tristan Papel (Papelmedia), voice by Irina Brochin. https://www.polyphone.io/en/soundfonts/vocals/228-papelmedia-final-sf2-xxl-irina-brochin"
+    }
+  ]
+}
