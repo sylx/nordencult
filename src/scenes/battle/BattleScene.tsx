@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SettingsIcon, Tooltip } from 'norden-ui'
+import { battleEndSong, playBgm } from '../../audio/bgm'
 import {
   BattleScreen, lineBarks, mathRng, SIDE_TEAM, type BarkSource, type BattleCutInTexts, type BattleFactions, type BattleOutcome,
   type Player, type RemainingUnit, type RetreatDestinations, type RetreatReport, type UnitStatus, type WipeoutReport,
@@ -215,6 +216,7 @@ function Battlefield({ battle }: { battle: Battle }) {
             map={map.data} troops={troops.troops} factions={factions} cutInTexts={battleCutInTexts(battle)} barks={barks} retreats={retreatTo}
             onRetreat={(report) => setRetreats((list) => [...list, toBattleRetreat(battle, report)])}
             onWipeout={(report) => setWipeouts((list) => [...list, toBattleWipeout(battle, report)])}
+            onDecided={(outcome) => playBgm(battleEndSong(isPlayerFaction(game, battle[outcome.winner].factionId)))}
             onEnd={(outcome) => decide(outcome.winner, outcome)} endLabel="戦闘の結果へ"
             playerSide={playerSideOf(game, battle)} cpu={cpu} speed={speed}
             className="battle-scene__screen"

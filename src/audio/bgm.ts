@@ -31,6 +31,9 @@ export function playBgm(songId: string | null): void {
     .catch((err: unknown) => console.error(`bgm: cannot play ${songId}`, err))
 }
 
+/** The song of a battle's end: the player's side won or lost (played with the outcome's cut-in, and on through the result) */
+export const battleEndSong = (won: boolean): string => (won ? 'victor-accolade' : 'fallen-requiem')
+
 /** The song last asked for (null: silence), e.g. to go back to after a dialogue */
 export const currentBgm = (): string | null => requested
 

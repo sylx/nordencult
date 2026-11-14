@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { playBgm } from '../../audio/bgm'
+import { battleEndSong, playBgm } from '../../audio/bgm'
 import { FactionLabel } from '../../components/FactionLabel'
 import { KnightList } from '../../components/KnightList'
 import { CHARACTER_MAP, type Character } from '../../data/character'
@@ -62,8 +62,9 @@ export default function BattleResultScene({ params }: SceneProps<'battleResult'>
   const kinds = (Object.keys(MOVE_LABELS) as MoveKind[]).filter((k) => moves.some((m) => m.kind === k))
   const isWinner = isPlayerFaction(game, winnerFaction)
 
+  // Already playing from the outcome's cut-in on a drawn battle (the same song is not restarted)
   useEffect(() => {
-    playBgm(isWinner ? 'victor-accolade' : 'fallen-requiem')
+    playBgm(battleEndSong(isWinner))
   }, [isWinner])
 
   return (
