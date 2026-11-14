@@ -9,8 +9,8 @@ export const SCENE_BGM: Record<SceneId, string | null | undefined> = {
   title: 'mist-pilgrim',
   /** 雪原の評議 */
   strategy: 'winter-council',
-  /** 鬨の声 */
-  battle: 'battle-cry',
+  /** 凍土の鉄騎 */
+  battle: 'tundra-march',
   /** 戦果に応じて BattleResultScene が victor-accolade / fallen-requiem を切り替える */
   battleResult: undefined,
 }

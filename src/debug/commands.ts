@@ -1,3 +1,4 @@
+import { bgmReverb, currentBgm, setBgmReverb } from '../audio/bgm'
 import { BUILDING_MAP } from '../data/buildings'
 import { CHARACTER_LIST, CHARACTER_MAP, CHARACTER_TYPE_LABELS, isSpecialCharacterId } from '../data/character'
 import { CITY_LIST, CITY_MAP } from '../data/city'
@@ -654,6 +655,22 @@ export const DEBUG_COMMANDS: readonly Command[] = [
         run: ([key], { store }) => {
           store.update((s) => clearFlag(s, key))
           return `${key} を消した`
+        },
+      },
+    ],
+  },
+  {
+    name: 'bgm', summary: 'BGM を調べる',
+    subcommands: [
+      {
+        name: 'reverb', summary: 'BGM のリバーブを入れる・切る（省くといまの状態。切ると原音だけになり音が小さくなる）',
+        args: [{ name: 'state', optional: true, candidates: words('on', 'off') }],
+        run: ([state]) => {
+          if (state !== undefined) {
+            if (state !== 'on' && state !== 'off') throw new DebugError(`on か off にしてください: ${state}`)
+            setBgmReverb(state === 'on')
+          }
+          return `BGM のリバーブ: ${bgmReverb() ? 'on' : 'off'}（曲: ${currentBgm() ?? 'なし'}）`
         },
       },
     ],

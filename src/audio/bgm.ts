@@ -4,6 +4,16 @@ import { getVolumes, subscribeVolumes, volumeGain } from './volume'
 let player: Promise<BgmPlayer> | undefined
 /** The last song asked for, played when the BGM is turned up before the player was made */
 let requested: string | null = null
+/** The reverb of the BGM is on (the debug console turns it off to hear the songs dry) */
+let reverbOn = true
+/** The reverb return's level the player was made with, put back when the reverb is turned on again */
+let reverbLevel: number | undefined
+
+function applyReverb(bgm: BgmPlayer): void {
+  const gain = bgm.synth.reverbReturn.gain
+  reverbLevel ??= gain.value
+  gain.setTargetAtTime(reverbOn ? reverbLevel : 0, bgm.synth.currentTime, 0.05)
+}
 
 /**
  * The game's one BGM player, created on first use. norden-synth (with every song) is
@@ -14,6 +24,7 @@ export function getBgm(): Promise<BgmPlayer> {
   player ??= import('norden-synth').then(({ BgmPlayer }) => {
     const bgm = new BgmPlayer({ indexUrl: `${import.meta.env.BASE_URL}instruments/index.json` })
     bgm.volume = volumeGain(getVolumes().bgm)
+    applyReverb(bgm)
     return bgm
   })
   return player
@@ -30,6 +41,14 @@ export function playBgm(songId: string | null): void {
     .then((bgm) => bgm.play(songId))
     .catch((err: unknown) => console.error(`bgm: cannot play ${songId}`, err))
 }
+
+/** Turns the BGM's reverb on or off (off: only the dry sound, quieter than the mix). For the debug console */
+export function setBgmReverb(on: boolean): void {
+  reverbOn = on
+  void player?.then(applyReverb)
+}
+
+export const bgmReverb = (): boolean => reverbOn
 
 /** The song of a battle's end: the player's side won or lost (played with the outcome's cut-in, and on through the result) */
 export const battleEndSong = (won: boolean): string => (won ? 'victor-accolade' : 'fallen-requiem')
@@ -48,4 +67,5 @@ import.meta.hot?.dispose(() => {
   unsubscribe()
   void player?.then((p) => p.dispose())
   player = undefined
+  reverbLevel = undefined
 })
