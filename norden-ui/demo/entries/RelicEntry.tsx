@@ -63,7 +63,7 @@ export default function RelicEntry() {
       },
       // Turned down, its price is not told
       papalRepair: relic.repair && (papalGold(relic) > PAPAL_REPAIR_MAX_GOLD
-        ? { unavailableReason: '法王府はこの遺物についての修復を拒否します' }
+        ? { unavailableReason: '法王府はこの遺物の修復を拒否します' }
         : { gold: papalGold(relic), unavailableReason: moneyReason(papalGold(relic)) }),
     }
   }

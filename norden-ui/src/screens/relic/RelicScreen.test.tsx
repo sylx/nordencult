@@ -26,7 +26,7 @@ describe('RelicScreen', () => {
   it('lists the box by how each stands, and what can be produced', () => {
     shown()
     const box = screen.getByRole('list', { name: 'アイテムボックス' })
-    expect(within(box).getByRole('button', { name: '壊れたライフル（壊れた）' })).toBeInTheDocument()
+    expect(within(box).getByRole('button', { name: '壊れたライフル（壊れている）' })).toBeInTheDocument()
     expect(within(box).getByRole('button', { name: 'ゴーレムの残骸（修復中（フルーエン））' })).toBeInTheDocument()
     expect(within(box).getByRole('button', { name: 'ドラゴンの卵（法王府に依頼中）' })).toBeInTheDocument()
     expect(within(box).getByRole('button', { name: 'ガンシップ（修復済み）' })).toBeInTheDocument()
@@ -66,7 +66,7 @@ describe('RelicScreen', () => {
     shown({ onRepair, onPapalRepair })
     await userEvent.click(screen.getByRole('button', { name: '壊れたライフルを法王府に依頼' }))
     expect(onPapalRepair).toHaveBeenCalledWith('rifle-1')
-    await userEvent.click(screen.getByRole('button', { name: '壊れたバリスタ（壊れた）' }))
+    await userEvent.click(screen.getByRole('button', { name: '壊れたバリスタ（壊れている）' }))
     await userEvent.click(screen.getByRole('button', { name: '壊れたバリスタをフルーエンで修復' }))
     expect(onRepair).toHaveBeenCalledWith('ballista-1')
     expect(screen.getByRole('button', { name: '壊れたバリスタを法王府に依頼' })).toBeDisabled()
@@ -74,10 +74,10 @@ describe('RelicScreen', () => {
   })
 
   it('tells no price of a relic 法王府 turns down', () => {
-    const refused: RelicView = { ...BROKEN, papalRepair: { unavailableReason: '法王府はこの遺物についての修復を拒否します' } }
+    const refused: RelicView = { ...BROKEN, papalRepair: { unavailableReason: '法王府はこの遺物の修復を拒否します' } }
     shown({ relics: [refused] })
     const action = screen.getByRole('button', { name: '壊れたライフルを法王府に依頼' }).closest('.norden-relic-action')!
-    expect(action).toHaveTextContent('法王府はこの遺物についての修復を拒否します')
+    expect(action).toHaveTextContent('法王府はこの遺物の修復を拒否します')
     expect(action).not.toHaveTextContent('金')
   })
 

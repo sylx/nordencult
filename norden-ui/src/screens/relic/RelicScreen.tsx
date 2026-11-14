@@ -46,7 +46,7 @@ export interface RelicScreenProps {
 }
 
 const STATUS_LABELS: Readonly<Record<RelicStatusView, string>> = {
-  broken: '壊れた', repairing: '修復中', producing: '生産中', papalRepair: '法王府に依頼中', repaired: '修復済み', equipped: '装備中', building: '建設中',
+  broken: '壊れている', repairing: '修復中', producing: '生産中', papalRepair: '法王府に依頼中', repaired: '修復済み', equipped: '装備中', building: '建設中',
 }
 
 /** Which of the list is chosen: a relic of the box, or one to produce */
