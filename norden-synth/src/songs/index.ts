@@ -21,6 +21,7 @@ import { mirageDiwan } from './mirage-diwan.ts'
 import { mistPilgrim } from './mist-pilgrim.ts'
 import { noonFairWind } from './noon-fair-wind.ts'
 import { northernOath } from './northern-oath.ts'
+import { northernVista } from './northern-vista.ts'
 import { silverBanner } from './silver-banner.ts'
 import { spiralCurrent } from './spiral-current.ts'
 import { starReader } from './star-reader.ts'
@@ -74,6 +75,7 @@ export const SONGS: CatalogSong[] = [
   { ...crystalMap, tier: 1, tags: ['戦略画面', '秋'] },
   { ...warlordsAlmanac, tier: 2, tags: [] },
   { ...silverBanner, tier: 1, tags: ['エンディング', '法王府健在時'] },
+  { ...northernVista, tier: 1, tags: ['戦略画面', 'ヴァルハルト家'] },
 ]
 
 // タグを複数指定した場合は、すべてを含む曲に絞る。
