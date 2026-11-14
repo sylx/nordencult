@@ -63,7 +63,7 @@ export default function RelicEntry() {
       },
       papalRepair: relic.repair && {
         gold: papalGold(relic),
-        unavailableReason: papalGold(relic) > PAPAL_REPAIR_MAX_GOLD ? `金${PAPAL_REPAIR_MAX_GOLD.toLocaleString()}を超える修復は法王府に断られます` : moneyReason(papalGold(relic)),
+        unavailableReason: papalGold(relic) > PAPAL_REPAIR_MAX_GOLD ? '法王府はこの遺物についての修復を拒否します' : moneyReason(papalGold(relic)),
       },
     }
   }
