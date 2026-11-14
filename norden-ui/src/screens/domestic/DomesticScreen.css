@@ -540,6 +540,22 @@
   border-radius: 4px;
 }
 
+/* A building's picture opens its details (BuildingDetailDialog) */
+.norden-domestic-build-image-button {
+  grid-area: image;
+  display: grid;
+  align-self: stretch;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  cursor: zoom-in;
+  transition: filter 120ms ease, box-shadow 120ms ease;
+}
+.norden-domestic-build-image-button:hover { filter: brightness(1.08); box-shadow: 0 0 0 2px #c8a15a; }
+.norden-domestic-build-image-button:focus-visible { outline: 2px solid #7a4f17; outline-offset: 2px; }
+.norden-domestic-build-image-button .norden-domestic-build-image { grid-area: auto; }
+
 /* The picture fills the tall frame, its sides cut off */
 .norden-domestic-build-image.is-sprite {
   justify-content: center;

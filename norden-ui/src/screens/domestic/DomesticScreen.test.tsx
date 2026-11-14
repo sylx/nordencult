@@ -55,6 +55,15 @@ describe('DomesticScreen', () => {
     const panel = screen.getByRole('complementary', { name: '追加できる施設' })
     expect(within(panel).getByText('工房')).toBeInTheDocument()
     expect(within(panel).getByText('物資の生産を増やす。')).toBeInTheDocument()
+    // Its picture shows its details over the page; Escape closes them, leaving the panel open
+    await userEvent.click(within(panel).getByRole('button', { name: '工房の詳細' }))
+    const detail = screen.getByRole('dialog', { name: '施設詳細：工房' })
+    expect(within(detail).getByRole('heading', { name: '工房' })).toBeInTheDocument()
+    expect(within(detail).getByText('生産 +15%')).toBeInTheDocument()
+    expect(within(detail).queryByRole('button', { name: '内政を開く' })).not.toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    expect(detail).not.toBeInTheDocument()
+    expect(panel).toBeInTheDocument()
     await userEvent.click(within(panel).getByRole('button', { name: '工房を建設' }))
     expect(onBuild).toHaveBeenCalledWith('workshop')
 
@@ -218,6 +227,8 @@ describe('DomesticScreen', () => {
     await userEvent.click(within(screen.getByRole('group', { name: '遺物の修復枠' })).getByRole('button', { name: '遺物を修復・生産' }))
     const relics = screen.getByRole('complementary', { name: '修復・生産できる遺物' })
     expect(within(relics).queryByRole('button', { name: '工房を建設' })).not.toBeInTheDocument()
+    // A relic's picture is no building's: it opens nothing
+    expect(within(relics).queryByRole('button', { name: '壊れたバリスタの詳細' })).not.toBeInTheDocument()
     await userEvent.click(within(relics).getByRole('button', { name: '壊れたバリスタを修復' }))
     expect(onRelicWork).toHaveBeenCalledWith(repair)
   })

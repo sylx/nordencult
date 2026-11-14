@@ -3,6 +3,7 @@ import { BuildingImage, ConstructionProgress, isRelicWork, workBusyReason, workL
 import Button from '../../components/parts/Button'
 import SectionFrame from '../../components/parts/SectionFrame'
 import KnightCard from '../../components/parts/KnightCard'
+import BuildingDetailDialog from '../cityCommand/BuildingDetailDialog'
 import ConfirmDialog from '../../components/window/ConfirmDialog'
 import WindowFrame from '../../components/window/WindowFrame'
 import type {
@@ -110,6 +111,8 @@ export default function DomesticScreen({
 }: DomesticScreenProps) {
   const [panel, setPanel] = useState<SidePanel | null>(null)
   const [demolishTarget, setDemolishTarget] = useState<BuildingView | null>(null)
+  // A building of the build panel shown in detail (its picture pressed)
+  const [detailBuilding, setDetailBuilding] = useState<BuildingView | null>(null)
 
   const slots = city.buildings?.slots ?? 0
   const built = city.buildings?.built ?? []
@@ -174,12 +177,17 @@ export default function DomesticScreen({
     </header>
   )
 
-  const renderOption = (option: BuildOptionView, action: string, label: string, onStart: () => void) => (
+  // `detail`: the picture opens the building's details (a building's option, not a relic's)
+  const renderOption = (option: BuildOptionView, action: string, label: string, onStart: () => void, detail = false) => (
     <li
       key={option.id}
       className={`norden-domestic-build-item ${option.unavailableReason ? 'is-unavailable' : ''}`}
     >
-      <BuildingImage building={option} className="norden-domestic-build-image" />
+      {detail ? (
+        <button type="button" className="norden-domestic-build-image-button" aria-label={`${option.name}の詳細`} onClick={() => setDetailBuilding(option)}>
+          <BuildingImage building={option} className="norden-domestic-build-image" />
+        </button>
+      ) : <BuildingImage building={option} className="norden-domestic-build-image" />}
       <div className="norden-domestic-build-info">
         <div className="norden-domestic-build-heading">
           <strong className="norden-domestic-build-name">{option.name}</strong>
@@ -580,6 +588,7 @@ export default function DomesticScreen({
                       upgradeBase ? 'アップグレード' : '建設',
                       upgradeBase ? `${option.name}にアップグレード` : `${option.name}を建設`,
                       () => onBuild?.(option.id),
+                      true,
                     ))}
                   </ul>
                 )}
@@ -605,6 +614,8 @@ export default function DomesticScreen({
           </footer>
         </div>
       </WindowFrame>
+
+      {detailBuilding && <BuildingDetailDialog building={detailBuilding} onClose={() => setDetailBuilding(null)} />}
 
       {demolishTarget && (
         <ConfirmDialog
