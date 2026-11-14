@@ -45,11 +45,6 @@ export default function RelicEntry() {
   const shortfall = techs ? 0 : DEMO_SHORTFALL
   const papalRate = (relic: RelicSpec) => (!relic.repair?.tech ? PAPAL_REPAIR_RATE : PAPAL_REPAIR_RATE + (PAPAL_REPAIR_RATE_RISE * shortfall) / PAPAL_REPAIR_RISE_POINTS)
   const papalGold = (relic: RelicSpec) => Math.ceil(((relic.repair?.gold ?? 0) + (relic.repair?.supplies ?? 0)) * papalRate(relic))
-  const papalNote = (relic: RelicSpec) => {
-    if (!relic.repair?.tech || shortfall === 0) return undefined
-    const percent = Math.round((papalRate(relic) / PAPAL_REPAIR_RATE - 1) * 100)
-    return `技術「${relic.repair.tech}」まで研究あと${shortfall.toLocaleString()}で +${percent}%`
-  }
 
   const view = (item: Item): RelicView => {
     const relic = RELIC_MAP[item.relicId]!
@@ -67,7 +62,7 @@ export default function RelicEntry() {
         ...relic.repair, turns: turns(relic.repair.supplies), unavailableReason: techReason(relic.repair.tech) ?? busy ?? moneyReason(relic.repair.gold),
       },
       papalRepair: relic.repair && {
-        gold: papalGold(relic), note: papalNote(relic),
+        gold: papalGold(relic),
         unavailableReason: papalGold(relic) > PAPAL_REPAIR_MAX_GOLD ? `金${PAPAL_REPAIR_MAX_GOLD.toLocaleString()}を超える修復は法王府に断られます` : moneyReason(papalGold(relic)),
       },
     }
