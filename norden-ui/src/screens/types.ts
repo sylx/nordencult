@@ -442,7 +442,7 @@ export interface RelicView {
   dismantle?: { points: number; unavailableReason?: string }
   /** Repairing it in the city the screen is opened on */
   repair?: { supplies: number; gold: number; turns?: number | null; unavailableReason?: string }
-  /** Asking 法王府 to repair it; note: why the price is as it is, e.g. 技術「ライフル」の習得で −20% */
+  /** Asking 法王府 to repair it; note: why the price is as it is, e.g. 技術「ライフル」の習得で −40%, 技術「ライフル」まで研究あと700で +2% */
   papalRepair?: { gold: number; note?: string; unavailableReason?: string }
 }
 

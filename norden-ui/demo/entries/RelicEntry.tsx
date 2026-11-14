@@ -11,10 +11,14 @@ const BROKEN = RELICS.filter(relic => relic.brokenName)
 const PRODUCTION_PER_TURN = 120
 
 /** The game's rules of relics (src/game/relics/), for the demo */
-/** 法王府's rate as the game's: plain for a relic needing no technology, dearer without it and cheaper with it */
+/**
+ * 法王府's rate as the game's: plain for a relic needing no technology; else the least with it researched, plus so
+ * much for each research point short of it (the demo takes DEMO_SHORTFALL short without 技術を習得)
+ */
 const PAPAL_REPAIR_RATE = 2.5
-const PAPAL_REPAIR_RATE_UNKNOWN = 3.5
 const PAPAL_REPAIR_RATE_KNOWN = 1.5
+const PAPAL_REPAIR_RATE_PER_POINT = 0.0015
+const DEMO_SHORTFALL = 1000
 const BROKEN_RARITY: Readonly<Record<RelicRarityView, RelicRarityView>> = { S: 'A', A: 'B', B: 'C', C: 'D', D: 'D' }
 const INITIAL_GOLD = 3000
 
@@ -36,11 +40,14 @@ export default function RelicEntry() {
   const turns = (supplies: number) => Math.ceil(supplies / PRODUCTION_PER_TURN)
   const moneyReason = (cost: number) => (gold < cost ? '金が足りません' : undefined)
   const techReason = (tech?: string) => (tech && !techs ? `技術「${tech}」の研究が必要です` : undefined)
-  const papalRate = (relic: RelicSpec) => (!relic.repair?.tech ? PAPAL_REPAIR_RATE : techs ? PAPAL_REPAIR_RATE_KNOWN : PAPAL_REPAIR_RATE_UNKNOWN)
+  const shortfall = techs ? 0 : DEMO_SHORTFALL
+  const papalRate = (relic: RelicSpec) => (!relic.repair?.tech ? PAPAL_REPAIR_RATE : PAPAL_REPAIR_RATE_KNOWN + PAPAL_REPAIR_RATE_PER_POINT * shortfall)
   const papalGold = (relic: RelicSpec) => Math.ceil(((relic.repair?.gold ?? 0) + (relic.repair?.supplies ?? 0)) * papalRate(relic))
   const papalNote = (relic: RelicSpec) => {
+    if (!relic.repair?.tech) return undefined
     const percent = Math.round((papalRate(relic) / PAPAL_REPAIR_RATE - 1) * 100)
-    return percent === 0 ? undefined : percent < 0 ? `技術「${relic.repair!.tech}」の習得で −${-percent}%` : `技術「${relic.repair!.tech}」が未習得で +${percent}%`
+    const change = percent === 0 ? '' : percent < 0 ? ` −${-percent}%` : ` +${percent}%`
+    return shortfall === 0 ? `技術「${relic.repair.tech}」の習得で${change}` : `技術「${relic.repair.tech}」まで研究あと${shortfall.toLocaleString()}で${change}`
   }
 
   const view = (item: Item): RelicView => {
