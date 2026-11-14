@@ -453,7 +453,7 @@ describe('法王府', () => {
     const state = withGold(debugAddRelic(playing('carta'), 'carta', 'colossus'), 100_000)
     const id = itemsOf(state).at(-1)!.id
     expect(papalRepairCost(state, 'carta', RELIC_MAP.colossus)).toBeGreaterThan(BALANCE.PAPAL_REPAIR_MAX_GOLD)
-    expect(papalRepairProblem(state, 'carta', id)).toBe('金5,000を超える修復は法王府に断られます')
+    expect(papalRepairProblem(state, 'carta', id)).toBe('法王府はこの遺物についての修復を拒否します')
     expect(() => requestPapalRepair(state, 'carta', id)).toThrow(GameRuleError)
     const skilled = researched(state, 'root', 'rifle')
     expect(papalRepairCost(skilled, 'carta', RELIC_MAP.colossus)).toBe(5000)
