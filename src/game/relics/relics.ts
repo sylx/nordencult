@@ -221,10 +221,6 @@ export interface RelicItemInfo {
   repairProblem: string | null
   /** The gold 法王府 takes */
   papalGold?: number
-  /** papalGold against the rate for a relic needing no technology: 1, or above it the farther the technology is; undefined: no such relic */
-  papalRateRatio?: number
-  /** The research points the faction lacks to reach the repair's technology (papalRepairShortfall); undefined: no such relic */
-  papalShortfall?: number
   papalProblem: string | null
 }
 
@@ -241,8 +237,6 @@ export function relicItemInfo(state: GameState, factionId: FactionId, cityId: Ci
     repair: relic.repair,
     repairProblem: repairProblem(state, cityId, itemId),
     papalGold: relic.repair && papalRepairCost(state, factionId, relic),
-    papalRateRatio: relic.repair?.tech ? papalRepairRate(state, factionId, relic) / PAPAL_REPAIR_RATE : undefined,
-    papalShortfall: papalRepairShortfall(state, factionId, relic),
     papalProblem: papalRepairProblem(state, factionId, itemId),
   }
 }
