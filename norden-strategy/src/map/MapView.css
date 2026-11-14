@@ -1,0 +1,175 @@
+/* 文字色は norden-ui の theme.css の変数。norden-strategy 単体で動かすとき（norden-ui を読まない）のために元の色を予備に書く */
+.map-view {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #10264a;
+}
+
+.map-view__canvas {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+}
+
+.map-view__canvas:active {
+  cursor: grabbing;
+}
+
+/* The room the focus test takes the UI to cover (focusPlaces' inset) */
+.map-view__inset {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  border: 0 solid rgb(176 52 44 / 0.28);
+  pointer-events: none;
+}
+
+.map-view__loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--norden-text, #e8dcc0);
+  font-size: 18px;
+  letter-spacing: 0.1em;
+  pointer-events: none;
+}
+
+.map-view__loading-box {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+.map-view__progress {
+  width: min(280px, 60vw);
+  height: 6px;
+  border: 1px solid color-mix(in srgb, var(--norden-text, #e8dcc0) 45%, transparent);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.map-view__progress-bar {
+  height: 100%;
+  background: var(--norden-text, #e8dcc0);
+  transition: width 0.2s linear;
+}
+
+.map-view__stats {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.45);
+  color: var(--norden-text-muted, #cfd8e0);
+  font: 12px/1.6 ui-monospace, monospace;
+  pointer-events: none;
+}
+
+.map-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: min(280px, calc(100% - 32px));
+  max-height: calc(100% - 64px);
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+}
+
+.map-controls__panel {
+  color: var(--norden-text, #e4dfc9);
+  background: rgb(20 30 25 / 0.94);
+  border: 1px solid #66705a;
+  border-radius: 8px;
+  box-shadow: 0 8px 28px #0005;
+  font: 12px/1.6 system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+.map-controls summary {
+  padding: 11px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.map-controls summary span { float: right; font-size: 11px; color: var(--norden-text-muted, #afb89c); }
+.map-controls__body { padding: 0 14px 12px; }
+.map-controls__mode { display: grid; gap: 5px; }
+.map-controls select, .map-controls button {
+  padding: 6px 8px;
+  color: inherit;
+  background: #303c31;
+  border: 1px solid #65705b;
+  border-radius: 4px;
+  font: inherit;
+}
+.map-controls button { cursor: pointer; }
+.map-controls button:disabled { cursor: default; opacity: 0.45; }
+.map-controls button:hover { background: #465640; }
+.map-controls__presets { display: flex; gap: 6px; margin: 12px 0; }
+.map-controls__presets button { flex: 1; }
+.map-controls__presets button[aria-pressed="true"] { background: #5d7050; border-color: #a9b88f; }
+.map-controls fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.map-controls fieldset:disabled { opacity: 0.4; }
+.map-controls__slider { display: block; margin: 9px 0; }
+.map-controls__slider span { display: flex; justify-content: space-between; gap: 8px; }
+.map-controls output { font-variant-numeric: tabular-nums; color: var(--norden-text-accent, #d5c998); }
+.map-controls input[type='range'] { width: 100%; margin: 5px 0 0; accent-color: #b8c58d; }
+.map-controls__note { color: var(--norden-text-muted, #afb89c); font-size: 11px; margin: 10px 0 0; }
+.map-controls :focus-visible { outline: 2px solid #e4cf89; outline-offset: 3px; }
+.map-controls__sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+@media (max-width: 600px) {
+  .map-controls { top: 8px; right: 8px; width: min(240px, calc(100% - 16px)); max-height: 65%; }
+}
+
+.map-controls__toggle { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
+.map-controls input[type="checkbox"] { accent-color: #b8c58d; }
+
+.map-controls__export { padding: 10px 14px; }
+.map-controls__export > button { width: 100%; }
+.map-controls__export .map-controls__note { margin-top: 5px; }
+.map-controls__export textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  resize: vertical;
+  background: #17231c;
+  color: var(--norden-text, #e4dfc9);
+  border: 1px solid #65705b;
+  border-radius: 4px;
+  font: 11px/1.5 ui-monospace, monospace;
+}
+
+.map-controls__heading {
+  margin: 14px 0 4px;
+  padding-top: 10px;
+  border-top: 1px solid #3f4a3c;
+  font-size: 12px;
+  color: var(--norden-text-accent, #d5c998);
+}
+.map-controls__heading:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.map-controls__field { display: grid; gap: 4px; margin: 8px 0; min-width: 0; }
+.map-controls__field select { width: 100%; min-width: 0; }
+.map-controls__chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; padding: 0; list-style: none; }
+.map-controls__chips li { display: flex; align-items: center; gap: 4px; padding: 2px 2px 2px 8px; font-size: 12px; background: #303c31; border: 1px solid #65705b; border-radius: 4px; }
+.map-controls__chips button { padding: 0 6px; line-height: 1.4; }
+.map-controls input[type='text'] {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  color: inherit;
+  background: #303c31;
+  border: 1px solid #65705b;
+  border-radius: 4px;
+  font: inherit;
+}
+.map-controls__row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

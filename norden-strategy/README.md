@@ -1,0 +1,75 @@
+# norden-strategy
+
+戦略マップを three.js で描画する新プロジェクト（nordencult-old の 2D 地図の置き換え）。
+
+```sh
+npm install
+npm run dev
+```
+
+操作: ドラッグで移動 / ホイール（タッチはピンチ）でカーソル位置に向かって拡大縮小。都市の絵と紋章が切り替わる途中の拡大率には止まらず、その先まで進みます。
+
+右上の「地図の色・羊皮紙」で地図全体の彩度・セピア・紙の地合いと染み・色あせ・周縁の焼け・明るさを調整できます。`norden-battle` の羊皮紙ポストプロセスを戦略マップの縮尺に合わせています。「標準・淡い水彩・古地図」のプリセットがあり、効果をオフにすると元の描画と比較できます。設定はこのブラウザに保存します。「標準」で採用済みの初期値に戻せます。
+
+「設定JSONをコピー」で森と羊皮紙の現在値を `{ forest, parchment }` のJSONとしてコピーできます。初期値に採用したい設定の共有に使えます。自動コピーが使えない環境では、選択してコピーできるテキスト欄を表示します。
+
+右上の「森の表現」で、生成した透過テクスチャによる森を調整できます。密度・樹冠サイズ・ばらつき・針葉樹の割合・明るさ・色味・陰影を即時反映し、設定はこのブラウザに保存します。「標準」で初期値に戻せます。「従来のシェーダー（比較）」では以前の半球状の樹冠を表示します。パネルの見出しで折りたためます。
+
+木は4種類の板絵をインスタンス描画し、64単位の区画で画面外を除外します。川岸・急斜面・高山を避けて配置し、地形と共通の高さシェーダーで接地させています。密度調整は固定された配置の本数だけを変更します。画像の読み込みに失敗した場合は従来の描画へ戻ります。
+
+テクスチャは `src/assets/forest/woodland-atlas.webp`。生成方法・最終プロンプトは [アセットの記録](src/assets/forest/README.md) を参照してください。葉の光は画像に描かれているため、現在の北向きカメラに合わせた表現です。
+
+描画例: [全景](docs/image/forest-overview.webp) / [森の拡大](docs/image/forest-detail.webp)。ソフトウェアWebGLで撮影しているため、画像内のfpsは実GPUの性能を示すものではありません。
+
+## 都市と街道
+
+都市の位置と街道のつながりは `src/map/world/placeLayout.ts` で編集します（座標は島の設計データと同じ 8192px の画像座標。初期値は旧2D地図から移したもの）。地形の生成時に、都市の足元を平らにならし、つながった都市の間の道筋を地形上で探索します。傾斜・山地・川を避けて谷筋を通り、海と湖は渡りません。既存の街道は通りやすく、後から引く道は既存の道に合流します。都市と街道の周りの木は取り除きます。水上にある都市や陸路のない街道は、コンソールと「都市と街道」パネルに表示します。
+
+都市は種類ごとのアイソメトリック画像（`src/assets/places/`）を、カメラに正対した板として地面に立てます。地形より手前に描くので、丘に隠れません。大きさは地形に対するワールド単位で決め、画面上の最小・最大サイズで制限します（都市の種類ごとの比率は旧2D地図に合わせています）。街道は地形と同じ高さ関数で地表に沿わせた帯で、引いた時は最小の画面幅を保ちます。引いて町の画像が一定の大きさ（既定34px）より小さくなると、都市の画像は勢力の紋章に切り替わります（カメラの注視点での大きさで判定するので、全都市が同時に切り替わります）。都市の画像と紋章は羊皮紙の後処理の後に全解像度で描くので、描画解像度の設定の影響を受けず、後処理の色調もかかりません。都市名はHTMLのレイヤーで重ねています（都市の画像が出ている間は名前の横に紋章を添え、その大きさも調整できます）。街道の最小幅は、引いた時に街道が細くなりすぎないよう保つ画面上の太さです。大きさ・街道の幅・都市名の表示は右上の「都市と街道」で調整できます。
+
+## 他のアプリへの組み込み
+
+`src/index.ts` が外部向けの公開APIです（nordencult ルートのアプリがソースのまま読み込みます）。都市・勢力・街道のデータだけが要るとき（ゲームの規則やそのテスト）は、地図の描画（three.js・DOM）を読み込まない `src/data.ts` を使います（ルートからは `norden-strategy/data`）。`MapView` は単体の画面と同じ部品で、次のpropsで外から制御できます（すべて省略可能）。
+
+| props | 振る舞い |
+| --- | --- |
+| `selectedPlace`, `onSelectPlace` | 選択中の都市ID（`''` で未選択）。クリックで選んだ都市を通知。省略時は内部で保持 |
+| `showControls` | 右上の調整パネルの表示（初期値 `true`）。非表示の時は選択の強調表示を呼び出し側で行う |
+| `copyClickPoint` | 開発時に、クリックした地点の画像座標（`placeLayout.ts` 用）をクリップボードにコピーする（初期値 `true`）。ゲームに組み込むときは `false` |
+| `onMapChange` | 地形の生成後に `StrategyMap`、破棄時に `null` を通知 |
+| `cities` | 描く都市（`MapCity`: `id`・`name`・`type`（絵）・`belongTo`（所属。省略は中立））。`placeLayout.ts` に位置のある都市だけを描く。絵と所属の変更はすぐ反映される（都市の下の整地は地図を作ったときの絵に合わせる）。省略時は `SAMPLE_CITIES`（全位置を ID の名前で、絵を順に並べた見本） |
+
+地形の生成だけが要るとき（ゲームの街道マップを地理情報から作るツールなど）は、`src/world.ts` を使います（ルートからは `norden-strategy/world`）。`generateWorld` と、その出力をワールド座標で読む `WorldSampler`（標高・川と湖・山岳度・森・乾燥度）を出します。
+
+`StrategyMap` の主なメソッド: `setCityHighlights`（都市の強調）、`setRoadHighlights`（街道の強調。`from` → `to` の向きに流れる模様）、`march` / `onMarchArrive`（行軍の表示と到着の通知）、`focusPlace`（カメラ移動。ズームはそのまま）、`focusPlaces`（複数の都市が入るように、その中心へ移動してズームも合わせる。`margin`（既定3）で周りに残す余白、`inset`（`{ left, right, top, bottom }`。UIが覆う画面の端の幅 px。各辺とも画面の半分まで）を除いた範囲に収め、隠れない限り画面の真ん中に、隠れるときは隠れないぶんだけずらして映す、`instant` で瞬時に。設定パネルの「フォーカス」で試せる）、`setCities`（`cities` と同じ）、`places`（描いている都市）。
+
+地形の生成結果（Worker の出力）はモジュール内に1つ保持し、同じ設定で `MapView` を作り直したとき（シーンの切り替えで戻ったときなど）は再生成せずに使い回します。GPU の資源はマウントのたびに作り直します。
+
+## 構成
+
+| ファイル | 役割 |
+| --- | --- |
+| `src/map/world/islandDesign.ts` | 島の設計データ（海岸線・山脈・多島海ゾーン・湖・砂漠）。座標は旧地図の 8192px 画像空間 |
+| `src/map/world/generateWorld.ts` | 設計データ＋ノイズから 1024² のマクロ地形を生成（標高・河川/湖・山岳度・森林密度・流向・乾燥度）。Web Worker で実行 |
+| `src/map/engine/terrainShader.ts` | マクロ地形にノイズの細部を重ねるシェーダー。画素の大きさに応じて細部を増減（拡大するほど岩肌・樹冠・砂紋・水面の流れが現れる） |
+| `src/map/engine/TerrainQuadtree.ts` | カメラ距離に応じた四分木タイル（1 ドローコールのインスタンス描画） |
+| `src/map/engine/MapCameraController.ts` | パン・ズーム・慣性・地形追従 |
+| `src/map/engine/StrategyMap.ts` | three.js シーン全体 |
+| `src/map/engine/Forest.ts` | 生成テクスチャの樹木・区画単位のインスタンス描画 |
+| `src/map/engine/forestSettings.ts` | 森の設定・範囲チェック・保存 |
+| `src/map/ForestControls.tsx` | 森の調整UI・プリセット・従来描画との比較 |
+| `src/map/engine/ParchmentEffect.ts` | MSAA付きのシーン描画・羊皮紙の後処理 |
+| `src/map/engine/parchmentSettings.ts` | 羊皮紙の設定・範囲チェック・保存 |
+| `src/map/ParchmentControls.tsx` | 羊皮紙の調整UI・プリセット |
+| `src/map/SettingsExport.tsx` | 森と羊皮紙の設定をJSONとしてコピー |
+| `src/map/world/placeLayout.ts` | 都市の位置・街道のつながり・都市の種類ごとの大きさ（手で編集する） |
+| `src/map/world/roads.ts` | 街道の経路探索（生成グリッド上の A*）と平滑化 |
+| `src/map/world/sampleWorld.ts` | マクロ地形をワールド座標で読む（`WorldSampler`。`src/world.ts` から公開） |
+| `src/map/engine/Roads.ts` | 地表に沿う街道の帯 |
+| `src/map/engine/Cities.ts` | 都市の板絵・画像ごとの接地点 |
+| `src/map/engine/PlaceLabels.ts` | 都市名と紋章のHTMLレイヤー |
+| `src/map/engine/placeSettings.ts` / `src/map/PlaceControls.tsx` | 都市と街道の設定・調整UI |
+| `src/data/` | 地図が描く勢力のデータ（紋章）。nordencult の `src/data/factionData.json`（norden-data で編集する）の写しで、ゲームのテストで比べる。都市は写しを持たず、埋め込むアプリが `MapView` の `cities`（名前・絵・所属）で渡す（単体では `SAMPLE_CITIES`）。位置と街道は `src/map/world/placeLayout.ts` |
+| `src/data/emblem.ts` | 紋章の画像（`src/assets/emblems/`）。番号で引く `emblemImage` |
+
+ワールド座標は 1 単位 = 旧地図画像の 8px（`IMAGE_TO_WORLD`）。

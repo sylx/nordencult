@@ -1,0 +1,10 @@
+// Public API for apps that embed the strategy map (the nordencult root app)
+export { default as MapView } from './map/MapView'
+export type { MapViewProps } from './map/MapView'
+export type { FocusInset, FocusOptions, StrategyMap, MapStats, MarchCommand } from './map/engine/StrategyMap'
+export type { MapSeason } from './map/engine/season'
+export { CITY_HIGHLIGHT_COLOR, type CityHighlight } from './map/engine/CityHighlights'
+export { ROAD_HIGHLIGHT_COLOR, type RoadHighlight } from './map/engine/RoadHighlights'
+export { MARCH_KINDS, type MarchKind } from './map/engine/MarchMarkers'
+export { PLACE_ART, emblemUrl } from './map/engine/Cities'
+export * from './data'
