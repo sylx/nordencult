@@ -3,11 +3,12 @@ import InfoWindowWithTabs from '../../components/window/InfoWindowWithTabs'
 import type { InfoWindowWithTabsProps, TabInfo } from '../../components/window/InfoWindowWithTabs'
 import KnightCard from '../../components/parts/KnightCard'
 import StatBar from '../../components/parts/StatBar'
-import BuildingSlots, { BuildingImage, ConstructionProgress, RelicWorkSlot, isRelicWork, workLabel } from '../../components/parts/BuildingSlots'
+import BuildingSlots, { RelicWorkSlot, isRelicWork } from '../../components/parts/BuildingSlots'
 import Button from '../../components/parts/Button'
 import FactionMark from '../../components/parts/FactionMark'
 import { knightAbilityStats } from '../domestic/DomesticOfficers'
 import KnightProfileWindow from './KnightProfileWindow'
+import BuildingDetailDialog from './BuildingDetailDialog'
 import { useBrowseHistory } from '../../hooks/useBrowseHistory'
 import iconAgriculture from '../../assets/ui/icons/icon-agriculture.svg'
 import iconCommerce from '../../assets/ui/icons/icon-commerce.webp'
@@ -82,36 +83,6 @@ function buildingDetailOf(city: CityView, id: string): BuildingDetailView | unde
   return building && { building }
 }
 
-/** A building's details under the city's slots: its picture, what it gives and its description, and the construction's progress */
-function BuildingDetail({ detail: { building, work }, onOpenDomestic, onClose }: {
-  detail: BuildingDetailView
-  onOpenDomestic?: () => void
-  onClose: () => void
-}) {
-  return (
-    <section className="norden-city-building-detail" aria-label={`${building.name}の詳細`}>
-      <BuildingImage building={building} className="norden-city-building-detail-image" />
-      <div className="norden-city-building-detail-body">
-        <header className="norden-city-building-detail-header">
-          <h4>{building.name}</h4>
-          {work && <span className="norden-city-building-detail-badge">{work.paused ? `${workLabel(work)}中（一時停止）` : `${workLabel(work)}中`}</span>}
-        </header>
-        {building.effects && building.effects.length > 0 && (
-          <ul className="norden-city-building-detail-effects" aria-label="効果">
-            {building.effects.map(effect => <li key={effect}>{effect}</li>)}
-          </ul>
-        )}
-        {building.description && <p className="norden-city-building-detail-desc">{building.description}</p>}
-        {work && <ConstructionProgress invested={work.invested} required={work.required} turnsLeft={work.paused ? undefined : work.turnsLeft} />}
-        <div className="norden-city-building-detail-actions">
-          {onOpenDomestic && <Button size="small" onClick={onOpenDomestic}>内政を開く</Button>}
-          <Button size="small" onClick={onClose}>閉じる</Button>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 /** Shared city panels for the game window and component catalog. */
 export function createCityInfoTabs(city: CityView, { onShowKnight, onOpenDomestic }: CityInfoTabOptions = {}): [TabInfo, TabInfo, TabInfo] {
   return [
@@ -133,7 +104,7 @@ function statKind(stat: CityStatView) {
 }
 
 function CityInfo({ city, onOpenDomestic }: { city: CityView; onOpenDomestic?: () => void }) {
-  // The building whose details are shown under the slots (any city's, the player's or not)
+  // The building whose details are shown over the page (any city's, the player's or not)
   const [selectedBuilding, setSelectedBuilding] = useState<string>()
   const construction = city.buildings?.construction ?? null
   const selected = selectedBuilding === undefined ? undefined : buildingDetailOf(city, selectedBuilding)
@@ -181,9 +152,9 @@ function CityInfo({ city, onOpenDomestic }: { city: CityView; onOpenDomestic?: (
       {city.buildings && (
         <section className="norden-city-info-buildings" aria-label="施設">
           <h3>施設 <span>{city.buildings.built.length} / {city.buildings.slots}</span></h3>
-          <BuildingSlots buildings={city.buildings} selectedId={selected?.building.id}
-            onSelect={id => setSelectedBuilding(current => (current === id ? undefined : id))} onSelectEmpty={onOpenDomestic} />
-          {selected && <BuildingDetail detail={selected} onOpenDomestic={onOpenDomestic} onClose={() => setSelectedBuilding(undefined)} />}
+          <BuildingSlots buildings={city.buildings} selectedId={selected?.building.id} onSelect={setSelectedBuilding} onSelectEmpty={onOpenDomestic} />
+          {selected && <BuildingDetailDialog building={selected.building} work={selected.work} onOpenDomestic={onOpenDomestic}
+            onClose={() => setSelectedBuilding(undefined)} />}
         </section>
       )}
       {construction && isRelicWork(construction) && (
