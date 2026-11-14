@@ -15,7 +15,7 @@
     "skipLibCheck": true,
     "noEmit": true,
     /*
-     * norden-ui はリポジトリの隣（nordencult では同じ親の下のサブモジュール）にあるソースをそのまま使う。
+     * norden-ui は隣のディレクトリ（nordencult の monorepo の norden-ui/）にあるソースをそのまま使う。
      * react の型は norden-ui 側の node_modules ではなく、こちらのものにそろえる（norden-ui は npm install しなくてよい）
      */
     "paths": {

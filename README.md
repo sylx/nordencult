@@ -1,8 +1,8 @@
 # nordencult
 
-ファンタジーSLG nordencult のゲーム本体。各機能はサブモジュールで開発し、このルートでシーンとして組み合わせます。
+ファンタジーSLG nordencult のゲーム本体。各機能をサブディレクトリで開発し、このルートでシーンとして組み合わせます（monorepo。2026-11-14 まではそれぞれ別のリポジトリのサブモジュールで、履歴はそのまま取り込んである）。
 
-| サブモジュール | 内容 |
+| ディレクトリ | 内容 |
 | --- | --- |
 | `norden-strategy` | three.js の戦略マップ |
 | `norden-ui` | React UI ライブラリ（基本部品・画面・画面スタック。カタログで各画面を作り込む） |
@@ -12,18 +12,17 @@
 | `norden-synth` | BGM。SoundFont から取り出した音色で鳴らすシンセと、LLM が書いた曲（`src/songs/`）。`BgmPlayer` で曲を切り替えて鳴らす |
 
 ```sh
-git submodule update --init
 npm install
 npm run dev
 ```
 
 `npm run build` で型チェックとビルド、`npm run lint` でルートの `src/` を検査します。
 
-main への push で GitHub Pages に公開します（`.github/workflows/deploy.yml`）。CIでは `norden-strategy`・`norden-ui`・`norden-battle`・`norden-synth` のサブモジュールだけを取得してビルドします。
+main への push で GitHub Pages に公開します（`.github/workflows/deploy.yml`）。ルートの `npm ci` だけでビルドできます（各ディレクトリの `npm install` は要りません）。
 
-## サブモジュールの参照
+## サブディレクトリの参照
 
-`norden-strategy`・`norden-ui`・`norden-battle/battle-runtime`・`norden-battle/map-runtime`・`norden-synth`・`norden-dialogue` はビルドせず、ソースを直接読み込みます（`vite.config.ts` のエイリアスと `tsconfig.app.json` の `paths`）。サブモジュールの変更はそのまま開発サーバーに反映されます。
+`norden-strategy`・`norden-ui`・`norden-battle/battle-runtime`・`norden-battle/map-runtime`・`norden-synth`・`norden-dialogue` はビルドせず、ソースを直接読み込みます（`vite.config.ts` のエイリアスと `tsconfig.app.json` の `paths`）。各ディレクトリの変更はそのまま開発サーバーに反映されます。
 
 - `import { MapView, CITY_MAP } from 'norden-strategy'` → `norden-strategy/src/index.ts`
 - `import { PLACE_POINTS, ROAD_LINKS } from 'norden-strategy/data'` → `norden-strategy/src/data.ts`（データだけ。three.js を読み込まないので `src/game/` はこちらを使う）
@@ -47,8 +46,8 @@ npm run road-maps -- --force P003-P005     # 既存のマップも上書き（�
 - `import { CityCommandScreen, ScreenHost } from 'norden-ui'` → `norden-ui/src/index.ts`
 
 公開APIは各 `src/index.ts` にまとめ、ルートから内部のファイルは直接参照しません。
-React・React DOM・three はルートの `node_modules` に一本化します（Vite の `resolve.dedupe`。React の型も `tsconfig.app.json` の `paths` でルートのものにそろえます）。サブモジュールの依存とバージョンを揃えてください。
-各サブモジュールは従来どおり単体で `npm run dev` できます。地図の描画設定の調整は `norden-strategy` 単体の画面で行います（ルートとはポートが違うため、ブラウザに保存した設定は共有されません）。
+React・React DOM・three はルートの `node_modules` に一本化します（Vite の `resolve.dedupe`。React の型も `tsconfig.app.json` の `paths` でルートのものにそろえます）。各ディレクトリの依存とバージョンを揃えてください。
+各ディレクトリは従来どおり単体で（そのディレクトリで `npm install` して）`npm run dev` できます。地図の描画設定の調整は `norden-strategy` 単体の画面で行います（ルートとはポートが違うため、ブラウザに保存した設定は共有されません）。
 
 ## シーン
 

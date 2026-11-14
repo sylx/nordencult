@@ -4,9 +4,9 @@
 
 戦闘画面は [battle-runtime](../battle-runtime/) の `BattleScreen`（ゲーム本体と同じもの）で、ここではその上にエディタの道具
 （ツールバー・マップ・部隊・CPU・速度・拠点施設・描画負荷・セリフ・状態・退却・捕縛）を重ねるだけ。マップの描画は map-editor と同じ [map-runtime](../map-runtime/) の `MapView` を使い、
-地形生成などのパラメータは map-editor の初期値のまま。UI の部品は [norden-ui](https://github.com/sylx/norden-ui)（リポジトリの隣の `../../norden-ui`）。
+地形生成などのパラメータは map-editor の初期値のまま。UI の部品は [norden-ui](../../norden-ui/)（隣のディレクトリの `../../norden-ui`）。
 
-ゲーム（nordencult）のデータ（騎士・勢力・セリフ・顔の画像。`../../src/`）を直接読むので、norden-battle は nordencult のサブモジュールとして置いておくこと。
+ゲーム（nordencult）のデータ（騎士・勢力・セリフ・顔の画像。`../../src/`）を直接読む（norden-battle は nordencult の monorepo の中にある）。
 
 ```sh
 npm install

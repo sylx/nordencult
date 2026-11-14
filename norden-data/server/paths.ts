@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 /** norden-data のリポジトリ直下 */
 export const DATA_DIR = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
 
-/** ゲーム本体（nordencult）のリポジトリ直下。既定は親ディレクトリ（サブモジュールとして置いたとき）。NORDEN_ROOT で変えられる */
+/** ゲーム本体（nordencult）のリポジトリ直下。既定は親ディレクトリ（monorepo の nordencult）。NORDEN_ROOT で変えられる */
 export const GAME_ROOT = path.resolve(process.env.NORDEN_ROOT ?? path.join(DATA_DIR, '..'))
 
 /** 騎士データの元データと元画像 */

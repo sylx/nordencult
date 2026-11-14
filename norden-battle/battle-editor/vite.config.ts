@@ -6,9 +6,9 @@ import { mapsPlugin } from '../map-runtime/server/vite-plugin-maps.ts';
 const local = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 /** ユニット画像の置き場所（リポジトリ直下。battle-editor の外なので監視対象に加える） */
 const unitImagesDir = local('../assets/units');
-/** norden-ui（リポジトリの隣。nordencult では同じ親の下のサブモジュール）。ソースをそのまま使う */
+/** norden-ui（隣のディレクトリ。nordencult の monorepo の norden-ui/）。ソースをそのまま使う */
 const nordenUiDir = local('../../norden-ui');
-/** ゲーム（nordencult。norden-battle をサブモジュールとして置いた親）のソース。騎士・勢力・セリフのデータと顔の画像を読む（src/gameKnights.ts・src/gameVoices.ts） */
+/** ゲーム（nordencult。norden-battle の親ディレクトリ）のソース。騎士・勢力・セリフのデータと顔の画像を読む（src/gameKnights.ts・src/gameVoices.ts） */
 const gameSrcDir = local('../../src');
 
 export default defineConfig({

@@ -3,7 +3,7 @@
 nordencult のゲームデータのエディタ。拠点データ・勢力データ・騎士データ・施設データ・技術データ・遺物データ・セリフを編集し、ゲーム本体（nordencult）の `src/` に書き出す。React + TypeScript + Vite。
 読み書きは開発サーバーの Vite プラグイン（[server/dataPlugin.ts](server/dataPlugin.ts)）が行うので、`npm run dev` で使う（ビルドはしない）。
 
-nordencult のサブモジュール（`nordencult/norden-data`）として置き、親ディレクトリをゲーム本体として読み書きする。
+nordencult の monorepo の中（`nordencult/norden-data`）にあり、親ディレクトリをゲーム本体として読み書きする。
 別の場所に置くときは `NORDEN_ROOT=/path/to/nordencult npm run dev`。
 
 ```sh

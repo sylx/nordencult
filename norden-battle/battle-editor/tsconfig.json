@@ -15,7 +15,7 @@
     "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "noEmit": true,
-    /* norden-ui はリポジトリの隣のソース。react の型はこちらのものにそろえる（battle-runtime/tsconfig.json と同じ） */
+    /* norden-ui は隣のディレクトリのソース。react の型はこちらのものにそろえる（battle-runtime/tsconfig.json と同じ） */
     "paths": {
       "norden-ui": ["../../norden-ui/src/index.ts"],
       "react": ["../node_modules/@types/react/index.d.ts"],

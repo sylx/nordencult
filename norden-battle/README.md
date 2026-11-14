@@ -12,8 +12,8 @@
 | [asset-runtime](asset-runtime/) | アセットカタログの型と three.js での読み込み（各ツール・戦闘デモで共有） |
 | [assets](assets/) | 取り込んだ素材のカタログ（素材本体は Git 管理外）、ユニット画像（`assets/units/`）、マップ JSON（`assets/maps/`） |
 
-battle-runtime（と battle-editor）は UI の部品に [norden-ui](https://github.com/sylx/norden-ui) のソースを使う。
-このリポジトリの隣（`../norden-ui`）に置いておくこと（[nordencult](https://github.com/sylx/nordencult) のサブモジュールの並びのまま。norden-ui 側の `npm install` は要らない）。
+battle-runtime（と battle-editor）は UI の部品に [norden-ui](../norden-ui/) のソースを使う。
+nordencult の monorepo の隣のディレクトリ（`../norden-ui`）をそのまま読む（norden-ui 側の `npm install` は要らない）。
 
 ```sh
 npm install
