@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["vite/client", "node"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "erasableSyntaxOnly": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+    "noEmit": true,
+    /* エディタは親（nordencult）のソースを読む。vite.config.ts の alias と同じ。React の型は 1 つにそろえる */
+    "paths": {
+      "norden-dialogue": ["./src/index.ts"],
+      "norden-ui": ["../norden-ui/src/index.ts"],
+      "norden-synth": ["../norden-synth/src/index.ts"],
+      "norden-strategy/data": ["../norden-strategy/src/data.ts"],
+      "@game/*": ["../src/*"],
+      "react": ["./node_modules/@types/react/index.d.ts"],
+      "react/*": ["./node_modules/@types/react/*"]
+    }
+  },
+  "include": ["src", "editor", "vite.config.ts", "vitest.config.ts"]
+}

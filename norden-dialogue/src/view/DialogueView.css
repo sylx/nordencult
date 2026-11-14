@@ -1,0 +1,205 @@
+/*
+ * As the event notice (norden-ui's EventScreen): a dark veil over the parent, taking every click, and in its centre
+ * the cut (1680 × 720, as the event cuts) and the message window under it. Sizes go by the parent (container units),
+ * so the editor's scaled preview is laid out as the game is
+ */
+.norden-dialogue {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: hidden;
+  background: rgb(10 7 4 / 0.72);
+  cursor: pointer;
+  user-select: none;
+  color: var(--norden-text);
+  animation: norden-dialogue-fade-in 320ms ease-out both;
+}
+.norden-dialogue-body {
+  /* The window's room is fixed: a window growing (a choice under the line) grows down into it and moves nothing */
+  --norden-dialogue-window-room: 200px;
+  display: grid;
+  grid-template-rows: auto var(--norden-dialogue-window-room);
+  justify-items: center;
+  gap: 18px;
+}
+
+/* The cut: what the scene shows, in the brass frame */
+.norden-dialogue-cut { animation: norden-dialogue-cut 600ms ease-out both; }
+.norden-dialogue-stage {
+  position: relative;
+  overflow: hidden;
+  /* As wide as there is room for: the frame (32px), the gap and the window's room below it */
+  width: min(1040px, calc(100cqw - 80px), calc((100cqh - 98px - var(--norden-dialogue-window-room)) * 1680 / 720));
+  aspect-ratio: 1680 / 720;
+  background: #0b0907;
+}
+.norden-dialogue-scene { position: absolute; inset: 0; }
+
+/* A panel of the game's (a mercenary's profile...) over the scene, on its side, as large as it is up to half the cut */
+.norden-dialogue-panel {
+  position: absolute;
+  top: 50%;
+  max-width: 48%;
+  max-height: 92%;
+  overflow: hidden;
+  transform: translateY(-50%);
+  animation: norden-dialogue-fade-in 300ms ease-out both;
+}
+.norden-dialogue-panel[data-at='left'] { left: 3%; }
+.norden-dialogue-panel[data-at='center'] { left: 50%; transform: translate(-50%, -50%); }
+.norden-dialogue-panel[data-at='right'] { right: 3%; }
+
+.norden-dialogue-bg {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  animation-name: norden-dialogue-fade-in;
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+}
+.norden-dialogue-bg[data-fx='cut'] { animation: none; }
+.norden-dialogue-bg-name {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.5);
+  font-size: 12px;
+  color: var(--norden-text);
+}
+
+/* A portrait stands on the bottom edge of the cut, centred on its place */
+.norden-dialogue-portrait {
+  position: absolute;
+  bottom: 0;
+  height: 96%;
+  transform: translateX(-50%);
+  transition: left 400ms ease-in-out;
+}
+.norden-dialogue-portrait[data-at='left'] { left: 22%; }
+.norden-dialogue-portrait[data-at='center'] { left: 50%; }
+.norden-dialogue-portrait[data-at='right'] { left: 78%; }
+.norden-dialogue-portrait-body {
+  height: 100%;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 8px rgb(0 0 0 / 0.6));
+  /* Fading out at the bottom and both sides (as CityInfoWindow's lord), into whatever background is behind */
+  mask-image:
+    linear-gradient(to bottom, black 92%, transparent 100%),
+    linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  mask-composite: intersect;
+  transition: filter 200ms;
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+  --norden-dialogue-slide: -12%;
+}
+.norden-dialogue-portrait-body[data-at='right'] { --norden-dialogue-slide: 12%; }
+.norden-dialogue-portrait-body.is-dimmed { filter: drop-shadow(0 0 8px rgb(0 0 0 / 0.6)) brightness(0.5); }
+.norden-dialogue-portrait-body.is-enter-fade { animation-name: norden-dialogue-fade-in; }
+.norden-dialogue-portrait-body.is-enter-slide { animation-name: norden-dialogue-slide-in; }
+.norden-dialogue-portrait-body.is-leave-fade { animation-name: norden-dialogue-fade-out; }
+.norden-dialogue-portrait-body.is-leave-slide { animation-name: norden-dialogue-slide-out; }
+.norden-dialogue-portrait-body.is-leave-none { visibility: hidden; }
+
+/* Over the backgrounds and under the portraits: dims the backgrounds only */
+.norden-dialogue-dim {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  transition-property: opacity;
+  transition-timing-function: ease-in-out;
+}
+
+/* The fade and the flash cover the cut */
+.norden-dialogue-fade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition-property: opacity;
+  transition-timing-function: ease-in-out;
+}
+.norden-dialogue-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: norden-dialogue-flash ease-out both;
+}
+.norden-dialogue-flash.is-white { background: #fff; }
+.norden-dialogue-flash.is-red { background: #c0201c; }
+
+/* The message window: the thin frame with the speaker's name on its plaque, as the event notice's */
+.norden-dialogue-message {
+  display: grid;
+  gap: 14px;
+  box-sizing: border-box;
+  align-self: start;
+  width: min(880px, calc(100cqw - 48px));
+  min-height: 118px;
+  padding: 26px 28px 18px;
+  color: var(--norden-text);
+  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  animation: norden-dialogue-window 420ms ease-out 200ms both;
+}
+.norden-dialogue-message.is-untitled .norden-thin-titled-title { visibility: hidden; }
+/* Nobody speaking yet: the window keeps its place, so that the cut does not move */
+.norden-dialogue-message.is-empty { visibility: hidden; }
+.norden-dialogue-message-line { display: flex; gap: 18px; align-items: flex-start; }
+.norden-dialogue-face {
+  flex: none;
+  width: 76px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px rgb(201 168 106 / 0.7), 0 2px 6px rgb(0 0 0 / 0.5);
+}
+.norden-dialogue-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.norden-dialogue-message.is-narrate .norden-dialogue-text { color: var(--norden-text); text-align: center; }
+.norden-dialogue-text-rest { visibility: hidden; }
+.norden-dialogue-next {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--norden-text-accent);
+  animation: norden-dialogue-blink 900ms ease-in-out infinite;
+}
+
+/* Choices under the line before them, as the event notice's buttons */
+.norden-dialogue-choices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 12px;
+  cursor: default;
+}
+.norden-dialogue-choices .norden-button { flex-direction: column; justify-content: center; }
+.norden-dialogue-choice-reason { display: block; font-size: 11px; opacity: 0.85; }
+
+@keyframes norden-dialogue-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes norden-dialogue-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes norden-dialogue-slide-in {
+  from { opacity: 0; transform: translateX(var(--norden-dialogue-slide)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes norden-dialogue-slide-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateX(var(--norden-dialogue-slide)); }
+}
+@keyframes norden-dialogue-cut { from { opacity: 0; scale: 1.03; } to { opacity: 1; scale: 1; } }
+@keyframes norden-dialogue-window { from { opacity: 0; translate: 0 16px; } to { opacity: 1; translate: 0 0; } }
+@keyframes norden-dialogue-flash { from { opacity: 0.85; } to { opacity: 0; } }
+@keyframes norden-dialogue-blink { 50% { opacity: 0.2; } }
+@media (prefers-reduced-motion: reduce) {
+  .norden-dialogue, .norden-dialogue-cut, .norden-dialogue-message { animation: none; }
+}

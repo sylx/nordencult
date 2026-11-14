@@ -1,0 +1,11 @@
+// 親（nordencult）のもの: 会話シーン・騎士と背景と音・検査のカタログ・ゲームの初期状態。ソースのまま読む
+export { DIALOGUE_PROVIDERS, SCENES, runDialogue, isDialogueId, type DialogueId } from '@game/dialogue'
+export { DIALOGUE_CATALOG } from '@game/dialogue/catalog'
+export { stateChanges } from '@game/dialogue/changes'
+export { dialogueCharacter } from '@game/dialogue/cast'
+export { CHARACTER_LIST, CHARACTER_MAP } from '@game/data/character'
+export { CITY_LIST, CITY_MAP } from '@game/data/city'
+export { VOICE_TONE_GROUPS, VOICE_TONE_LABELS } from '@game/data/characterVoice'
+export { createInitialState } from '@game/game/setup'
+export { GameRuleError } from '@game/game/errors'
+export type { GameState } from '@game/game/types'
