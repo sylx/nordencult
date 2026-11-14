@@ -143,7 +143,11 @@ describe('CityCommandScreen', () => {
     const slots = screen.getByRole('list', { name: '施設 1 / 3' })
     await userEvent.click(within(slots).getByRole('button', { name: '市場' }))
     const market = screen.getByRole('dialog', { name: '施設詳細：市場' })
-    expect(within(market).getByRole('button', { name: '閉じる' })).toHaveFocus()
+    expect(within(market).getByRole('heading', { name: '市場' })).toBeInTheDocument()
+    // The frame's × and the 閉じる under the details, which has the focus
+    const closers = within(market).getAllByRole('button', { name: '閉じる' })
+    expect(closers).toHaveLength(2)
+    expect(closers[1]).toHaveFocus()
     await userEvent.keyboard('{Escape}')
     expect(market).not.toBeInTheDocument()
     await userEvent.click(within(slots).getByRole('button', { name: /工房/ }))
@@ -156,7 +160,7 @@ describe('CityCommandScreen', () => {
       expect(onCommand.mock.calls).toEqual([['domestic'], ['domestic']])
     } else {
       expect(within(workshop).queryByRole('button', { name: '内政を開く' })).not.toBeInTheDocument()
-      await userEvent.click(within(workshop).getByRole('button', { name: '閉じる' }))
+      await userEvent.click(within(workshop).getAllByRole('button', { name: '閉じる' })[0]!)
       expect(workshop).not.toBeInTheDocument()
       expect(within(slots).queryByRole('button', { name: '空き' })).not.toBeInTheDocument()
       await userEvent.click(within(slots).getByText('空き'))
