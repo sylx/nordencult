@@ -5,7 +5,7 @@ export {
   unequipRelic,
 } from './equipment'
 export {
-  debugAddRelic, dismantleProblem, dismantleRelic, PAPAL_FACTION, papalRepairCost, papalRepairKnowledge, papalRepairProblem, papalRepairRate, producibleRelics, productionProblem, relicItemInfo, relicWorks,
+  debugAddRelic, dismantleProblem, dismantleRelic, PAPAL_FACTION, papalRepairCost, papalRepairShortfall, papalRepairProblem, papalRepairRate, producibleRelics, productionProblem, relicItemInfo, relicWorks,
   repairableRelics, repairProblem, requestPapalRepair, startRelicProduction, startRelicRepair,
   type RelicItemInfo, type RelicWorkInfo,
 } from './relics'

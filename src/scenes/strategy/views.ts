@@ -539,13 +539,17 @@ const relicStatus = (item: RelicItem) =>
 /** The building a 施設の遺物 lets a city build (Building.requiredRelic) */
 const facilityOf = (relicId: string) => BUILDING_LIST.find((b) => b.requiredRelic === relicId)
 
-/** How the technology researched moves 法王府's price, e.g. 技術「ライフル」の習得で −20%; undefined: it needs no technology or is as it is */
-function papalRateNote(relic: Relic, ratio: number | undefined): string | undefined {
-  if (ratio === undefined) return undefined
+/**
+ * How the technology moves 法王府's price, e.g. 技術「ライフル」の習得で −40% or 技術「ライフル」まで研究あと700で +2%;
+ * undefined: it needs no technology
+ */
+function papalRateNote(relic: Relic, ratio: number | undefined, shortfall: number | undefined): string | undefined {
+  if (ratio === undefined || shortfall === undefined) return undefined
   const percent = Math.round((ratio - 1) * 100)
-  if (percent === 0) return undefined
+  const change = percent === 0 ? '' : percent < 0 ? ` −${-percent}%` : ` +${percent}%`
   const tech = TECH_MAP[relic.repair!.tech!]?.name ?? relic.repair!.tech!
-  return percent < 0 ? `技術「${tech}」の習得で −${-percent}%` : `技術「${tech}」が未習得で +${percent}%`
+  if (shortfall === 0) return change ? `技術「${tech}」の習得で${change}` : undefined
+  return `技術「${tech}」まで研究あと${shortfall.toLocaleString()}で${change}`
 }
 
 /** The faction's box, what it can do with each relic (repairing in `cityId`), then the relics being repaired or produced in its cities */
@@ -565,7 +569,7 @@ export function relicsView(game: GameState, factionId: string, cityId: string): 
         supplies: repair.supplies, gold: repair.gold, turns: constructionTurns(game, cityId, repair.supplies), unavailableReason: info.repairProblem ?? undefined,
       },
       papalRepair: papalGold === undefined ? undefined : {
-        gold: papalGold, note: papalRateNote(relic, info.papalRateRatio), unavailableReason: info.papalProblem ?? undefined,
+        gold: papalGold, note: papalRateNote(relic, info.papalRateRatio, info.papalShortfall), unavailableReason: info.papalProblem ?? undefined,
       },
       effects: relicEffects(relic),
       ...(item.repaired && facilityOf(item.relicId) && { buildingName: facilityOf(item.relicId)!.name }),

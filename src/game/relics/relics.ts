@@ -1,6 +1,6 @@
 import { RELIC_LIST, RELIC_MAP, type Relic, type RelicWorkCost } from '../../data/relics'
 import { TECH_MAP } from '../../data/techs'
-import { PAPAL_REPAIR_RATE, PAPAL_REPAIR_RATE_KNOWN, PAPAL_REPAIR_RATE_UNKNOWN } from '../economy/balance'
+import { PAPAL_REPAIR_RATE, PAPAL_REPAIR_RATE_KNOWN, PAPAL_REPAIR_RATE_PER_POINT } from '../economy/balance'
 import { commandProblem, constructionBusyProblem, withCity } from '../economy/domestic'
 import { GameRuleError } from '../errors'
 import { citiesOf } from '../queries'
@@ -144,27 +144,27 @@ function techLineage(techId: string): string[] {
 }
 
 /**
- * How much of what repairing the relic takes the faction knows: the share (0 to 1) of the research points of its
- * repair's technology and those it requires that the faction has researched; undefined: its repair needs no technology
+ * The research points the faction lacks to reach the relic's repair technology: those of it and every technology it
+ * requires (all are needed, so this is the shortest way there) not researched yet, less what it has put into them;
+ * 0 when it is researched. undefined: its repair needs no technology
  */
-export function papalRepairKnowledge(state: GameState, factionId: FactionId, relic: Relic): number | undefined {
+export function papalRepairShortfall(state: GameState, factionId: FactionId, relic: Relic): number | undefined {
   const tech = relic.repair?.tech
   if (!tech || !TECH_MAP[tech]) return undefined
-  const researched = new Set(researchOf(state, factionId).researched)
-  const lineage = techLineage(tech)
-  const total = lineage.reduce((sum, id) => sum + TECH_MAP[id].cost, 0)
-  const known = lineage.reduce((sum, id) => sum + (researched.has(id) ? TECH_MAP[id].cost : 0), 0)
-  return total > 0 ? known / total : 1
+  const { researched, progress } = researchOf(state, factionId)
+  return techLineage(tech)
+    .filter((id) => !researched.includes(id))
+    .reduce((sum, id) => sum + Math.max(0, TECH_MAP[id].cost - (progress[id] ?? 0)), 0)
 }
 
 /** The rate of the relic's repair 法王府 asks of the faction (balance.ts' PAPAL_REPAIR_RATE…) */
 export function papalRepairRate(state: GameState, factionId: FactionId, relic: Relic): number {
-  const knowledge = papalRepairKnowledge(state, factionId, relic)
-  if (knowledge === undefined) return PAPAL_REPAIR_RATE
-  return PAPAL_REPAIR_RATE_UNKNOWN + (PAPAL_REPAIR_RATE_KNOWN - PAPAL_REPAIR_RATE_UNKNOWN) * knowledge
+  const shortfall = papalRepairShortfall(state, factionId, relic)
+  if (shortfall === undefined) return PAPAL_REPAIR_RATE
+  return PAPAL_REPAIR_RATE_KNOWN + PAPAL_REPAIR_RATE_PER_POINT * shortfall
 }
 
-/** Gold 法王府 takes from the faction to repair the relic: dearer the less of its technology the faction has researched */
+/** Gold 法王府 takes from the faction to repair the relic: dearer the farther the faction is from its technology */
 export const papalRepairCost = (state: GameState, factionId: FactionId, relic: Relic): number =>
   Math.ceil(((relic.repair?.gold ?? 0) + (relic.repair?.supplies ?? 0)) * papalRepairRate(state, factionId, relic))
 
@@ -221,6 +221,8 @@ export interface RelicItemInfo {
   papalGold?: number
   /** papalGold against the rate for a relic needing no technology: below 1 cheaper, above dearer (the technology researched); undefined: no such relic */
   papalRateRatio?: number
+  /** The research points the faction lacks to reach the repair's technology (papalRepairShortfall); undefined: no such relic */
+  papalShortfall?: number
   papalProblem: string | null
 }
 
@@ -238,6 +240,7 @@ export function relicItemInfo(state: GameState, factionId: FactionId, cityId: Ci
     repairProblem: repairProblem(state, cityId, itemId),
     papalGold: relic.repair && papalRepairCost(state, factionId, relic),
     papalRateRatio: relic.repair?.tech ? papalRepairRate(state, factionId, relic) / PAPAL_REPAIR_RATE : undefined,
+    papalShortfall: papalRepairShortfall(state, factionId, relic),
     papalProblem: papalRepairProblem(state, factionId, itemId),
   }
 }

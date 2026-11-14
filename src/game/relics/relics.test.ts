@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   addOrder, addResearchPoints, BALANCE, buildingLocked, buildingProblem, cancelConstruction, cityOutput, constructionBusyProblem, constructionProblem, constructionTurns, createInitialState, debugAddRelic,
-  dismantleProblem, dismantleRelic, endFactionTurn, GameRuleError, mustChooseResearch, papalRepairCost, papalRepairKnowledge, papalRepairProblem, pauseConstruction, producibleRelics,
+  dismantleProblem, dismantleRelic, endFactionTurn, GameRuleError, mustChooseResearch, papalRepairCost, papalRepairProblem, papalRepairShortfall, pauseConstruction, producibleRelics,
   productionProblem, relicItemInfo, relicWorks, repairProblem, requestPapalRepair, resolveBattle, runEconomy, setResearch, startConstruction, startNextBattle,
   startRelicProduction, startRelicRepair, withRelics,
   type CityConstruction, type CityState, type FactionResearch, type GameState, type RelicItem,
@@ -382,18 +382,23 @@ describe('法王府', () => {
     expect(item(next, BALLISTA)).toEqual({ id: BALLISTA, relicId: 'ballista', repaired: false, papalRepair: true })
   })
 
-  it('asks more the less of the repair\'s technology (and those it requires) the faction has researched', () => {
+  it('asks more the farther the faction is from the repair\'s technology, by the research points it lacks', () => {
     const state = playing('carta')
-    const rifle = (...techs: string[]) => papalRepairCost(researched(state, ...techs), 'carta', RELIC_MAP.rifle)
+    const rate = (shortfall: number) => BALANCE.PAPAL_REPAIR_RATE_KNOWN + BALANCE.PAPAL_REPAIR_RATE_PER_POINT * shortfall
+    const rifle = (next: GameState) => papalRepairCost(next, 'carta', RELIC_MAP.rifle)
     // ライフル needs 根 before it: 100 + 200 research points
-    expect(papalRepairKnowledge(researched(state), 'carta', RELIC_MAP.rifle)).toBe(0)
-    expect(papalRepairKnowledge(researched(state, 'root'), 'carta', RELIC_MAP.rifle)).toBeCloseTo(100 / 300)
-    expect(rifle()).toBe(Math.ceil(550 * BALANCE.PAPAL_REPAIR_RATE_UNKNOWN))
-    expect(rifle('root', 'rifle')).toBe(Math.ceil(550 * BALANCE.PAPAL_REPAIR_RATE_KNOWN))
-    expect(rifle('root')).toBe(Math.ceil(550 * (BALANCE.PAPAL_REPAIR_RATE_UNKNOWN + (BALANCE.PAPAL_REPAIR_RATE_KNOWN - BALANCE.PAPAL_REPAIR_RATE_UNKNOWN) / 3)))
+    expect(papalRepairShortfall(researched(state), 'carta', RELIC_MAP.rifle)).toBe(300)
+    expect(rifle(researched(state))).toBe(Math.ceil(550 * rate(300)))
+    expect(papalRepairShortfall(researched(state, 'root'), 'carta', RELIC_MAP.rifle)).toBe(200)
+    expect(rifle(researched(state, 'root'))).toBe(Math.ceil(550 * rate(200)))
+    // What it has put into one counts; researched, the rate is the least
+    const halfway = withResearch(state, 'carta', { researched: ['root'], current: 'rifle', progress: { rifle: 150 } })
+    expect(papalRepairShortfall(halfway, 'carta', RELIC_MAP.rifle)).toBe(50)
+    expect(rifle(researched(state, 'root', 'rifle'))).toBe(Math.ceil(550 * BALANCE.PAPAL_REPAIR_RATE_KNOWN))
     // What follows from it does not count; a relic needing no technology keeps the plain rate
-    expect(rifle('root', 'rifle', 'rifle_production')).toBe(rifle('root', 'rifle'))
-    expect(papalRepairKnowledge(state, 'carta', RELIC_MAP.ballista)).toBeUndefined()
+    expect(rifle(researched(state, 'root', 'rifle', 'rifle_production'))).toBe(rifle(researched(state, 'root', 'rifle')))
+    expect(papalRepairShortfall(state, 'carta', RELIC_MAP.ballista)).toBeUndefined()
+    expect(papalRepairCost(state, 'carta', RELIC_MAP.ballista)).toBe(Math.ceil(651 * BALANCE.PAPAL_REPAIR_RATE))
   })
 
   it('repairs it by the next turn, with no technology, city or 生産, telling the player', () => {
