@@ -103,13 +103,18 @@ export const SUMMON_MORALE = 70
 /**
  * 法王府 repairs a relic for ceil((its repair's gold + supplies) × rate) gold. The rate is PAPAL_REPAIR_RATE for a relic
  * whose repair needs no technology; for one that needs a technology, it is PAPAL_REPAIR_RATE_KNOWN (the technology
- * researched) plus PAPAL_REPAIR_RATE_PER_POINT for each research point the faction still lacks to reach it: of the
- * technology and every one it requires, those not researched yet, less what it has put into them (the farther the
- * faction is from the technology, the more it depends on 法王府). E.g. 1000 points short: 1.5 + 1.5 = 3.0
+ * researched) plus PAPAL_REPAIR_RATE_RISE for every PAPAL_REPAIR_RISE_POINTS research points the faction still lacks to
+ * reach it: of the technology and every one it requires, those not researched yet, less what it has put into them (the
+ * farther the faction is from the technology, the more it depends on 法王府). The rise is set so that ライフル with
+ * nothing of 物理文明・火薬・ライフル researched (700 points) costs 3.5 times
  */
 export const PAPAL_REPAIR_RATE = 2.5
 export const PAPAL_REPAIR_RATE_KNOWN = 1.5
-export const PAPAL_REPAIR_RATE_PER_POINT = 0.0015
+export const PAPAL_REPAIR_RATE_RISE = 2
+export const PAPAL_REPAIR_RISE_POINTS = 700
+
+/** 法王府 turns down a repair that would cost more gold than this */
+export const PAPAL_REPAIR_MAX_GOLD = 5000
 
 /** A mercenary's monthly fee is their 契約金 / this */
 export const MERCENARY_MONTHLY_DIVISOR = 6

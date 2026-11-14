@@ -3,7 +3,7 @@ import { CHARACTER_MAP } from '../../data/character'
 import { RELIC_MAP } from '../../data/relics'
 import { SUMMON_NAMES } from '../../data/summons'
 import {
-  addMoveOrder, addOrder, addTransportOrder, assignmentProblem, autoSummonName, BALANCE, canCommand, characterOf, citySoldiers, debugAddRelic, debugImprison,
+  addMoveOrder, addOrder, addTransportOrder, assignmentProblem, autoSummonName, BALANCE, canCommand, characterOf, citySoldiers, debugAddRelic, debugCompleteTech, debugImprison,
   debugSummon, defaultUnitType, defenderArmy, defenseKnights, endFactionTurn, equipProblem, formDefense, isSummon, leadingKnight, moveOrderProblem,
   orderProblem, ownSoldiers, recoverSummons, relicsOf, renameProblem, renameSummon, requestPapalRepair, resolveBattle, runEconomy, runMovements,
   soldiersLeft, startNextBattle, successorLord, summonProblem, summonRelic, summonStrength, transportKnightProblem, unitTypesOf, withSummonHp,
@@ -62,7 +62,8 @@ describe('summoning', () => {
     const broken = debugAddRelic(playing('carta'), 'carta', 'golem', false)
     const brokenId = relicsOf(broken, 'carta').at(-1)!.id
     expect(summonProblem(broken, FLUEN, brokenId)).toBe('修復されていない遺物です')
-    const rich = { ...broken, gold: { ...broken.gold, carta: 100000 } }
+    // ゴーレム researched: 法王府 turns down a repair dearer than 5,000
+    const rich = debugCompleteTech({ ...broken, gold: { ...broken.gold, carta: 100000 } }, 'carta', 'golem')
     expect(summonProblem(requestPapalRepair(rich, 'carta', brokenId), FLUEN, brokenId)).toBe('法王府に依頼中です')
     // カルタ書院's ライフル
     expect(summonProblem(state, FLUEN, 'carta-2')).toBe('召喚の遺物ではありません')

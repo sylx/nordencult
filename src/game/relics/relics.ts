@@ -1,6 +1,6 @@
 import { RELIC_LIST, RELIC_MAP, type Relic, type RelicWorkCost } from '../../data/relics'
 import { TECH_MAP } from '../../data/techs'
-import { PAPAL_REPAIR_RATE, PAPAL_REPAIR_RATE_KNOWN, PAPAL_REPAIR_RATE_PER_POINT } from '../economy/balance'
+import { PAPAL_REPAIR_MAX_GOLD, PAPAL_REPAIR_RATE, PAPAL_REPAIR_RATE_KNOWN, PAPAL_REPAIR_RATE_RISE, PAPAL_REPAIR_RISE_POINTS } from '../economy/balance'
 import { commandProblem, constructionBusyProblem, withCity } from '../economy/domestic'
 import { GameRuleError } from '../errors'
 import { citiesOf } from '../queries'
@@ -161,7 +161,7 @@ export function papalRepairShortfall(state: GameState, factionId: FactionId, rel
 export function papalRepairRate(state: GameState, factionId: FactionId, relic: Relic): number {
   const shortfall = papalRepairShortfall(state, factionId, relic)
   if (shortfall === undefined) return PAPAL_REPAIR_RATE
-  return PAPAL_REPAIR_RATE_KNOWN + PAPAL_REPAIR_RATE_PER_POINT * shortfall
+  return PAPAL_REPAIR_RATE_KNOWN + (PAPAL_REPAIR_RATE_RISE * shortfall) / PAPAL_REPAIR_RISE_POINTS
 }
 
 /** Gold 法王府 takes from the faction to repair the relic: dearer the farther the faction is from its technology */
@@ -177,7 +177,9 @@ export function papalRepairProblem(state: GameState, factionId: FactionId, itemI
   if (factionId === PAPAL_FACTION) return '法王府は自らに依頼できません'
   if (citiesOf(state, PAPAL_FACTION).length === 0) return '法王府は滅んでいます'
   if (relicsOf(state, factionId).some((other) => other.papalRepair)) return '法王府への依頼は同時に1件までです'
-  return (state.gold[factionId] ?? 0) < papalRepairCost(state, factionId, relic) ? '金が足りません' : null
+  const cost = papalRepairCost(state, factionId, relic)
+  if (cost > PAPAL_REPAIR_MAX_GOLD) return `金${PAPAL_REPAIR_MAX_GOLD.toLocaleString()}を超える修復は法王府に断られます`
+  return (state.gold[factionId] ?? 0) < cost ? '金が足りません' : null
 }
 
 /**

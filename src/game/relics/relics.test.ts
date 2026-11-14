@@ -26,6 +26,7 @@ vi.mock('../../data/relicData.json', () => ({
     },
     { id: 'ballista', name: 'バリスタ', brokenName: '壊れたバリスタ', description: '', rarity: 'C', use: 'building', dismantlePoints: 60, repair: { supplies: 500, gold: 151 } },
     { id: 'grimoire', name: '魔導書', description: '', rarity: 'B', use: 'equipment', production: { supplies: 400, gold: 200, tech: 'root' } },
+    { id: 'colossus', name: '巨像', brokenName: '壊れた巨像', description: '', rarity: 'A', use: 'building', repair: { supplies: 2400, gold: 900, tech: 'rifle' } },
   ],
 }))
 
@@ -384,7 +385,7 @@ describe('法王府', () => {
 
   it('asks more the farther the faction is from the repair\'s technology, by the research points it lacks', () => {
     const state = playing('carta')
-    const rate = (shortfall: number) => BALANCE.PAPAL_REPAIR_RATE_KNOWN + BALANCE.PAPAL_REPAIR_RATE_PER_POINT * shortfall
+    const rate = (shortfall: number) => BALANCE.PAPAL_REPAIR_RATE_KNOWN + (BALANCE.PAPAL_REPAIR_RATE_RISE * shortfall) / BALANCE.PAPAL_REPAIR_RISE_POINTS
     const rifle = (next: GameState) => papalRepairCost(next, 'carta', RELIC_MAP.rifle)
     // ライフル needs 根 before it: 100 + 200 research points
     expect(papalRepairShortfall(researched(state), 'carta', RELIC_MAP.rifle)).toBe(300)
@@ -445,6 +446,18 @@ describe('法王府', () => {
     expect(papalRepairProblem(withGold(state, cost() - 1), 'carta', BALLISTA)).toBe('金が足りません')
     expect(papalRepairProblem(withGold(state, cost()), 'carta', BALLISTA)).toBeNull()
     expect(papalRepairProblem(withRelics(state, 'carta', [{ id: 'g', relicId: 'grimoire', repaired: false }]), 'carta', 'g')).toBe('修復できない遺物です')
+  })
+
+  it('turns down a repair dearer than PAPAL_REPAIR_MAX_GOLD, however rich the faction', () => {
+    // 巨像: 3300 × (1.5 + 2 × 300 / 700) ≈ 7,629 with nothing researched, 3300 × 1.5 = 4,950 with ライフル
+    const state = withGold(debugAddRelic(playing('carta'), 'carta', 'colossus'), 100_000)
+    const id = itemsOf(state).at(-1)!.id
+    expect(papalRepairCost(state, 'carta', RELIC_MAP.colossus)).toBeGreaterThan(BALANCE.PAPAL_REPAIR_MAX_GOLD)
+    expect(papalRepairProblem(state, 'carta', id)).toBe('金5,000を超える修復は法王府に断られます')
+    expect(() => requestPapalRepair(state, 'carta', id)).toThrow(GameRuleError)
+    const skilled = researched(state, 'root', 'rifle')
+    expect(papalRepairCost(skilled, 'carta', RELIC_MAP.colossus)).toBe(4950)
+    expect(papalRepairProblem(skilled, 'carta', id)).toBeNull()
   })
 
   it('does not repair for itself', () => {
