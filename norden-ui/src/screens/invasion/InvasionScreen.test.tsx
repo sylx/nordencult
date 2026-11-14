@@ -1,0 +1,282 @@
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
+import InvasionScreen from './InvasionScreen'
+import type { InvasionScreenProps } from './InvasionScreen'
+
+const unitTypes = [{ id: 'infantry', name: '歩兵' }, { id: 'archer', name: '弓兵' }, { id: 'cavalry', name: '騎兵' }]
+
+const setup = (props: Partial<InvasionScreenProps> = {}) => {
+  const onConfirm = vi.fn()
+  const onCancel = vi.fn()
+  render(<InvasionScreen from={{ id: 'A', name: 'フルーエン' }} to={{ id: 'B', name: 'アンバリア' }} defenders={1}
+    knights={[
+      { id: 'k1', name: 'エルネスト', defaultUnitType: 'cavalry' },
+      { id: 'k2', name: 'リディア' },
+      { id: 'k3', name: 'オスカー', commandRank: 1 },
+      { id: 'k4', name: 'マルクス', unavailableReason: '内政を担当中' },
+    ]}
+    unitTypes={unitTypes} indirectUnitTypes={['infantry', 'archer']} soldierPool={600} maxSoldiers={400} onConfirm={onConfirm} onCancel={onCancel} {...props} />)
+  return { onConfirm, onCancel }
+}
+
+const confirm = () => screen.getByRole('button', { name: '予約' })
+const button = (name: string) => screen.getByRole('button', { name })
+const unit = (name: string) => within(screen.getByRole('region', { name }))
+const units = () => screen.queryAllByRole('region', { name: /の部隊$|^間接指揮部隊\d$/ }).map(region => region.getAttribute('aria-label'))
+
+describe('InvasionScreen', () => {
+  const mercenary = { id: 'm1', name: 'ブロック', defaultUnitType: 'cavalry', mercenary: { company: '樽盾団', soldiers: 500, maxSoldiers: 500, morale: 70 } }
+  const withMercenary = () => setup({
+    knights: [{ id: 'k1', name: 'エルネスト', defaultUnitType: 'cavalry' }, mercenary, { id: 'k2', name: 'リディア' }],
+  })
+
+  it('does not make a mercenary the commander', async () => {
+    withMercenary()
+    expect(button('ブロックを軍団長にする')).toBeDisabled()
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('ブロックを加える'))
+    expect(units()).toEqual(['エルネストの部隊', 'ブロックの部隊'])
+    expect(screen.queryByRole('button', { name: 'ブロックを軍団長にする' })).not.toBeInTheDocument()
+  })
+
+  it('takes a mercenary with their own soldiers and unit type, out of the pool', async () => {
+    const { onConfirm } = withMercenary()
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('ブロックを加える'))
+    expect(unit('ブロックの部隊').getByLabelText('ブロックの部隊の内容')).toHaveTextContent('騎兵・500人')
+    expect(unit('ブロックの部隊').queryByRole('spinbutton')).not.toBeInTheDocument()
+    await userEvent.click(button('兵を均等に分ける'))
+    await userEvent.click(confirm())
+    expect(onConfirm.mock.calls[0]![0].units).toEqual([
+      { knightId: 'k1', unitType: 'cavalry', soldiers: 400 },
+      { knightId: 'm1', unitType: 'cavalry', soldiers: 500 },
+    ])
+  })
+
+  it('takes a summoned unit with its HP and monster, out of the pool, never as the commander', async () => {
+    const summon = { id: 's1', name: 'イグナーヴ', defaultUnitType: 'dragon', unitTypes: ['dragon'], summon: { hp: 450, maxHp: 600, attack: 172, defense: 185, morale: 70, relicName: 'ドラゴン', relicDescription: '竜の卵から孵った。' } }
+    const { onConfirm } = setup({
+      knights: [{ id: 'k1', name: 'エルネスト', defaultUnitType: 'cavalry' }, summon],
+      unitTypes: [...unitTypes, { id: 'dragon', name: 'ドラゴン' }],
+    })
+    expect(button('イグナーヴを軍団長にする')).toBeDisabled()
+    expect(button('イグナーヴを軍団長にする')).toHaveAttribute('aria-description', '召喚ユニットは軍団長になれません')
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('イグナーヴを加える'))
+    expect(unit('イグナーヴの部隊').getByLabelText('イグナーヴの部隊の内容')).toHaveTextContent('ドラゴン・450（HP）召喚ユニットの兵科と兵数は変えられません')
+    expect(screen.queryByRole('button', { name: 'イグナーヴを軍団長にする' })).not.toBeInTheDocument()
+    expect(screen.getByRole('meter', { name: 'イグナーヴの士気' })).toHaveAttribute('aria-valuenow', '70')
+    await userEvent.click(button('兵を均等に分ける'))
+    await userEvent.click(confirm())
+    expect(onConfirm.mock.calls[0]![0].units).toEqual([
+      { knightId: 'k1', unitType: 'cavalry', soldiers: 400 },
+      { knightId: 's1', unitType: 'dragon', soldiers: 450 },
+    ])
+  })
+
+  it('leaves no army of mercenaries alone when the commander goes', async () => {
+    withMercenary()
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('ブロックを加える'))
+    await userEvent.click(button('エルネストを外す'))
+    expect(units()).toEqual([])
+  })
+
+  it('starts by picking the commander; unavailable knights cannot be picked', async () => {
+    setup()
+    expect(confirm()).toBeDisabled()
+    expect(screen.getByRole('status', { name: '' })).toHaveTextContent('軍団長を選んでください')
+    expect(screen.queryByRole('button', { name: 'マルクスを軍団長にする' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /間接指揮部隊/ })).not.toBeInTheDocument()
+    expect(screen.getByText('守備の騎士: 1人')).toBeInTheDocument()
+
+    await userEvent.click(button('エルネストを軍団長にする'))
+    expect(unit('エルネストの部隊').getByText('軍団長')).toBeInTheDocument()
+    // the others now join under the commander
+    expect(button('リディアを加える')).toBeEnabled()
+    expect(confirm()).toBeEnabled()
+  })
+
+  it('adds knights with their default unit type and soldiers within the pool', async () => {
+    const { onConfirm } = setup()
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('リディアを加える'))
+    // エルネスト takes 400 (the cap of a unit); リディア gets the 200 left
+    expect(unit('エルネストの部隊').getByRole('radio', { name: '騎兵' })).toHaveAttribute('aria-checked', 'true')
+    expect(unit('リディアの部隊').getByRole('radio', { name: '歩兵' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('spinbutton', { name: 'エルネストの兵数（数値）' })).toHaveValue(400)
+    expect(screen.getByRole('spinbutton', { name: 'リディアの兵数（数値）' })).toHaveValue(200)
+    expect(screen.getByRole('slider', { name: 'リディアの兵数' })).toHaveAttribute('max', '200')
+
+    await userEvent.click(unit('リディアの部隊').getByRole('radio', { name: '弓兵' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'エルネストの兵数（数値）' }), { target: { value: '300' } })
+    expect(screen.getByRole('slider', { name: 'リディアの兵数' })).toHaveAttribute('max', '300')
+    await userEvent.click(confirm())
+    expect(onConfirm).toHaveBeenCalledWith({
+      commander: 'k1',
+      units: [{ knightId: 'k1', unitType: 'cavalry', soldiers: 300 }, { knightId: 'k2', unitType: 'archer', soldiers: 200 }],
+    })
+  })
+
+  it('hands the command to another knight of the army, and to the next one when the commander leaves', async () => {
+    setup({ soldierPool: 2000 })
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('リディアを加える'))
+    await userEvent.click(button('リディアを軍団長にする'))
+    expect(units()).toEqual(['リディアの部隊', 'エルネストの部隊'])
+    expect(unit('リディアの部隊').getByText('軍団長')).toBeInTheDocument()
+
+    await userEvent.click(button('リディアを外す'))
+    expect(units()).toEqual(['エルネストの部隊'])
+    expect(unit('エルネストの部隊').getByText('軍団長')).toBeInTheDocument()
+  })
+
+  it('makes a knight who must lead the commander, and keeps them there', async () => {
+    const { onConfirm } = setup({ soldierPool: 2000 })
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('オスカーを加える'))
+    expect(units()).toEqual(['オスカーの部隊', 'エルネストの部隊'])
+    expect(button('エルネストを軍団長にする')).toBeDisabled()
+    expect(button('エルネストを軍団長にする')).toHaveAttribute('aria-description', 'オスカーが出撃するため軍団長は変えられません')
+    await userEvent.click(confirm())
+    expect(onConfirm.mock.calls[0]![0]).toMatchObject({ commander: 'k3' })
+  })
+
+  it('forms units the commander leads indirectly, as infantry or archers', async () => {
+    const { onConfirm } = setup({ soldierPool: 2000 })
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('＋ 間接指揮部隊（歩兵・弓兵）'))
+    expect(unit('間接指揮部隊1').getByText('軍団長 エルネスト が率いる')).toBeInTheDocument()
+    expect(unit('間接指揮部隊1').getAllByRole('radio').map(radio => radio.textContent)).toEqual(['歩兵', '弓兵'])
+    // maxSoldiers caps them like the knights' units
+    expect(screen.getByRole('spinbutton', { name: '間接指揮部隊1の兵数（数値）' })).toHaveValue(400)
+    await userEvent.click(unit('間接指揮部隊1').getByRole('radio', { name: '弓兵' }))
+    await userEvent.click(confirm())
+    expect(onConfirm).toHaveBeenCalledWith({
+      commander: 'k1',
+      units: [{ knightId: 'k1', unitType: 'cavalry', soldiers: 400 }, { knightId: null, unitType: 'archer', soldiers: 400 }],
+    })
+
+    // without knights there is no commander to lead them
+    await userEvent.click(button('エルネストを外す'))
+    expect(units()).toEqual([])
+  })
+
+  it('forms up to maxUnits units', async () => {
+    setup({ soldierPool: 2000, maxUnits: 2 })
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('＋ 間接指揮部隊（歩兵・弓兵）'))
+    expect(button('リディアを加える')).toBeDisabled()
+    expect(button('リディアを加える')).toHaveAttribute('aria-description', '2部隊までです')
+    expect(button('＋ 間接指揮部隊（歩兵・弓兵）')).toBeDisabled()
+    expect(within(screen.getByRole('region', { name: '軍団編成' })).getByText('部隊 2 / 2')).toBeInTheDocument()
+    await userEvent.click(button('間接指揮部隊1を外す'))
+    expect(button('リディアを加える')).toBeEnabled()
+  })
+
+  it('pictures the units with their soldiers and morale, and the empty slots', async () => {
+    const unitPower = vi.fn((unit: { soldiers: number }, commander: string) => ({ attack: unit.soldiers / 10, defense: commander === 'k1' ? 120 : 0 }))
+    setup({ soldierPool: 2000, maxUnits: 4, morale: 70, unitPower,
+      unitTypes: unitTypes.map(type => ({ ...type, image: `/units/${type.id}.webp` })) })
+    const formation = within(screen.getByRole('list', { name: '編成した部隊' }))
+    expect(formation.getAllByRole('listitem').map(slot => slot.textContent)).toEqual(['空き', '空き', '空き', '空き'])
+
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('＋ 間接指揮部隊（歩兵・弓兵）'))
+    const commander = within(formation.getByRole('listitem', { name: 'エルネスト' }))
+    expect(commander.getByText('騎兵')).toBeInTheDocument()
+    expect(commander.getByText('軍団長')).toBeInTheDocument()
+    expect(commander.getByRole('meter', { name: 'エルネストの兵数' })).toHaveAttribute('aria-valuetext', '400 / 400')
+    expect(commander.getByRole('meter', { name: 'エルネストの士気' })).toHaveAttribute('aria-valuenow', '70')
+    expect(formation.getByRole('listitem', { name: 'エルネスト' }).querySelector('img')).toHaveAttribute('src', '/units/cavalry.webp')
+    // the knight's face (their initial without a portrait), clipped round at the top left
+    expect(formation.getByRole('listitem', { name: 'エルネスト' }).querySelector('.norden-invasion-slot-face')).toHaveTextContent('エ')
+    expect(commander.getByText('攻撃').nextElementSibling).toHaveTextContent('40')
+    expect(commander.getByText('防御').nextElementSibling).toHaveTextContent('120')
+    const indirect = within(formation.getByRole('listitem', { name: '間接指揮部隊1' }))
+    expect(indirect.getByText('間接指揮（エルネスト）')).toBeInTheDocument()
+    expect(indirect.getByRole('meter', { name: '間接指揮部隊1の兵数' })).toHaveAttribute('aria-valuetext', '400 / 400')
+    expect(unitPower).toHaveBeenCalledWith({ knightId: null, unitType: 'infantry', soldiers: 400 }, 'k1')
+    expect(formation.getAllByText('空き')).toHaveLength(2)
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'エルネストの兵数（数値）' }), { target: { value: '300' } })
+    expect(commander.getByRole('meter', { name: 'エルネストの兵数' })).toHaveAttribute('aria-valuenow', '300')
+    expect(commander.getByText('攻撃').nextElementSibling).toHaveTextContent('30')
+  })
+
+  it('offers only the unit types a knight can lead', async () => {
+    setup({ knights: [
+      { id: 'k1', name: 'エルネスト', defaultUnitType: 'archer', unitTypes: ['infantry', 'cavalry'] },
+      { id: 'k2', name: 'リディア' },
+    ] })
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('リディアを加える'))
+    const ernest = unit('エルネストの部隊')
+    expect(ernest.getAllByRole('radio').map(radio => radio.textContent)).toEqual(['歩兵', '騎兵'])
+    // their default is not among them, so the first one is chosen
+    expect(ernest.getByRole('radio', { name: '歩兵' })).toHaveAttribute('aria-checked', 'true')
+    expect(unit('リディアの部隊').getAllByRole('radio')).toHaveLength(3)
+  })
+
+  it('shares the soldiers out evenly in steps, the cap at most in each unit', async () => {
+    setup({ soldierPool: 610 })
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('リディアを加える'))
+    await userEvent.click(button('＋ 間接指揮部隊（歩兵・弓兵）'))
+    const soldiers = (names = ['エルネスト', 'リディア', '間接指揮部隊1']) => names
+      .map(name => (screen.getByRole('spinbutton', { name: `${name}の兵数（数値）` }) as HTMLInputElement).valueAsNumber)
+    expect(soldiers()).toEqual([400, 210, 0])
+    await userEvent.click(button('兵を均等に分ける'))
+    // the step left over goes to the commander's unit
+    expect(soldiers()).toEqual([210, 200, 200])
+    expect(confirm()).toBeEnabled()
+
+    await userEvent.click(button('間接指揮部隊1を外す'))
+    await userEvent.click(button('兵を均等に分ける'))
+    expect(soldiers(['エルネスト', 'リディア'])).toEqual([310, 300])
+  })
+
+  it('shares no more than the cap of each unit', async () => {
+    setup({ soldierPool: 2000 })
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('リディアを加える'))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'エルネストの兵数（数値）' }), { target: { value: '100' } })
+    await userEvent.click(button('兵を均等に分ける'))
+    expect(screen.getByRole('spinbutton', { name: 'エルネストの兵数（数値）' })).toHaveValue(400)
+    expect(screen.getByRole('spinbutton', { name: 'リディアの兵数（数値）' })).toHaveValue(400)
+  })
+
+  it('blocks empty units', async () => {
+    setup({ soldierPool: 400 })
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('リディアを加える'))
+    expect(confirm()).toBeDisabled()
+    expect(confirm()).toHaveAttribute('aria-description', '兵数が0の部隊があります')
+    await userEvent.click(button('リディアの部隊を外す'))
+    expect(confirm()).toBeEnabled()
+  })
+
+  it('applies the host rules and cancels', async () => {
+    const { onCancel } = setup({ validate: draft => (draft.units.length > 1 ? '1部隊までです' : null) })
+    await userEvent.click(button('エルネストを軍団長にする'))
+    expect(confirm()).toBeEnabled()
+    await userEvent.click(button('リディアを加える'))
+    expect(confirm()).toHaveAttribute('aria-description', '1部隊までです')
+    await userEvent.click(button('やめる'))
+    expect(onCancel).toHaveBeenCalledOnce()
+  })
+
+  it('forms the defense of the target without a way to back out', async () => {
+    const onConfirm = vi.fn()
+    render(<InvasionScreen mode="defense" from={{ id: 'A', name: 'フルーエン' }} to={{ id: 'B', name: 'アンバリア' }}
+      knights={[{ id: 'k1', name: 'エルネスト' }]} unitTypes={unitTypes} soldierPool={600} onConfirm={onConfirm} />)
+    expect(screen.getByText('アンバリアの防衛')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '防衛する騎士' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'やめる' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '閉じる' })).not.toBeInTheDocument()
+    await userEvent.click(button('エルネストを軍団長にする'))
+    await userEvent.click(button('防衛する'))
+    expect(onConfirm).toHaveBeenCalledWith({ commander: 'k1', units: [{ knightId: 'k1', unitType: 'infantry', soldiers: 600 }] })
+  })
+})

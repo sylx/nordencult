@@ -1,0 +1,47 @@
+.norden-building-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(64px, 100%), 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.norden-building-slots > li { min-width: 0; }
+.norden-building-slot {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 92px;
+  padding: 4px;
+  color: var(--norden-ink);
+  background: linear-gradient(#fff9e670, #ead8b670);
+  border: 1px solid #bca27d;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px #fff9e680, 0 1px 2px #52300e12;
+  font: inherit;
+  text-align: center;
+}
+button.norden-building-slot { cursor: pointer; }
+button.norden-building-slot:hover { background: #fffaea; }
+.norden-building-slot.is-selected { border-color: #7a4f17; box-shadow: 0 0 0 2px #c9963c; }
+.norden-building-slot.is-building { background: #f3e6c4b0; border-style: dashed; }
+.norden-building-slot.is-building .norden-building-image { opacity: .55; filter: sepia(.6); }
+.norden-building-slot.is-empty { justify-content: center; color: var(--norden-ink-faint); background: #fff9e620; border: 1px dashed #b38d5260; box-shadow: none; font-size: 11px; }
+.norden-building-slot.is-empty::before { content: '+'; color: var(--norden-ink-faint); font-size: 20px; line-height: 1; }
+.norden-building-slot-name { max-width: 100%; font-size: 11px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.norden-building-slot-badge { max-width: 100%; padding: 2px 0 0; color: var(--norden-ink-accent); font-size: 10px; line-height: 1.3; overflow-wrap: anywhere; }
+.norden-building-slot-badge > span { display: inline-block; max-width: 100%; }
+.norden-building-slot-badge > .norden-building-slot-months { max-width: none; white-space: nowrap; }
+/* Keep the whole 256 × 384 illustration, with the same row height as the old square thumbnails. */
+.norden-building-slot .norden-building-image { flex: none; width: 44px; height: 66px; border-radius: 2px; }
+.norden-building-slot-relic { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 3px 10px; min-height: 0; padding: 6px 8px; text-align: left; }
+.norden-building-slot-relic .norden-building-image { grid-column: 1; grid-row: 1 / 3; }
+
+.norden-building-image { display: block; width: 56px; height: 56px; object-fit: cover; border-radius: 3px; }
+.norden-building-image.is-sprite { display: flex; align-items: center; overflow: hidden; }
+.norden-building-image-cell { display: block; flex: none; width: 100%; background-repeat: no-repeat; }
+.norden-building-image.is-placeholder { display: flex; align-items: center; justify-content: center; color: var(--norden-text); background: linear-gradient(#9b7a4c, #6d5232); font-size: 24px; font-weight: 700; }
+
+.norden-construction-progress { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; box-sizing: border-box; width: 100%; min-width: 0; }
+.norden-construction-progress-bar { display: block; height: 6px; overflow: hidden; background: #3a2b1d; border: 1px solid #7b5b31; border-radius: 3px; }
+.norden-construction-progress-bar > span { display: block; height: 100%; background: linear-gradient(#f0d291, #b98a3a); transition: width .6s ease; }
+.norden-construction-progress-text { color: var(--norden-ink-soft); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }

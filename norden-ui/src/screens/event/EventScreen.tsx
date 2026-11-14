@@ -1,0 +1,92 @@
+import { useEffect, type ReactNode } from 'react'
+import Button from '../../components/parts/Button'
+import ImageFrame from '../../components/parts/ImageFrame'
+import ThinFrameWithTitle from '../../components/parts/ThinFrameWithTitle'
+import '../screens.css'
+import './EventScreen.css'
+
+/** A line of the event's details, e.g. 最後の拠点: フルーエン */
+export interface EventDetail {
+  label: ReactNode
+  value: ReactNode
+}
+
+export interface EventScreenProps {
+  /** The cut (the event's picture) shown above the message window, e.g. CUT_IMAGES.faction_destruction */
+  image?: string
+  /** A picture of the host in place of the cut (e.g. a technology's picture cut from its sheet); omitted: `image` */
+  picture?: ReactNode
+  /** Shown on the plaque of the message window, e.g. 勢力滅亡 */
+  title: ReactNode
+  /** What happened, e.g. カルタ書院は滅亡しました */
+  message: ReactNode
+  /** The details below the message, a line each */
+  details?: readonly EventDetail[]
+  /** More of the host below the details, e.g. the knights it concerns */
+  children?: ReactNode
+  /** The button closing the notice (Enter and Esc too, unless there is a `secondary` choice) */
+  onClose: () => void
+  closeLabel?: string
+  /** Why the closing button cannot be pressed now */
+  closeReason?: string
+  /** A second choice: the player must pick one of the two, so neither Enter nor Esc closes the notice */
+  secondary?: EventChoice
+}
+
+/** A button of a notice giving a choice */
+export interface EventChoice {
+  label: string
+  onClick: () => void
+  /** Why it cannot be pressed now */
+  reason?: string
+}
+
+/**
+ * A notice of an event over the whole host: the cut (the event's picture) and below it a message window with what
+ * happened and its details. It takes the pointer and the keys until it is closed (Esc does not reach the screen under
+ * it). With a `secondary` button it asks for a choice between the two
+ */
+export default function EventScreen({ image, picture, title, message, details = [], children, onClose, closeLabel = '閉じる', closeReason, secondary }: EventScreenProps) {
+  const choosing = secondary !== undefined
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' && event.key !== 'Enter') return
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      if (!choosing) onClose()
+    }
+    window.addEventListener('keydown', onKeyDown, true)
+    return () => window.removeEventListener('keydown', onKeyDown, true)
+  }, [onClose, choosing])
+
+  return (
+    <div className="norden-event" role="dialog" aria-modal="true" aria-label={typeof title === 'string' ? title : 'イベント'}>
+      <div className="norden-event-body">
+        {(picture || image) && (
+          <ImageFrame className={`norden-event-cut ${picture ? 'is-picture' : ''}`}>
+            {picture ?? <img src={image} alt="" />}
+          </ImageFrame>
+        )}
+        <ThinFrameWithTitle as="div" title={title} className="norden-event-window">
+          <p className="norden-event-message">{message}</p>
+          {details.length > 0 && (
+            <dl className="norden-event-details">
+              {details.map((detail, index) => (
+                <div key={index} className="norden-event-detail">
+                  <dt>{detail.label}</dt>
+                  <dd>{detail.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          {children}
+          {(closeReason || secondary?.reason) && <p className="norden-event-reason" role="note">{closeReason ?? secondary?.reason}</p>}
+          <div className="norden-event-actions">
+            {secondary && <Button disabled={Boolean(secondary.reason)} title={secondary.reason} onClick={secondary.onClick}>{secondary.label}</Button>}
+            <Button variant="primary" disabled={Boolean(closeReason)} title={closeReason} onClick={onClose}>{closeLabel}</Button>
+          </div>
+        </ThinFrameWithTitle>
+      </div>
+    </div>
+  )
+}

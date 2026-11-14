@@ -1,0 +1,40 @@
+.norden-image-frame {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  box-sizing: border-box;
+  width: fit-content;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 16px;
+  filter: drop-shadow(0 6px 12px #000b);
+}
+.norden-image-frame::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 8px;
+  background: #15110d url('../../assets/ui/hud/dark-texture.webp') repeat;
+}
+.norden-image-frame-border {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border: 32px solid transparent;
+  border-image: url('../../assets/ui/skins/image-frame.svg') 40 / 32px / 0 stretch;
+  pointer-events: none;
+}
+.norden-image-frame-content {
+  display: grid;
+  min-width: 0;
+  max-width: 100%;
+}
+.norden-image-frame-content > img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: var(--norden-image-max-height, none);
+  object-fit: contain;
+}

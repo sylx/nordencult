@@ -1,0 +1,137 @@
+.norden-window-frame {
+  --norden-window-frame-size: 64px;
+  --norden-window-close-size: 44px;
+  --norden-window-close-icon-size: 20px;
+  --norden-window-close-x: 0px;
+  --norden-window-close-y: 0px;
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-width: calc(var(--norden-window-frame-size) * 2);
+  min-height: calc(var(--norden-window-frame-size) * 2);
+  padding: var(--norden-window-content-top, 44px)
+    var(--norden-window-content-right, 25px)
+    var(--norden-window-content-bottom, calc(var(--norden-window-frame-size) * .625))
+    var(--norden-window-content-left, 30px);
+  pointer-events: auto;
+  color: var(--norden-text);
+  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+}
+.norden-window-frame-decoration {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.norden-window-frame-surface {
+  position: absolute;
+  inset: var(--norden-window-surface-inset, calc(var(--norden-window-frame-size) * .28125));
+  border-radius: var(--norden-window-surface-radius, 20px);
+  background: #211b14 url('../../assets/ui/hud/dark-texture.webp') repeat;
+  opacity: var(--norden-window-surface-opacity, 1);
+}
+.norden-window-frame-border {
+  position: absolute;
+  inset: 0;
+  border: var(--norden-window-frame-size) solid transparent;
+  border-image: url('../../assets/ui/skins/ornate-close-frame.webp') 25% / var(--norden-window-frame-size) / 0 stretch;
+}
+.norden-window-frame[data-background='parchment'] {
+  color: var(--norden-ink);
+}
+.norden-window-frame[data-background='parchment'] .norden-window-frame-surface {
+  background: #e9d8ae url('../../assets/ui/ui_paper_texture.webp') repeat;
+}
+.norden-window-frame[data-background='parchment'] .norden-window-frame-content {
+  scrollbar-color: #94703b #e9d8ae;
+}
+.norden-window-frame-title {
+  position: absolute;
+  top: var(--norden-window-title-y, 2px);
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  width: max-content;
+  max-width: calc(100% - 140px);
+  height: var(--norden-window-title-height, 44px);
+  padding: 0 44px;
+  isolation: isolate;
+  user-select: none;
+  pointer-events: none;
+}
+.norden-window-frame-title::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 0 solid transparent;
+  border-inline-width: 30px;
+  border-image: url('../../assets/ui/info_window_title_full.webp') 0 8% fill / 0 30px / 0 stretch;
+}
+.norden-window-frame-title.is-draggable { pointer-events: auto; touch-action: none; cursor: grab; }
+.norden-window-frame.is-dragging .norden-window-frame-title { cursor: grabbing; }
+.norden-window-frame-title.is-draggable:focus-visible { outline: 2px solid #ffe0a1; outline-offset: -4px; }
+.norden-window-frame-title-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--norden-text);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 2px #0f0a05;
+}
+/* The medallion is part of the corner image; this transparent hit target carries its live cross. */
+.norden-window-frame-close {
+  position: absolute;
+  top: calc(var(--norden-window-frame-size) * .484375 - var(--norden-window-close-size) / 2 + var(--norden-window-close-y));
+  right: calc(var(--norden-window-frame-size) * .40625 - var(--norden-window-close-size) / 2 + var(--norden-window-close-x));
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: var(--norden-window-close-size);
+  height: var(--norden-window-close-size);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--norden-text-accent);
+  cursor: pointer;
+}
+.norden-window-frame-close::before {
+  content: '';
+  position: absolute;
+  inset: 16%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffe3a54d, #ffe3a500 72%);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.norden-window-frame-close svg {
+  position: relative;
+  width: var(--norden-window-close-icon-size);
+  height: var(--norden-window-close-icon-size);
+  filter: drop-shadow(0 1px 1px #100b05);
+}
+.norden-window-frame-close:hover { color: var(--norden-text-strong); }
+.norden-window-frame-close:hover::before { opacity: 1; }
+.norden-window-frame-close:active svg { transform: translateY(1px); }
+.norden-window-frame-close:focus-visible { outline: 2px solid #ffe0a1; outline-offset: -5px; }
+.norden-window-frame-content {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  scrollbar-width: thin;
+  scrollbar-color: #94703b #211b14;
+}
+@media (prefers-reduced-motion: reduce) {
+  .norden-window-frame-close::before { transition: none; }
+}

@@ -1,0 +1,8 @@
+.norden-screen-host { position: absolute; inset: 0; pointer-events: none; }
+
+.norden-screen-layer { position: absolute; inset: 0; pointer-events: none; }
+/* A screen under an overlay keeps only its bottom toolbar row (e.g. the city commands, to close the overlay with) */
+.norden-screen-layer.is-covered .norden-screen > :not(.norden-screen-bottom-center) { display: none; }
+.norden-screen-layer.is-covered .norden-screen-bottom-center { z-index: 300; }
+/* ...which the overlays above leave uncovered */
+.norden-screen-layer.is-covered ~ .norden-screen-layer { --norden-screen-bottom-inset: 100px; }

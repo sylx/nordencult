@@ -1,0 +1,1032 @@
+/* The lord and the city's state, its building slots and its officers on the left, and a right 350px panel (layout from screens.css) */
+.norden-domestic-left {
+  flex: 1 1 62%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* Top row: the city's state */
+.norden-domestic-status-frame {
+  position: relative;
+  /* Above the facility frame below, so the stats' tooltips are not hidden behind it */
+  z-index: 1;
+  isolation: isolate;
+  box-sizing: border-box;
+  flex: none;
+  padding: 14px 22px;
+}
+
+.norden-domestic-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 28px;
+}
+
+.norden-domestic-stats {
+  flex: 1 1 380px;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 800px;
+}
+
+.norden-domestic-stat {
+  display: grid;
+  grid-template-columns: 7.5em minmax(0, 1fr) 6.5em;
+  align-items: center;
+  gap: 10px;
+}
+
+.norden-domestic-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--norden-text);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.norden-domestic-stat-label img {
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(0 2px 1px #0006);
+}
+
+.norden-domestic-stat-bar {
+  display: flex;
+  min-width: 0;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  font: inherit;
+  cursor: help;
+}
+
+.norden-domestic-stat-bar:focus-visible {
+  outline: 2px solid #ffe0a1;
+  outline-offset: 2px;
+}
+
+.norden-domestic-stat-bar .norden-stat-bar-value {
+  min-width: 3.5ch;
+  color: var(--norden-text-strong);
+}
+
+.norden-domestic-stat-boost {
+  color: var(--norden-text-good);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.norden-domestic-stat-boost.is-none {
+  color: var(--norden-text-faint);
+  font-weight: 500;
+}
+
+/* Breakdown of a stat, in a Tooltip */
+.norden-domestic-stat-tip {
+  min-width: 220px;
+}
+
+.norden-domestic-stat-tip-title {
+  display: block;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #b38d5280;
+  font-size: 14px;
+}
+
+.norden-domestic-stat-tip-title b {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.norden-domestic-stat-tip-title span {
+  color: var(--norden-ink-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.norden-domestic-stat-tip-rows,
+.norden-domestic-stat-tip-details {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.norden-domestic-stat-tip-rows > li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 12px;
+  padding: 2px 0;
+}
+
+.norden-domestic-stat-tip-rows b {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.norden-domestic-stat-tip-rows > li.is-building {
+  color: var(--norden-ink-good);
+}
+
+.norden-domestic-stat-tip-details {
+  grid-column: 1 / -1;
+  padding-left: 1em;
+  color: var(--norden-ink-soft);
+  font-size: 12px;
+}
+
+.norden-domestic-stat-tip-notes {
+  margin: 0;
+  padding: 0;
+  color: var(--norden-ink);
+  font-size: 12px;
+  line-height: 1.5;
+  list-style: none;
+}
+
+.norden-domestic-stat-tip-rows + .norden-domestic-stat-tip-notes {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid #b38d5260;
+}
+
+.norden-domestic-stat-tip-none {
+  margin: 4px 0 0;
+  color: var(--norden-ink-muted);
+  font-size: 12px;
+}
+
+/* Population, supplies and gold in large figures */
+.norden-domestic-figures {
+  flex: 0 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+}
+
+.norden-domestic-figures > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 110px;
+  padding: 6px 14px 8px;
+  background: rgb(255 243 204 / 0.06);
+  border: 1px solid #b38d5260;
+  border-radius: 6px;
+}
+
+.norden-domestic-figures dt {
+  align-self: flex-start;
+  color: var(--norden-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.norden-domestic-figures dd {
+  margin: 0;
+  color: var(--norden-text-strong);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 3px #0008;
+}
+
+/* Under a figure: e.g. the population's growth a turn and the turns until the next tier */
+.norden-domestic-figures dd.norden-domestic-figure-note {
+  color: var(--norden-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-shadow: none;
+}
+
+.norden-domestic-figures dd.norden-domestic-figure-note:nth-of-type(2) {
+  margin-top: 2px;
+  color: var(--norden-text-good);
+}
+
+/* The building slots and, past a rule, the relic frame: one card as wide as a building's */
+.norden-domestic-works {
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
+  min-width: 0;
+}
+
+.norden-domestic-works-part {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.norden-domestic-works-part.norden-domestic-relic-frame {
+  flex: none;
+  width: 168px;
+}
+
+.norden-domestic-works-splitter {
+  flex: none;
+  width: 1px;
+  background: #cbb28266;
+}
+
+/* Building slots row: filled from left to right; each card shows its building's picture whole */
+.norden-domestic-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 168px));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.norden-domestic-slot-item {
+  display: flex;
+}
+
+.norden-domestic-slot {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  min-height: 300px;
+  padding: 6px 6px 8px;
+  color: var(--norden-ink);
+  background: #fff6dcde;
+  border: 1px solid #b38d52;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 2px #fff9e666, 0 2px 5px #0006;
+  font: inherit;
+  text-align: center;
+}
+
+.norden-domestic-slot.is-built.is-selected {
+  border-color: #f3ce82;
+  box-shadow: inset 0 0 0 2px #fff9e666, 0 0 0 2px #c9963c, 0 2px 5px #0006;
+}
+
+/* The picture at its own proportions (the sprite cell is portrait), never cropped */
+.norden-domestic-slot .norden-domestic-slot-image {
+  flex: none;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px #2a1c0e40;
+}
+
+.norden-domestic-slot .norden-domestic-slot-image.is-placeholder {
+  aspect-ratio: 2 / 3;
+  font-size: 40px;
+}
+
+.norden-domestic-slot-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0 2px;
+}
+
+.norden-domestic-slot-name {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.norden-domestic-slot-effects {
+  color: var(--norden-ink-soft);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.norden-domestic-slot-from {
+  color: var(--norden-ink-soft);
+  font-size: 11px;
+}
+
+.norden-domestic-slot-relic {
+  color: var(--norden-ink-rare);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.norden-domestic-slot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: auto;
+  width: 100%;
+}
+
+.norden-domestic-slot-actions .norden-button.is-small {
+  min-height: 28px;
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+.norden-domestic-slot-delete {
+  padding: 2px 8px;
+  color: var(--norden-text-strong);
+  background: #7b2d26;
+  border: 1px solid #b6594c;
+  border-radius: 3px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.norden-domestic-slot-delete:hover {
+  background: #96372f;
+}
+
+.norden-domestic-slot-delete:focus-visible {
+  outline: 2px solid #ffe0a1;
+  outline-offset: 1px;
+}
+
+/* Under-construction slot (a new building, or an upgrade over the one standing there) */
+.norden-domestic-slot.is-building {
+  background: #f3e6c4d9;
+  border-style: dashed;
+  border-width: 2px;
+}
+
+.norden-domestic-slot.is-building .norden-domestic-slot-image {
+  opacity: 0.7;
+  filter: sepia(0.45);
+}
+
+.norden-domestic-slot.is-building.is-paused {
+  background: #e4d8bed0;
+  border-color: #8c7a5b;
+}
+
+.norden-domestic-slot-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+  padding: 1px 6px;
+  color: var(--norden-text-strong);
+  background: #7a4f17;
+  border-radius: 3px;
+  box-shadow: 0 1px 2px #0006;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.norden-domestic-slot.is-paused .norden-domestic-slot-badge {
+  background: #5c5346;
+}
+
+.norden-domestic-slot-note {
+  color: var(--norden-ink-soft);
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+/* Empty slots */
+.norden-domestic-slot.is-empty {
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  color: var(--norden-ink-faint);
+  background: rgb(255 246 220 / 0.05);
+  border: 1px dashed #b38d5270;
+  box-shadow: none;
+}
+
+.norden-domestic-slot.is-empty.is-addable {
+  color: var(--norden-text);
+  background: rgb(255 243 204 / 0.1);
+  border: 2px dashed #d4ad68;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.norden-domestic-slot.is-empty.is-addable:hover {
+  background: rgb(255 243 204 / 0.18);
+  border-color: #f0cf8e;
+}
+
+.norden-domestic-slot.is-empty.is-addable.is-selected {
+  background: rgb(255 235 175 / 0.22);
+  border-style: solid;
+  border-color: #f3ce82;
+  box-shadow: 0 0 0 2px #c9963c80;
+}
+
+.norden-domestic-slot-plus {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.norden-domestic-slot-add-label {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.norden-domestic-slot-empty-label {
+  font-size: 12px;
+}
+
+/* Right panel (350px): the buildings to add or upgrade to, the relics to repair or produce, or the knights to pick */
+.norden-domestic-build-panel {
+  flex: 0 0 350px;
+  width: 350px;
+  padding: 18px 20px;
+  min-height: 0;
+}
+
+.norden-domestic-build-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.norden-domestic-build-title {
+  margin: 0;
+  color: var(--norden-text-strong);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.norden-domestic-build-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--norden-text);
+  background: transparent;
+  border: 1px solid #947347;
+  border-radius: 4px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.norden-domestic-build-close:hover {
+  color: var(--norden-text-strong);
+  background: rgb(255 255 255 / 0.08);
+}
+
+.norden-domestic-build-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0 4px 0 0;
+  list-style: none;
+}
+
+/* A tall picture on the left; the name, effects and text beside it, the costs and the button below them */
+.norden-domestic-build-item {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-areas: 'image info' 'image footer';
+  grid-template-rows: 1fr auto;
+  column-gap: 12px;
+  row-gap: 8px;
+  padding: 10px 12px;
+  color: var(--norden-ink);
+  background: #fff6dcde;
+  border: 1px solid #b38d52;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 2px #fff9e666, 0 2px 4px #0004;
+}
+
+.norden-domestic-build-item.is-unavailable {
+  opacity: 0.68;
+}
+
+.norden-domestic-build-image {
+  grid-area: image;
+  align-self: stretch;
+  width: 72px;
+  height: auto;
+  min-height: 108px;
+  border-radius: 4px;
+}
+
+/* A building's picture opens its details (BuildingDetailDialog) */
+.norden-domestic-build-image-button {
+  grid-area: image;
+  display: grid;
+  align-self: stretch;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  cursor: zoom-in;
+  transition: filter 120ms ease, box-shadow 120ms ease;
+}
+.norden-domestic-build-image-button:hover { filter: brightness(1.08); box-shadow: 0 0 0 2px #c8a15a; }
+.norden-domestic-build-image-button:focus-visible { outline: 2px solid #7a4f17; outline-offset: 2px; }
+.norden-domestic-build-image-button .norden-domestic-build-image { grid-area: auto; }
+
+/* The picture fills the tall frame, its sides cut off */
+.norden-domestic-build-image.is-sprite {
+  justify-content: center;
+}
+
+.norden-domestic-build-image .norden-building-image-cell {
+  width: auto;
+  height: 100%;
+}
+
+.norden-domestic-build-info {
+  grid-area: info;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.norden-domestic-build-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.norden-domestic-build-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.norden-domestic-build-effects {
+  color: var(--norden-ink-good);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.norden-domestic-build-desc {
+  margin: 0;
+  color: var(--norden-ink-soft);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.norden-domestic-build-footer {
+  grid-area: footer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.norden-domestic-build-costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--norden-ink);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  width: 50%;
+}
+
+.norden-domestic-build-reason {
+  color: var(--norden-ink-bad);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.norden-domestic-build-relic {
+  color: var(--norden-ink-rare);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .norden-domestic .norden-window-screen-layout {
+    flex-direction: column;
+  }
+  .norden-domestic-build-panel {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Top row: the lord beside the city's state */
+.norden-domestic-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 24px;
+}
+
+.norden-domestic-status-row > .norden-domestic-status {
+  flex: 1 1 520px;
+  min-width: 0;
+}
+
+.norden-domestic-lord {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 8px 8px;
+  background: rgb(255 243 204 / 0.06);
+  border: 1px solid #b38d5260;
+  border-radius: 6px;
+}
+
+.norden-domestic-lord.is-selected {
+  border-color: #f3ce82;
+  box-shadow: 0 0 0 2px #c9963c80;
+}
+
+.norden-domestic-lord-face {
+  display: grid;
+  flex: none;
+  width: 92px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 2px solid #b38d52;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px #0008;
+  background: #2a1d10;
+}
+
+.norden-domestic-lord-face > * {
+  width: 100%;
+  height: 100%;
+}
+
+.norden-domestic-lord-face > img {
+  display: block;
+  object-fit: cover;
+  object-position: top;
+}
+
+.norden-domestic-lord-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 8em;
+}
+
+.norden-domestic-lord-label {
+  color: var(--norden-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.norden-domestic-lord-name {
+  color: var(--norden-text-strong);
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.norden-domestic-lord-abilities {
+  display: flex;
+  gap: 10px;
+  color: var(--norden-text-muted);
+  font-size: 12px;
+}
+
+.norden-domestic-lord-abilities b {
+  color: var(--norden-text-strong);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.norden-domestic-lord-info .norden-button.is-small {
+  min-height: 28px;
+  margin-top: 2px;
+  padding: 3px 14px;
+  font-size: 12px;
+}
+
+/* Third row: the domestic officers, two posts for each role */
+.norden-domestic-officer-roles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.norden-domestic-officer-role {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px 12px;
+  background: rgb(255 243 204 / 0.06);
+  border: 1px solid #b38d5260;
+  border-radius: 6px;
+}
+
+.norden-domestic-officer-role.is-selected {
+  border-color: #f3ce82;
+  box-shadow: 0 0 0 2px #c9963c80;
+}
+
+/* A role whose officers have no budget left, or too little for a turn's work */
+.norden-domestic-officer-role.has-budget-empty { border-color: #e0705a; box-shadow: inset 0 0 0 1px #e0705a80; background: rgb(224 112 90 / 0.12); }
+.norden-domestic-officer-role.has-budget-short { border-color: #e0b04a; background: rgb(224 176 74 / 0.08); }
+.norden-domestic-officer-role.is-selected.has-budget-empty,
+.norden-domestic-officer-role.is-selected.has-budget-short { box-shadow: 0 0 0 2px #c9963c80; }
+/* At the bottom of the role, under what its officers bring */
+.norden-domestic-officer-alert {
+  align-self: flex-start;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: help;
+}
+.has-budget-empty .norden-domestic-officer-alert { color: var(--norden-text-strong); background: #b8402c; }
+.has-budget-short .norden-domestic-officer-alert { color: var(--norden-ink); background: #e8c060; }
+
+.norden-domestic-officer-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.norden-domestic-officer-title {
+  color: var(--norden-text-strong);
+  font-size: 16px;
+}
+
+.norden-domestic-officer-ability {
+  padding: 0 6px;
+  color: var(--norden-ink);
+  background: #d9b672;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.norden-domestic-officer-desc {
+  margin: 0;
+  color: var(--norden-text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+  min-height: 2.0rem;
+}
+
+.norden-domestic-officer-posts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.norden-domestic-officer-posts > li {
+  position: relative;
+  display: flex;
+}
+
+.norden-domestic-officer-post {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  min-height: 128px;
+  padding: 6px 4px;
+  color: var(--norden-ink);
+  background: #fff6dcde;
+  border: 1px solid #b38d52;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 2px #fff9e666, 0 2px 4px #0005;
+  font: inherit;
+  cursor: pointer;
+}
+
+.norden-domestic-officer-post:focus-visible,
+.norden-domestic-officer-dismiss:focus-visible {
+  outline: 2px solid #ffe0a1;
+  outline-offset: 1px;
+}
+
+.norden-domestic-officer-post.is-empty {
+  justify-content: center;
+  color: var(--norden-text);
+  background: rgb(255 243 204 / 0.08);
+  border: 2px dashed #d4ad68;
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.norden-domestic-officer-post.is-empty:hover {
+  background: rgb(255 243 204 / 0.16);
+  border-color: #f0cf8e;
+}
+
+.norden-domestic-officer-post.is-filled:hover {
+  background: #fffaeaf0;
+}
+
+.norden-domestic-officer-plus {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.norden-domestic-officer-face {
+  display: grid;
+  width: 64px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 3px;
+}
+
+.norden-domestic-officer-face > * {
+  width: 100%;
+  height: 100%;
+}
+
+.norden-domestic-officer-face > img {
+  display: block;
+  object-fit: cover;
+}
+
+.norden-domestic-officer-name {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.norden-domestic-officer-value {
+  color: var(--norden-ink-soft);
+  font-size: 11px;
+}
+
+.norden-domestic-officer-value b {
+  color: var(--norden-ink);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.norden-domestic-officer-dismiss {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  color: var(--norden-text-strong);
+  background: #7b2d26;
+  border: 1px solid #b6594c;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.norden-domestic-officer-dismiss:hover {
+  background: #96372f;
+}
+
+.norden-domestic-officer-effect {
+  min-height: 1.4em;
+  color: var(--norden-text-good);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.norden-domestic-officer-effect.is-none {
+  color: var(--norden-text-faint);
+  font-weight: 500;
+}
+
+/* The gold set aside for a funded role: a compact slider on the dark parchment */
+.norden-domestic-officer-budget.norden-quantity {
+  /* The slider takes the whole width between − and +; the number goes below it */
+  grid-template-columns: 28px minmax(0, 1fr) 28px;
+  grid-template-areas: 'label label label' 'minus range plus' 'value value value';
+  column-gap: 4px;
+  width: 100%;
+  color: var(--norden-text-strong);
+}
+
+.norden-domestic-officer-budget .norden-quantity-value {
+  justify-self: end;
+}
+
+.norden-domestic-officer-budget .norden-quantity-label,
+.norden-domestic-officer-budget .norden-quantity-unit {
+  color: var(--norden-text-muted);
+  font-size: 11px;
+}
+
+.norden-domestic-officer-budget .norden-quantity-step.norden-button {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  font-size: 16px;
+}
+
+.norden-domestic-officer-budget .norden-quantity-value input {
+  width: 3.6em;
+  color: var(--norden-ink);
+  background: #fff6dcde;
+}
+
+.norden-domestic-officer-budget .norden-quantity-max {
+  display: none;
+}
+
+/* Knight lists in the right-hand panel (lord, officers) */
+.norden-domestic-build-note {
+  margin-left: 10px;
+  color: var(--norden-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.norden-domestic-panel-desc {
+  color: var(--norden-text-muted);
+}
+
+.norden-domestic-knight-list .norden-knight-card {
+  min-height: 0;
+}
+
+.norden-domestic-knight-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.norden-domestic-knight-badge {
+  padding: 2px 8px;
+  color: var(--norden-text-strong);
+  background: #7a4f17;
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+.norden-domestic-knight-reason {
+  color: var(--norden-ink-bad);
+  font-weight: 700;
+}
+
+/* The window split into the panels above and, along the bottom, the button back (at the right, the left left empty for now) */
+.norden-domestic-layout { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 14px; height: 100%; min-height: 0; }
+.norden-domestic-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  /* Room for a pressed button moving down (translate), which would otherwise overflow the window and bring up its scrollbar */
+  padding: 10px 4px 4px;
+  color: var(--norden-text);
+  white-space: nowrap;
+  border-top: 1px solid #cbb2824d;
+}
+.norden-domestic-back { margin-left: auto; }

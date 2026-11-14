@@ -1,0 +1,456 @@
+/* Small parts used inside windows (parchment) and on the HUD (dark panels) */
+
+/* The image is sliced into nine regions; corners retain their size at any width/height. */
+.norden-button, .norden-quantity-range {
+  --norden-ivory-gold: url('../../assets/ui/buttons/ivory-button-gold.webp');
+  --norden-ivory-silver: url('../../assets/ui/buttons/ivory-button-silver.webp');
+  --norden-ivory-plain: url('../../assets/ui/buttons/ivory-button-plain.webp');
+}
+.norden-button {
+  --norden-button-image: var(--norden-ivory-silver);
+  --norden-button-corner: 24px;
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  min-height: 56px;
+  padding: 12px 28px;
+  color: var(--norden-ink-strong);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-family: 'Noto Sans JP', 'Yu Gothic', 'Hiragino Kaku Gothic ProN', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-shadow: none;
+  cursor: pointer;
+  transition: translate 120ms ease;
+}
+.norden-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border: var(--norden-button-corner) solid transparent;
+  border-image: var(--norden-button-image) 26% fill / var(--norden-button-corner) / 0 stretch;
+  filter: drop-shadow(0 2px 2px #24180c55);
+  transition: filter 120ms ease;
+}
+.norden-button.is-primary, .norden-button.is-gold { --norden-button-image: var(--norden-ivory-gold); }
+.norden-button.is-silver { --norden-button-image: var(--norden-ivory-silver); }
+.norden-button.is-none { --norden-button-image: var(--norden-ivory-plain); }
+.norden-button:hover:not(:disabled)::before { filter: brightness(1.06) drop-shadow(0 3px 3px #24180c60); }
+.norden-button:active:not(:disabled) { translate: 0 2px; }
+.norden-button:active:not(:disabled)::before { filter: brightness(.97) drop-shadow(0 1px 1px #24180c40); }
+.norden-button.is-small { --norden-button-corner: 16px; min-width: 36px; min-height: 36px; padding: 6px 20px; font-size: 14px; }
+.norden-button:disabled { opacity: .45; cursor: default; }
+.norden-button:focus-visible { outline: 2px solid #765b9a; outline-offset: 2px; }
+.norden-button.is-quiet:focus-visible { outline-color: #ffe08a; }
+.norden-button.has-icon { gap: 7px; }
+.norden-button-icon { display: inline-flex; flex: none; width: 1.3em; height: 1.3em; }
+.norden-button-icon > :is(img, svg) { width: 100%; height: 100%; object-fit: contain; }
+
+/* Shared InfoWindow thin skin, with background inset to preserve transparent cutouts. */
+.norden-thin-frame { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.norden-thin-frame-surface {
+  position: absolute;
+  inset: 5px;
+  border-radius: 12px;
+  background: #211b14 url('../../assets/ui/hud/dark-texture.webp') repeat;
+}
+.norden-thin-frame-border {
+  position: absolute;
+  inset: 0;
+  border: 22px solid transparent;
+  border-image: var(--norden-frame) var(--norden-frame-slice) / 22px / 0 stretch;
+}
+
+/* Section divider frame: gold foil stamped onto dark leather texture */
+.norden-section-frame {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.norden-section-frame-surface {
+  position: absolute;
+  inset: 4px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.14);
+}
+.norden-section-frame-border {
+  position: absolute;
+  inset: 0;
+  border: var(--norden-section-frame-width, 22px) solid transparent;
+  border-image: url('../../assets/ui/skins/section-frame.webp') 22% / var(--norden-section-frame-width, 22px) / 0 stretch;
+}
+
+.norden-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  min-height: 64px;
+  max-width: 100%;
+  padding: 14px 22px;
+  color: var(--norden-text-strong);
+  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  font-size: 17px;
+  font-weight: 700;
+  pointer-events: auto;
+  filter: drop-shadow(0 3px 6px #0008);
+  animation: norden-banner-in 200ms ease-out;
+}
+.norden-banner-message { min-width: 0; overflow-wrap: anywhere; }
+.norden-banner-actions { flex-shrink: 0; display: inline-flex; gap: 6px; }
+@keyframes norden-banner-in { from { opacity: 0; translate: 0 -6px; } }
+
+/*
+ * ThinFrameWithTitle: the thin bezel with a title plaque centred on its top edge.
+ * Slice the plaque horizontally: fixed brass caps and a stretchable dark centre.
+ */
+.norden-thin-titled {
+  --norden-thin-title-height: 24px;
+  /* Each cap is 10% of the 1024 × 128 source; preserve its aspect ratio. */
+  --norden-thin-title-cap: calc(var(--norden-thin-title-height) * .8);
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  /* Room for the lower half of the plaque */
+  padding: calc(var(--norden-thin-title-height) / 2 + 10px) 14px 12px;
+  color: var(--norden-text);
+  filter: drop-shadow(0 3px 5px #0008);
+}
+.norden-thin-titled-title {
+  position: absolute;
+  box-sizing: border-box;
+  top: 3px;
+  left: 50%;
+  z-index: 1;
+  translate: -50% -50%;
+  display: flex;
+  align-items: center;
+  max-width: calc(100% - 24px);
+  height: var(--norden-thin-title-height);
+  margin: 0;
+  padding: 0 calc(var(--norden-thin-title-cap) + 14px);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: .3em;
+  text-indent: .3em;
+  white-space: nowrap;
+  color: var(--norden-text-strong);
+  user-select: none;
+}
+.norden-thin-titled-title::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border: 0 solid transparent;
+  border-inline-width: var(--norden-thin-title-cap);
+  border-image: url('../../assets/ui/skins/thin-title.webp') 0 10% fill / 0 var(--norden-thin-title-cap) / 0 stretch;
+}
+.norden-thin-titled-title-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+.norden-choice-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 4px;
+  border: 1px solid #947347;
+  border-radius: 6px;
+  background: #3a2b1c url('../../assets/ui/hud/dark-texture.webp') repeat;
+  box-shadow: inset 0 2px 4px #120c0780, 0 1px #fff8;
+}
+.norden-choice { --norden-button-corner: 16px; gap: 7px; min-width: 92px; min-height: 40px; padding: 4px 14px; }
+.norden-choice[aria-checked='false'] { color: var(--norden-text-strong); }
+/* Reversing the bevel lighting makes the dark ivory sit inside the shared housing. */
+.norden-choice[aria-checked='false']::before {
+  transform: rotate(180deg);
+  filter: brightness(.34) saturate(.6);
+}
+.norden-choice[aria-checked='false']::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  z-index: -1;
+  border-radius: 4px;
+  box-shadow: inset 0 3px 5px #100a05bf, inset 0 -1px 1px #c8af7d66;
+  pointer-events: none;
+}
+.norden-choice[aria-checked='false']:hover:not(:disabled)::before { filter: brightness(.46) saturate(.7); }
+.norden-choice[aria-checked='false']:active:not(:disabled)::before { filter: brightness(.4) saturate(.7); }
+.norden-choice[aria-checked='true'] { outline: 1px solid #c6a469; outline-offset: -3px; }
+.norden-choice:focus-visible { outline: 2px solid #f0d28a; outline-offset: 1px; }
+.norden-choice-indicator {
+  flex: none;
+  box-sizing: border-box;
+  width: 11px;
+  height: 11px;
+  border: 1px solid #b69c70;
+  border-radius: 50%;
+  background: #1e1710;
+  box-shadow: inset 0 1px 2px #0009;
+}
+.norden-choice[aria-checked='true'] .norden-choice-indicator { background: #876024; border-color: #8c6831; box-shadow: inset 0 0 0 2px #f8edcf; }
+.norden-choice-icon { display: inline-flex; width: 22px; height: 22px; }
+.norden-choice-icon > :is(img, svg) { width: 100%; height: 100%; object-fit: contain; }
+
+.norden-quantity {
+  display: grid;
+  grid-template-columns: 36px minmax(60px, 1fr) 36px auto auto;
+  grid-template-areas: 'label label label label label' 'minus range plus value max';
+  align-items: center;
+  column-gap: 6px;
+  row-gap: 2px;
+  color: var(--norden-ink);
+}
+.norden-quantity-label { grid-area: label; display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--norden-ink-soft); }
+.norden-quantity-icon { display: inline-flex; flex: none; width: 22px; height: 22px; }
+.norden-quantity-icon > :is(img, svg) { width: 100%; height: 100%; object-fit: contain; }
+.norden-quantity-step.norden-button { width: 36px; height: 36px; min-width: 36px; padding: 0; font-size: 19px; }
+.norden-quantity-range {
+  grid-area: range;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+.norden-quantity-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border: 1px solid #77532a;
+  border-radius: 2px;
+  /* Past the cap (what cannot be chosen now) the track is darker */
+  background: linear-gradient(90deg, #b48a3d 0%, #e0bb6c var(--norden-range-progress), #58432b var(--norden-range-progress),
+    #58432b var(--norden-range-cap, 100%), #2a1f13 var(--norden-range-cap, 100%), #2a1f13 100%);
+  box-shadow: inset 0 1px 2px #24180c80, 0 1px #fff9;
+}
+.norden-quantity-range::-moz-range-track {
+  height: 6px;
+  border: 1px solid #77532a;
+  border-radius: 2px;
+  background: #58432b;
+  box-shadow: inset 0 1px 2px #24180c80, 0 1px #fff9;
+}
+.norden-quantity-range::-moz-range-progress { height: 6px; background: linear-gradient(90deg, #b48a3d, #e0bb6c); }
+.norden-quantity-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 24px;
+  height: 28px;
+  margin-top: -11px;
+  border: 0;
+  background: var(--norden-ivory-plain) center / 100% 100% no-repeat;
+  filter: drop-shadow(0 2px 2px #24180c70);
+  cursor: grab;
+}
+.norden-quantity-range::-moz-range-thumb {
+  width: 24px;
+  height: 28px;
+  border: 0;
+  border-radius: 0;
+  background: var(--norden-ivory-gold) center / 100% 100% no-repeat;
+  filter: drop-shadow(0 2px 2px #24180c70);
+  cursor: grab;
+}
+.norden-quantity-range:hover:not(:disabled)::-webkit-slider-thumb { filter: brightness(1.06) drop-shadow(0 2px 3px #24180c80); }
+.norden-quantity-range:hover:not(:disabled)::-moz-range-thumb { filter: brightness(1.06) drop-shadow(0 2px 3px #24180c80); }
+.norden-quantity-range:active:not(:disabled)::-webkit-slider-thumb { cursor: grabbing; }
+.norden-quantity-range:active:not(:disabled)::-moz-range-thumb { cursor: grabbing; }
+.norden-quantity-range:disabled::-webkit-slider-thumb { cursor: default; }
+.norden-quantity-range:disabled::-moz-range-thumb { cursor: default; }
+.norden-quantity-range:disabled { opacity: .45; cursor: default; }
+.norden-quantity-value { grid-area: value; display: inline-flex; align-items: baseline; gap: 2px; }
+.norden-quantity-value input {
+  width: 5em;
+  padding: 2px 4px;
+  color: inherit;
+  background: rgb(255 255 255 / 0.55);
+  border: 1px solid #a8885a;
+  border-radius: 3px;
+  font: inherit;
+  font-weight: 700;
+  text-align: right;
+}
+.norden-quantity-unit { font-size: 12px; color: var(--norden-ink-soft); }
+.norden-quantity-max { grid-area: max; font-size: 12px; color: var(--norden-ink-muted); white-space: nowrap; }
+.norden-quantity :focus-visible { outline: 2px solid #765b9a; outline-offset: 2px; }
+
+/* Read aloud but not drawn */
+.norden-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* VolumeSlider: on dark panels (SettingsWindow); the text takes the surface's color */
+.norden-volume {
+  display: grid;
+  grid-template-columns: 5.5em minmax(80px, 1fr) 3.2em;
+  align-items: center;
+  column-gap: 10px;
+  color: inherit;
+  font-size: 14px;
+}
+.norden-volume.is-label-hidden { grid-template-columns: minmax(80px, 1fr) 3.2em; }
+.norden-volume-label { white-space: nowrap; }
+.norden-volume-value { text-align: right; font-variant-numeric: tabular-nums; opacity: .85; }
+.norden-volume-range { grid-area: auto; }
+.norden-volume-range:focus-visible { outline: 2px solid #f4d987; outline-offset: 2px; }
+
+.norden-card {
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 16px 18px;
+  color: var(--norden-ink);
+  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+}
+.norden-card::before {
+  content: '';
+  position: absolute;
+  z-index: -2;
+  inset: 3px;
+  background: url('../../assets/ui/ui_paper_texture.webp') repeat;
+  box-shadow: inset 0 0 18px #a0783026, 0 2px 4px #38200c14;
+}
+.norden-card::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border: 20px solid transparent;
+  border-image: url('../../assets/ui/skins/ink-card-frame.svg') 26 / 20px / 0 stretch;
+  pointer-events: none;
+}
+.norden-knight-card { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; min-height: 118px; }
+.norden-knight-card.is-selectable { cursor: pointer; }
+.norden-knight-card.is-selectable:hover:not(.is-disabled)::before { box-shadow: inset 0 0 0 1000px #fff3, 0 2px 5px #38200c26; }
+.norden-knight-card.is-selected::before { box-shadow: inset 0 0 0 1000px #ddb95b30, inset 0 0 18px #a0783040; }
+.norden-knight-card.is-current { outline: 2px solid #8a5a20; outline-offset: -5px; }
+.norden-knight-card.is-disabled { opacity: .55; cursor: default; }
+.norden-knight-card:has(:focus-visible) { outline: 2px solid #765b9a; outline-offset: 1px; }
+.norden-knight-card input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: #8a6020; }
+.norden-knight-face {
+  display: grid;
+  flex: none;
+  width: 76px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px #76563280, 0 0 0 3px #c5aa7650;
+}
+.norden-knight-face > * { width: 100%; height: 100%; }
+.norden-knight-face > img { display: block; object-fit: cover; }
+.norden-knight-initial {
+  display: grid;
+  place-content: center;
+  color: var(--norden-text);
+  background: linear-gradient(135deg, #7a5530, #3e2814);
+  font-size: 30px;
+  font-weight: 700;
+}
+.norden-knight-info { display: grid; flex: 1; gap: 4px; min-width: 150px; }
+.norden-knight-name { font-size: 18px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+.norden-knight-subtitle-outer { display: flex; gap: 6px; align-items: center; }
+.norden-knight-subtitle { font-size: 12px; color: var(--norden-ink-soft); min-height: 24px;}
+.norden-knight-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+.norden-knight-stat { display: grid; justify-items: center; min-width: 42px; padding: 2px 5px; --stat-color: var(--norden-ink-soft); border-bottom: 2px solid var(--stat-color); color: var(--stat-color); background: var(--stat-wash, color-mix(in srgb, var(--stat-color) 4%, transparent)); }
+.norden-knight-stat.is-low { --stat-color: var(--norden-ink-bad); --stat-wash: color-mix(in srgb, var(--stat-color) 6%, transparent); }
+.norden-knight-stat.is-mid { --stat-color: var(--norden-ink-soft); }
+.norden-knight-stat.is-high { --stat-color: var(--norden-ink-good); --stat-wash: color-mix(in srgb, var(--stat-color) 7%, transparent); }
+.norden-knight-stat.is-exceptional { --stat-color: var(--norden-ink-rare); --stat-wash: color-mix(in srgb, var(--stat-color) 8%, transparent); }
+.norden-knight-stat-label { color: var(--norden-ink-soft); font-size: 11px; white-space: nowrap; }
+.norden-knight-stat b { font-size: 24px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.norden-knight-aside { margin-left: auto; max-width: 100%; font-size: 12px; color: var(--norden-ink-soft); text-align: right; overflow-wrap: anywhere; }
+.norden-knight-card.is-compact { min-height: 96px; gap: 10px; padding: 12px 14px; }
+.norden-knight-card.is-compact .norden-knight-face { width: 60px; }
+.norden-knight-card.is-compact .norden-knight-name { font-size: 16px; }
+.norden-knight-card.is-compact .norden-knight-stat b { font-size: 20px; }
+
+.norden-mercenary-card { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 104px; padding: 12px 14px; font-size: inherit; text-align: left; background: none; border: 0; cursor: pointer; }
+.norden-mercenary-card:hover::before { box-shadow: inset 0 0 0 1000px #fff3, 0 2px 5px #38200c26; }
+.norden-mercenary-card.is-selected { outline: 2px solid #8a5a20; outline-offset: -5px; }
+.norden-mercenary-card.is-selected::before { box-shadow: inset 0 0 0 1000px #ddb95b30, inset 0 0 18px #a0783040; }
+.norden-mercenary-card:focus-visible { outline: 2px solid #765b9a; outline-offset: 1px; }
+.norden-mercenary-card .norden-knight-face { width: 76px; }
+.norden-mercenary-card-body { display: grid; flex: 1 1 auto; gap: 5px; min-width: 0; }
+.norden-mercenary-card-head { display: flex; justify-content: space-between; gap: 10px; min-width: 0; }
+.norden-mercenary-card-title { display: grid; align-content: start; gap: 2px; min-width: 0; }
+.norden-mercenary-card-company { overflow: hidden; font-size: 15px; font-weight: 700; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.norden-mercenary-card-note { overflow: hidden; color: var(--norden-ink-soft); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.norden-mercenary-card-prices { display: grid; flex: none; align-content: start; justify-items: end; color: var(--norden-ink-soft); font-size: 11px; white-space: nowrap; }
+.norden-mercenary-card-prices b { margin-left: 5px; color: var(--norden-ink); font-size: 15px; font-variant-numeric: tabular-nums; }
+.norden-mercenary-card-rank { display: flex; align-items: baseline; }
+.norden-mercenary-card-prices .norden-mercenary-card-rank b { font-size: 34px; }
+/* A mercenary's rank (MercenaryCard, MercenaryProfile): a large serif letter coloured by rank, S in gold */
+.norden-mercenary-rank-letter[data-rank] { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; line-height: 1; color: var(--norden-ink-soft); }
+.norden-mercenary-rank-letter[data-rank='C'] { color: var(--norden-ink-good); }
+.norden-mercenary-rank-letter[data-rank='B'] { color: var(--norden-ink-info); }
+.norden-mercenary-rank-letter[data-rank='A'] { color: var(--norden-ink-rare); }
+.norden-mercenary-rank-letter[data-rank='S'] { color: var(--norden-ink-gold); text-shadow: 0 0 1px #6a4a0a, 0 1px 3px #f5d77a99; }
+.norden-mercenary-card .norden-knight-stats { gap: 4px; }
+.norden-mercenary-card .norden-knight-stat { min-width: 34px; padding: 1px 3px; }
+.norden-mercenary-card .norden-knight-stat-label { font-size: 10px; }
+.norden-mercenary-card .norden-knight-stat b { font-size: 15px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .norden-banner { animation: none; }
+  .norden-button, .norden-button::before { transition: none; }
+}
+
+.norden-faction-mark { display: inline-flex; align-items: center; gap: 0.35em; white-space: nowrap; }
+.norden-faction-mark img, .norden-faction-mark-blank { width: 1.6em; height: 1.6em; object-fit: contain; }
+.norden-faction-mark-blank { display: inline-block; border-radius: 50%; background: rgb(0 0 0 / 0.1); }
+
+/* KnightChip: a face and a name on one line, over any background (the text colour is inherited) */
+.norden-knight-chip { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; font-size: 13px; line-height: 1.3; }
+.norden-knight-chip-face {
+  display: grid;
+  flex: none;
+  width: 60px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px #76563280, 0 0 0 2px #c5aa7650;
+}
+.norden-knight-chip-face > * { width: 100%; height: 100%; }
+.norden-knight-chip-face > img { display: block; object-fit: cover; }
+.norden-knight-chip-initial {
+  display: grid;
+  place-content: center;
+  color: var(--norden-text);
+  background: linear-gradient(135deg, #7a5530, #3e2814);
+  font-size: 14px;
+  font-weight: 700;
+}
+.norden-knight-chip-name { min-width: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.norden-knight-chip-note { flex: none; padding: 0 5px; font-size: 11px; line-height: 1.5; border: 1px solid currentColor; border-radius: 3px; opacity: 0.75; }
+
+.norden-knight-mercenary { display: block; overflow: hidden; color: var(--norden-ink-soft); font-size: 11px; font-variant-numeric: tabular-nums; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
+.norden-knight-mercenary-mark { display: inline-block; margin-right: 4px; padding: 0 4px; color: var(--norden-ink-strong); background: #c98f52; border-radius: 2px; font-weight: 700; }

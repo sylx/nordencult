@@ -1,0 +1,342 @@
+# norden-ui
+
+ファンタジーSLG **nordencult** のReact UIライブラリ。ターン制SLGのUIを次の3層で作ります。
+
+| 層 | 内容 | 場所 |
+| --- | --- | --- |
+| 基本部品 | ウィンドウ（`InfoWindow` / `InfoWindowWithTabs` / 最小化できる `MinimizableWindow`）、確認・お知らせのダイアログ（`ConfirmDialog` / OK だけの `AlertDialog`）、設定ウィンドウ（`SettingsWindow` / `SettingsSection` / `SettingsItem`）、ツールバー（`CommandToolbar`）、ターン情報（`DateBar`）、勢力の情報（`FactionBar`）、行動予約（`ActionOrders`）、UIパーツ（`Button`・`Tooltip`・`ChoiceGroup`・`QuantityInput`・`VolumeSlider`・`KnightCard`・`KnightChip`・`MercenaryCard`・`RelicRow`・`EquipmentSlots` など）、一覧から選ぶ窓（`PickerDialog`・`KnightPicker`・`RelicPicker`） | `src/components/` |
+| 画面 | 基本部品を組み合わせた1画面分のUI。都市コマンド画面・地図で選ぶステップ・侵攻画面 | `src/screens/` |
+| 画面スタック | 画面の階層。都市コマンド → 侵攻先の選択 → 侵攻画面と積み、Escで1段戻る | `src/navigation/` |
+
+画面は表示専用です。ゲームの状態や規則は持たず、表示用のデータ（`CityView` などのview型）とコールバックをpropsで受け取ります。
+ゲーム（ルートの `src/scenes/`）が自分の状態をview型に変換して渡し、コールバックで状態を更新します。
+
+## 開発・動作確認
+
+Node.js 22.12以上（開発時は24）、npmを使用します。
+
+```sh
+npm ci
+npm run dev
+```
+
+http://localhost:5173 でカタログを開きます。左の一覧から項目を選び、右の設定で表示を変えられます。項目は `#<id>` で直接開けます（例: `/#info-window`）。
+
+| 区分 | 項目 |
+| --- | --- |
+| 画面フロー | 戦略画面（`#strategy-flow`、既定）: 都市コマンド → 軍事 → 侵攻 → 地図で侵攻先を選ぶ → 侵攻画面 → 予約。Escで1段ずつ戻る |
+| 画面 | 都市コマンド（`#city-command`）、地図で選ぶ（`#map-pick`）、内政（`#domestic`）、技術（`#tech`）、遺物（`#relic`）、傭兵（`#mercenary`）、侵攻（`#invasion`）、移動（`#move`）、輸送（`#transport`） |
+| 基本部品 | ウィンドウ（`#info-window`）、ウィンドウ（閉じるボタン付き）（`#window-frame`）、設定ウィンドウ（`#settings-window`）、ツールバー（`#command-toolbar`）、ターン情報（`#date-bar`）、行動予約（`#action-orders`）、UIパーツ（`#parts`） |
+| 演出 | カットインエディタ（`#cutin-editor`）: テンプレートを作り、JSONで書き出す。`src/cutin/templates/` のJSONを開いて直せる。イベント通知（`#event`）: `EventScreen` を、カットイン `faction_destruction` のあとに出す流れと、研究完了の通知（技術を選ぶ）で確かめる |
+
+画面の項目は仮の地図（`demo/mock/MockMap.tsx`）の上に重ねます。都市・騎士・兵科は `demo/mock/data.ts` の仮データです。
+
+```sh
+npm run test        # Vitest: 部品・画面スタック・画面の操作とARIA
+npm run build       # 型チェック + ライブラリJS/CSS + TypeScript宣言
+npm run build:demo  # カタログを dist-demo/ にビルド
+npm run preview     # ビルド済みカタログの確認
+npx playwright install chromium  # 初回のみ（Chromium未導入の場合）
+npm run test:e2e    # Chromium: ウィンドウの実寸・ドラッグ・リサイズ、戦略画面のフロー
+npm run check      # 上記のテスト・ビルドをまとめて実行
+```
+
+## ゲームからの利用
+
+nordencult のルートは `norden-ui/src/index.ts` をエイリアスで直接読みます（ルートのREADMEを参照）。
+単独のパッケージとして使う場合は `npm run build` し、`"norden-ui": "file:../norden-ui"` のように依存に加え、`import 'norden-ui/style.css'` を読み込みます。
+
+React / React DOMはpeer dependencyとしてゲームと共有し、ライブラリのJSには含めません。装飾画像はライブラリに含みます。
+配置先には `position: relative` を指定してください。ウィンドウの `x` / `y` と画面のレイヤーは配置先を基準にします。
+
+### 閉じるボタン付きウィンドウ枠
+
+`WindowFrame` は暗い羊皮紙に medium 相当の厚みの金属装飾枠を重ねた共通部品です。右上の閉じるボタンは、枠の彫刻が絡み合う円形の意匠に組み込まれています。内容だけがスクロールし、閉じるボタンは常に表示されます。配置と寸法は `className` / `style`、ウィンドウ名は `aria-label` / `aria-labelledby` で指定します。
+
+カタログの基本部品 → **ウィンドウ（閉じるボタン付き）**（`/#window-frame`）で、寸法・装飾のサイズ・× の位置と操作領域・内容の余白・背景を調整できます。設定は画面下の `style` 欄からコピーできます。数値の調整は CSS カスタムプロパティで行い、枠の装飾サイズに閉じる部分の位置が追従します。閉じると実際にウィンドウが消え、「ウィンドウを再表示」で開き直せます。
+
+```tsx
+import { WindowFrame } from 'norden-ui'
+
+<WindowFrame aria-label="施設の詳細" onClose={onClose} style={{ width: 480, height: 320 }}>
+  <p>ウィンドウの内容</p>
+</WindowFrame>
+```
+
+### 設定ウィンドウ
+
+`SettingsWindow` は配置先（`position: relative`）の中央に、マスクを敷いて出す設定のモーダルです（`WindowFrame` の暗い面・題名の札・右上の ×）。×・Esc・マスクのクリックで `onClose` を呼びます。マスクの上で押して離したときだけ閉じるので、スライダーをウィンドウの外までドラッグしても閉じません。Esc を含め、キーは下の画面（戦闘画面のショートカットなど）に届きません。Tab はウィンドウの中を巡り、閉じるとフォーカスを開く前の要素へ戻します。設定が多いと中身だけがスクロールし、`footer`（「初期値に戻す」など）は下に残ります。
+
+中身は `SettingsSection`（見出し `title`）に `SettingsItem` を並べて組みます。`SettingsItem` は左に名前（`label`）と説明（`description`）、右に操作（`children`）を置き、ウィンドウが狭い（内容の幅 400px 以下）と名前を操作の上に置きます。項目は `role="group"` で名前と説明が付きますが、操作にも自分の名前を付けてください（`ChoiceGroup` の `label`、`VolumeSlider` の `label` + `hideLabel`）。`ChoiceGroup` は設定ウィンドウの中では外枠なしの小さめのボタンで出ます。
+
+`VolumeSlider` は 0〜1 の音量を 5% 刻みのスライダーと百分率で出します。文字の色は置いた面の色を継ぐので、暗い面に置きます。`hideLabel` で名前を読み上げだけにします（`SettingsItem` が名前を出すとき）。
+
+カタログの基本部品 → **設定ウィンドウ**（`/#settings-window`）で、タイトル・戦略・戦闘の各場面の設定と幅を確かめられます。
+
+```tsx
+import { ChoiceGroup, SettingsItem, SettingsSection, SettingsWindow, VolumeSlider } from 'norden-ui'
+
+<SettingsWindow onClose={close}>
+  <SettingsSection title="サウンド">
+    <SettingsItem label="BGM">
+      <VolumeSlider label="BGM" hideLabel value={bgm} onChange={setBgm} />
+    </SettingsItem>
+  </SettingsSection>
+  <SettingsSection title="戦闘">
+    <SettingsItem label="戦闘の速度" description="戦闘の途中でも変えられます">
+      <ChoiceGroup label="戦闘の速度" options={speeds} value={speed} onChange={setSpeed} />
+    </SettingsItem>
+  </SettingsSection>
+</SettingsWindow>
+```
+
+### 効果音
+
+norden-ui は音を鳴らしません。効果音の名前を伝えるだけで、鳴らすのはゲームです（`setSoundPlayer`）。プレイヤーが無い間（カタログ）は鳴りません。
+
+- `playSound(name)`: 名前の効果音を鳴らす。norden-ui の上に作るもの（norden-battle）もこれを使う
+- `installClickSound(target = document)`: ボタン・リンク・タブ・選択肢（`role="radio"`）・チェックボックスのクリックで `click` を鳴らす。無効のもの（`disabled`・`aria-disabled="true"`）は鳴らない。
+  キャプチャで拾うので、伝播を止めるダイアログの中でも鳴る。戻り値で外す
+- `data-sound`: その要素（または囲む要素）のクリックで鳴らす音の名前。`none` で無音（ドラッグで動かす取っ手・リサイズ）。ボタン以外の要素（リストの項目など）も付けると鳴る
+
+```tsx
+import { installClickSound, setSoundPlayer } from 'norden-ui'
+
+setSoundPlayer(name => mySePlayer.play(name))
+installClickSound()
+
+<Button data-sound="cancel" onClick={back}>戻る</Button>
+```
+
+### 画面スタック
+
+```tsx
+import { CityCommandScreen, InvasionScreen, MapPickScreen, ScreenHost, useScreenStack } from 'norden-ui'
+
+type StrategyScreens = {
+  cityCommand: { cityId: string }
+  pickTarget: { from: string }
+  invasion: { from: string; to: string }
+}
+
+function StrategyUi() {
+  const nav = useScreenStack<StrategyScreens>({ screen: 'cityCommand', params: { cityId: 'P012' } })
+  // 地図のクリック: nav.top.screen === 'pickTarget' なら nav.push('invasion', { from, to })
+  return <ScreenHost nav={nav} screens={{
+    cityCommand: ({ cityId }) => <CityCommandScreen city={toCityView(cityId)} turn={turn}
+      onCommand={(id) => id === 'invade' && nav.push('pickTarget', { from: cityId })} onEndTurn={endTurn} />,
+    pickTarget: ({ from }) => <MapPickScreen message="侵攻先を選んでください" onCancel={nav.pop} />,
+    invasion: ({ from, to }) => <InvasionScreen /* … */ onCancel={nav.pop}
+      onConfirm={(draft) => { order(from, to, draft); nav.popTo('cityCommand') }} />,
+  }} />
+}
+```
+
+| `useScreenStack` | 振る舞い |
+| --- | --- |
+| `top`, `stack`, `canPop` | 表示中の画面（`{ screen, params, key }`）、下からの全画面、戻れるか |
+| `push(screen, params)` | 1段深くする |
+| `replace(screen, params)` | 表示中の画面を差し替える（都市の切り替えなど） |
+| `pop()` / `popTo(screen)` | 1段戻る（最下段は残す）／指定した画面まで戻る |
+| `reset(screen, params)` | 1画面からやり直す |
+
+`ScreenHost` は最上段の画面だけを配置先いっぱいのレイヤーに描きます。レイヤー自体はポインターを通すので、下の地図をクリックできます。
+pushのたびに `key` が変わり、同じ画面でも新しくマウントされます（侵攻画面を開き直すと選択が初期化される）。
+`overlays={['domestic']}` に挙げた画面は、下の画面に重ねて描きます。下の画面はマウントされたまま下端のツールバーだけを残し（`.norden-screen-bottom-center` 以外を隠す）、重ねた画面はその分（`--norden-screen-bottom-inset`）を空けます。内政画面を開いたまま都市コマンドのツールバーで閉じたり、ほかのコマンドに移ったりできます。
+Escで `pop()` します。サブコマンドの展開などEscを自分で使う部品は `event.preventDefault()` し、`ScreenHost` はその場合に戻りません。`escapeToPop={false}` で無効にできます。
+地図の強調など画面の外の処理は、ホストが `nav.top` を見て行います。
+
+### カットイン
+
+「戦闘開始」などの画面中央のカットインと文字演出です。カタログのカットインエディタ（`#cutin-editor`）でテンプレートを作り、JSONで書き出します。
+書き出したJSONは `src/cutin/templates/` に置きます。ライブラリの `CUTIN_TEMPLATES` にファイル名（`.json` の前）で入り、エディタの「保存済み」からも開けます。
+ゲームは `useCutIn()` の `play` にテンプレートを渡して再生し、`CutInLayer` が配置先いっぱいのcanvasに描きます。
+
+```tsx
+import { CUTIN_TEMPLATES, CutInLayer, useCutIn } from 'norden-ui'
+
+function BattleUi() {
+  const cutIn = useCutIn()
+  const start = async () => {
+    await cutIn.play(CUTIN_TEMPLATES['battle-start']!)               // 終わると解決する
+    await cutIn.play(CUTIN_TEMPLATES['round']!, { text: `ROUND ${n}` })  // 文字だけ差し替える
+  }
+  return <div style={{ position: 'relative' }}>{/* 画面 */}<CutInLayer cutIn={cutIn} /></div>
+}
+```
+
+| `useCutIn()` | 振る舞い |
+| --- | --- |
+| `play(template, { text?, subText? })` | 再生して、終わると解決する。再生中に呼ぶと順番待ちになる。足りない項目は初期値で補う |
+| `skip()` | 退場へ飛ばす。退場中なら終える |
+| `clear()` | 再生中と順番待ちを終える（Promiseは解決する） |
+| `playing`, `current` | 再生中か、再生中のテンプレート |
+
+`CutInLayer` はクリックを受けません（下の画面を操作できます）。画面のどこかを押すとスキップします（`skipOnClick={false}` で無効）。
+テンプレートには書体の名前（CSSのfont-family）だけを書きます。書体はゲーム側のCSSで読み込んでください。再生前に `document.fonts.load` で最大3秒待ちます。
+テンプレートの項目、エディタの使い方、画面サイズへの合わせ方は [カットイン](docs/cutin.md) を参照してください。
+
+### 画面
+
+| 画面 | 構成 | 主なprops |
+| --- | --- | --- |
+| `CityCommandScreen` | 勢力の情報と都市の切り替え ◀ ▶（左上の `FactionBar`）、都市情報ウィンドウ（都市情報・騎士・街道タブ。騎士タブは所属する騎士のあと、区切りに続けて召喚ユニット（`knights` のうち `summon` のあるもの。札は HP・攻撃力・防御力）、傭兵（`knights` のうち `mercenary` のある騎士）、さらに区切りに続けて捕虜（`CityView.prisoners`。仕えていた勢力つき）。都市情報は領主・人口と Tier、兵数・練度・物資（大きな数字で横に並べる）、商業と生産（実効値と基礎値）、施設スロット）、ターン情報（右上）、アクションツールバー（下） | `city: CityView`, `turn: TurnView`, `faction: FactionSummaryView`, `onPrevCity` / `onNextCity`, `cityPosition`, `commandState`, `activeCommand`（上に開いている画面のコマンド。押された状態で出す）, `onCommand(id)`, `onEndTurn`, `endTurnDisabled`, `endTurnReason`（ターン終了のツールチップ）, `onOpenResearch`（`FactionBar` の研究から技術画面を開く）, `onSelectNeighbour`, `onOpenSettings`（ターン情報の歯車。設定ウィンドウはホストが出す）, `knightOf`, `equipment: EquipmentActions`（騎士の詳細ウィンドウの装備の枠を押すと、`options(knightId, slot)` の遺物を `RelicPicker` の窓で選んで `onEquip`、「外す」で `onUnequip`。省くと枠は見せるだけ。`KnightView.equipment` の無い騎士（傭兵など）には枠を出さず、`unavailableReason` があれば枠を押せずに理由を出す）, `children`（ホストの追加HUD） |
+| `MapPickScreen` | 案内の帯と「やめる」 | `message`, `onCancel`, `cancelLabel` |
+| `DomesticScreen` | 都市の内政。画面いっぱいのウィンドウに、領主（顔と「交代」）と都市の現状（人口の下に1ターンの伸びと次の Tier までのターン数の見込み）、施設スロット、内政担当官（商業・生産・訓練・募兵・研究に2人まで）を並べ、右側に建設できる施設・修復と生産できる遺物や任命する騎士の一覧を開く。遺物の修復・生産は施設スロットを使わず、施設の横に区切り線を挟んだ「遺物の修復」の枠から始め、進捗もそこに出す（施設の一覧に遺物は混ぜない）。施設の遺物を使う施設は、建てられる施設の欄と建設中の枠に `relicNote`（「遺物：ガンシップを 1 つ使用」など）を出す。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `city: CityView`, `buildOptions`, `relicOptions`, `onRelicWork(option)`, `gold`, `populationGrowth`, `stats`, `knights`, `officers`, `officerEffects`, `onBuild` などの施設の操作, `onChangeLord`, `lordFixedReason`（「交代」を無効にする理由）, `onAssignOfficers`, `onClose` |
+| `RelicScreen` | 遺物（研究＞遺物）。画面いっぱいのウィンドウの上に、開いている都市の建設の枠（空き・進行中のもの）と国庫の金。左にアイテムボックス（画像・名前・状態・レアリティ。壊れた・修復中（都市名）・生産中（都市名）・法王府に依頼中・修復済みで描き分ける）と生産できる遺物、右に選んだ遺物の詳細（画像・レアリティ・使い道・説明）と操作。壊れた遺物には解体（確認あり）・修復（ボタンは「フルーエンで修復」のように開いている都市を出す。生産も同じ）・法王府に依頼があり、必要な物資・金・ターン数はボタンの横に出し、できないものは押せず理由を出す。「法王府に献上」は壊れた遺物と修復済みの遺物に出すが押せない。遺物の効果（`RelicView.effects`）は説明の下に出す。修復済みの装備の遺物（`equip` のあるもの）には「装備させる」があり、`equipCandidates` の騎士を `KnightPicker` の窓で選ぶと空いた枠に付ける（枠が埋まっていれば、入れ替える遺物を `RelicPicker` の窓で選ぶ）。装備中の遺物は「装備中（騎士名）」と出し、「外す」がある。修復済みの施設の遺物（`buildingName` のあるもの）には「内政画面で{施設名}を建てるのに使えます」、施設の建設に使っている遺物（`status: 'building'`）は「建設中（都市名）」と出す。修復済みの召喚の遺物（`summon` のあるもの）には「{都市}で召喚」があり、押すと `onSummon`（名付けはホストが `SummonDialog` を `children` に出す） | `cityName`, `construction`, `gold`, `relics: RelicView[]`, `productions: RelicProductionView[]`, `onDismantle(id)`, `onRepair(id)`, `onPapalRepair(id)`, `onProduce(relicId)`, `equipCandidates(id): EquipCandidateView[]`, `onEquip(id, knightId, slot)`, `onUnequip(id)`, `onSummon(id)`, `onClose`, `children` |
+| `SummonDialog` | 召喚したユニットの名付け。ページ全体の上に（`body` に描く）立ち絵・種別・HP・攻撃力・防御力・名前の入力欄（`maxLength` 文字まで。既定 12）・「自動」（押すたびに `onAutoName()` の名前にする）・「決定」。空の名前・長すぎる名前・`validate` の理由があると決定できない。やめる手段は無く、Esc は何もしない（下の画面にも届かない） | `knight: KnightView`（`summon` と立ち絵）, `name`, `maxLength?`, `onAutoName(): string`, `validate?(name)`, `onConfirm(name)` |
+| `TechScreen` | 技術（研究＞技術）。画面いっぱいのウィンドウに、技術ツリーを左から右へ段ごとの列で描き（前提の無い技術は系統に関係なく左端の列に並べ、前提を線でつなぐ。位置は `requires` から `layoutTechs` が決め、`alignWith` の技術があればその行に置く）、右に選んだ技術の詳細（画像・説明・効果・進捗と完了までのターン数・足りない前提）と「研究する」。ツリーと詳細は 7:3（詳細は幅 370px まで）で、ツリーはその中でスクロールし、技術の枠の外をマウスでドラッグしてもパンできる。ノードは研究済み・研究中（進捗のバー）・研究できる・名前だけ・???（画像も伏せる）で描き分ける。下端に研究ポイント（/ターン、内訳はツールチップ）と宙に浮いたポイント（全部研究し終えたらそのこと）（左）と「戻る」（右）。宙に浮いたポイントで足りる技術（`turns` 0）は詳細に「研究するとすぐに完了します」と出す。`mustChoose` のあいだは閉じられず（「戻る」も押せない）「研究先を選んでください」と出す | `techs: TechView[]`, `perTurn`, `pointDetails`, `carry`, `mustChoose`, `onResearch(techId)`, `onClose` |
+| `InvasionScreen` | 侵攻。画面いっぱいのウィンドウに、出撃する騎士の一覧、軍団編成（部隊ごとの兵科と兵数）、編成した部隊の図を横に並べ、その下に合計兵数と「やめる / 予約」。傭兵（`mercenary`）と召喚ユニット（`summon`。兵数は HP）は自前の兵で、兵科と兵数を変えられず、都市の兵から引かず、軍団長になれない。都市コマンド画面の上に重ねると、下のツールバーの分を空ける | `from` / `to: CityView`, `defenders`, `knights: KnightView[]`, `unitTypes`, `indirectUnitTypes`, `maxUnits`, `soldierPool`, `maxSoldiers`, `morale`, `unitPower`, `soldierStep`, `validate(draft)`, `onConfirm(draft)`, `onCancel`（閉じるボタンも同じ。省くと「やめる」と閉じるボタンを出さない）, `mode`（`'defense'` で防衛軍団の編成: 見出し「〇〇の防衛」・「防衛する騎士」・確定ボタン「防衛する」。`knights`・`soldierPool` は防衛する拠点のもの） |
+| `MoveScreen` | 移動。画面いっぱいのウィンドウに、移動する騎士の一覧（チェックボックスで複数選ぶ。カードに全能力を出す）と、移動の内容（経路・到着までの月数・単騎移動（傭兵・召喚ユニットを選ぶとできない）・兵数・物資・連れて行く捕虜（複数。単騎移動では選べない））を横に並べ、その下に合計と「やめる / 予約」 | `from` / `to: CityView`, `route`（経路の都市名）, `months`, `soloMonths`, `knights`, `soldierPool`, `supplyPool`, `prisoners`（出発する拠点の捕虜。無ければ一覧を出さない）, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
+| `TransportScreen` | 輸送。移動画面と同じ形のウィンドウに、担当の騎士の一覧（ラジオボタンで1人選ぶ）と、輸送の内容（経路・到着までの月数と騎士の帰還までの月数・兵数・物資・連れて行く捕虜（複数）・繰り返し輸送（準備中のため無効））を横に並べ、その下に合計と「やめる / 予約」 | `from` / `to: CityView`, `route`, `months`（到着まで）, `returnMonths`（下ろしたあと単騎で戻る月数）, `knights`, `soldierPool`, `supplyPool`, `prisoners`, `validate(draft)`, `onConfirm(draft)`, `onCancel` |
+| `EventScreen` | イベント通知（勢力の滅亡など）。ホスト全体を暗くして、カット画像（`CUT_IMAGES`: `src/assets/cut/*.webp` をファイル名で引く）とその下のメッセージウィンドウ（見出し・メッセージ・詳細の行・ホストの内容）を出す。閉じるボタン・Enter・Escで閉じ、Escは下の画面に届かない。騎士の顔を並べるときは `norden-event-chips` の中に `KnightChip` を置く。`secondary` を渡すと2択になり、Enter・Escでは閉じない。押せないボタンには理由（`closeReason`・`secondary.reason`）を出す | `image`, `picture`（カットの代わりのホストの絵。技術の画像など）, `title`, `message`, `details: { label, value }[]`, `children`, `onClose`, `closeLabel`, `closeReason`, `secondary: { label, onClick, reason }` |
+| `MercenaryScreen` | 軍事＞傭兵。全画面のウィンドウで、上に開いた都市と国庫の金、タブが「契約できる傭兵」と「契約中」。左の一覧（`MercenaryCard`。傭兵団・騎士名で検索でき、能力値・価格・兵科で並べ替えられる。既定は価格の安い順）で選ぶと、右に立ち絵・兵科の絵・略歴などの詳細と「契約」または「契約を打ち切る」（確認あり。兵が減っていれば評判と回復のことを確認に出す）。できないものは押せず、ホストの理由を出す | `cityName`, `gold`, `offers: MercenaryOfferView[]`, `contracts: MercenaryContractView[]`, `onHire`, `onDismiss`, `onClose`, `children` |
+
+アクションツールバーのコマンドは `CITY_COMMAND_GROUPS` に定義しています。内政、軍事（移動・侵攻・輸送・傭兵）、研究（探索・遺物・技術）、交渉（外交・捕虜・商人）、情報（勢力・傭兵・地理・遺物）と、最後にターン終了です。
+分類を押すと上にサブコマンドが開きます。`commandState={{ invade: { disabled: true, reason: '出撃できる騎士がいません' } }}` で無効にし、理由をツールチップに出します。
+
+移動画面は騎士を1人以上選ぶと「予約」を押せます。「単騎移動」にすると兵数と物資が0になって変えられなくなり、到着までの月数が `soloMonths` に変わります。`onConfirm` には `{ knights, troops, supplies, solo }` を渡します（`knights` は一覧の順）。
+
+輸送画面は担当の騎士を1人選び、兵か物資を1以上にすると「予約」を押せます。`onConfirm` には `{ knight, troops, supplies }` を渡します。
+
+侵攻画面は軍団を編成します。まず左の一覧で軍団長（侵攻を率いる騎士）を選び、続けてほかの騎士を加えます。部隊は間接指揮部隊も含めて `maxUnits`（既定6）までです。
+軍団長は編成済みの騎士の「軍団長にする」で付け替えられます。ただし `commandRank` を持つ騎士（領主・君主など）が加わると、いちばん高い騎士が軍団長になり、ほかの騎士には付け替えられません。軍団長が外れると、残った騎士のうち `commandRank` がいちばん高い騎士（同じなら先に加えた騎士）が軍団長になります。
+`indirectUnitTypes` を渡すと、騎士がいない部隊（間接指揮部隊）を軍団長の下に編成できます。兵科は `indirectUnitTypes` の中から選びます。騎士が1人もいなくなると間接指揮部隊も外れます。
+騎士の部隊の兵科は騎士の `unitTypes`（率いられる兵科の id。無ければ全兵科）に含まれるものだけを選べます。騎士を加えると、`defaultUnitType`（選べる兵科に無ければ選べる兵科の先頭）と、1部隊の上限（`maxSoldiers`。騎士の部隊も間接指揮部隊も共通、省略すると `soldierPool`）と残りの兵数の小さい方で部隊に加わります。
+兵数の合計は `soldierPool` を超えません。軍団編成の見出しの「兵を均等に分ける」は、`soldierPool` を `soldierStep` 刻みで全部隊に均等に配り直します（1部隊 `maxSoldiers` まで。割り切れない分は軍団長の部隊から順に1刻みずつ足します）。軍団長がいない、兵数0の部隊がある、`validate` が理由を返した、のどれかに当たると「予約」を押せません。`onConfirm` には `{ commander, units }` を渡します。`units` は軍団長の部隊が先頭の `{ knightId, unitType, soldiers }[]` で、間接指揮部隊の `knightId` は `null` です。
+編成した部隊は右端のタイトルなしのウィンドウに、軍団長の部隊から順に縦に並べて図示します。兵科の画像（`UnitTypeView.image`。戦闘画面のユニット画像など右向きの絵）と左上に丸く切り抜いた騎士の顔（間接指揮部隊は軍団長の顔）、兵数のゲージ（上限は `maxSoldiers`）、士気のゲージ（`morale`。出発都市の兵の士気で全部隊に共通。省略すると出さない）、右側に基本攻撃力・基本防御力（`unitPower(unit, commander)` がホストの計算で返す値。省略すると出さない）を出し、残りの枠は「空き」と出します。
+`unavailableReason` を持つ騎士は一覧に出ますが選べません。
+
+召喚ユニットは `KnightView.summon`（`SummonView`: HP・攻撃力・防御力・士気・召喚した遺物の名前と説明）を持ちます。騎士の詳細ウィンドウ（`KnightProfileWindow`）は、能力値とチャートの代わりに HP・攻撃力・防御力を、略歴の代わりに「召喚の遺物」を出します。札の能力値（`knightAbilityStats`）も HP・攻撃力・防御力になります。
+
+騎士の顔は `KnightView.portrait`（ReactNode）または `portraitSrc`（画像URL）で渡します。両方指定した場合は `portraitSrc` を優先します。省略すると頭文字を表示します。紋章は `FactionView.emblem`（画像URL）です。
+
+画面の追加方法は [画面の追加](docs/screens.md) を参照してください。
+
+### 基本部品
+
+| 部品 | 主なprops | 振る舞い |
+| --- | --- | --- |
+| `NavigationWindow` | `title?`, `onClose`, `onBack?`, `onForward?`, `backDisabled?`, `forwardDisabled?`, `children`, `style` | `WindowFrame` の左上装飾に戻る・進むを埋め込んだ汎用ウィンドウ。各方向を独立して無効化可能。カタログ `#navigation-window` でプレビュー（[使い方・生成画像](docs/navigation-window.md)） |
+| `CommandToolbar` | `commands: { id, label, icon?, onClick?, disabled?, title?, active?, tone?, children? }[]`, `movable` | 子を持つコマンドは押すと上にサブコマンドの列を開く（再クリック・Esc・外側クリックで閉じる）。`tone: 'accent'` で強調。`movable` で左右の端をドラッグ・矢印キーで移動 |
+| `DateBar` | `phaseLabel`, `factionName?`, `dateLabel?`, `onSettings?` | フェーズ・勢力のターン・年月・設定の順に表示。設定（歯車）は `onSettings` を呼ぶだけで、設定ウィンドウ（`SettingsWindow`）は呼び出し側が出す。`onSettings` が無い場合は設定ボタンを無効にする。`factionName: null` は全勢力の行動解決中 |
+| `ActionOrders` | `orders: ActionOrderView[]`, `title?`（既定「行動予約」）, `onCancel?(id)`, `onSelect?(id)`, `activeId?`, `onDeactivate?()` | 侵攻（`kind: 'invasion'`）・移動（`'move'`）・輸送（`'transport'`）の予約を1行ずつ並べるHUDのパネル。経路（`from` → `to`、移動中の移動・輸送は出発した拠点から）と騎士（侵攻は「軍団長 〜 以下N名」、移動と輸送は「担当 〜・〜」）。`cancellable` の行に取消、`status`（「あと3ヶ月」など）を右に出す。`faction` で行頭に紋章、`current` で解決中の行を強調（進行フェーズの一覧）。`activeId` の行を選択中として強調して、その行の `members`（騎士の顔と名前。`KnightChip` で並べる）と `details`（`{ label, value }[]`。兵・物資・到着までの月数など）を行の下に開き、パネルの外を押すと `onDeactivate` を呼ぶ。行が多いと一覧がスクロールする。`MinimizableWindow` で題名の札だけに畳める（`minimized?`, `onMinimizedChange?`） |
+| `Button` | `variant: 'normal' \| 'primary' \| 'quiet'`, `metal: 'gold' \| 'silver' \| 'none'`, `size`, `icon`, `style` | 象牙の立体的なボタンに金／銀の四隅装飾、または装飾なし。生成画像を9分割で伸縮し、`style` で幅・高さを指定可能。`icon` は文字の前に出す飾りの画像 |
+| `Tooltip` | `content`, `children`（対象の要素1つ）, `open`, `delay`, `id`, `className` | ブラウザの `title` の代わりに使うツールチップ。対象の要素に直接イベントを付けるので要素は増えず、無効のボタンにも出せる。ホバーかキーボードのフォーカスで対象の下（入らなければ上）に開き、`body` に描くのでウィンドウの `overflow` で切れない。`open` で開いたままにできる。`Button` の `title` もこれで出る |
+| `Banner` | `children`, `actions` | HUDの案内の帯（`role="status"`） |
+| `FactionBar` | `faction?: FactionView`, `summary?: FactionSummaryView`, `onOpenResearch`, `cityName`, `onPrevCity`, `onNextCity`, `cityPosition`, `movable`, `position`, `onPositionChange` | 左端の球に勢力のエンブレムを表示。球をドラッグしてバー全体を移動。矢印キーは10px、Shift併用は1px、Homeで元の位置。金（次のターンの増減）｜総生産｜総兵力｜研究（/ターンと研究中の技術・進捗・残りターン。研究先が無ければ「研究先なし」、ポイントも出ていなければ薄く。全部研究し終えたら（`complete`）「全技術研究済み」で薄く。`onOpenResearch` があれば押せる）｜◀ 都市名 ▶。`summary` が無ければ都市の切り替えだけ。ハンドラが無い方向は無効 |
+| `ChoiceGroup` | `label`, `options`, `value`, `onChange` | 単一選択のボタン列。radiogroupとして矢印キーで移動し、無効な選択肢を飛ばす |
+| `QuantityInput` | `label`, `icon?`（ラベルの前）, `value`, `onChange`, `min`, `max`, `step`, `unit` | スライダー・± ボタン・数値入力。範囲外は丸める |
+| `Card` | `as`, `children`, `className`, `style` | 羊皮紙とインクで描いた汎用装飾枠。`as` は div / article / section / label |
+| `KnightCard` | `knight: { name, portrait?, portraitSrc?, subtitle?, stats? }`, `selection`, `current`, `aside`, `compact` | `Card` に顔・名前・能力名と大きな能力値を配置。数値は段階別の色。`selection` でチェックボックス（`type: 'radio'` と `name` でラジオボタン）になる |
+| `KnightChip` | `knight: { name, portrait?, portraitSrc? }`, `note?` | 小さな顔（30px）と名前を1行に並べる省スペースの騎士表示。`note` は名前の後ろの小さな札（「軍団長」など）。色は周りの文字色を継ぐので、羊皮紙の上でも暗いHUDの上でも使える |
+| `MercenaryCard` | `knight`, `company`, `prices: { label, value }[]`, `notes?`, `selected`, `onSelect` | 一覧の傭兵1人分のボタン。羊皮紙の上に顔・傭兵団・騎士名と `notes`・金額・能力値を並べる |
+| `FactionMark` | `faction?`, `emblemOnly` | 紋章と勢力名。省略すると中立 |
+| `BuildingSlots` | `buildings: CityBuildingsView`, `onSelect?`, `selectedId?` | 都市の施設スロット。建設済み（画像と名前）・建設中（進捗のバーと残りターン）・空きの順。`onSelect` で施設をボタンにする。`BuildingImage`（画像が無ければ頭文字）と `ConstructionProgress` も公開 |
+| `RelicRow` | `relic: { id, name, image?, rarity }`, `label`, `status?`, `selected`, `disabled?`, `onSelect` | 遺物1つを選ぶ行（絵・名前・その下の1行・レアリティ）。遺物の画面の一覧と `RelicPicker` が使う。`RelicRarity`（レアリティの札）も公開 |
+| `EquipmentSlots` | `slots: (EquippedRelicView \| null)[]`, `disabledReason?`, `onPick?(slot)`, `onRemove?(slot)` | 騎士の装備の枠を横に並べる（遺物の絵・名前・レアリティ・効果、または「空き」）。枠を押すと `onPick`、遺物のある枠に「外す」。`disabledReason` があると枠を押せず、下に理由を出す |
+| `PickerDialog` | `title`, `message?`, `children`, `confirmLabel?`（既定「決定」）, `cancelLabel?`（既定「やめる」）, `confirmDisabled?`, `onConfirm`, `onCancel` | 一覧から選ぶための窓。`body` に描くので、開いたウィンドウに切られない。Esc・外側のクリックで `onCancel`（下の画面・ウィンドウには Esc が届かない）。`className="is-narrow"` で幅を狭く |
+| `KnightPicker` | `items: { knight: KnightView, note?, disabledReason? }[]`, `selected: string[]`, `onChange(ids)`, `multiple?`, `label?`, `emptyText?` | 騎士の一覧から1人（`multiple` で複数）を選ぶ。顔・名前・種別（`subtitle`）・`note` と5つの能力値の列で、列の見出しで並べ替える（もう一度押すと逆順）。`disabledReason` の騎士は灰色で理由を出し、選べない。ゲームの決まりは知らない |
+| `RelicPicker` | `items: { id, name, image?, rarity, label?, disabledReason? }[]`, `selectedId`, `onSelect(id)`, `label?`, `emptyText?` | 遺物の一覧（`RelicRow`）から1つを選ぶ。`disabledReason` の遺物は灰色で、`label` の代わりに理由を出す |
+| `ThinFrameWithTitle` | `title`, `titleAction?`, `as`, `ref`, ほかの属性 | `ThinFrame` の上辺に題名の札を載せたHUDのパネル。題名がパネルの名前になる。`titleAction` は札の題名の後ろに置く操作。札はCSSの仮組（[画像の仕様](docs/parts-assets.md#細いベゼルの題名の札)） |
+| `MinimizableWindow` | `title`, `minimized?`, `defaultMinimized?`, `onMinimizedChange?(minimized)`, `minimizeLabel?`, `restoreLabel?`, `ThinFrameWithTitle` のほかのprops | 札のボタンで題名の札だけに畳める `ThinFrameWithTitle`。`minimized` を省くと自身で状態を持つ。畳んでいる間も中身は残り、スクロール位置や状態を保つ |
+| `ThinFrame` | なし | `windowSkins.thin` の細いベゼルと暗い地。最も近い位置指定の祖先いっぱいに、中身の後ろへ敷く（祖先に `isolation: isolate`）。HUDのパネルに使う |
+
+DateBarは`phaseLabel`・`factionName`・`dateLabel`を個別に渡します。文字サイズ・左装飾・右上配置の調整箇所と生成プロンプトは [DateBarの装飾と調整](docs/date-bar-assets.md) を参照してください。
+
+FactionBar の `--faction-bar-height` はバー部分の最小高さ（既定56px）、`--faction-orb-size` は球の装飾サイズ（既定88px）です。球は常に正方形の領域に描画し、バーの高さから独立しています。内容は上下10pxの余白を持ちます。カタログで両方のサイズを個別に変更できます。
+
+バーは左端の金具・中央の帯・右端の彫刻を分けて表示します。左右の装飾は画像の比率を保ち、幅の変更は中央だけに反映します。`style.width` で全体の幅を指定でき、カタログでは「内容に幅を合わせる」と指定幅を切り替えて確認できます。
+
+FactionBar は専用の球体と彫刻の画像で枠を描画します（[素材と生成プロンプト](docs/faction-bar-assets.md)）。カタログ `#faction-bar` で勢力の切り替え・ドラッグ・位置のリセット・透過を確認できます。都市コマンド画面には `playerFaction` でプレイヤーの勢力を渡します。Banner は `ThinFrame`（`windowSkins.thin` と同じ画像）を使います。ボタンの伸縮、Cardの利用例、騎士画像のプレビュー、生成プロンプトは [UIパーツの装飾と画像](docs/parts-assets.md) を参照してください。カタログ `#parts` ではルートの人物素材を直接参照でき、画像URL・ローカル画像ファイル、名前・能力値を変更できます。
+
+旧実装（`nordencult-old/src/ui/components/`）から `CommandToolbar` と `DateBar` を移植しました。HUDのフレーム・背景画像は `src/assets/ui/hud/`、アイコンは `src/assets/ui/icons/` です。ResourceBar・PlayerEmblem・MinimapWindow は未移植です。
+
+### ウィンドウ
+
+`InfoWindow` は枠・タイトル・サイズ調整・ドラッグを担当します。
+`InfoWindowWithTabs` はそのpropsを受け取り、タブ選択とパネルを追加します。
+
+| InfoWindowのprops | 初期値 | 振る舞い |
+| --- | --- | --- |
+| `title`, `children` | 必須 | タイトルと任意のReactコンテンツ |
+| `showTitleBar` | `true` | `false` でタイトルバーを非表示。タイトルでのドラッグを無効にし、自動幅の計測から除外。ウィンドウのアクセシブルな名前は保持 |
+| `titleBarOffset` | スキン設定（`x: 0`, `y: -18`） | `{ x?, y? }` をpxで指定。`x` はウィンドウ中央、`y` は枠の上端を基準。省略した軸はスキン設定を継承 |
+| `width`, `height` | `'auto'` | 数値で固定、`'auto'` で内容に追従 |
+| `minWidth`, `maxWidth` | `320`, `720` | 自動幅の範囲。最大幅は画面幅−32pxにも制限 |
+| `minHeight` | `240` | 最低の高さ。枠の角領域2つ分の寸法も確保 |
+| `x`, `y` | `0`, `0` | 初期座標。props変更時に移動先を更新 |
+| `draggable` | `true` | タイトルでのポインタードラッグ |
+| `resizable` | `false` | 右下のハンドルでサイズ変更。矢印キーにも対応 |
+| `onPositionChange`, `onSizeChange` | — | ユーザー操作時の座標・サイズ通知 |
+| `onBoundsChange` | — | 位置と落ち着き先のサイズ（アニメーション途中の値ではない）の通知。測定後に一度、以後は変わるたび |
+| `className`, `style` | — | 外観の調整（寸法・座標は専用propsを使用） |
+| `skin` | `windowSkins.medium` | 全体PNGの9分割で描画。`thin` / `goddess` も同梱 |
+
+旧APIの `resizeable` は `resizable` の別名として使用可能です。
+
+| InfoWindowWithTabsのprops | 初期値 | 振る舞い |
+| --- | --- | --- |
+| `tabs` | 必須 | `{ id?, name, icon, content }[]`。`icon` は画像URL |
+| `title` | 選択タブの `name` | 指定すればタブを切り替えてもタイトルを維持 |
+| `defaultActiveTab` | `0` | 非制御モードの初期インデックス |
+| `activeTab`, `onActiveTabChange` | — | 親からの制御モード（数値インデックス） |
+| `tabListLabel` | `'情報の種類'` | タブ一覧のアクセシブルな名前 |
+| `emptyContent` | `null` | タブが0件のときの内容 |
+
+自動サイズでは `ResizeObserver` でタイトルと内容を計測し、幅・高さを220msで変化させます。
+長い内容は最大幅で折り返し、上限を超えるタイトルは省略表示します（全文はtitle属性・アクセシブルな名前に保持）。
+固定サイズでは内容領域をスクロールできます。タブ数に応じて、タブ一覧が収まる最低高さを確保します。
+手動リサイズ後はそのサイズを優先します。サイズ関連propsの変更または再マウントで自動サイズに戻ります。
+
+タブ切替時は選択されたパネルだけをマウントし、180msの登場アニメーションを再生します。
+各パネルの永続的なゲーム状態は親に保持してください。並び替えがある場合は一意の `id` を指定すると非制御モードで選択を維持できます。
+インデックスの範囲外、タブの削除、空配列にも対応します。
+`prefers-reduced-motion: reduce` のときはアニメーションとtransitionを無効にします。
+
+### 装飾画像の差し替え
+
+```tsx
+import { InfoWindowWithTabs, windowSkins } from 'norden-ui'
+
+<InfoWindowWithTabs tabs={tabs} skin={windowSkins.thin} />
+<InfoWindowWithTabs tabs={tabs} skin={windowSkins.medium} />
+<InfoWindowWithTabs tabs={tabs} skin={windowSkins.goddess} />
+```
+
+カタログの「ウィンドウ」の「装飾スキン」で細いベゼル・中程度の装飾（medium）・女神像を切り替えられます。
+旧クラシック用の角・辺の画像と描画分岐は削除しました。
+「透過確認の背景」で白・黒・市松模様を選択し、「羊皮紙を表示する」をオフにすると枠だけの透過を確認できます。
+タイトルバーは左右の装飾を含む一枚の透過PNGで描画します。カタログの「タイトルバーを表示する」で表示を切り替えられます。
+
+```tsx
+<InfoWindowWithTabs tabs={tabs} showTitleBar={false} />
+```
+
+非表示時もスキンの内容余白とタブ配置は維持します。タイトルバーがない場合、タイトルでのドラッグはできません。
+独自画像の指定方法、画像編集時の注意点、生成PNGへのリンクは [装飾スキンの説明](docs/skins.md) を参照してください。
+
+## 構成・移植元
+
+```text
+src/components/window/   ウィンドウ（InfoWindow, InfoWindowWithTabs, MinimizableWindow）
+src/components/toolbar/  CommandToolbar
+src/components/hud/      DateBar, FactionBar, ActionOrders
+src/components/parts/    小さな部品（Button, Tooltip, Banner, ChoiceGroup, QuantityInput, KnightCard, KnightChip, MercenaryCard, FactionMark）
+src/navigation/          画面スタック（useScreenStack, ScreenHost）
+src/cutin/               カットイン（template.ts にJSONの型と初期値、templates/ に作ったテンプレートのJSON、engine/ に描画、useCutIn, CutInLayer）
+src/screens/             画面（types.ts にview型、cityCommand/ mapPick/ invasion/）
+src/hooks/               内容のサイズ計測
+src/assets/ui/           装飾画像・HUD画像・タブアイコン
+src/skins.ts             ウィンドウの装飾スキン
+src/index.ts             公開API
+demo/                    カタログ（catalog.tsx に項目、entries/ に各項目、mock/ に仮データと仮の地図、cutin/ にカットインエディタの部品と見本テンプレート）
+tests/                   実ブラウザでのテスト
+```
+
+- 参考画像: `norden-strategy/docs/image/exec-0f8f41c4-e9b3-423a-af0d-ce7b8c4f8165.webp`
+- 移植元: `nordencult-old/src/ui/components/{InfoWindow,InfoWindowWithTabs,CommandToolbar,DateBar}.{tsx,css}`、都市情報ウィンドウはルートの `src/scenes/strategy/CityWindow.tsx`
+- 画像: 枠は `src/assets/ui/skins/` の生成PNG3点、タイトルは生成した `info_window_title_full.webp` を使用。羊皮紙・タブ画像・アイコン・HUD画像は旧実装から移植。都市画像は `src/assets/map/place_city.webp` からデモ専用にコピー
+- ゲームの都市・人物データ、地図処理は含めず、view型として呼び出し側から渡す
+- 開発構成: [Viteのライブラリモード](https://vite.dev/guide/build.html#library-mode)
+- タブの操作と関連付け: [WAI-ARIA Tabs Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/)、単一選択: [Radio Group Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/radio/)

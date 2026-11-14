@@ -1,0 +1,28 @@
+import { useId } from 'react'
+import type { HTMLAttributes, ReactNode, Ref } from 'react'
+import ThinFrame from './ThinFrame'
+import './parts.css'
+
+export interface ThinFrameWithTitleProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
+  /** Shown on the plaque straddling the top edge; also the panel's accessible name */
+  title: ReactNode
+  /** A control on the plaque after the title; not part of the accessible name */
+  titleAction?: ReactNode
+  as?: 'section' | 'div' | 'aside'
+  ref?: Ref<HTMLElement>
+}
+
+/**
+ * A HUD panel: the thin bezel (ThinFrame) with a title plaque on its top edge.
+ * The image plaque keeps its brass end caps fixed while the dark centre stretches.
+ * Other attributes and handlers (e.g. for dragging) go to the panel element.
+ */
+export default function ThinFrameWithTitle({ title, titleAction, as = 'section', className = '', children, ref, ...props }: ThinFrameWithTitleProps) {
+  const id = useId()
+  const Tag = as as 'section'
+  return <Tag ref={ref} aria-labelledby={id} className={`norden-thin-titled ${className}`} {...props}>
+    <ThinFrame />
+    <h2 className="norden-thin-titled-title"><span id={id} className="norden-thin-titled-title-text">{title}</span>{titleAction}</h2>
+    {children}
+  </Tag>
+}

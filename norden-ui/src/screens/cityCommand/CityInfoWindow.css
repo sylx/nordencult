@@ -1,0 +1,101 @@
+.norden-city-info { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; width: 460px; max-width: 100%; color: var(--norden-ink); }
+.norden-city-info-overview { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.norden-city-info-overview.has-lord {
+   min-height: 245px;
+   padding-right: 40%;
+   align-content: start;
+}
+.norden-city-info-header { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid #8a705040; }
+.norden-city-info-emblem { width: 44px; height: 44px; object-fit: contain; flex-shrink: 0; }
+.norden-city-info-name { margin: 0; font-size: 24px; font-weight: 700; line-height: 1.3; }
+.norden-city-info-sub { font-size: 13px; color: var(--norden-ink-soft); }
+.norden-city-info-body { display: grid; gap: 10px; position: relative;}
+.norden-city-info-facts { display: grid; gap: 6px; margin: 0; font-size: 15px;height: min-content; }
+.norden-city-info-facts div { display: flex; gap: 12px; }
+.norden-city-info-facts dt { width: 32px; flex-shrink: 0; padding-top: 2px; font-size: 12px; font-weight: 600; color: var(--norden-ink-soft); }
+.norden-city-info-facts dd { margin: 0; min-width: 0; }
+.norden-city-info-lord-name {
+  position: relative;
+  z-index: 1;
+  text-shadow:
+    -1px -1px 0 #e4d2b6, 0 -1px 0 #e4d2b6, 1px -1px 0 #e4d2b6,
+    -1px 0 0 #e4d2b6, 1px 0 0 #e4d2b6,
+    -1px 1px 0 #e4d2b6, 0 1px 0 #e4d2b6, 1px 1px 0 #e4d2b6;
+}
+.norden-city-info-lord { 
+  position: absolute; 
+  top: 0; right: 0; width: 53%; max-width: 244px; height: 342px;
+  overflow: hidden; pointer-events: none; 
+  mask-image: linear-gradient(to bottom, black 68%, transparent 100%); 
+  z-index: 0;
+}
+.norden-city-info-lord > * { display: block; width: 100%; height: 100%; object-fit: contain; object-position: top; }
+.norden-city-info-stats { display: grid; gap: 8px; margin: 0; padding: 10px 12px; border-block: 1px solid #ab88534d; background: #fff9e673; box-shadow: inset 0 0 16px #b3914720; }
+.norden-city-info-stat { display: flex; align-items: center; gap: 10px; }
+.norden-city-info-stat dt { display: flex; align-items: center; gap: 8px; flex-shrink: 0; color: var(--norden-ink-soft); font-size: 14px; font-weight: 700; }
+.norden-city-info-stat dt img { width: 38px; height: 38px; filter: drop-shadow(0 2px 1px #38251030); }
+.norden-city-info-stat dd { flex: 1; min-width: 0; margin: 0; }
+.norden-city-info-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0 8px; list-style: none; }
+.norden-city-info-tags li { position: relative; padding: 5px 16px; font-size: 16px; font-weight: 600; color: var(--norden-ink-soft); background: #fff4d580; border: 1px solid #b38d52; box-shadow: inset 0 0 0 2px #fff9e699, 0 2px 3px #52300e12; border-radius: 3px; }
+
+.norden-city-knights { display: grid; gap: 8px; width: 460px; max-width: 100%; }
+.norden-city-empty { margin: 0; padding: 12px 0; color: var(--norden-ink-muted); }
+
+.norden-city-history { display: grid; gap: 10px; width: 460px; max-width: 100%; margin: 0; padding: 0; list-style: none; }
+.norden-city-history-turn { padding: 8px 10px; background: rgb(255 255 255 / 0.4); border: 1px solid #c9ad7a; border-radius: 4px; }
+.norden-city-history-turn header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; color: var(--norden-ink-soft); font-size: 12px; }
+.norden-city-history-turn h3 { margin: 0 auto 0 0; color: var(--norden-ink); font-size: 14px; }
+.norden-city-history-turn header b { color: var(--norden-ink); font-size: 14px; font-variant-numeric: tabular-nums; }
+.norden-city-history-turn dl { display: grid; gap: 6px; margin: 8px 0 0; }
+.norden-city-history-turn dt { display: flex; gap: 8px; color: var(--norden-ink); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.norden-city-history-turn dt span:first-child { min-width: 6.5em; }
+.norden-city-history-turn dt .is-up { color: var(--norden-ink-good); }
+.norden-city-history-turn dt .is-down { color: var(--norden-ink-bad); }
+.norden-city-history-turn dd { margin: 2px 0 0; color: var(--norden-ink-soft); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.norden-city-history-note { margin: 6px 0 0; color: var(--norden-ink-muted); font-size: 12px; }
+.norden-city-knights .norden-knight-face { width: 92px; }
+.norden-city-knight-aside { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.norden-city-knight-badge { padding: 2px 8px; color: var(--norden-text-strong); background: #7a4f17; border-radius: 3px; font-weight: 700; }
+/* The mercenaries and the prisoners each after a labelled rule, the faction each prisoner served beside them */
+.norden-city-knights-splitter { 
+  display: flex; align-items: center; gap: 10px; margin: 8px 0 2px; 
+  color: var(--norden-ink-soft); font-size: 13px; font-weight: 700; }
+.norden-city-knights-splitter::before,
+.norden-city-knights-splitter::after { content: ''; flex: 1; height: 1px; background: #cbb28266; }
+.norden-city-knight-group { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.norden-city-prisoner-faction { font-size: 12px; color: var(--norden-ink-muted); white-space: nowrap; }
+@media (max-width: 560px) {
+  .norden-city-info-overview.has-lord { padding-right: 0; min-height: 0; }
+  .norden-city-info-lord { position: relative; top: auto; right: auto; justify-self: center; order: -1; height: 300px; width: 220px; max-width: 100%; }
+  .norden-city-info-stat { gap: 6px; }
+  .norden-city-info-stat dt { gap: 4px; font-size: 12px; }
+  .norden-city-info-stat dt img { width: 30px; height: 30px; }
+}
+
+.norden-city-info-resources { 
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; padding: 8px 4px; border-block: 1px solid #ab88534d; background: #fff9e673;
+  z-index: 1;
+ }
+.norden-city-info-resources div { display: grid; min-width: 0; justify-items: center; align-content: start; gap: 4px; padding: 2px 0; }
+.norden-city-info-resources div + div { border-left: 1px solid #8a705040; }
+.norden-city-info-resources dt { 
+  display: flex; align-items: center; gap: 6px; color: var(--norden-ink-soft);
+  font-size: 16px; font-weight: 600;
+  text-shadow:
+    -1px -1px 0 #fff8e6, 0 -1px 0 #fff8e6, 1px -1px 0 #fff8e6,
+    -1px 0 0 #fff8e6, 1px 0 0 #fff8e6,
+    -1px 1px 0 #fff8e6, 0 1px 0 #fff8e6, 1px 1px 0 #fff8e6,
+    0 0 3px #fff8e6;
+ }
+.norden-city-info-resources dt img { width: 36px; height: 36px; object-fit: contain; filter: drop-shadow(0 2px 1px #38251030); }
+.norden-city-info-resources dd { margin: 0; color: var(--norden-ink); font-family: Georgia, 'Times New Roman', serif; font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.norden-city-info-stat dd { display: flex; align-items: center; gap: 8px; }
+.norden-city-info-buildings { display: grid; gap: 6px; padding: 0 4px; }
+.norden-city-info-buildings h3 { margin: 0; color: var(--norden-ink-soft); font-size: 14px; font-weight: 700; }
+.norden-city-info-buildings h3 span { margin-left: 6px; color: var(--norden-ink-muted); font-size: 12px; font-weight: 600; }
+
+@media (max-width: 560px) {
+  .norden-city-info-resources dt { flex-direction: column; gap: 2px; }
+  .norden-city-info-resources dd { font-size: 22px; }
+  .norden-city-info-stat dd { flex-wrap: wrap; }
+}

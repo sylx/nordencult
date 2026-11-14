@@ -1,0 +1,77 @@
+/* PickerDialog over the whole page, and the lists it holds (KnightPicker, RelicPicker) */
+.norden-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(10 7 4 / 0.65);
+}
+.norden-picker-dialog-wrap { max-width: 100%; max-height: 100%; }
+.norden-picker-dialog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  box-sizing: border-box;
+  width: min(760px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  padding: 28px 22px 18px;
+}
+.norden-picker-dialog.is-narrow { width: min(520px, calc(100vw - 48px)); }
+.norden-picker-message { margin: 0; color: var(--norden-text); font-size: 14px; line-height: 1.7; }
+.norden-picker-body { min-height: 0; overflow: auto; }
+.norden-picker-actions { display: flex; justify-content: center; gap: 12px; }
+.norden-picker-empty { margin: 0; padding: 18px 8px; color: var(--norden-text-faint); font-size: 14px; text-align: center; }
+
+.norden-relic-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+
+/* Face, name and note, then the five abilities: the header and every row share the columns */
+.norden-knight-picker { --norden-knight-picker-columns: 52px minmax(0, 1fr) repeat(5, 46px); display: grid; gap: 4px; color: var(--norden-text); }
+.norden-knight-picker-header,
+.norden-knight-picker-row { display: grid; grid-template-columns: var(--norden-knight-picker-columns); align-items: center; gap: 8px; }
+.norden-knight-picker-header { position: sticky; top: 0; z-index: 1; padding: 0 8px 4px 4px; background: #1d1711; border-bottom: 1px solid #6e5838; }
+.norden-knight-picker-sort {
+  padding: 2px 0;
+  color: var(--norden-text-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+}
+.norden-knight-picker-sort.is-name { text-align: left; }
+.norden-knight-picker-sort:hover,
+.norden-knight-picker-sort.is-sorted { color: var(--norden-text-gold); }
+.norden-knight-picker-sort span { margin-left: 2px; font-size: 9px; }
+.norden-knight-picker-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.norden-knight-picker-row {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 60px;
+  padding: 4px 8px 4px 4px;
+  color: inherit;
+  text-align: left;
+  background: #2a2119;
+  border: 1px solid #6e5838;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+}
+.norden-knight-picker-row:hover { border-color: #d6b268; }
+.norden-knight-picker-row:focus-visible { outline: 2px solid #f4d987; outline-offset: 2px; }
+.norden-knight-picker-row.is-selected { background: #3b3220; border-color: #f4d987; box-shadow: 0 0 0 2px #f4d98766; }
+.norden-knight-picker-row.is-disabled { cursor: not-allowed; opacity: .55; }
+.norden-knight-picker-row.is-disabled:hover { border-color: #6e5838; }
+.norden-knight-picker-face { display: grid; width: 52px; aspect-ratio: 1; overflow: hidden; border-radius: 2px; }
+.norden-knight-picker-header .norden-knight-picker-face { aspect-ratio: auto; }
+.norden-knight-picker-face > * { width: 100%; height: 100%; }
+.norden-knight-picker-face > img { display: block; object-fit: cover; }
+.norden-knight-picker-face .norden-knight-initial { font-size: 22px; }
+.norden-knight-picker-name { display: grid; gap: 2px; min-width: 0; }
+.norden-knight-picker-name b { overflow: hidden; color: var(--norden-text-strong); font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.norden-knight-picker-sub,
+.norden-knight-picker-note { overflow: hidden; color: var(--norden-text-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.norden-knight-picker-reason { color: var(--norden-text-caution); font-size: 11px; }
+.norden-knight-picker-ability { color: var(--norden-text-highlight); font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-variant-numeric: tabular-nums; text-align: center; }

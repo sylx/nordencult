@@ -1,0 +1,23 @@
+.norden-cutin-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 900;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.norden-cutin-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* For screen readers only */
+.norden-cutin-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

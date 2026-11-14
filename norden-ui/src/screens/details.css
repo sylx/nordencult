@@ -1,0 +1,53 @@
+/* Shared reading rhythm for the relic and technology dossiers. */
+.norden-details {
+  display: grid;
+  flex: 1 1 auto;
+  align-content: start;
+  /* Keep the portrait intact on short windows; scroll the details instead. */
+  grid-auto-rows: max-content;
+  gap: 16px;
+  min-width: 0;
+  min-height: 0;
+  padding: 4px 6px 8px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #94703b #211b14;
+  scrollbar-gutter: stable;
+  overflow-wrap: anywhere;
+}
+.norden-details-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 140px) minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+}
+.norden-details-portrait.norden-image-frame { width: 140px; max-width: 100%; }
+.norden-details-portrait .norden-image-frame-content { width: 100%; }
+.norden-details-portrait .norden-building-image { width: 100%; height: auto; border-radius: 0; }
+.norden-details-portrait .norden-building-image.is-placeholder { aspect-ratio: 2 / 3; }
+.norden-details-heading { display: grid; justify-items: start; align-content: center; gap: 12px; min-width: 0; }
+.norden-details-label { margin: 0; color: var(--norden-text-muted); font-size: 11px; letter-spacing: .2em; }
+.norden-details-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.norden-details-section { display: grid; gap: 12px; min-width: 0; }
+.norden-details-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  color: var(--norden-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .12em;
+}
+.norden-details-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, #a3824b99, #a3824b11);
+}
+
+@container norden-detail-panel (max-width: 280px) {
+  .norden-details-hero { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 14px; }
+  .norden-details-heading { justify-items: center; text-align: center; }
+  .norden-details-badges { justify-content: center; }
+}

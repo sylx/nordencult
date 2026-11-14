@@ -1,0 +1,49 @@
+/* The window split into the status and the tabs along the top, the list and the details, and the button back along the bottom */
+.norden-mercenary-layout { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 5px; height: 100%; min-height: 0; color: var(--norden-text); }
+.norden-mercenary .norden-window-screen-layout { gap: 5px; }
+.norden-mercenary .norden-window-screen-layout > .norden-window-section { min-width: 0; min-height: 0; }
+
+.norden-mercenary-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 24px; padding: 2px 4px 6px; color: var(--norden-text-muted); font-size: 14px; }
+.norden-mercenary-city b { margin-right: 2px; color: var(--norden-text-highlight); font-size: 22px; font-weight: 700; }
+.norden-mercenary-gold b { color: var(--norden-text-highlight); font-family: Georgia, 'Times New Roman', serif; font-size: 18px; font-variant-numeric: tabular-nums; }
+
+.norden-mercenary-tabs { display: flex; gap: 4px; padding: 0 4px; border-bottom: 1px solid #a3824b66; }
+.norden-mercenary-tab { display: inline-flex; align-items: baseline; gap: 8px; padding: 6px 16px; color: var(--norden-text-muted); background: #211b14; border: 1px solid #6e5838; border-bottom: 0; border-radius: 4px 4px 0 0; cursor: pointer; font: inherit; font-size: 13px; }
+.norden-mercenary-tab:hover { color: var(--norden-text); }
+.norden-mercenary-tab:focus-visible { outline: 2px solid #f4d987; outline-offset: -2px; }
+.norden-mercenary-tab.is-active { color: var(--norden-text-highlight); background: #3b3220; border-color: #b8944f; }
+
+.norden-mercenary-list-section { flex: 5 1 0; }
+.norden-mercenary-scroll { flex: 1 1 auto; }
+.norden-mercenary-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+
+.norden-mercenary-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.norden-mercenary-search { box-sizing: border-box; height: 30px; color: var(--norden-text); background: #211b14; border: 1px solid #6e5838; border-radius: 4px; font: inherit; font-size: 13px; }
+.norden-mercenary-search { flex: 1 1 180px; min-width: 0; padding: 0 8px; }
+.norden-mercenary-search::placeholder { color: var(--norden-text-faint); }
+.norden-mercenary-search:focus-visible { outline: 2px solid #f4d987; outline-offset: -2px; }
+
+.norden-mercenary-side { flex: 4 1 0; max-width: 520px; }
+/* The body scrolls; the reason and the button stay at the bottom */
+.norden-mercenary-details { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 10px; flex: 1 1 auto; min-height: 0; }
+.norden-mercenary-details-body { display: grid; align-content: start; gap: 12px; padding-right: 6px; }
+
+.norden-mercenary-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; margin: 0; }
+.norden-mercenary-facts > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 4px; border-bottom: 1px solid #a3824b33; font-size: 13px; }
+.norden-mercenary-facts dt { flex: none; color: var(--norden-text-muted); }
+.norden-mercenary-facts dd { min-width: 0; margin: 0; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+.norden-mercenary-facts dd.is-price { font-size: 20px; line-height: 1.2; }
+
+.norden-mercenary-biography { display: grid; gap: 4px; }
+.norden-mercenary-biography h3 { margin: 0; color: var(--norden-text-muted); font-size: 13px; font-weight: 700; }
+.norden-mercenary-biography p { margin: 0; font-size: 13px; line-height: 1.8; }
+
+.norden-mercenary-action { display: grid; gap: 6px; }
+.norden-mercenary-reason { margin: 0; color: var(--norden-text-caution); font-size: 12px; line-height: 1.7; }
+
+.norden-mercenary-footer { display: flex; justify-content: flex-end; padding: 10px 4px 4px; }
+
+@media (max-width: 720px) {
+  .norden-mercenary .norden-window-screen-layout { flex-direction: column; }
+  .norden-mercenary-side { max-width: none; }
+}

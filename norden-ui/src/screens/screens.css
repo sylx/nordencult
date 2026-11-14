@@ -1,0 +1,69 @@
+/* Regions of a screen layer. The layer covers the host and lets pointer events through */
+.norden-screen { position: absolute; inset: 0; pointer-events: none; }
+.norden-screen-top-left, .norden-screen-top-center, .norden-screen-top-right,
+.norden-screen-bottom-center, .norden-screen-bottom-right { position: absolute; z-index: 150; pointer-events: none; }
+.norden-screen-top-left > *, .norden-screen-top-center > *, .norden-screen-top-right > *,
+.norden-screen-bottom-center > *, .norden-screen-bottom-right > * { pointer-events: auto; }
+.norden-screen-top-left { top: 16px; left: 24px; }
+/* Center with flex, not translate: -50%. A half-pixel offset breaks the 9-slice border-image of the buttons into dark seams */
+.norden-screen-top-center, .norden-screen-bottom-center { left: 16px; right: 16px; display: flex; justify-content: center; }
+.norden-screen-top-center { top: 12px; }
+.norden-screen-top-right { top: 16px; right: 24px; }
+.norden-screen-bottom-center { bottom: 16px; }
+.norden-screen-bottom-right { right: 24px; bottom: 16px; }
+.norden-screen-banner { top: 84px; }
+
+/* A dark HUD panel, e.g. the totals of the invasion screen */
+.norden-hud-panel {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px 10px 18px;
+  color: var(--norden-text);
+  font-family: 'Noto Serif JP', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  background: #211b14 url('../assets/ui/hud/dark-texture.webp') repeat;
+  border: 3px double #b59151;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px #000a;
+}
+
+/* DateBar is flush with the host's top-right edge. Move the city switcher below it on narrow hosts. */
+.norden-city-command { container: norden-date-host / inline-size; }
+.norden-city-command > .norden-info-window { max-width: calc(100% - var(--norden-city-window-x, 56px) - 16px); max-height: calc(100% - var(--norden-city-window-y, 96px) - 112px); }
+.norden-city-command .norden-info-window-measure { max-width: min(var(--norden-content-max-width), calc(100cqw - var(--norden-city-window-x, 56px) - 16px - var(--norden-padding-left) - var(--norden-padding-right))); }
+.norden-city-command .norden-screen-top-right { top: 0; right: 0; left: 0; display: flex; justify-content: flex-end; }
+@container norden-date-host (max-width: 1300px) {
+  .norden-city-command .norden-screen-top-left { top: 112px; }
+  .norden-city-command > .norden-info-window { margin-top: 96px; max-height: calc(100% - var(--norden-city-window-y, 96px) - 208px); }
+}
+
+/* A full-screen ornamental window (WindowFrame) split into framed sections side by side, e.g. the domestic and invasion screens */
+.norden-window-screen {
+  position: absolute;
+  /* Over the city command screen, its toolbar stays uncovered below the window */
+  inset: 0 0 var(--norden-screen-bottom-inset, 0);
+  animation: norden-window-screen-enter 240ms ease-out both;
+}
+@keyframes norden-window-screen-enter { from { opacity: 0; translate: 0 12px; scale: .985; } to { opacity: 1; translate: 0 0; scale: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .norden-window-screen { animation: none; }
+}
+.norden-window-screen-layout { display: flex; align-items: stretch; gap: 20px; height: 100%; min-height: 0; }
+
+/* A section of the window, framed by a SectionFrame placed first inside it */
+.norden-window-section {
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 100%;
+  padding: 18px 22px 20px;
+}
+.norden-window-section-header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px; }
+.norden-window-section-title { display: flex; align-items: baseline; gap: 10px; margin: 0; color: var(--norden-text-strong); font-size: 18px; font-weight: 700; }
+.norden-window-section-count { color: var(--norden-text-muted); font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.norden-window-section-empty { margin: 0; color: var(--norden-text-muted); font-size: 14px; }
+/* A part of the window that scrolls on its own */
+.norden-window-scroll { min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #94703b #211b14; }
